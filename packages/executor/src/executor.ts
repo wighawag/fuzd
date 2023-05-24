@@ -1,7 +1,6 @@
 import {logs} from 'named-logs';
 import {EIP1193ProviderWithoutEvents, EIP1193TransactionData} from 'eip-1193';
-import {Execution, KeyValueDB} from './types';
-import {Time} from '../dist';
+import {Execution, KeyValueDB, Time} from './types';
 const logger = logs('dreveal-executor');
 
 const defaultFinality = 12;
