@@ -1,3 +1,11 @@
+import {
+	EIP1193LegacyTransactionData,
+	EIP1193ProviderWithoutEvents,
+	EIP1193TransactionData,
+	EIP1193TransactionDataOfType1,
+	EIP1193TransactionDataOfType2,
+} from 'eip-1193';
+
 type BaseExecution = {
 	assumingTransaction?: {
 		// the execution should only happen if that tx is included in a block
@@ -81,4 +89,22 @@ export type KeyValueDB = {
 	//Deletes the provided keys and their associated values. Supports up to 128 keys at a time. Returns a count of the number of key-value pairs deleted.
 	delete(keys: string[]): Promise<number>;
 	list<T = unknown>(options: ListOptions): Promise<Map<string, T>>;
+};
+
+export type TransactionData = {chainId: string} & (
+	| Omit<EIP1193LegacyTransactionData, 'from'>
+	| Omit<EIP1193TransactionDataOfType1, 'from'>
+	| Omit<EIP1193TransactionDataOfType2, 'from'>
+);
+
+export type Wallet = {
+	address: `0x${string}`;
+	signTransaction(tx: TransactionData): Promise<`0x${string}`>;
+};
+
+export type ExecutorConfig = {
+	provider: EIP1193ProviderWithoutEvents;
+	time: Time;
+	db: KeyValueDB;
+	wallet: Wallet;
 };

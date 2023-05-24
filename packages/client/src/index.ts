@@ -1,6 +1,9 @@
-import {Execution, createExecutor} from 'dreveal-executor';
+import {Execution, TransactionData, createExecutor} from 'dreveal-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {createInMemoryKeyValueDB} from './InMemoryKeyValueDB';
+import {privateKeyToAccount} from 'viem/accounts';
+import {TransactionSerializable} from 'viem';
+import {createWallet} from './ViemWallet';
 
 const provider = new JSONRPCHTTPProvider('http://localhost:8545');
 const db = createInMemoryKeyValueDB();
@@ -11,12 +14,8 @@ const time = {
 	},
 };
 
-const wallet = {
-	address: '0x' as `0x${string}`,
-	async signTransaction() {
-		return '0x' as `0x${string}`;
-	},
-};
+const privateKey = '0x00';
+const wallet = createWallet(privateKey);
 
 const executor = createExecutor({
 	provider,

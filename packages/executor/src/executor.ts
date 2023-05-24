@@ -1,19 +1,8 @@
 import {logs} from 'named-logs';
-import {EIP1193ProviderWithoutEvents, EIP1193TransactionData} from 'eip-1193';
-import {Execution, KeyValueDB, Time} from './types';
+import {Execution, KeyValueDB, Time, ExecutorConfig, TransactionData} from './types';
 const logger = logs('dreveal-executor');
 
 const defaultFinality = 12;
-
-export type ExecutorConfig = {
-	provider: EIP1193ProviderWithoutEvents;
-	time: Time;
-	db: KeyValueDB;
-	wallet: {
-		address: `0x${string}`;
-		signTransaction(tx: EIP1193TransactionData): Promise<`0x${string}`>;
-	};
-};
 
 export function createExecutor(config: ExecutorConfig) {
 	const {provider, time, db, wallet} = config;
@@ -23,13 +12,13 @@ export function createExecutor(config: ExecutorConfig) {
 	}
 
 	async function execute(execution: Execution) {
-		let transaction: EIP1193TransactionData | undefined;
+		let transaction: TransactionData | undefined;
 
 		if (execution.type === 'clear') {
 			if (typeof execution.data === 'string') {
 				transaction = {
+					chainId: '1',
 					to: execution.data,
-					from: wallet.address,
 					data: execution.data,
 				};
 			} else {

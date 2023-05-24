@@ -14,10 +14,11 @@
   },
   "dependencies": {
     "dreveal-executor": "workspace:*",
-    "named-logs": "^0.2.2"
+    "named-logs": "^0.2.2",
+    "viem": "^0.3.36"
   },
   "devDependencies": {
-    "eip-1193-json-provider": "^0.1.1",
+    "eip-1193-json-provider": "^0.1.4",
     "ldenv": "^0.3.5",
     "named-logs-console": "^0.2.3",
     "prettier": "^2.8.8",
