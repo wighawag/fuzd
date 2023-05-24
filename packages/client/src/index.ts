@@ -1,8 +1,6 @@
-import {Execution, TransactionData, createExecutor} from 'dreveal-executor';
+import {createExecutor} from 'dreveal-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {createInMemoryKeyValueDB} from './InMemoryKeyValueDB';
-import {privateKeyToAccount} from 'viem/accounts';
-import {TransactionSerializable} from 'viem';
 import {createWallet} from './ViemWallet';
 
 const provider = new JSONRPCHTTPProvider('http://localhost:8545');
