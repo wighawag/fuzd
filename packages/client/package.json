@@ -17,6 +17,7 @@
     "named-logs": "^0.2.2"
   },
   "devDependencies": {
+    "eip-1193-json-provider": "^0.1.0",
     "ldenv": "^0.3.5",
     "named-logs-console": "^0.2.3",
     "prettier": "^2.8.8",
