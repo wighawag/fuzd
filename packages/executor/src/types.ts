@@ -1,6 +1,7 @@
 import {
 	EIP1193AccessList,
 	EIP1193Account,
+	EIP1193DATA,
 	EIP1193LegacyTransactionData,
 	EIP1193ProviderWithoutEvents,
 	EIP1193TransactionData,
@@ -10,34 +11,42 @@ import {
 
 import type {AbiEvent} from 'abitype';
 
-type BaseExecution = {
-	assumingTransaction?: {
-		// the execution should only happen if that tx is included in a block
-		// which can serve as a startTime
-		hash: `0x${string}`;
-		nonce: number;
-		broadcastTime?: number; // this can be used as an estimate
-		// TODO should we also allow an executor to broadcast both commit tx + reveal tx ?
-		expectEvent?: {
-			eventABI: AbiEvent;
-			startTimeParam?: string;
-		};
+export type StartTransaction = {
+	// the execution should only happen if that tx is included in a block
+	// which can serve as a startTime
+	hash: `0x${string}`;
+	nonce: number;
+	broadcastTime: number;
+	expectEvent?: {
+		eventABI: AbiEvent;
+		startTimeParam?: string;
 	};
-	timing: {
-		expiry?: number;
-	} & (
-		| {
-				type: 'duration';
-				duration: number | {};
-		  }
-		| {
-				type: 'timestamp';
-				timestamp: number;
-		  }
-	);
 };
 
-export type ExecutionData =
+export type DeltaExecution<T extends StartTransaction = StartTransaction> = {
+	type: 'delta';
+	expiry?: number;
+	startTransaction: T;
+	delta: number;
+};
+
+export type AssumedTransaction = {
+	// the execution should only happen if that tx is included in a block
+	hash: `0x${string}`;
+	nonce: number;
+	expectEvent?: {
+		eventABI: AbiEvent;
+	};
+};
+
+export type FixedTimeExecution<T extends AssumedTransaction = AssumedTransaction> = {
+	type: 'fixed';
+	expiry?: number;
+	assumedTransaction?: T;
+	timestamp: number;
+};
+
+export type TransactionExecutionData =
 	| `0x${string}`
 	| {
 			// TODO abitype
@@ -49,6 +58,30 @@ export type ExecutionData =
 			data: any;
 	  };
 
+export type BaseExecutionData = {
+	gas: string;
+	feeStrategy: FeeStrategy;
+};
+
+export type DecryptedTransactionData = {
+	data: EIP1193DATA;
+	to: EIP1193Account;
+	accessList?: EIP1193AccessList;
+};
+
+export type ExecutionDataInClear = BaseExecutionData &
+	DecryptedTransactionData & {
+		type: 'clear';
+	};
+
+export type ExecutionDataTimedLocked = BaseExecutionData & {
+	type: 'enctime-lockedypted';
+	payload: string;
+	// TODO algorithm?: string;
+};
+
+export type ExecutionData = ExecutionDataInClear | ExecutionDataTimedLocked;
+
 export type SingleFeeStrategy = {
 	type: 'single';
 	maxFeePerGas: string;
@@ -57,21 +90,10 @@ export type SingleFeeStrategy = {
 
 export type FeeStrategy = SingleFeeStrategy;
 
-export type ExecutionInClear = BaseExecution & {
-	type: 'clear';
-	data: ExecutionData;
-	to: EIP1193Account;
-	gas: string;
-	feeStrategy: FeeStrategy;
-	accessList?: EIP1193AccessList;
+export type Execution = {
+	tx: ExecutionData;
+	timing: FixedTimeExecution | DeltaExecution;
 };
-
-export type EncryptedExecution = BaseExecution & {
-	type: 'encrypted';
-	payload: `0x${string}`; // get decrypted in the ExecutionData type
-};
-
-export type Execution = EncryptedExecution | ExecutionInClear;
 
 export type Time = {
 	getTimestamp(): Promise<number>;
@@ -82,7 +104,13 @@ export type ExecutionBroadcastStored = {
 	queueID: string;
 };
 
-export type ExecutionStored = Execution & {id: string; assumedTransactionConfirmed?: number; retries: number};
+export type ExecutionStored = Execution & {
+	id: string;
+	retries: number;
+	timing:
+		| FixedTimeExecution<AssumedTransaction & {confirmed?: {blockTime: number}}>
+		| DeltaExecution<StartTransaction & {confirmed?: {blockTime: number; startTime?: number}}>;
+};
 
 export type ListOptions = (
 	| {

@@ -28,11 +28,19 @@ const executor = createExecutor({
 async function main() {
 	const id = '1'; // TODO id based on player account
 	executor.submitExecution(id, {
-		type: 'encrypted',
-		payload: '0x',
+		tx: {
+			type: 'clear',
+			data: '0x',
+			to: '0x',
+			feeStrategy: {
+				type: 'single',
+				maxFeePerGas: '1',
+				maxPriorityFeePerGas: '1',
+			},
+			gas: '1000000',
+		},
 		timing: {
-			type: 'timestamp',
-
+			type: 'fixed',
 			timestamp: 1,
 		},
 	});
