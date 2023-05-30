@@ -8,6 +8,8 @@ import {
 	EIP1193TransactionDataOfType2,
 } from 'eip-1193';
 
+import type {AbiEvent} from 'abitype';
+
 type BaseExecution = {
 	assumingTransaction?: {
 		// the execution should only happen if that tx is included in a block
@@ -16,6 +18,10 @@ type BaseExecution = {
 		nonce: number;
 		broadcastTime?: number; // this can be used as an estimate
 		// TODO should we also allow an executor to broadcast both commit tx + reveal tx ?
+		expectEvent?: {
+			eventABI: AbiEvent;
+			startTimeParam?: string;
+		};
 	};
 	timing: {
 		expiry?: number;
@@ -76,7 +82,7 @@ export type ExecutionBroadcastStored = {
 	queueID: string;
 };
 
-export type ExecutionStored = Execution & {id: string};
+export type ExecutionStored = Execution & {id: string; assumedTransactionConfirmed?: number; retries: number};
 
 export type ListOptions = (
 	| {
@@ -104,7 +110,7 @@ export type ListOptions = (
 	};
 
 export type KeyValueDB = {
-	get<T = unknown>(key: string): Promise<T>;
+	get<T = unknown>(key: string): Promise<T | undefined>;
 	get<T = unknown>(keys: string[]): Promise<Map<string, T>>;
 	put<T = unknown>(key: string, value: T): Promise<void>;
 	put<T = unknown>(entries: {[key: string]: T}): Promise<void>;
