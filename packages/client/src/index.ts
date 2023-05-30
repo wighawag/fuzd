@@ -14,18 +14,25 @@ const privateKey = '0x0000000000000000000000000000000000000000000000000000000000
 const wallet = createWallet(privateKey);
 
 const executor = createExecutor({
+	chainId: '1',
+	finality: 12,
+	worstCaseBlockTime: 15,
 	provider,
 	db,
 	time,
 	wallet,
+	maxExpiry: 24 * 3600,
+	maxNumTransactionsToProcessInOneGo: 10,
 });
 
 async function main() {
-	executor.submitExecution({
+	const id = '1'; // TODO id based on player account
+	executor.submitExecution(id, {
 		type: 'encrypted',
 		payload: '0x',
 		timing: {
 			type: 'timestamp',
+
 			timestamp: 1,
 		},
 	});

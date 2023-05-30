@@ -1,4 +1,6 @@
 import {
+	EIP1193AccessList,
+	EIP1193Account,
 	EIP1193LegacyTransactionData,
 	EIP1193ProviderWithoutEvents,
 	EIP1193TransactionData,
@@ -15,7 +17,9 @@ type BaseExecution = {
 		broadcastTime?: number; // this can be used as an estimate
 		// TODO should we also allow an executor to broadcast both commit tx + reveal tx ?
 	};
-	timing:
+	timing: {
+		expiry?: number;
+	} & (
 		| {
 				type: 'duration';
 				duration: number | {};
@@ -23,7 +27,8 @@ type BaseExecution = {
 		| {
 				type: 'timestamp';
 				timestamp: number;
-		  };
+		  }
+	);
 };
 
 export type ExecutionData =
@@ -38,9 +43,21 @@ export type ExecutionData =
 			data: any;
 	  };
 
+export type SingleFeeStrategy = {
+	type: 'single';
+	maxFeePerGas: string;
+	maxPriorityFeePerGas: string;
+};
+
+export type FeeStrategy = SingleFeeStrategy;
+
 export type ExecutionInClear = BaseExecution & {
 	type: 'clear';
 	data: ExecutionData;
+	to: EIP1193Account;
+	gas: string;
+	feeStrategy: FeeStrategy;
+	accessList?: EIP1193AccessList;
 };
 
 export type EncryptedExecution = BaseExecution & {
@@ -53,6 +70,13 @@ export type Execution = EncryptedExecution | ExecutionInClear;
 export type Time = {
 	getTimestamp(): Promise<number>;
 };
+
+export type ExecutionBroadcastStored = {
+	pendingID?: string;
+	queueID: string;
+};
+
+export type ExecutionStored = Execution & {id: string};
 
 export type ListOptions = (
 	| {
@@ -103,8 +127,13 @@ export type Wallet = {
 };
 
 export type ExecutorConfig = {
+	chainId: string;
 	provider: EIP1193ProviderWithoutEvents;
 	time: Time;
 	db: KeyValueDB;
 	wallet: Wallet;
+	finality: number;
+	worstCaseBlockTime: number;
+	maxExpiry?: number;
+	maxNumTransactionsToProcessInOneGo?: number;
 };

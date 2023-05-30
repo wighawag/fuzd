@@ -5,9 +5,8 @@ import {privateKeyToAccount} from 'viem/accounts';
 export function createWallet(privateKey: `0x${string}`): Wallet {
 	const account = privateKeyToAccount(privateKey);
 	const wallet = {
-		address: '0x' as `0x${string}`,
+		address: account.address,
 		async signTransaction(tx: TransactionData) {
-			// return '0x' as `0x${string}`;
 			let viemTransaction: TransactionSerializable | undefined;
 			if (!tx.type || tx.type === '0x0') {
 				viemTransaction = {
@@ -46,7 +45,7 @@ export function createWallet(privateKey: `0x${string}`): Wallet {
 				};
 			}
 			if (!viemTransaction) {
-				throw new Error(`could not create tx data`);
+				throw new Error(`could not create tx data for type ${tx.type}`);
 			}
 
 			const signedTx = await account.signTransaction(viemTransaction);
