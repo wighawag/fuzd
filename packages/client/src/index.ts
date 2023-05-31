@@ -34,10 +34,10 @@ async function main() {
 			to: '0x',
 			feeStrategy: {
 				type: 'single',
-				maxFeePerGas: '1',
-				maxPriorityFeePerGas: '1',
+				maxFeePerGas: 1n,
+				maxPriorityFeePerGas: 1n,
 			},
-			gas: '1000000',
+			gas: 1000000,
 		},
 		timing: {
 			type: 'fixed',
