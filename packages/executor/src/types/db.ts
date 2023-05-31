@@ -23,6 +23,10 @@ export type ListOptions = (
 		//Note that enabling this does not change the meaning of start, startKey, or endKey. start still defines the smallest key in lexicographic order that can be returned (inclusive), effectively serving as the endpoint for a reverse-order list. end still defines the largest key in lexicographic order that the list should consider (exclusive), effectively serving as the starting point for a reverse-order list.
 	};
 
+/**
+ * KeyValue DB
+ * Following on cloudflare Durable Object spec
+ */
 export type KeyValueDB = {
 	get<T = unknown>(key: string): Promise<T | undefined>;
 	get<T = unknown>(keys: string[]): Promise<Map<string, T>>;
@@ -33,4 +37,7 @@ export type KeyValueDB = {
 	//Deletes the provided keys and their associated values. Supports up to 128 keys at a time. Returns a count of the number of key-value pairs deleted.
 	delete(keys: string[]): Promise<number>;
 	list<T = unknown>(options: ListOptions): Promise<Map<string, T>>;
+	transaction(closure: (txn: TransactionOperations) => Promise<void>): Promise<void>;
 };
+
+export type TransactionOperations = Omit<KeyValueDB, 'transaction'> & {rollback(): void};
