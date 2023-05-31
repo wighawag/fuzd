@@ -10,6 +10,7 @@ import {
 } from 'eip-1193';
 
 import type {AbiEvent} from 'abitype';
+import {EIP1193QUANTITY} from 'eip-1193';
 
 export type Broadcaster = {
 	nextNonce: number;
@@ -63,7 +64,7 @@ export type TransactionExecutionData =
 	  };
 
 export type BaseExecutionData = {
-	gas: string;
+	gas: number;
 	feeStrategy: FeeStrategy;
 };
 
@@ -79,7 +80,7 @@ export type ExecutionDataInClear = BaseExecutionData &
 	};
 
 export type ExecutionDataTimedLocked = BaseExecutionData & {
-	type: 'enctime-lockedypted';
+	type: 'time-locked';
 	payload: string;
 	// TODO algorithm?: string;
 };
@@ -88,8 +89,8 @@ export type ExecutionData = ExecutionDataInClear | ExecutionDataTimedLocked;
 
 export type SingleFeeStrategy = {
 	type: 'single';
-	maxFeePerGas: string;
-	maxPriorityFeePerGas: string;
+	maxFeePerGas: bigint;
+	maxPriorityFeePerGas: bigint;
 };
 
 export type FeeStrategy = SingleFeeStrategy;
@@ -103,13 +104,18 @@ export type Time = {
 	getTimestamp(): Promise<number>;
 };
 
-export type ExecutionBroadcastStored = {
-	pendingID?: string;
-	queueID?: string;
-};
+export type ExecutionBroadcastStored =
+	| {
+			pendingID: string;
+	  }
+	| {
+			queueID: string;
+	  };
 
-export type TransactionInfo = {hash: `0x${string}`; nonce: number; broadcastTime: number; maxFeePerGasUsed: string};
-export type ExecutionPendingTransactionData = ExecutionStored & {broadcastedTransaction: TransactionInfo};
+export type TransactionInfo = {hash: `0x${string}`; nonce: number; broadcastTime: number; maxFeePerGasUsed: bigint};
+export type ExecutionPendingTransactionData = ExecutionStored & {
+	broadcastedTransaction: {data: TransactionDataUsed; info: TransactionInfo};
+};
 
 export type ExecutionStored = Execution & {
 	id: string;
@@ -161,6 +167,16 @@ export type TransactionData = {chainId: string} & (
 	| Omit<EIP1193TransactionDataOfType1, 'from'>
 	| Omit<EIP1193TransactionDataOfType2, 'from'>
 );
+
+export type TransactionDataUsed = Omit<EIP1193TransactionDataOfType2, 'from'> & {
+	chainId: string;
+	to: EIP1193Account;
+	gas: EIP1193QUANTITY;
+	data: EIP1193DATA;
+	nonce: EIP1193QUANTITY;
+	maxFeePerGas: EIP1193QUANTITY;
+	maxPriorityFeePerGas: EIP1193QUANTITY;
+};
 
 export type Wallet = {
 	address: `0x${string}`;

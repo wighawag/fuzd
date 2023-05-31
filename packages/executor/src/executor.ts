@@ -8,12 +8,12 @@ import {
 	TransactionData,
 	TransactionInfo,
 	Broadcaster,
+	TransactionDataUsed,
 } from './types';
 import {dequals} from './utils/js';
 import {DecryptedTransactionData} from '../dist';
 import {getTransactionStatus} from './utils/ethereum';
 import {time2text} from './utils/time';
-import {EIP1193TransactionReceipt} from 'eip-1193';
 const logger = logs('dreveal-executor');
 
 function lexicographicNumber(num: number, size: number): string {
@@ -99,7 +99,7 @@ export function createExecutor(config: ExecutorConfig) {
 
 		const broadcast = await db.get<ExecutionBroadcastStored>(broadcastID);
 		if (broadcast) {
-			if (broadcast.pendingID) {
+			if ('pendingID' in broadcast && broadcast.pendingID) {
 				// TODO what should we do here, for now reject
 				// the transaction is already on its way and unless the initial data was wrong, the tx is going to go through
 				// could add a FORCE option ?
@@ -256,7 +256,7 @@ export function createExecutor(config: ExecutorConfig) {
 							hash,
 							nonce,
 							broadcastTime: timestamp,
-							maxFeePerGasUsed: options.maxFeePerGas.toString(),
+							maxFeePerGasUsed: options.maxFeePerGas,
 						},
 					};
 				} catch (e) {
@@ -273,19 +273,21 @@ export function createExecutor(config: ExecutorConfig) {
 					hash,
 					nonce,
 					broadcastTime: timestamp,
-					maxFeePerGasUsed: options.maxFeePerGas.toString(),
+					maxFeePerGasUsed: options.maxFeePerGas,
 				},
 			};
 		}
 	}
 
 	async function execute(queueID: string, execution: ExecutionStored) {
-		let transaction: TransactionData | undefined;
+		let transaction: Omit<TransactionDataUsed, 'nonce'> | undefined;
 
 		// now we are ready to execute, if we reached there, this means the execution is in the right time slot
 		// we will now process it and broadcast it
 		// for encrypted payload we will attempt to decrypt
 		// if it fails, we will push it accoridng to time schedule
+
+		const feeStrategy = execution.tx.feeStrategy;
 
 		if (execution.tx.type === 'clear') {
 			if (typeof execution.tx.data === 'string') {
@@ -296,8 +298,8 @@ export function createExecutor(config: ExecutorConfig) {
 					data: execution.tx.data,
 					accessList: execution.tx.accessList,
 					gas: `0x${BigInt(execution.tx.gas).toString(16)}`,
-					maxFeePerGas: `0x${BigInt(execution.tx.feeStrategy.maxFeePerGas).toString(16)}`,
-					maxPriorityFeePerGas: `0x${BigInt(execution.tx.feeStrategy.maxPriorityFeePerGas).toString(16)}`,
+					maxFeePerGas: `0x${BigInt(feeStrategy.maxFeePerGas).toString(16)}`,
+					maxPriorityFeePerGas: `0x${BigInt(feeStrategy.maxPriorityFeePerGas).toString(16)}`,
 					// TODO? value
 				};
 			} else {
@@ -329,6 +331,9 @@ export function createExecutor(config: ExecutorConfig) {
 			}
 		}
 
+		// TODO fee strategies
+		const currentMaxFee = feeStrategy;
+
 		const result = await _submitTransaction(transaction, {
 			expectedNonce: broadcaster.nextNonce,
 			maxFeePerGas: currentMaxFee.maxFeePerGas,
@@ -341,7 +346,7 @@ export function createExecutor(config: ExecutorConfig) {
 			// TODO what to do here. this should not happen
 			return;
 		}
-		if (broadcast.pendingID) {
+		if ('pendingID' in broadcast) {
 			// Already pending
 			// TODO what to do here ?
 		} else if (broadcast.queueID) {
@@ -356,7 +361,10 @@ export function createExecutor(config: ExecutorConfig) {
 
 		const pendingID = `pending_${lexicographicNumber(broadcaster.nextNonce, 12)}`;
 		db.put<ExecutionBroadcastStored>(broadcastID, {pendingID}); // no queueID
-		db.put<ExecutionPendingTransactionData>(pendingID, {...execution, broadcastedTransaction: result.tx});
+		db.put<ExecutionPendingTransactionData>(pendingID, {
+			...execution,
+			broadcastedTransaction: {info: result.tx, data: {...transaction, nonce: `0x${result.tx.nonce.toString()}`}},
+		});
 
 		broadcaster.nextNonce = result.tx.nonce + 1;
 		await db.put<Broadcaster>(broadcasterID, broadcaster);
@@ -491,76 +499,97 @@ export function createExecutor(config: ExecutorConfig) {
 		pendingID: string,
 		pendingExecution: ExecutionPendingTransactionData
 	): Promise<void> {
-		const latestBlocknumberAshex = await provider.request({
-			method: 'eth_blockNumber',
-		});
-		const latestBlockNumber = parseInt(latestBlocknumberAshex.slice(2), 16);
-		const receipt = await provider.request({
-			method: 'eth_getTransactionReceipt',
-			params: [pendingExecution.broadcastedTransaction.hash],
+		// const receipt = await provider.request({
+		// 	method: 'eth_getTransactionReceipt',
+		// 	params: [pendingExecution.broadcastedTransaction.hash],
+		// });
+		const pendingTansaction = await provider.request({
+			method: 'eth_getTransactionByHash',
+			params: [pendingExecution.broadcastedTransaction.info.hash],
 		});
 
-		const transactionBlockNumber = parseInt(receipt.blockNumber.slice(2), 16);
-		const finalised = receipt && latestBlockNumber - finality >= transactionBlockNumber;
+		let finalised = false;
+		if (pendingTansaction && pendingTansaction.blockNumber) {
+			const latestBlocknumberAshex = await provider.request({
+				method: 'eth_blockNumber',
+			});
+			const latestBlockNumber = parseInt(latestBlocknumberAshex.slice(2), 16);
+			const transactionBlockNumber = parseInt(pendingTansaction.blockNumber.slice(2), 16);
+			finalised = latestBlockNumber - finality >= transactionBlockNumber;
+		}
 
-		if (!receipt) {
-			const lastMaxFeeUsed = pendingExecution.tx.maxFeePerGasUsed;
-			const broadcastingTime = Math.max(
-				pendingExecution.arrivalTimeWanted,
-				pendingExecution.startTime + pendingExecution.minDuration
-			);
-			const currentMaxFee = getMaxFeeFromArray(pendingExecution.maxFeesSchedule, getTimestamp() - broadcastingTime);
-			if (!transaction || currentMaxFee.maxFeePerGas.gt(lastMaxFeeUsed)) {
-				this.info(
-					`broadcast reveal tx for fleet: ${pendingExecution.fleetID} ${
-						transaction ? 'with new fee' : 'again as it was lost'
-					} ... `
-				);
-				const {error, tx} = await this._submitTransaction(pendingExecution, {
-					forceNonce: pendingExecution.tx.nonce,
-					maxFeePerGas: currentMaxFee.maxFeePerGas,
-					maxPriorityFeePerGas: currentMaxFee.maxPriorityFeePerGas,
-				});
-				if (error) {
-					// TODO
-					this.error(error);
-					return;
-				} else if (!tx) {
-					// impossible
-					return;
-				}
-				pendingExecution.tx = tx;
-				db.put<ExecutionPendingTransactionData>(pendingID, pendingExecution);
-			}
+		if (!pendingTansaction) {
+			// TODO resubmit with higher gas
+			// const lastMaxFeeUsed = pendingExecution.tx.maxFeePerGasUsed;
+			// const broadcastingTime = Math.max(
+			// 	pendingExecution.arrivalTimeWanted,
+			// 	pendingExecution.startTime + pendingExecution.minDuration
+			// );
+			// const currentMaxFee = getMaxFeeFromArray(pendingExecution.maxFeesSchedule, getTimestamp() - broadcastingTime);
+			// if (!transaction || currentMaxFee.maxFeePerGas.gt(lastMaxFeeUsed)) {
+			// 	this.info(
+			// 		`broadcast reveal tx for fleet: ${pendingExecution.fleetID} ${
+			// 			transaction ? 'with new fee' : 'again as it was lost'
+			// 		} ... `
+			// 	);
+			// 	const {error, tx} = await this._submitTransaction(pendingExecution, {
+			// 		forceNonce: pendingExecution.tx.nonce,
+			// 		maxFeePerGas: currentMaxFee.maxFeePerGas,
+			// 		maxPriorityFeePerGas: currentMaxFee.maxPriorityFeePerGas,
+			// 	});
+			// 	if (error) {
+			// 		// TODO
+			// 		this.error(error);
+			// 		return;
+			// 	} else if (!tx) {
+			// 		// impossible
+			// 		return;
+			// 	}
+			// 	pendingExecution.tx = tx;
+			// 	db.put<ExecutionPendingTransactionData>(pendingID, pendingExecution);
+			// }
+
+			// FOR NOW we just re broadcast
+			await _submitTransaction(pendingExecution.broadcastedTransaction.data, {
+				forceNonce: pendingExecution.broadcastedTransaction.info.nonce,
+				maxFeePerGas: BigInt(pendingExecution.broadcastedTransaction.data.maxFeePerGas),
+				maxPriorityFeePerGas: BigInt(pendingExecution.broadcastedTransaction.data.maxPriorityFeePerGas),
+			});
 		} else if (finalised) {
-			const txReceipt = await this.provider.getTransactionReceipt(pendingExecution.tx.hash);
-			const accountID = `account_${pendingExecution.player.toLowerCase()}`;
-			const accountData = await this.state.storage.get<AccountData | undefined>(accountID);
-			if (accountData) {
-				const maxFeeAllowed = getMaxFeeAllowed(pendingExecution.maxFeesSchedule);
-				const minimumCost = maxFeeAllowed.mul(revealMaxGasEstimate);
-				let gasCost = minimumCost;
-				if (txReceipt.gasUsed && txReceipt.effectiveGasPrice) {
-					gasCost = txReceipt.gasUsed?.mul(txReceipt.effectiveGasPrice);
-				}
-				const paymentUsed = BigNumber.from((await accountData).paymentUsed).add(gasCost);
-				let paymentSpending = BigNumber.from((await accountData).paymentSpending).sub(minimumCost);
-				if (paymentSpending.lt(0)) {
-					paymentSpending = BigNumber.from(0);
-				}
-				// TODO move to sync stage ?
-				//  could either make every tx go through the payment gateway and emit event there
-				//  or do it on OuterSpace by adding an param to the event
-				//  we just need payer address and amount reserved (spending)
-				//  doing it via event has the advantage that the payment can be tacked back even after full db reset
-				//  we could even process a signature from the payer
-				//  the system would still require trusting the agent-service, but everything would at least be auditable
-				accountData.paymentUsed = paymentUsed.toString();
-				accountData.paymentSpending = paymentSpending.toString();
-				db.put<AccountData>(accountID, accountData);
-			} else {
-				logger.error(`weird, accountData do not exist anymore`); // TODO handle it
-			}
+			// TODO account
+			// const txReceipt = await provider.request({
+			// 	method: 'eth_getTransactionReceipt',
+			// 	params: [pendingExecution.broadcastedTransaction.hash],
+			// });
+			// const accountID = `account_${pendingExecution.player.toLowerCase()}`;
+			// const accountData = await this.state.storage.get<AccountData | undefined>(accountID);
+			// if (accountData) {
+			// 	const maxFeeAllowed = getMaxFeeAllowed(pendingExecution.maxFeesSchedule);
+			// 	const minimumCost = maxFeeAllowed.mul(revealMaxGasEstimate);
+			// 	let gasCost = minimumCost;
+			// 	if (txReceipt.gasUsed && txReceipt.effectiveGasPrice) {
+			// 		gasCost = txReceipt.gasUsed?.mul(txReceipt.effectiveGasPrice);
+			// 	}
+			// 	const paymentUsed = BigNumber.from((await accountData).paymentUsed).add(gasCost);
+			// 	let paymentSpending = BigNumber.from((await accountData).paymentSpending).sub(minimumCost);
+			// 	if (paymentSpending.lt(0)) {
+			// 		paymentSpending = BigNumber.from(0);
+			// 	}
+			// 	// TODO move to sync stage ?
+			// 	//  could either make every tx go through the payment gateway and emit event there
+			// 	//  or do it on OuterSpace by adding an param to the event
+			// 	//  we just need payer address and amount reserved (spending)
+			// 	//  doing it via event has the advantage that the payment can be tacked back even after full db reset
+			// 	//  we could even process a signature from the payer
+			// 	//  the system would still require trusting the agent-service, but everything would at least be auditable
+			// 	accountData.paymentUsed = paymentUsed.toString();
+			// 	accountData.paymentSpending = paymentSpending.toString();
+			// 	db.put<AccountData>(accountID, accountData);
+			// } else {
+			// 	logger.error(`weird, accountData do not exist anymore`); // TODO handle it
+			// }
+
+			// the tx has been finalised, we can delete it from the system
 			db.delete(pendingID);
 			const broadcastID = computeBroadcastID(pendingExecution.id);
 			db.delete(broadcastID);
