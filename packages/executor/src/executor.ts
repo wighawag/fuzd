@@ -1,19 +1,18 @@
 import {logs} from 'named-logs';
+import {Execution, ExecutorConfig} from './types/execution';
 import {
-	Execution,
 	ExecutionBroadcastStored,
 	ExecutionPendingTransactionData,
 	ExecutionStored,
-	ExecutorConfig,
-	TransactionData,
 	TransactionInfo,
 	Broadcaster,
 	TransactionDataUsed,
-} from './types';
+} from './types/internal';
 import {dequals} from './utils/js';
 import {DecryptedTransactionData} from '../dist';
 import {getTransactionStatus} from './utils/ethereum';
 import {time2text} from './utils/time';
+import {TransactionData} from './types/transactions';
 const logger = logs('dreveal-executor');
 
 function lexicographicNumber(num: number, size: number): string {

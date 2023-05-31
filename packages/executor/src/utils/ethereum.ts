@@ -6,7 +6,7 @@ export async function getTransactionStatus(
 	finality: number
 ): Promise<
 	| {finalised: true; blockTime: number; receipt: EIP1193TransactionReceipt; failed: boolean}
-	| {finalised: false; blockTime?: number; receipt?: EIP1193TransactionReceipt; failed?: boolean}
+	| {finalised: false; blockTime?: number; receipt: EIP1193TransactionReceipt | null; failed?: boolean}
 > {
 	let finalised = false;
 	let blockTime: number | undefined;
@@ -26,22 +26,25 @@ export async function getTransactionStatus(
 			);
 		}
 
-		finalised = receiptBlocknumber <= Math.max(0, latestBlockNumber - finality);
-
 		const block = await provider.request({
 			method: 'eth_getBlockByHash',
 			params: [receipt.blockHash, false],
 		});
-		blockTime = parseInt(block.timestamp.slice(2), 16);
+		if (block) {
+			blockTime = parseInt(block.timestamp.slice(2), 16);
+			finalised = receiptBlocknumber <= Math.max(0, latestBlockNumber - finality);
+		}
 	}
 
-	let failed = false;
-	if (receipt.status === '0x0') {
-		failed = true;
-	} else if (receipt.status === '0x1') {
-		failed = false;
-	} else {
-		throw new Error(`Could not get the tx status for ${receipt.transactionHash} (status: ${receipt.status})`);
+	let failed: boolean | undefined;
+	if (receipt) {
+		if (receipt.status === '0x0') {
+			failed = true;
+		} else if (receipt.status === '0x1') {
+			failed = false;
+		} else {
+			throw new Error(`Could not get the tx status for ${receipt.transactionHash} (status: ${receipt.status})`);
+		}
 	}
 
 	if (finalised) {
