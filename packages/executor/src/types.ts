@@ -11,6 +11,10 @@ import {
 
 import type {AbiEvent} from 'abitype';
 
+export type Broadcaster = {
+	nextNonce: number;
+};
+
 export type StartTransaction = {
 	// the execution should only happen if that tx is included in a block
 	// which can serve as a startTime
@@ -101,8 +105,11 @@ export type Time = {
 
 export type ExecutionBroadcastStored = {
 	pendingID?: string;
-	queueID: string;
+	queueID?: string;
 };
+
+export type TransactionInfo = {hash: string; nonce: number; broadcastTime: number; maxFeePerGasUsed: string};
+export type ExecutionPendingTransactionData = ExecutionStored & {broadcastedTransaction: TransactionInfo};
 
 export type ExecutionStored = Execution & {
 	id: string;
