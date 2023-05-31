@@ -12,6 +12,8 @@ import {
 import {dequals} from './utils/js';
 import {DecryptedTransactionData} from '../dist';
 import {getTransactionStatus} from './utils/ethereum';
+import {time2text} from './utils/time';
+import {EIP1193TransactionReceipt} from 'eip-1193';
 const logger = logs('dreveal-executor');
 
 function lexicographicNumber(num: number, size: number): string {
@@ -443,6 +445,7 @@ export function createExecutor(config: ExecutorConfig) {
 		const timestamp = await time.getTimestamp();
 
 		const limit = maxNumTransactionsToProcessInOneGo;
+		// TODO only query up to a certain time
 		const executions = await db.list<ExecutionStored>({prefix: 'q_', limit});
 
 		for (const executionEntry of executions.entries()) {
@@ -454,13 +457,14 @@ export function createExecutor(config: ExecutorConfig) {
 
 			const executionUpdated = updates.execution;
 			const executionTime = computeExecutionTime(executionUpdated);
-			// delete if execution expired
+
 			if (
 				timestamp >
 				executionTime +
 					Math.min(executionUpdated.timing.expiry || Number.MAX_SAFE_INTEGER, maxExpiry) +
 					finality * worstCaseBlockTime
 			) {
+				// delete if execution expired
 				logger.info(`too late, deleting ${queueID}...`);
 				const broadcastID = `b_${executionUpdated.id}`;
 				db.delete(queueID);
@@ -469,14 +473,113 @@ export function createExecutor(config: ExecutorConfig) {
 			}
 
 			if (timestamp >= executionTime) {
+				// execute if it is the time
 				await execute(queueID, executionUpdated);
 			} else {
+				// if not, then in most case we detected a change in the execution time
 				if (updates.status === 'changed') {
 					db.put(queueID, executionUpdated);
+				} else {
+					// For now as we do not limit result to a certain time, we will reach there often
+					logger.info(`not yet time: ${time2text(executionTime - timestamp)} to wait...`);
 				}
-				logger.info(
-					`skip execution (queueID: ${queueID}) because not yet time executionTime (${executionTime}) > timestamp (${timestamp})`
+			}
+		}
+	}
+
+	async function __processPendingTransaction(
+		pendingID: string,
+		pendingExecution: ExecutionPendingTransactionData
+	): Promise<void> {
+		const latestBlocknumberAshex = await provider.request({
+			method: 'eth_blockNumber',
+		});
+		const latestBlockNumber = parseInt(latestBlocknumberAshex.slice(2), 16);
+		const receipt = await provider.request({
+			method: 'eth_getTransactionReceipt',
+			params: [pendingExecution.broadcastedTransaction.hash],
+		});
+
+		const transactionBlockNumber = parseInt(receipt.blockNumber.slice(2), 16);
+		const finalised = receipt && latestBlockNumber - finality >= transactionBlockNumber;
+
+		if (!receipt) {
+			const lastMaxFeeUsed = pendingExecution.tx.maxFeePerGasUsed;
+			const broadcastingTime = Math.max(
+				pendingExecution.arrivalTimeWanted,
+				pendingExecution.startTime + pendingExecution.minDuration
+			);
+			const currentMaxFee = getMaxFeeFromArray(pendingExecution.maxFeesSchedule, getTimestamp() - broadcastingTime);
+			if (!transaction || currentMaxFee.maxFeePerGas.gt(lastMaxFeeUsed)) {
+				this.info(
+					`broadcast reveal tx for fleet: ${pendingExecution.fleetID} ${
+						transaction ? 'with new fee' : 'again as it was lost'
+					} ... `
 				);
+				const {error, tx} = await this._submitTransaction(pendingExecution, {
+					forceNonce: pendingExecution.tx.nonce,
+					maxFeePerGas: currentMaxFee.maxFeePerGas,
+					maxPriorityFeePerGas: currentMaxFee.maxPriorityFeePerGas,
+				});
+				if (error) {
+					// TODO
+					this.error(error);
+					return;
+				} else if (!tx) {
+					// impossible
+					return;
+				}
+				pendingExecution.tx = tx;
+				db.put<ExecutionPendingTransactionData>(pendingID, pendingExecution);
+			}
+		} else if (finalised) {
+			const txReceipt = await this.provider.getTransactionReceipt(pendingExecution.tx.hash);
+			const accountID = `account_${pendingExecution.player.toLowerCase()}`;
+			const accountData = await this.state.storage.get<AccountData | undefined>(accountID);
+			if (accountData) {
+				const maxFeeAllowed = getMaxFeeAllowed(pendingExecution.maxFeesSchedule);
+				const minimumCost = maxFeeAllowed.mul(revealMaxGasEstimate);
+				let gasCost = minimumCost;
+				if (txReceipt.gasUsed && txReceipt.effectiveGasPrice) {
+					gasCost = txReceipt.gasUsed?.mul(txReceipt.effectiveGasPrice);
+				}
+				const paymentUsed = BigNumber.from((await accountData).paymentUsed).add(gasCost);
+				let paymentSpending = BigNumber.from((await accountData).paymentSpending).sub(minimumCost);
+				if (paymentSpending.lt(0)) {
+					paymentSpending = BigNumber.from(0);
+				}
+				// TODO move to sync stage ?
+				//  could either make every tx go through the payment gateway and emit event there
+				//  or do it on OuterSpace by adding an param to the event
+				//  we just need payer address and amount reserved (spending)
+				//  doing it via event has the advantage that the payment can be tacked back even after full db reset
+				//  we could even process a signature from the payer
+				//  the system would still require trusting the agent-service, but everything would at least be auditable
+				accountData.paymentUsed = paymentUsed.toString();
+				accountData.paymentSpending = paymentSpending.toString();
+				db.put<AccountData>(accountID, accountData);
+			} else {
+				logger.error(`weird, accountData do not exist anymore`); // TODO handle it
+			}
+			db.delete(pendingID);
+			const broadcastID = computeBroadcastID(pendingExecution.id);
+			db.delete(broadcastID);
+		}
+	}
+
+	async function processPendingTransactions() {
+		// TODO test limit, is 10 good enough ? this will depends on exec time and CRON period and number of tx submitted
+		const limit = 10;
+		const txs = (await db.list({prefix: `pending_`, limit})) as
+			| Map<string, ExecutionPendingTransactionData>
+			| undefined;
+		if (txs) {
+			for (const txEntry of txs.entries()) {
+				const pendingID = txEntry[0];
+				const pendingExecution = txEntry[1];
+				await __processPendingTransaction(pendingID, pendingExecution);
+				// TODO check pending transactions, remove confirmed one, increase gas if queue not moving
+				// nonce can be rebalanced too if needed ?
 			}
 		}
 	}
@@ -484,5 +587,6 @@ export function createExecutor(config: ExecutorConfig) {
 	return {
 		submitExecution,
 		processQueue,
+		processPendingTransactions,
 	};
 }

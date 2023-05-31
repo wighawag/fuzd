@@ -108,7 +108,7 @@ export type ExecutionBroadcastStored = {
 	queueID?: string;
 };
 
-export type TransactionInfo = {hash: string; nonce: number; broadcastTime: number; maxFeePerGasUsed: string};
+export type TransactionInfo = {hash: `0x${string}`; nonce: number; broadcastTime: number; maxFeePerGasUsed: string};
 export type ExecutionPendingTransactionData = ExecutionStored & {broadcastedTransaction: TransactionInfo};
 
 export type ExecutionStored = Execution & {

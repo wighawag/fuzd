@@ -43,8 +43,8 @@ importers:
         specifier: ^0.8.5
         version: 0.8.5(typescript@5.0.4)
       eip-1193:
-        specifier: ^0.3.3
-        version: 0.3.3
+        specifier: ^0.3.4
+        version: 0.3.4
       ldenv:
         specifier: ^0.3.5
         version: 0.3.5
@@ -507,8 +507,8 @@ packages:
       - encoding
     dev: true
 
-  /eip-1193@0.3.3:
-    resolution: {integrity: sha512-CQWOFlyV0MFDpnprdndZi9k7mbVQzCRNVnAITzSepwZEEArCHmvYWao19m5usapWxop4bwInYJbjjlBb2TkfLw==}
+  /eip-1193@0.3.4:
+    resolution: {integrity: sha512-7e++k5tMOwjZ0L9qHrQ1S21lLxAnBbrWg0Gy3w055Rq68G5lFPaRxyrRV/pMghV0XlzgwyQjFt4AYflo3WnXsA==}
     dev: true
 
   /esbuild@0.17.19:

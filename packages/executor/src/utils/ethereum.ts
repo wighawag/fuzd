@@ -11,7 +11,7 @@ export async function getTransactionStatus(
 	let finalised = false;
 	let blockTime: number | undefined;
 	// TODO fix eip-1193 to make receipt response optional, is that a null ?
-	const receipt: EIP1193TransactionReceipt | undefined = await provider.request({
+	const receipt = await provider.request({
 		method: 'eth_getTransactionReceipt',
 		params: [transaction.hash],
 	});
