@@ -1,14 +1,8 @@
 # ###########################################
 # .gitignore
 #############################################
-# environment variables
-.env*.local
-
-# node modules
+.wrangler
 node_modules
-
-# data generated
-/dist
 #############################################
 
 # Ignore npm files
