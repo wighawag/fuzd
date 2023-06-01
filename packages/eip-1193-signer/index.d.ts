@@ -1,4 +1,10 @@
-import {EIP1193LegacyTransactionData, EIP1193TransactionDataOfType1, EIP1193TransactionDataOfType2} from 'eip-1193';
+import {
+	EIP1193Account,
+	EIP1193DATA,
+	EIP1193LegacyTransactionData,
+	EIP1193TransactionDataOfType1,
+	EIP1193TransactionDataOfType2,
+} from 'eip-1193';
 
 export type EIP1193TransactionDataToSign = {chainId: string} & (
 	| Omit<EIP1193LegacyTransactionData, 'from'>
@@ -7,6 +13,6 @@ export type EIP1193TransactionDataToSign = {chainId: string} & (
 );
 
 export type EIP1193Signer = {
-	address: `0x${string}`;
-	signTransaction(tx: EIP1193TransactionDataToSign): Promise<`0x${string}`>;
+	address: EIP1193Account;
+	signTransaction(tx: EIP1193TransactionDataToSign): Promise<EIP1193DATA>;
 };
