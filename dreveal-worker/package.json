@@ -7,6 +7,14 @@
     "typescript": "^5.0.4",
     "wrangler": "^3.0.1"
   },
+  "dependencies": {
+    "dreveal-executor": "workspace:*",
+    "eip-1193-json-provider": "^0.1.4",
+    "eip-1193-signer-viem": "workspace:*",
+    "itty-durable": "^1.6.0",
+    "itty-router": "^4.0.9",
+    "itty-router-extras": "0.4.2"
+  },
   "scripts": {
     "deploy": "wrangler publish",
     "start": "wrangler dev"

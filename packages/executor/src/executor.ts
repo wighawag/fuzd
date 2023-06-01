@@ -12,7 +12,7 @@ import {dequals} from './utils/js';
 import {DecryptedTransactionData} from '../dist';
 import {getTransactionStatus} from './utils/ethereum';
 import {time2text} from './utils/time';
-import {TransactionData} from './types/transactions';
+import {EIP1193TransactionDataToSign} from 'eip-1193-signer';
 const logger = logs('dreveal-executor');
 
 function lexicographicNumber(num: number, size: number): string {
@@ -148,7 +148,7 @@ export function createExecutor(config: ExecutorConfig) {
 	}
 
 	async function _submitTransaction(
-		transactionData: TransactionData,
+		transactionData: EIP1193TransactionDataToSign,
 		options: {expectedNonce?: number; forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas?: bigint}
 	): Promise<{tx: TransactionInfo}> {
 		// TODO pass it in to remove the await

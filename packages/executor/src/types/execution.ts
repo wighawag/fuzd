@@ -1,5 +1,5 @@
 import {EIP1193AccessList, EIP1193Account, EIP1193DATA, EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {TransactionData} from './transactions';
+import {EIP1193Signer} from 'eip-1193-signer';
 import {AbiEvent} from 'abitype';
 import {KeyValueDB} from './db';
 
@@ -91,17 +91,12 @@ export type Execution = {
 	timing: FixedTimeExecution | DeltaExecution;
 };
 
-export type Wallet = {
-	address: `0x${string}`;
-	signTransaction(tx: TransactionData): Promise<`0x${string}`>;
-};
-
 export type ExecutorConfig = {
 	chainId: string;
 	provider: EIP1193ProviderWithoutEvents;
 	time: Time;
 	db: KeyValueDB;
-	wallet: Wallet;
+	wallet: EIP1193Signer;
 	finality: number;
 	worstCaseBlockTime: number;
 	maxExpiry?: number;

@@ -1,7 +1,7 @@
 import {createExecutor} from 'dreveal-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {createInMemoryKeyValueDB} from './InMemoryKeyValueDB';
-import {createWallet} from './ViemWallet';
+import {createWallet} from 'eip-1193-signer-viem';
 
 const provider = new JSONRPCHTTPProvider('http://localhost:8545');
 const db = createInMemoryKeyValueDB();

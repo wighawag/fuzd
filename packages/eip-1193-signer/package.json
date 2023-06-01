@@ -1,0 +1,8 @@
+{
+  "name": "eip-1193-signer",
+  "version": "0.0.1",
+  "types": "index.d.ts",
+  "dependencies": {
+    "eip-1193": "^0.3.4"
+  }
+}

@@ -1,27 +1,20 @@
 {
-  "name": "dreveal-executor",
-  "version": "0.1.0",
-  "description": "execute transaction",
+  "name": "eip-1193-signer-viem",
+  "version": "0.0.1",
+  "description": "sign transaction",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "volta": {
     "node": "18.7.0"
   },
   "dependencies": {
-    "dreveal-executor": "workspace:*",
     "named-logs": "^0.2.2",
     "viem": "^0.3.36"
   },
   "devDependencies": {
-    "eip-1193-json-provider": "^0.1.4",
-    "eip-1193-signer-viem": "workspace:*",
-    "ldenv": "^0.3.5",
-    "named-logs-console": "^0.2.3",
+    "eip-1193-signer": "workspace:*",
     "prettier": "^2.8.8",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4"
@@ -30,7 +23,6 @@
     "build": "tsup src/index.ts --dts --format esm,cjs",
     "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
     "format:check": "prettier --check .",
-    "format": "prettier --write .",
-    "test": "NAMED_LOGS_LEVEL=6 NAMED_LOGS=dreveal* node --require named-logs-console dist/index.js"
+    "format": "prettier --write ."
   }
 }

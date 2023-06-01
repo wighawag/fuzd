@@ -1,12 +1,12 @@
-import {TransactionData, Wallet} from 'dreveal-executor';
+import {EIP1193TransactionDataToSign, EIP1193Signer} from 'eip-1193-signer';
 import {TransactionSerializable} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 
-export function createWallet(privateKey: `0x${string}`): Wallet {
+export function createWallet(privateKey: `0x${string}`): EIP1193Signer {
 	const account = privateKeyToAccount(privateKey);
 	const wallet = {
 		address: account.address,
-		async signTransaction(tx: TransactionData) {
+		async signTransaction(tx: EIP1193TransactionDataToSign) {
 			let viemTransaction: TransactionSerializable | undefined;
 			if (!tx.type || tx.type === '0x0') {
 				viemTransaction = {
