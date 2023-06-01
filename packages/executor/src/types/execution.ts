@@ -68,7 +68,7 @@ export type ExecutionDataInClear = BaseExecutionData &
 
 export type ExecutionDataTimedLocked = BaseExecutionData & {
 	type: 'time-locked';
-	payload: string;
+	payload: `0x${string}`;
 	// TODO algorithm?: string;
 };
 

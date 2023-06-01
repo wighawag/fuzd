@@ -1,5 +1,5 @@
 import {logs} from 'named-logs';
-import {Execution, ExecutorConfig} from './types/execution';
+import {DecryptedTransactionData, Execution, ExecutorConfig} from './types/execution';
 import {
 	ExecutionBroadcastStored,
 	ExecutionPendingTransactionData,
@@ -9,7 +9,6 @@ import {
 	TransactionDataUsed,
 } from './types/internal';
 import {dequals} from './utils/js';
-import {DecryptedTransactionData} from '../dist';
 import {getTransactionStatus} from './utils/ethereum';
 import {time2text} from './utils/time';
 import {EIP1193TransactionDataToSign} from 'eip-1193-signer';
@@ -23,7 +22,7 @@ function lexicographicNumber(num: number, size: number): string {
 }
 
 // TODO
-async function decrypt(payload: string): Promise<DecryptedTransactionData> {
+async function decrypt(payload: `0x${string}`): Promise<DecryptedTransactionData> {
 	return {
 		data: '0x',
 		to: '0x',

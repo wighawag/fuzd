@@ -13,7 +13,8 @@
     "eip-1193-signer-viem": "workspace:*",
     "itty-durable": "^1.6.0",
     "itty-router": "^4.0.9",
-    "itty-router-extras": "0.4.2"
+    "itty-router-extras": "0.4.2",
+    "viem": "^0.3.36"
   },
   "scripts": {
     "deploy": "wrangler publish",

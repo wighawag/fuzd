@@ -22,6 +22,9 @@ importers:
       itty-router-extras:
         specifier: 0.4.2
         version: 0.4.2
+      viem:
+        specifier: ^0.3.36
+        version: 0.3.36(typescript@5.0.4)
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20230518.0
