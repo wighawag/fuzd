@@ -6,8 +6,6 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230518.0",
     "typescript": "^5.0.4",
-    "vitest": "^0.31.4",
-    "vitest-environment-miniflare": "^2.14.0",
     "wrangler": "^3.0.1"
   },
   "dependencies": {
@@ -15,8 +13,7 @@
     "eip-1193-json-provider": "^0.1.4",
     "eip-1193-signer-viem": "workspace:*",
     "itty-router": "^4.0.9",
-    "viem": "^0.3.36",
-    "wighawag-itty-durable": "workspace:*"
+    "viem": "^0.3.36"
   },
   "scripts": {
     "deploy": "wrangler publish",
