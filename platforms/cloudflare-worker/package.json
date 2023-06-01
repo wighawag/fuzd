@@ -1,5 +1,5 @@
 {
-  "name": "dreveal-worker",
+  "name": "dreveal-cloudflare-worker",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,6 +12,7 @@
     "dreveal-executor": "workspace:*",
     "eip-1193-json-provider": "^0.1.4",
     "eip-1193-signer-viem": "workspace:*",
+    "itty-durable": "^2.0.0",
     "itty-router": "^4.0.9",
     "viem": "^0.3.36"
   },

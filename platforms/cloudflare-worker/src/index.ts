@@ -1,5 +1,5 @@
 import {withParams, Router, error, IRequest} from 'itty-router';
-import {withDurables} from 'wighawag-itty-durable';
+import {withDurables} from 'itty-durable';
 import {ExecutorDO} from './ExecutorDO';
 
 export {ExecutorDO} from './ExecutorDO';
