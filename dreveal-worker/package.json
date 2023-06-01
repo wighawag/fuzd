@@ -2,19 +2,21 @@
   "name": "dreveal-worker",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230518.0",
     "typescript": "^5.0.4",
+    "vitest": "^0.31.4",
+    "vitest-environment-miniflare": "^2.14.0",
     "wrangler": "^3.0.1"
   },
   "dependencies": {
     "dreveal-executor": "workspace:*",
     "eip-1193-json-provider": "^0.1.4",
     "eip-1193-signer-viem": "workspace:*",
-    "itty-durable": "^1.6.0",
     "itty-router": "^4.0.9",
-    "itty-router-extras": "0.4.2",
-    "viem": "^0.3.36"
+    "viem": "^0.3.36",
+    "wighawag-itty-durable": "workspace:*"
   },
   "scripts": {
     "deploy": "wrangler publish",

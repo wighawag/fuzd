@@ -1,5 +1,5 @@
 import {withParams, Router, error, IRequest} from 'itty-router';
-import {withDurables} from 'itty-durable';
+import {withDurables} from 'wighawag-itty-durable';
 import {ExecutorDO} from './ExecutorDO';
 
 export {ExecutorDO} from './ExecutorDO';
@@ -7,7 +7,7 @@ interface Env {
 	EXECUTOR: DurableObjectNamespace;
 }
 
-const router = Router<{EXECUTOR: {get(str: string): ExecutorDO}}>({base: '/'});
+export const router = Router<{EXECUTOR: {get(str: string): ExecutorDO}}>({base: '/'});
 
 router
 	// add upstream middleware, allowing Durable access off the request

@@ -1,4 +1,4 @@
-import {createDurable} from 'itty-durable';
+import {createDurable} from 'wighawag-itty-durable';
 import {createExecutor} from 'dreveal-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {createWallet} from 'eip-1193-signer-viem';

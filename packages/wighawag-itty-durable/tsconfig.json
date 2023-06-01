@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		"moduleResolution": "node",
+		"target": "es2020",
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"strict": true,
+		"types": ["@cloudflare/workers-types"]
+	}
+}
