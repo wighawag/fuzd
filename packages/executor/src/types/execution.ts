@@ -1,5 +1,10 @@
-import {EIP1193AccessList, EIP1193Account, EIP1193DATA, EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {EIP1193Signer} from 'eip-1193-signer';
+import {
+	EIP1193AccessList,
+	EIP1193Account,
+	EIP1193DATA,
+	EIP1193ProviderWithoutEvents,
+	EIP1193SignerProvider,
+} from 'eip-1193';
 import {AbiEvent} from 'abitype';
 import {KeyValueDB} from './db';
 
@@ -96,7 +101,7 @@ export type ExecutorConfig = {
 	provider: EIP1193ProviderWithoutEvents;
 	time: Time;
 	db: KeyValueDB;
-	wallet: EIP1193Signer;
+	signerProvider: EIP1193SignerProvider;
 	finality: number;
 	worstCaseBlockTime: number;
 	maxExpiry?: number;

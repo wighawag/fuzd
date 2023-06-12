@@ -11,7 +11,7 @@ import {
 import {dequals} from './utils/js';
 import {getTransactionStatus} from './utils/ethereum';
 import {time2text} from './utils/time';
-import {EIP1193TransactionDataToSign} from 'eip-1193-signer';
+import {EIP1193SignerProvider, EIP1193Transaction, EIP1193TransactionData} from 'eip-1193';
 const logger = logs('dreveal-executor');
 
 function lexicographicNumber(num: number, size: number): string {
@@ -64,7 +64,7 @@ function computeBroadcastID(id: string): string {
 // transaction counter: pending
 
 export function createExecutor(config: ExecutorConfig) {
-	const {provider, time, db, wallet, chainId} = config;
+	const {provider, time, db, signerProvider, chainId} = config;
 	const finality = config.finality;
 	const worstCaseBlockTime = config.worstCaseBlockTime;
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
@@ -147,11 +147,13 @@ export function createExecutor(config: ExecutorConfig) {
 	}
 
 	async function _submitTransaction(
-		transactionData: EIP1193TransactionDataToSign,
+		transactionData: EIP1193TransactionData,
 		options: {expectedNonce?: number; forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas?: bigint}
 	): Promise<{tx: TransactionInfo}> {
 		// TODO pass it in to remove the await
 		const timestamp = await time.getTimestamp();
+
+		const [address] = await signerProvider.request({method: 'eth_accounts'});
 
 		let nonceIncreased = false;
 		let nonce: number | undefined;
@@ -162,7 +164,7 @@ export function createExecutor(config: ExecutorConfig) {
 			if (!nonce) {
 				const nonceAsHex = await provider.request({
 					method: 'eth_getTransactionCount',
-					params: [wallet.address, 'latest'],
+					params: [address, 'latest'],
 				});
 				nonce = parseInt(nonceAsHex.slice(2), 16);
 				if (isNaN(nonce)) {
@@ -188,7 +190,7 @@ export function createExecutor(config: ExecutorConfig) {
 		if (!nonce) {
 			const nonceAsHex = await provider.request({
 				method: 'eth_getTransactionCount',
-				params: [wallet.address, 'latest'],
+				params: [address, 'latest'],
 			});
 			nonce = parseInt(nonceAsHex.slice(2), 16);
 			if (isNaN(nonce)) {
@@ -238,15 +240,21 @@ export function createExecutor(config: ExecutorConfig) {
 				logger.error('already done, sending dummy transaction');
 
 				try {
-					const rawTx = await wallet.signTransaction({
-						type: '0x2',
-						to: wallet.address,
-						nonce: `0x${nonce.toString(16)}` as `0x${string}`,
-						maxFeePerGas: `0x${options.maxFeePerGas.toString(16)}` as `0x${string}`,
-						maxPriorityFeePerGas: options.maxPriorityFeePerGas
-							? (`0x${options.maxPriorityFeePerGas.toString(16)}` as `0x${string}`)
-							: undefined,
-						chainId: chainIdAsHex,
+					const rawTx = await signerProvider.request({
+						method: 'eth_signTransaction',
+						params: [
+							{
+								type: '0x2',
+								from: address,
+								to: address,
+								nonce: `0x${nonce.toString(16)}` as `0x${string}`,
+								maxFeePerGas: `0x${options.maxFeePerGas.toString(16)}` as `0x${string}`,
+								maxPriorityFeePerGas: options.maxPriorityFeePerGas
+									? (`0x${options.maxPriorityFeePerGas.toString(16)}` as `0x${string}`)
+									: undefined,
+								chainId: chainIdAsHex,
+							},
+						],
 					});
 					const hash = await provider.request({method: 'eth_sendRawTransaction', params: [rawTx]});
 					return {
@@ -264,7 +272,7 @@ export function createExecutor(config: ExecutorConfig) {
 				}
 			}
 		} else {
-			const rawTx = await wallet.signTransaction(transactionData);
+			const rawTx = await signerProvider.request({method: 'eth_signTransaction', params: [transactionData]});
 			const hash = await provider.request({method: 'eth_sendRawTransaction', params: [rawTx]});
 			return {
 				tx: {
@@ -278,6 +286,8 @@ export function createExecutor(config: ExecutorConfig) {
 	}
 
 	async function execute(queueID: string, execution: ExecutionStored) {
+		const [address] = await signerProvider.request({method: 'eth_accounts'});
+
 		let transaction: Omit<TransactionDataUsed, 'nonce'> | undefined;
 
 		// now we are ready to execute, if we reached there, this means the execution is in the right time slot
@@ -292,6 +302,7 @@ export function createExecutor(config: ExecutorConfig) {
 				transaction = {
 					type: '0x2',
 					chainId: chainIdAsHex,
+					from: address,
 					to: execution.tx.to,
 					data: execution.tx.data,
 					accessList: execution.tx.accessList,
@@ -310,13 +321,13 @@ export function createExecutor(config: ExecutorConfig) {
 			throw new Error(`no transaction, only "clear" and "time-locked" are supported`);
 		}
 
-		const broadcasterID = `broadcaster_${wallet.address}`;
+		const broadcasterID = `broadcaster_${address}`;
 		// we get the transaction count
 		let broadcaster = await db.get<Broadcaster>(broadcasterID);
 		if (!broadcaster) {
 			const transactionCountAsHex = await provider.request({
 				method: 'eth_getTransactionCount',
-				params: [wallet.address, 'latest'],
+				params: [address, 'latest'],
 			});
 			const transactionCount = parseInt(transactionCountAsHex.slice(2), 16);
 			if (isNaN(transactionCount)) {

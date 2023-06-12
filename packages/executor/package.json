@@ -17,8 +17,8 @@
   },
   "devDependencies": {
     "abitype": "^0.8.5",
-    "eip-1193": "^0.3.4",
-    "eip-1193-signer": "workspace:*",
+    "eip-1193": "^0.4.7",
+    "eip-1193-signer": "^0.0.1",
     "ldenv": "^0.3.5",
     "prettier": "^2.8.8",
     "tsup": "^6.7.0",

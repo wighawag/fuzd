@@ -26,7 +26,7 @@ export type ExecutionStored = Execution & {
 		| DeltaExecution<StartTransaction & {confirmed?: {blockTime: number; startTime?: number}}>;
 };
 
-export type TransactionDataUsed = Omit<EIP1193TransactionDataOfType2, 'from'> & {
+export type TransactionDataUsed = EIP1193TransactionDataOfType2 & {
 	chainId: string;
 	to: EIP1193Account;
 	gas: EIP1193QUANTITY;

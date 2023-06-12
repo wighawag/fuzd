@@ -1,0 +1,25 @@
+layout {
+	pane {
+		pane split_direction="vertical" {
+			pane name="shell" command="bash" {
+				args "-c" "${SHELL-bash}"
+			}
+		}
+		pane split_direction="vertical" {
+			pane name="client" command="bash" {
+				args "-c" "pnpm run --filter ./packages/client dev; cd packages/client; ${SHELL-bash}"
+			}
+			pane name="executor" command="bash" {
+				args "-c" "pnpm run --filter ./packages/executor dev; cd packages/executor; ${SHELL-bash}"
+			}
+		}
+		pane split_direction="vertical" {
+			pane name="cloudflare-worker" command="bash" {
+				args "-c" "pnpm run --filter ./platforms/cloudflare-worker dev; cd platforms/cloudflare-worker; ${SHELL-bash}"
+			}
+			pane name="nodejs-server" command="bash" {
+				args "-c" "pnpm run --filter ./platforms/nodejs-server dev; cd platforms/nodejs-server; ${SHELL-bash}"
+			}
+		}
+	}
+}

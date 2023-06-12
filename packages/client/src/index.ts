@@ -1,7 +1,7 @@
 import {createExecutor} from 'dreveal-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {createInMemoryKeyValueDB} from './InMemoryKeyValueDB';
-import {createWallet} from 'eip-1193-signer-viem';
+import {EIP1193LocalSigner} from 'eip-1193-signer';
 
 const provider = new JSONRPCHTTPProvider('http://localhost:8545');
 const db = createInMemoryKeyValueDB();
@@ -10,8 +10,9 @@ const time = {
 		return Math.floor(Date.now() / 1000);
 	},
 };
+// TODO
 const privateKey = '0x0000000000000000000000000000000000000000000000000000000000000001';
-const wallet = createWallet(privateKey);
+const signerProvider = new EIP1193LocalSigner(privateKey);
 
 const executor = createExecutor({
 	chainId: '1',
@@ -20,7 +21,7 @@ const executor = createExecutor({
 	provider,
 	db,
 	time,
-	wallet,
+	signerProvider,
 	maxExpiry: 24 * 3600,
 	maxNumTransactionsToProcessInOneGo: 10,
 });
