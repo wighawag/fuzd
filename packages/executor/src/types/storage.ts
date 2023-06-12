@@ -9,6 +9,7 @@ export type ExecutionPendingTransactionData = ExecutionStored & {
 
 export type Broadcaster = {
 	nextNonce: number;
+	address: `0x${string}`;
 };
 
 export type ExecutionBroadcastStored =

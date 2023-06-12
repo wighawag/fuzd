@@ -320,7 +320,7 @@ export function createExecutor(config: ExecutorConfig) {
 			}
 			broadcaster = await storage.getBroadcaster(address);
 			if (!broadcaster) {
-				broadcaster = {nextNonce: transactionCount}; // ensure no duplicate id in the bucket even if exact same boradcastingTime
+				broadcaster = {address, nextNonce: transactionCount}; // ensure no duplicate id in the bucket even if exact same boradcastingTime
 				await storage.createBroadcaster(address, broadcaster);
 			}
 		}
