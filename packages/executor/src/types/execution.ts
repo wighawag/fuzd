@@ -6,7 +6,7 @@ import {
 	EIP1193SignerProvider,
 } from 'eip-1193';
 import {AbiEvent} from 'abitype';
-import {KeyValueDB} from './db';
+import {ExecutorStorage} from './storage';
 
 export type StartTransaction = {
 	// the execution should only happen if that tx is included in a block
@@ -100,7 +100,7 @@ export type ExecutorConfig = {
 	chainId: string;
 	provider: EIP1193ProviderWithoutEvents;
 	time: Time;
-	db: KeyValueDB;
+	storage: ExecutorStorage;
 	signerProvider: EIP1193SignerProvider;
 	finality: number;
 	worstCaseBlockTime: number;

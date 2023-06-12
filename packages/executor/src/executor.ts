@@ -1,25 +1,11 @@
 import {logs} from 'named-logs';
 import {DecryptedTransactionData, Execution, ExecutorConfig} from './types/execution';
-import {
-	ExecutionBroadcastStored,
-	ExecutionPendingTransactionData,
-	ExecutionStored,
-	TransactionInfo,
-	Broadcaster,
-	TransactionDataUsed,
-} from './types/internal';
+import {ExecutionPendingTransactionData, ExecutionStored, TransactionInfo, TransactionDataUsed} from './types/storage';
 import {dequals} from './utils/js';
 import {getTransactionStatus} from './utils/ethereum';
 import {time2text} from './utils/time';
-import {EIP1193SignerProvider, EIP1193Transaction, EIP1193TransactionData} from 'eip-1193';
+import {EIP1193TransactionData} from 'eip-1193';
 const logger = logs('dreveal-executor');
-
-function lexicographicNumber(num: number, size: number): string {
-	if (num.toString().length > size) {
-		throw new Error(`number bigger than the lexicographic representation allow. Number : ${num}, Size: ${size}`);
-	}
-	return num.toString().padStart(size, '0');
-}
 
 // TODO
 async function decrypt(payload: `0x${string}`): Promise<DecryptedTransactionData> {
@@ -27,6 +13,16 @@ async function decrypt(payload: `0x${string}`): Promise<DecryptedTransactionData
 		data: '0x',
 		to: '0x',
 	};
+}
+
+function computeExecutionTimeFromSubmission(execution: Execution): number {
+	if (execution.timing.type === 'fixed') {
+		return execution.timing.timestamp;
+	} else if (execution.timing.type === 'delta') {
+		return execution.timing.delta + execution.timing.startTransaction.broadcastTime;
+	} else {
+		throw new Error(`execution timing type must be "fixed" or "delta"`);
+	}
 }
 
 function computeExecutionTime(execution: ExecutionStored, expectedStartTime?: number): number {
@@ -48,14 +44,6 @@ function computeExecutionTime(execution: ExecutionStored, expectedStartTime?: nu
 	}
 }
 
-function computeQueueID(executionTime: number, id: string): string {
-	return `q_${lexicographicNumber(executionTime, 12)}_${id}`;
-}
-
-function computeBroadcastID(id: string): string {
-	return `b_${id}`;
-}
-
 // DB need to support 256 bytes keys
 // broadcast_list : b_0x<account>_<id: can be tx hash>: or dependent tx hash
 // store until broadcasted
@@ -63,8 +51,12 @@ function computeBroadcastID(id: string): string {
 // delete once broadcasted
 // transaction counter: pending
 
+function displayExecution(execution: ExecutionStored) {
+	return JSON.stringify({id: execution.id, executionTime: execution.executionTime});
+}
+
 export function createExecutor(config: ExecutorConfig) {
-	const {provider, time, db, signerProvider, chainId} = config;
+	const {provider, time, storage, signerProvider, chainId} = config;
 	const finality = config.finality;
 	const worstCaseBlockTime = config.worstCaseBlockTime;
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
@@ -74,28 +66,30 @@ export function createExecutor(config: ExecutorConfig) {
 	// TODO id
 	// should we include account management ?
 	// if not the id will most like be player_account + some counter
-	async function submitExecution(id: string, execution: Execution): Promise<string> {
-		const executionToStore: ExecutionStored = {...execution, id, retries: 0};
+	async function submitExecution(id: string, execution: Execution): Promise<{id: string; executionTime: number}> {
+		const executionTime = computeExecutionTimeFromSubmission(execution);
 
-		const executionTime = computeExecutionTime(executionToStore);
-		const queueID = computeQueueID(executionTime, id);
-		const broadcastID = computeBroadcastID(id);
+		const executionToStore: ExecutionStored = {...execution, executionTime, id, retries: 0};
 
-		const existingExecution = await db.get<ExecutionStored>(queueID);
+		const existingExecution = await storage.getExecution(id, executionTime);
 		if (existingExecution) {
 			if (dequals(existingExecution, execution)) {
 				logger.info(
-					`execution has already been submitted and has not been completed or cancelled, queueID: ${queueID}`
+					`execution has already been submitted and has not been completed or cancelled, queueID: ${displayExecution(
+						existingExecution
+					)}`
 				);
-				return queueID;
+				return {id, executionTime};
 			} else {
 				throw new Error(
-					`an execution with the same id as already been submitted and is still being processed, queueID: ${queueID}`
+					`an execution with the same id as already been submitted and is still being processed, queueID: ${displayExecution(
+						existingExecution
+					)}`
 				);
 			}
 		}
 
-		const broadcast = await db.get<ExecutionBroadcastStored>(broadcastID);
+		const broadcast = await storage.getBroadcastedExecution(id);
 		if (broadcast) {
 			if ('pendingID' in broadcast && broadcast.pendingID) {
 				// TODO what should we do here, for now reject
@@ -117,31 +111,23 @@ export function createExecutor(config: ExecutorConfig) {
 			}
 		}
 
-		// db.put<AccountData>(accountID, accountRefected);
-		// TODO callback for account ?
-		db.put<ExecutionStored>(queueID, executionToStore);
-		db.put<ExecutionBroadcastStored>(broadcastID, {queueID});
+		await storage.createExecution(id, executionTime, executionToStore);
 
-		return queueID;
+		return {executionTime, id};
 	}
 
 	async function retryLater(
-		queueID: string,
+		oldExecutionTime: number,
 		execution: ExecutionStored,
 		newTimestamp: number
 	): Promise<ExecutionStored> {
-		const broadcastID = computeBroadcastID(execution.id);
-
 		execution.retries++;
 		if (execution.retries >= 10) {
 			logger.info(`deleting execution ${execution.id} after ${execution.retries} retries ...`);
 			// TODO hook await this._reduceSpending(reveal);
-			db.delete(queueID);
-			db.delete(broadcastID);
+			storage.deleteExecution(execution.id, oldExecutionTime);
 		} else {
-			db.delete(queueID);
-			db.put<ExecutionStored>(computeQueueID(newTimestamp, execution.id), execution);
-			// TODO change queueID, delete and put
+			storage.reassignExecutionToQueue(oldExecutionTime, newTimestamp, execution);
 		}
 		return execution;
 	}
@@ -285,7 +271,7 @@ export function createExecutor(config: ExecutorConfig) {
 		}
 	}
 
-	async function execute(queueID: string, execution: ExecutionStored) {
+	async function execute(executionTime: number, execution: ExecutionStored) {
 		const [address] = await signerProvider.request({method: 'eth_accounts'});
 
 		let transaction: Omit<TransactionDataUsed, 'nonce'> | undefined;
@@ -321,9 +307,8 @@ export function createExecutor(config: ExecutorConfig) {
 			throw new Error(`no transaction, only "clear" and "time-locked" are supported`);
 		}
 
-		const broadcasterID = `broadcaster_${address}`;
 		// we get the transaction count
-		let broadcaster = await db.get<Broadcaster>(broadcasterID);
+		let broadcaster = await storage.getBroadcaster(address);
 		if (!broadcaster) {
 			const transactionCountAsHex = await provider.request({
 				method: 'eth_getTransactionCount',
@@ -333,10 +318,10 @@ export function createExecutor(config: ExecutorConfig) {
 			if (isNaN(transactionCount)) {
 				throw new Error(`could not parse transactionCount`);
 			}
-			broadcaster = await db.get<Broadcaster>(broadcasterID);
+			broadcaster = await storage.getBroadcaster(address);
 			if (!broadcaster) {
 				broadcaster = {nextNonce: transactionCount}; // ensure no duplicate id in the bucket even if exact same boradcastingTime
-				await db.put<Broadcaster>('pending', broadcaster);
+				await storage.createBroadcaster(address, broadcaster);
 			}
 		}
 
@@ -349,17 +334,16 @@ export function createExecutor(config: ExecutorConfig) {
 			maxPriorityFeePerGas: currentMaxFee.maxPriorityFeePerGas,
 		});
 
-		const broadcastID = computeBroadcastID(execution.id);
-		const broadcast = await db.get<ExecutionBroadcastStored>(broadcastID);
+		const broadcast = await storage.getBroadcastedExecution(execution.id);
 		if (!broadcast) {
 			// TODO what to do here. this should not happen
 			return;
 		}
-		if ('pendingID' in broadcast) {
+		if ('nonce' in broadcast) {
 			// Already pending
 			// TODO what to do here ?
-		} else if (broadcast.queueID) {
-			queueID = broadcast.queueID;
+		} else if (broadcast.executionTime) {
+			executionTime = broadcast.executionTime;
 		}
 
 		// TODO
@@ -368,20 +352,24 @@ export function createExecutor(config: ExecutorConfig) {
 		// we could save both somehow?
 		// should not happen as the only submitter is the CRON job, leave it for now
 
-		const pendingID = `pending_${lexicographicNumber(broadcaster.nextNonce, 12)}`;
-		db.put<ExecutionBroadcastStored>(broadcastID, {pendingID}); // no queueID
-		db.put<ExecutionPendingTransactionData>(pendingID, {
+		const pendingTransaction: ExecutionPendingTransactionData = {
 			...execution,
+			nonce: result.tx.nonce, // TODO? we shoule remove that as we have  in tx datax`
 			broadcastedTransaction: {info: result.tx, data: {...transaction, nonce: `0x${result.tx.nonce.toString()}`}},
-		});
-
+		};
 		broadcaster.nextNonce = result.tx.nonce + 1;
-		await db.put<Broadcaster>(broadcasterID, broadcaster);
-		await db.delete(queueID);
+		await storage.createPendingExecution(
+			execution.id,
+			executionTime,
+			broadcaster.nextNonce,
+			pendingTransaction,
+			address,
+			broadcaster
+		);
 	}
 
 	async function checkAndUpdateExecutionIfNeeded(
-		queueID: string,
+		executionTime: number,
 		execution: ExecutionStored
 	): Promise<
 		| {status: 'deleted'}
@@ -400,14 +388,12 @@ export function createExecutor(config: ExecutorConfig) {
 					logger.debug(`the tx the execution depends on has not finalised and the timestamp has already passed`);
 					// TODO should we delete ?
 					// or retry later ?
-					db.delete(queueID);
-					db.delete(computeBroadcastID(execution.id));
+					storage.deleteExecution(execution.id, executionTime);
 					return {status: 'deleted'};
 				} else {
 					if (txStatus.failed) {
 						logger.debug(`deleting the execution as the tx it depends on failed...`);
-						db.delete(queueID);
-						db.delete(computeBroadcastID(execution.id));
+						storage.deleteExecution(execution.id, executionTime);
 						return {status: 'deleted'};
 					}
 					// we do not really need to store that, we can skip it and simply execute
@@ -425,7 +411,7 @@ export function createExecutor(config: ExecutorConfig) {
 				const txStatus = await getTransactionStatus(provider, execution.timing.startTransaction, finality);
 				if (!txStatus.finalised) {
 					const executionToRetry = await retryLater(
-						queueID,
+						executionTime,
 						execution,
 						computeExecutionTime(execution, txStatus.blockTime || timestamp)
 					);
@@ -433,8 +419,7 @@ export function createExecutor(config: ExecutorConfig) {
 				} else {
 					if (txStatus.failed) {
 						logger.debug(`deleting the execution as the tx it depends on failed...`);
-						db.delete(queueID);
-						db.delete(computeBroadcastID(execution.id));
+						storage.deleteExecution(execution.id, executionTime);
 						return {status: 'deleted'};
 					}
 					// TODO implement event expectation with params extraction
@@ -463,11 +448,10 @@ export function createExecutor(config: ExecutorConfig) {
 
 		const limit = maxNumTransactionsToProcessInOneGo;
 		// TODO only query up to a certain time
-		const executions = await db.list<ExecutionStored>({prefix: 'q_', limit});
+		const executions = await storage.getQueueTopMostExecutions(limit);
 
-		for (const executionEntry of executions.entries()) {
-			const queueID = executionEntry[0];
-			const updates = await checkAndUpdateExecutionIfNeeded(queueID, executionEntry[1]);
+		for (const execution of executions) {
+			const updates = await checkAndUpdateExecutionIfNeeded(execution.executionTime, execution);
 			if (updates.status === 'deleted' || updates.status === 'willRetry') {
 				continue;
 			}
@@ -482,20 +466,19 @@ export function createExecutor(config: ExecutorConfig) {
 					finality * worstCaseBlockTime
 			) {
 				// delete if execution expired
-				logger.info(`too late, deleting ${queueID}...`);
-				const broadcastID = `b_${executionUpdated.id}`;
-				db.delete(queueID);
-				db.delete(broadcastID);
+				logger.info(`too late, deleting ${displayExecution(execution)}...`);
+
+				storage.deleteExecution(execution.id, execution.executionTime);
 				continue;
 			}
 
 			if (timestamp >= executionTime) {
 				// execute if it is the time
-				await execute(queueID, executionUpdated);
+				await execute(executionUpdated.executionTime, executionUpdated);
 			} else {
 				// if not, then in most case we detected a change in the execution time
 				if (updates.status === 'changed') {
-					db.put(queueID, executionUpdated);
+					storage.updateExecutionInQueue(executionUpdated.executionTime, executionUpdated);
 				} else {
 					// For now as we do not limit result to a certain time, we will reach there often
 					logger.info(`not yet time: ${time2text(executionTime - timestamp)} to wait...`);
@@ -505,7 +488,7 @@ export function createExecutor(config: ExecutorConfig) {
 	}
 
 	async function __processPendingTransaction(
-		pendingID: string,
+		nonce: number,
 		pendingExecution: ExecutionPendingTransactionData
 	): Promise<void> {
 		// const receipt = await provider.request({
@@ -599,23 +582,18 @@ export function createExecutor(config: ExecutorConfig) {
 			// }
 
 			// the tx has been finalised, we can delete it from the system
-			db.delete(pendingID);
-			const broadcastID = computeBroadcastID(pendingExecution.id);
-			db.delete(broadcastID);
+			storage.deletePendingExecution(pendingExecution.id, pendingExecution.broadcastedTransaction.data.from, nonce);
 		}
 	}
 
 	async function processPendingTransactions() {
 		// TODO test limit, is 10 good enough ? this will depends on exec time and CRON period and number of tx submitted
 		const limit = 10;
-		const txs = (await db.list({prefix: `pending_`, limit})) as
-			| Map<string, ExecutionPendingTransactionData>
-			| undefined;
-		if (txs) {
-			for (const txEntry of txs.entries()) {
-				const pendingID = txEntry[0];
-				const pendingExecution = txEntry[1];
-				await __processPendingTransaction(pendingID, pendingExecution);
+
+		const pendingExecutions = await storage.getPendingExecutions(limit);
+		if (pendingExecutions) {
+			for (const pendingExecution of pendingExecutions) {
+				await __processPendingTransaction(pendingExecution.nonce, pendingExecution);
 				// TODO check pending transactions, remove confirmed one, increase gas if queue not moving
 				// nonce can be rebalanced too if needed ?
 			}

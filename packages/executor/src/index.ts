@@ -1,3 +1,3 @@
 export * from './executor';
-export * from './types/db';
+export * from './types/storage';
 export * from './types/execution';

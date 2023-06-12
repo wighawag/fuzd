@@ -1,4 +1,4 @@
-import type {KeyValueDB, ListOptions, TransactionOperations} from 'dreveal-executor';
+import type {KeyValueDB, ListOptions, TransactionOperations} from 'atomikv';
 
 export function createInMemoryKeyValueDB(): KeyValueDB {
 	const db: {[key: string]: unknown} = {};

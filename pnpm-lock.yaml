@@ -14,8 +14,13 @@ importers:
         specifier: ^9.8.4
         version: 9.8.4
 
+  packages/atomikv: {}
+
   packages/client:
     dependencies:
+      atomikv:
+        specifier: workspace:*
+        version: link:../atomikv
       dreveal-executor:
         specifier: workspace:*
         version: link:../executor
