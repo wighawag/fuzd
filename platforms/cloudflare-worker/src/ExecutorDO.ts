@@ -1,7 +1,7 @@
 import {createDurable} from 'itty-durable';
 import {createExecutor} from 'dreveal-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
-import {createWallet} from 'eip-1193-signer-viem';
+import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {Execution} from 'dreveal-executor';
 import {encodePacked, keccak256} from 'viem';
 
@@ -21,7 +21,7 @@ export class ExecutorDO extends createDurable() {
 		};
 		// account 0 of test test ... junk : 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 		const privateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
-		const wallet = createWallet(privateKey);
+		const signerProvider = new EIP1193LocalSigner(privateKey);
 		this.executor = createExecutor({
 			chainId: '31337',
 			finality: 3,
@@ -29,7 +29,7 @@ export class ExecutorDO extends createDurable() {
 			provider,
 			db,
 			time,
-			wallet,
+			signerProvider,
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
 		});

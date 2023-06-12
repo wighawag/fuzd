@@ -5,15 +5,16 @@
   "type": "module",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230518.0",
-    "typescript": "^5.0.4",
-    "wrangler": "^3.0.1"
+    "typescript": "^5.1.3",
+    "wrangler": "^3.1.0"
   },
   "dependencies": {
     "dreveal-executor": "workspace:*",
-    "eip-1193-json-provider": "^0.1.4",
+    "eip-1193-json-provider": "^0.1.8",
+    "eip-1193-signer": "^0.0.1",
     "itty-durable": "^2.0.0",
     "itty-router": "^4.0.9",
-    "viem": "^0.3.36"
+    "viem": "^1.0.5"
   },
   "scripts": {
     "deploy": "wrangler publish",
