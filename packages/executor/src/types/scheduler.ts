@@ -1,12 +1,8 @@
-import {
-	EIP1193AccessList,
-	EIP1193Account,
-	EIP1193DATA,
-	EIP1193ProviderWithoutEvents,
-	EIP1193SignerProvider,
-} from 'eip-1193';
+import {EIP1193AccessList, EIP1193Account, EIP1193DATA, EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {AbiEvent} from 'abitype';
-import {ExecutorStorage} from './storage';
+import {SchedulerStorage} from './scheduler-storage';
+import {FeeStrategy, Time} from './common';
+import {Executor} from './executor';
 
 export type StartTransaction = {
 	// the execution should only happen if that tx is included in a block
@@ -79,29 +75,17 @@ export type ExecutionDataTimedLocked = BaseExecutionData & {
 
 export type ExecutionData = ExecutionDataInClear | ExecutionDataTimedLocked;
 
-export type SingleFeeStrategy = {
-	type: 'single';
-	maxFeePerGas: bigint;
-	maxPriorityFeePerGas: bigint;
-};
-
-export type FeeStrategy = SingleFeeStrategy;
-
-export type Time = {
-	getTimestamp(): Promise<number>;
-};
-
 export type Execution = {
 	tx: ExecutionData;
 	timing: FixedTimeExecution | DeltaExecution;
 };
 
-export type ExecutorConfig = {
+export type SchedulerConfig = {
+	executor: Executor;
 	chainId: string;
 	provider: EIP1193ProviderWithoutEvents;
 	time: Time;
-	storage: ExecutorStorage;
-	signerProvider: EIP1193SignerProvider;
+	storage: SchedulerStorage;
 	finality: number;
 	worstCaseBlockTime: number;
 	maxExpiry?: number;
