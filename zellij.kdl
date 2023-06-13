@@ -12,6 +12,9 @@ layout {
 			pane name="executor" command="bash" {
 				args "-c" "pnpm run --filter ./packages/executor dev; cd packages/executor; ${SHELL-bash}"
 			}
+			pane name="executor-gateway" command="bash" {
+				args "-c" "pnpm run --filter ./packages/executor-gateway dev; cd packages/executor-gateway; ${SHELL-bash}"
+			}
 			pane name="remote-account" command="bash" {
 				args "-c" "pnpm run --filter ./packages/remote-account dev; cd packages/remote-accoun; ${SHELL-bash}"
 			}

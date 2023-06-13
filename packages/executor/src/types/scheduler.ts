@@ -1,4 +1,4 @@
-import {EIP1193ProviderWithoutEvents} from 'eip-1193';
+import {EIP1193Account, EIP1193ProviderWithoutEvents} from 'eip-1193';
 // import {AbiEvent} from 'abitype';
 import {SchedulerStorage} from './scheduler-storage';
 import {Time} from './common';
@@ -72,4 +72,16 @@ export type SchedulerConfig = {
 	worstCaseBlockTime: number;
 	maxExpiry?: number;
 	maxNumTransactionsToProcessInOneGo?: number;
+};
+
+export type Scheduler = {
+	submitExecution(
+		id: string,
+		account: EIP1193Account,
+		execution: Execution
+	): Promise<{id: string; executionTime: number}>;
+};
+
+export type SchedulerBackend = {
+	processQueue(): Promise<void>;
 };

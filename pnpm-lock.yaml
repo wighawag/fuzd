@@ -102,6 +102,31 @@ importers:
         specifier: ^5.0.4
         version: 5.0.4
 
+  packages/executor-gateway:
+    dependencies:
+      dreveal-executor:
+        specifier: workspace:*
+        version: link:../executor
+      named-logs:
+        specifier: ^0.2.2
+        version: 0.2.2
+      viem:
+        specifier: ^1.0.5
+        version: 1.0.5(typescript@5.1.3)
+    devDependencies:
+      ldenv:
+        specifier: ^0.3.5
+        version: 0.3.7
+      prettier:
+        specifier: ^2.8.8
+        version: 2.8.8
+      tsup:
+        specifier: ^6.7.0
+        version: 6.7.0(typescript@5.1.3)
+      typescript:
+        specifier: ^5.0.4
+        version: 5.1.3
+
   packages/remote-account:
     dependencies:
       '@noble/hashes':

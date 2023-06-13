@@ -5,12 +5,12 @@ import {time2text} from './utils/time';
 import {EIP1193Account, EIP1193TransactionDataOfType2} from 'eip-1193';
 import {computeExecutionTime, computeExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
-import {Execution, SchedulerConfig} from './types/scheduler';
+import {Execution, Scheduler, SchedulerBackend, SchedulerConfig} from './types/scheduler';
 import {ExecutionQueued} from './types/scheduler-storage';
 
 const logger = logs('dreveal-scheduler');
 
-export function createScheduler(config: SchedulerConfig) {
+export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerBackend {
 	const {provider, time, storage, executor, chainId} = config;
 	const finality = config.finality;
 	const worstCaseBlockTime = config.worstCaseBlockTime;
@@ -18,8 +18,8 @@ export function createScheduler(config: SchedulerConfig) {
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
 	async function submitExecution(
-		account: EIP1193Account,
 		id: string,
+		account: EIP1193Account,
 		execution: Execution
 	): Promise<{id: string; executionTime: number}> {
 		const executionTime = computeExecutionTimeFromSubmission(execution);
