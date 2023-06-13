@@ -1,0 +1,29 @@
+{
+	"name": "remote-account",
+	"version": "0.0.1",
+	"description": "remote account based on hd keys",
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"main": "dist/index.cjs",
+	"module": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"devDependencies": {
+		"@scure/bip39": "^1.2.0",
+		"rimraf": "^4.4.1",
+		"tsup": "^6.7.0",
+		"tsx": "^3.12.7",
+		"typescript": "^5.0.4"
+	},
+	"dependencies": {
+		"@noble/hashes": "^1.3.1",
+		"@noble/secp256k1": "^2.0.0",
+		"@scure/bip32": "^1.3.0"
+	},
+	"scripts": {
+		"build": "rimraf dist && tsup src/index.ts --dts --format esm,cjs",
+		"dev": "rimraf dist && tsup src/index.ts --dts --format esm,cjs --watch",
+		"test": "tsx test/remote-account.test.ts"
+	}
+}
