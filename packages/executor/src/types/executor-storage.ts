@@ -1,5 +1,6 @@
 import {EIP1193Account, EIP1193DATA, EIP1193TransactionDataOfType2} from 'eip-1193';
 import {RequiredKeys} from './utils';
+import {BroadcastSchedule} from './executor';
 
 // export type EIP1193TransactionDataUsed =
 // 	| RequiredKeys<EIP1193LegacyTransactionData, 'nonce' | 'gasPrice'>
@@ -15,16 +16,12 @@ export type BroadcasterData = {
 	address: EIP1193Account;
 };
 
-export type ExecutionTransactionData = Omit<
-	EIP1193TransactionDataOfType2,
-	'nonce' | 'from' | 'gasPrice' | 'maxFeePerGas' | 'maxPriorityFeePerGas'
->;
-
 export type PendingExecutionStored = EIP1193TransactionDataUsed & {
 	id: string;
 	broadcastTime: number;
 	hash: EIP1193DATA;
 	account: EIP1193Account;
+	broadcastSchedule: BroadcastSchedule;
 	retries?: number;
 };
 

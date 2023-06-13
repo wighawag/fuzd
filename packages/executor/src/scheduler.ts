@@ -16,7 +16,6 @@ export function createScheduler(config: SchedulerConfig) {
 	const worstCaseBlockTime = config.worstCaseBlockTime;
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
-	const chainIdAsHex = `0x${BigInt(chainId).toString(16)}` as const;
 
 	async function submitExecution(
 		account: EIP1193Account,
@@ -81,24 +80,7 @@ export function createScheduler(config: SchedulerConfig) {
 		// for encrypted payload we will attempt to decrypt
 		// if it fails, we will push it accoridng to time schedule
 
-		const feeStrategy = execution.tx.feeStrategy;
-
-		if (execution.tx.type === 'clear') {
-			if (typeof execution.tx.data === 'string') {
-				transaction = {
-					type: '0x2',
-					chainId: chainIdAsHex,
-					to: execution.tx.to,
-					data: execution.tx.data,
-					accessList: execution.tx.accessList,
-					gas: `0x${BigInt(execution.tx.gas).toString(16)}`,
-					// TODO? value
-				};
-			} else {
-				throw new Error(`only data string supported for now`);
-			}
-		} else {
-			// TODO
+		if (execution.tx.type === 'time-locked') {
 			throw new Error(`time-locked tx not supported for now`);
 		}
 
@@ -106,7 +88,7 @@ export function createScheduler(config: SchedulerConfig) {
 			throw new Error(`no transaction, only "clear" and "time-locked" are supported`);
 		}
 
-		const {hash} = await executor.submitTransaction(execution.id, '0x', transaction, feeStrategy);
+		const {hash} = await executor.submitTransaction(execution.id, '0x', execution.tx.execution);
 
 		// if we reaches there, the execution is now handled by the executor
 		// the schedule has done its job
@@ -169,13 +151,13 @@ export function createScheduler(config: SchedulerConfig) {
 						return {status: 'deleted'};
 					}
 					// TODO implement event expectation with params extraction
-					if (execution.timing.startTransaction.expectEvent) {
-						// for (const log of receipt.logs) {
-						// 	log.
-						// }
-						// if event then continue and extract param
-						// else delete as the tx has not been doing what it was supposed to do
-					}
+					// if (execution.timing.startTransaction.expectEvent) {
+					// 	// for (const log of receipt.logs) {
+					// 	// 	log.
+					// 	// }
+					// 	// if event then continue and extract param
+					// 	// else delete as the tx has not been doing what it was supposed to do
+					// }
 
 					execution.timing.startTransaction.confirmed = {
 						blockTime: txStatus.blockTime,

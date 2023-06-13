@@ -13,6 +13,9 @@
     "node": "18.7.0"
   },
   "dependencies": {
+    "@nomicfoundation/ethereumjs-rlp": "^5.0.1",
+    "@scure/bip32": "^1.3.0",
+    "@scure/bip39": "^1.2.0",
     "atomikv": "workspace:*",
     "dreveal-executor": "workspace:*",
     "named-logs": "^0.2.2",
@@ -25,7 +28,9 @@
     "ldenv": "^0.3.7",
     "named-logs-console": "^0.2.3",
     "prettier": "^2.8.8",
+    "remote-account": "workspace: *",
     "tsup": "^6.7.0",
+    "tsx": "^3.12.7",
     "typescript": "^5.1.3"
   },
   "scripts": {
@@ -33,6 +38,6 @@
     "dev": "tsup src/index.ts --dts --format esm,cjs --watch",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
-    "test": "NAMED_LOGS_LEVEL=6 NAMED_LOGS=dreveal* node --require named-logs-console dist/index.js"
+    "test": "NAMED_LOGS_LEVEL=6 NAMED_LOGS=dreveal* tsx src/index.ts"
   }
 }

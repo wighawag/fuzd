@@ -1,13 +1,15 @@
 import {logs} from 'named-logs';
+import {BroadcasterData, EIP1193TransactionDataUsed, PendingExecutionStored} from './types/executor-storage';
+import {EIP1193Account, EIP1193TransactionDataOfType2} from 'eip-1193';
 import {
-	BroadcasterData,
-	EIP1193TransactionDataUsed,
-	ExecutionTransactionData,
-	PendingExecutionStored,
-} from './types/executor-storage';
-import {EIP1193Account, EIP1193TransactionData, EIP1193TransactionDataOfType2} from 'eip-1193';
-import {Executor, ExecutorBackend, ExecutorConfig, RawTransactionInfo, TransactionInfo} from './types/executor';
-import {FeeStrategy} from './types/common';
+	ExecutionSubmission,
+	Executor,
+	ExecutorBackend,
+	ExecutorConfig,
+	FeePerGasPeriod,
+	RawTransactionInfo,
+	TransactionInfo,
+} from './types/executor';
 
 const logger = logs('dreveal-executor');
 
@@ -15,24 +17,22 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 	const {provider, time, storage, getSignerProvider, chainId} = config;
 	const finality = config.finality;
 	const worstCaseBlockTime = config.worstCaseBlockTime;
-	const maxExpiry = (config.maxExpiry = 24 * 3600);
+	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 	const chainIdAsHex = `0x${BigInt(chainId).toString(16)}` as const;
 
 	async function submitTransaction(
 		id: string,
 		account: EIP1193Account,
-		executionTransactionData: ExecutionTransactionData,
-		feeStrategy: FeeStrategy
+		submission: ExecutionSubmission
 	): Promise<TransactionInfo> {
-		// TODO fee strategies
-		const currentMaxFee = feeStrategy;
+		const currentMaxFee = submission.broadcastSchedule[0];
 
 		const result = await _submitTransaction(
-			{...executionTransactionData, account, id},
+			{...submission, account, id},
 			{
-				maxFeePerGas: currentMaxFee.maxFeePerGas,
-				maxPriorityFeePerGas: currentMaxFee.maxPriorityFeePerGas,
+				maxFeePerGas: BigInt(currentMaxFee.maxFeePerGas),
+				maxPriorityFeePerGas: BigInt(currentMaxFee.maxPriorityFeePerGas),
 			}
 		);
 		return result;
@@ -40,7 +40,7 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 
 	async function _signTransaction(
 		transactionData: Omit<EIP1193TransactionDataOfType2, 'nonce' | 'from'>,
-		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint}
+		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
 	): Promise<RawTransactionInfo> {
 		let actualTransactionData: EIP1193TransactionDataUsed;
 		const broadcasterAddress = '0xFF' as EIP1193Account; // TODO
@@ -113,41 +113,11 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 			}
 		}
 
-		let maxPriorityFeePerGas = options.maxPriorityFeePerGas;
-		// let feeHistory:
-		// | {
-		//     baseFeePerGas: string[];
-		//     gasUsedRatio?: number[]; // not documented on https://playground.open-rpc.org/?schemaUrl=https://raw.githubusercontent.com/ethereum/eth1.0-apis/assembled-spec/openrpc.json&uiSchema%5BappBar%5D%5Bui:splitView%5D=false&uiSchema%5BappBar%5D%5Bui:input%5D=false&uiSchema%5BappBar%5D%5Bui:examplesDropdown%5D=false
-		//     oldestBlock: number;
-		//     reward: string[][];
-		//   }
-		// | undefined = undefined;
-		// try {
-		//   // TODO check what best to do to ensure we do not unecessarely high maxPriorityFeePerGas
-		//   // in worst case, we could continue and try catch like below catching specific error message
-		//   feeHistory = await this.provider.send('eth_feeHistory', [
-		//     1,
-		//     'latest',
-		//     [100],
-		//   ]);
-		// } catch (e) {}
-		// if (feeHistory) {
-		//   if (options.maxFeePerGas.lt(feeHistory.reward[0][0])) {
-		//     maxPriorityFeePerGas = options.maxFeePerGas;
-		//   }
-		//   this.info(feeHistory.reward);
-		// } else {
-		//   this.info('no feeHistory')
-		// }
-
-		// this.info('getting mathcing alliance...');
-		// // const alliance = await this._getAlliance(reveal);
-		// this.info({alliance});
-
 		logger.info('checcking if tx should still be submitted');
 		const already_resolved = false;
-		// const {quantity} = await this.outerspaceContract.getFleet(reveal.fleetID, '0');
-		if (already_resolved) {
+		// TODO allow execution of logic
+		// To be fair if the tx fails this should be enough
+		if (options?.forceVoid || already_resolved) {
 			if (nonceIncreased) {
 				// return {error: {message: 'nonce increased but fleet already resolved', code: 5502}};
 				throw new Error(`nonce increased but already resolved`);
@@ -205,7 +175,7 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 			PendingExecutionStored,
 			'from' | 'hash' | 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'broadcastTime'
 		>,
-		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint}
+		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
 	): Promise<TransactionInfo> {
 		const rawTxInfo = await _signTransaction(transactionData, options);
 		const hash = '0xTODO';
@@ -216,6 +186,7 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 
 		const newTransactionData: PendingExecutionStored = {
 			...rawTxInfo.transactionData,
+			broadcastSchedule: transactionData.broadcastSchedule,
 			id: transactionData.id,
 			account: transactionData.account,
 			hash,
@@ -233,74 +204,81 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 			isVoidTransaction: rawTxInfo.isVoidTransaction,
 		};
 	}
-	async function __processPendingTransaction(pendingExecution: PendingExecutionStored): Promise<void> {
-		// const receipt = await provider.request({
-		// 	method: 'eth_getTransactionReceipt',
-		// 	params: [pendingExecution.broadcastedTransaction.hash],
-		// });
+
+	async function _resubmitIfNeeded(pendingExecution: PendingExecutionStored): Promise<void> {
+		const timestamp = await time.getTimestamp();
+		const diff = timestamp - pendingExecution.broadcastTime;
+
+		// TODO validation aty submission time
+		// TODO also we need to limit the size of the array of schedule
+		// TODO we also need to ensure fee are in increasing order
+		if (pendingExecution.broadcastSchedule.length === 0) {
+			throw new Error(`should not have let this tx go through, do not have gas params`);
+		}
+		let feeSlot: FeePerGasPeriod | undefined;
+		let total = 0;
+		for (let i = 0; i < pendingExecution.broadcastSchedule.length; i++) {
+			const currentSlot = pendingExecution.broadcastSchedule[i];
+			if (total <= diff) {
+				feeSlot = currentSlot;
+			}
+			total += parseInt(currentSlot.duration.slice(2), 16);
+		}
+
+		if (!feeSlot) {
+			// we do not have more to resubmit
+			return;
+		}
+
+		const maxFeePerGas = BigInt(feeSlot.maxFeePerGas);
+		const maxPriorityFeePerGas = BigInt(feeSlot.maxPriorityFeePerGas);
+
+		const maxFeePerGasUsed = BigInt(pendingExecution.maxFeePerGas);
+		const maxPriorityFeePerGasUsed = BigInt(pendingExecution.maxFeePerGas);
+
 		const pendingTansaction = await provider.request({
 			method: 'eth_getTransactionByHash',
 			params: [pendingExecution.hash],
 		});
 
+		if (
+			!pendingTansaction ||
+			maxFeePerGasUsed < maxFeePerGas ||
+			(maxFeePerGasUsed === maxFeePerGas && maxPriorityFeePerGasUsed < maxPriorityFeePerGas)
+		) {
+			await _submitTransaction(pendingExecution, {
+				forceNonce: parseInt(pendingExecution.nonce.slice(2), 16),
+				maxFeePerGas,
+				maxPriorityFeePerGas,
+			});
+		}
+	}
+
+	async function __processPendingTransaction(pendingExecution: PendingExecutionStored): Promise<void> {
+		const receipt = await provider.request({
+			method: 'eth_getTransactionReceipt',
+			params: [pendingExecution.hash],
+		});
+
 		let finalised = false;
-		if (pendingTansaction && pendingTansaction.blockNumber) {
+		if (receipt) {
 			const latestBlocknumberAshex = await provider.request({
 				method: 'eth_blockNumber',
 			});
 			const latestBlockNumber = parseInt(latestBlocknumberAshex.slice(2), 16);
-			const transactionBlockNumber = parseInt(pendingTansaction.blockNumber.slice(2), 16);
+			const transactionBlockNumber = parseInt(receipt.blockNumber.slice(2), 16);
 			finalised = latestBlockNumber - finality >= transactionBlockNumber;
 		}
 
-		if (!pendingTansaction) {
-			// TODO resubmit with higher gas
-			// const lastMaxFeeUsed = pendingExecution.tx.maxFeePerGasUsed;
-			// const broadcastingTime = Math.max(
-			// 	pendingExecution.arrivalTimeWanted,
-			// 	pendingExecution.startTime + pendingExecution.minDuration
-			// );
-			// const currentMaxFee = getMaxFeeFromArray(pendingExecution.maxFeesSchedule, getTimestamp() - broadcastingTime);
-			// if (!transaction || currentMaxFee.maxFeePerGas.gt(lastMaxFeeUsed)) {
-			// 	this.info(
-			// 		`broadcast reveal tx for fleet: ${pendingExecution.fleetID} ${
-			// 			transaction ? 'with new fee' : 'again as it was lost'
-			// 		} ... `
-			// 	);
-			// 	const {error, tx} = await this._submitTransaction(pendingExecution, {
-			// 		forceNonce: pendingExecution.tx.nonce,
-			// 		maxFeePerGas: currentMaxFee.maxFeePerGas,
-			// 		maxPriorityFeePerGas: currentMaxFee.maxPriorityFeePerGas,
-			// 	});
-			// 	if (error) {
-			// 		// TODO
-			// 		this.error(error);
-			// 		return;
-			// 	} else if (!tx) {
-			// 		// impossible
-			// 		return;
-			// 	}
-			// 	pendingExecution.tx = tx;
-			// 	db.put<ExecutionPendingTransactionData>(pendingID, pendingExecution);
-			// }
-
-			// FOR NOW we just re broadcast
-			if (pendingExecution.type === '0x2') {
-				await _submitTransaction(pendingExecution, {
-					forceNonce: parseInt(pendingExecution.nonce.slice(2), 16),
-					maxFeePerGas: BigInt(pendingExecution.maxFeePerGas),
-					maxPriorityFeePerGas: BigInt(pendingExecution.maxPriorityFeePerGas),
-				});
-			} else {
-			}
-		} else if (finalised) {
+		if (finalised) {
 			storage.deletePendingExecution(pendingExecution);
+		} else if (!receipt) {
+			await _resubmitIfNeeded(pendingExecution);
 		}
 	}
 
 	async function processPendingTransactions() {
-		// TODO test limit, is 10 good enough ? this will depends on exec time and CRON period and number of tx submitted
-		const limit = 10;
+		const limit = maxNumTransactionsToProcessInOneGo;
 
 		const pendingExecutions = await storage.getPendingExecutions({limit});
 		if (pendingExecutions) {

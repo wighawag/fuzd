@@ -46,7 +46,7 @@ export function deriveRemoteAddress(publicExtendedKey: string, address: `0x${str
 	return publicKeyToAddress(publicKey);
 }
 
-export function initKeyFromHD(hdkey: HDKey) {
+export function initAccountFromHD(hdkey: HDKey) {
 	if (!hdkey.publicKey) {
 		throw new Error(`invalid hdkey provided, no public key`);
 	}
@@ -59,7 +59,7 @@ export function initKeyFromHD(hdkey: HDKey) {
 	const address = publicKeyToAddress(publicKey);
 
 	function deriveForAddress(address: `0x${string}`) {
-		return initKeyFromHD(hdkey.derive(pathFromAddress(address)));
+		return initAccountFromHD(hdkey.derive(pathFromAddress(address)));
 	}
 
 	return {

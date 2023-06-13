@@ -1,8 +1,9 @@
-import {EIP1193AccessList, EIP1193Account, EIP1193DATA, EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {AbiEvent} from 'abitype';
+import {EIP1193ProviderWithoutEvents} from 'eip-1193';
+// import {AbiEvent} from 'abitype';
 import {SchedulerStorage} from './scheduler-storage';
-import {FeeStrategy, Time} from './common';
+import {Time} from './common';
 import {Executor} from './executor';
+import {ExecutionSubmission} from './executor';
 
 export type StartTransaction = {
 	// the execution should only happen if that tx is included in a block
@@ -10,10 +11,11 @@ export type StartTransaction = {
 	hash: `0x${string}`;
 	nonce: number;
 	broadcastTime: number;
-	expectEvent?: {
-		eventABI: AbiEvent;
-		startTimeParam?: string;
-	};
+	// TODO
+	// expectEvent?: {
+	// 	eventABI: AbiEvent;
+	// 	startTimeParam?: string;
+	// };
 };
 
 export type DeltaExecution<T extends StartTransaction = StartTransaction> = {
@@ -27,9 +29,10 @@ export type AssumedTransaction = {
 	// the execution should only happen if that tx is included in a block
 	hash: `0x${string}`;
 	nonce: number;
-	expectEvent?: {
-		eventABI: AbiEvent;
-	};
+	// TODO
+	// expectEvent?: {
+	// 	eventABI: AbiEvent;
+	// };
 };
 
 export type FixedTimeExecution<T extends AssumedTransaction = AssumedTransaction> = {
@@ -39,35 +42,14 @@ export type FixedTimeExecution<T extends AssumedTransaction = AssumedTransaction
 	timestamp: number;
 };
 
-export type TransactionExecutionData =
-	| `0x${string}`
-	| {
-			// TODO abitype
-			abi: any[];
-			// data:
-			// with specific pattern to fill it with execution data so that the executor can call a contract before sending
-			// Note that this require trust, unless that data is checked by the contract somehow
-			// TODO: would that run the risk of having tx failure that cannot be attributed trustlessly
-			data: any;
-	  };
+export type DecryptedTransactionData = ExecutionSubmission;
 
-export type BaseExecutionData = {
-	gas: number;
-	feeStrategy: FeeStrategy;
+export type ExecutionDataInClear = {
+	type: 'clear';
+	execution: DecryptedTransactionData;
 };
 
-export type DecryptedTransactionData = {
-	data: EIP1193DATA;
-	to: EIP1193Account;
-	accessList?: EIP1193AccessList;
-};
-
-export type ExecutionDataInClear = BaseExecutionData &
-	DecryptedTransactionData & {
-		type: 'clear';
-	};
-
-export type ExecutionDataTimedLocked = BaseExecutionData & {
+export type ExecutionDataTimedLocked = {
 	type: 'time-locked';
 	payload: `0x${string}`;
 	// TODO algorithm?: string;
@@ -77,7 +59,7 @@ export type ExecutionData = ExecutionDataInClear | ExecutionDataTimedLocked;
 
 export type Execution = {
 	tx: ExecutionData;
-	timing: FixedTimeExecution | DeltaExecution;
+	timing: FixedTimeExecution | DeltaExecution; // TODO time-locked should have different timing, at least for game like conquest
 };
 
 export type SchedulerConfig = {
