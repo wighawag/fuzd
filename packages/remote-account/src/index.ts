@@ -27,6 +27,11 @@ function toHex(arr: Uint8Array): `0x${string}` {
 	return str as `0x${string}`;
 }
 
+export function publicKeyToAddress(publicKey: `0x${string}`): `0x${string}` {
+	const publicKeyRaw = ProjectivePoint.fromHex(publicKey.slice(2)).toRawBytes(false);
+	return (`0x` + toHex(keccak_256(publicKeyRaw.slice(1))).slice(26)) as `0x${string}`;
+}
+
 export function deriveRemoteKeyAsPublic(publicExtendedKey: string, address: `0x${string}`) {
 	const publicOnlyKey = HDKey.fromExtendedKey(publicExtendedKey);
 	return publicOnlyKey.derive(pathFromAddress(address));
@@ -38,10 +43,7 @@ export function deriveRemoteAddress(publicExtendedKey: string, address: `0x${str
 		throw new Error(`could not get public key from account with dervided account: ${publicExtendedKey} / ${address}`);
 	}
 	const publicKey = toHex(accountHD.publicKey);
-	// const publicKeyRaw = toHex(ProjectivePoint.fromHex(publicKey.slice(2)).toRawBytes(false));
-	// return keccak256((`0x` + publicKeyRaw.slice(4)) as `0x${string}`).slice(26) as `0x${string}`;
-	const publicKeyRaw = ProjectivePoint.fromHex(publicKey.slice(2)).toRawBytes(false);
-	return (`0x` + toHex(keccak_256(publicKeyRaw.slice(1))).slice(26)) as `0x${string}`;
+	return publicKeyToAddress(publicKey);
 }
 
 export function initKeyFromHD(hdkey: HDKey) {
@@ -54,11 +56,7 @@ export function initKeyFromHD(hdkey: HDKey) {
 	const privateKey = toHex(hdkey.privateKey);
 	const publicKey = toHex(hdkey.publicKey);
 	const publicExtendedKey = hdkey.publicExtendedKey;
-
-	// const publicKeyRaw = ProjectivePoint.fromHex(publicKey.slice(2)).toRawBytes(false);
-	// const address = (`0x` + keccak256((`0x` + toHex(publicKeyRaw).slice(4)) as `0x${string}`).slice(26)) as `0x${string}`;
-	const publicKeyRaw = ProjectivePoint.fromHex(publicKey.slice(2)).toRawBytes(false);
-	const address = (`0x` + toHex(keccak_256(publicKeyRaw.slice(1))).slice(26)) as `0x${string}`;
+	const address = publicKeyToAddress(publicKey);
 
 	function deriveForAddress(address: `0x${string}`) {
 		return initKeyFromHD(hdkey.derive(pathFromAddress(address)));
