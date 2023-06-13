@@ -1,7 +1,6 @@
 name = "dreveal-worker"
 main = "src/index.ts"
 compatibility_date = "2023-05-18"
-format = "modules"
 
 [durable_objects]
 bindings = [

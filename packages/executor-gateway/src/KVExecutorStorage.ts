@@ -18,7 +18,7 @@ function computePendingIndex(id: string) {
 
 type IndexID = {dbID: string};
 
-export class initKVExecutorStorage implements ExecutorStorage {
+export class KVExecutorStorage implements ExecutorStorage {
 	constructor(private db: KeyValueDB) {}
 
 	async getPendingExecutionByID(params: {id: string}): Promise<PendingExecutionStored | undefined> {

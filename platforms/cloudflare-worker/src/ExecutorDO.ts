@@ -1,19 +1,22 @@
 import {createDurable} from 'itty-durable';
-import {createExecutor} from 'dreveal-executor';
+import {Executor, createExecutor} from 'dreveal-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {Execution} from 'dreveal-executor';
-import {encodePacked, keccak256} from 'viem';
+import {KVExecutorStorage, initExecutorGateway} from 'dreveal-executor-gateway';
+import {ExecutorBackend} from 'dreveal-executor';
 
 interface Env {}
 
 export class ExecutorDO extends createDurable() {
-	protected executor: ReturnType<typeof createExecutor>;
+	protected executor: Executor & ExecutorBackend;
+	protected executorGateway: ReturnType<typeof initExecutorGateway>;
 	constructor(state: DurableObjectState, env: Env) {
 		super(state, env);
 
 		const provider = new JSONRPCHTTPProvider('http://localhost:8545');
 		const db = state.storage;
+		const storage = new KVExecutorStorage(db);
 		const time = {
 			async getTimestamp() {
 				return Math.floor(Date.now() / 1000);
@@ -27,12 +30,17 @@ export class ExecutorDO extends createDurable() {
 			finality: 3,
 			worstCaseBlockTime: 15,
 			provider,
-			db,
+			storage,
 			time,
-			signerProvider,
+			async getSignerProvider(address: `0x${string}`) {
+				// TODO
+				return signerProvider;
+			},
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
 		});
+
+		this.executorGateway = initExecutorGateway(this.executor);
 	}
 
 	home() {
@@ -40,25 +48,7 @@ export class ExecutorDO extends createDurable() {
 	}
 
 	submitExecution(execution: Execution) {
-		let id: string;
-		let timeIdentifier: `0x${string}`;
-		if (execution.timing.type === 'delta') {
-			timeIdentifier = execution.timing.startTransaction.hash;
-		} else {
-			timeIdentifier = `0x${execution.timing.timestamp.toString(16)}`;
-		}
-		if (execution.tx.type === 'clear') {
-			id = keccak256(
-				encodePacked(['address', 'bytes', 'bytes32'], [execution.tx.to, execution.tx.data, timeIdentifier])
-			);
-		} else {
-			id = keccak256(encodePacked(['bytes', 'bytes32'], [execution.tx.payload, timeIdentifier]));
-		}
-		return this.executor.submitExecution(id, execution);
-	}
-
-	processQueue() {
-		return this.executor.processQueue();
+		return this.executorGateway.submitTransaction(execution);
 	}
 
 	processPendingTransactions() {

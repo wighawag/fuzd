@@ -1,4 +1,4 @@
-import {withParams, Router, error, IRequest} from 'itty-router';
+import {Router, error} from 'itty-router';
 import {withDurables} from 'itty-durable';
 import {ExecutorDO} from './ExecutorDO';
 

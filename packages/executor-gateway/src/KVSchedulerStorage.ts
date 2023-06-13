@@ -12,7 +12,7 @@ function computeQueueID(executionTime: number, id: string): string {
 	return `q_${lexicographicNumber(executionTime, 12)}_${id}`;
 }
 
-export class initKVStorage implements SchedulerStorage {
+export class KVSchedulerStorage implements SchedulerStorage {
 	constructor(private db: KeyValueDB) {}
 
 	getQueuedExecution(params: {id: string; executionTime: number}): Promise<ExecutionQueued | undefined> {
