@@ -9,6 +9,7 @@ import {walletClient, contract, publicClient, getAccounts} from './viem';
 import artifacts from '../generated/artifacts';
 import {encodeFunctionData} from 'viem';
 import {deriveRemoteAddress} from 'remote-account';
+import {initExecutorGateway} from 'dreveal-executor-gateway';
 
 const time = initTime();
 
@@ -19,6 +20,8 @@ const {executor, publicExtendedKey} = createTestExecutor({
 	provider: network.provider as EIP1193ProviderWithoutEvents,
 	time,
 });
+
+const executorGateway = initExecutorGateway(executor);
 
 async function deploymentFixture() {
 	const {deployments, accounts} = await loadAndExecuteDeployments({
@@ -61,7 +64,7 @@ describe('Executing on the registry', function () {
 			await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
 		}
 
-		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
+		const json = JSON.stringify({
 			...txData,
 			gas: `0x${gas.toString(16)}` as `0x${string}`,
 			broadcastSchedule: [
@@ -72,7 +75,8 @@ describe('Executing on the registry', function () {
 				},
 			],
 		});
-
+		const signature = await walletClient.signMessage({message: json, account: user});
+		const txInfo = await executorGateway.submitTransactionAsJsonString(json, signature);
 		expect(txInfo.isVoidTransaction).to.be.false;
 	});
 });

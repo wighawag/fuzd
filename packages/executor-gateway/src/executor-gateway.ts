@@ -1,3 +1,4 @@
+import ono from '@jsdevtools/ono';
 import {Executor, ExecutionSubmission, TransactionInfo} from 'dreveal-executor';
 import {hashMessage, recoverAddress} from 'viem';
 
@@ -11,7 +12,11 @@ export function initExecutorGateway(executor: Executor) {
 		if (signature.startsWith('debug@')) {
 			account = signature.split('@')[1] as `0x${string}`;
 		} else {
-			account = await recoverAddress({hash, signature});
+			try {
+				account = await recoverAddress({hash, signature});
+			} catch (err: any) {
+				throw ono(err, 'failed to recover address from message and signature');
+			}
 		}
 		// const account = await recoverAddress({hash, signature});
 		const id = hash;

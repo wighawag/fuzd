@@ -176,6 +176,9 @@ importers:
 
   packages/executor-gateway:
     dependencies:
+      '@jsdevtools/ono':
+        specifier: ^7.1.3
+        version: 7.1.3
       dreveal-executor:
         specifier: workspace:*
         version: link:../executor
