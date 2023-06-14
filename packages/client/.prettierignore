@@ -1,14 +1,23 @@
 # ###########################################
 # .gitignore
 #############################################
-# environment variables
-.env*.local
-
-# node modules
 node_modules
+.vscode/*
+!*.default
+*.local
 
-# data generated
-/dist
+# rocketh
+generated
+deployments/localhost
+
+# hardhat
+coverage
+coverage.json
+cache
+artifacts
+
+# 
+dist
 #############################################
 
 # Ignore npm files
