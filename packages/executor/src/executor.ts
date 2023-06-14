@@ -172,6 +172,8 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 				}
 			}
 		} else {
+			// TODO if nonceIncreased
+			//
 			actualTransactionData = {
 				type: transactionData.type,
 				accessList: transactionData.accessList,
