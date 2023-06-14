@@ -1,0 +1,14 @@
+{
+  "body": {
+    "content": "eyJ0byI6IjB4RkYiLCJicm9hZGNhc3RTY2hlZHVsZSI6W3siZHVyYXRpb24iOiAiMHhGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGIiwgIm1heEZlZVBlckdhcyI6ICIweEZGIiwgIm1heFByaW9yaXR5RmVlUGVyR2FzIjogIjB4RkYifV19",
+    "file": false,
+    "fileSize": false
+  },
+  "headers": {
+    "signature": "debug@0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+    "content-type": "application/json"
+  },
+  "method": "POST",
+  "title": "New HTTP Request",
+  "url": "http://127.0.0.1:8787/sendTransaction"
+}

@@ -32,7 +32,7 @@ export class ExecutorDO extends createDurable() {
 			provider,
 			storage,
 			time,
-			async getSignerProvider(address: `0x${string}`) {
+			async getSignerProviderFor(address: `0x${string}`) {
 				// TODO
 				return signerProvider;
 			},
@@ -47,8 +47,15 @@ export class ExecutorDO extends createDurable() {
 		return 'hello';
 	}
 
-	submitExecution(execution: Execution) {
-		return this.executorGateway.submitTransaction(execution);
+	async submitExecution(executionAsString: string, signature: `0x${string}`) {
+		try {
+			const txInfo = await this.executorGateway.submitTransactionAsJsonString(executionAsString, signature);
+			console.log(txInfo);
+			return txInfo;
+		} catch (err) {
+			console.error(err);
+			throw err;
+		}
 	}
 
 	processPendingTransactions() {

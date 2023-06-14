@@ -10,11 +10,27 @@ import {
 	RawTransactionInfo,
 	TransactionInfo,
 } from './types/executor';
+import {keccak_256} from '@noble/hashes/sha3';
 
 const logger = logs('dreveal-executor');
 
+function toHex(arr: Uint8Array): `0x${string}` {
+	let str = `0x`;
+	for (const element of arr) {
+		str += element.toString(16).padStart(2, '0');
+	}
+	return str as `0x${string}`;
+}
+function fromHex(str: `0x${string}`): Uint8Array {
+	const matches = str.slice(2).match(/.{1,2}/g);
+	if (matches) {
+		return Uint8Array.from(matches.map((byte) => parseInt(byte, 16)));
+	}
+	return new Uint8Array(0);
+}
+
 export function createExecutor(config: ExecutorConfig): Executor & ExecutorBackend {
-	const {provider, time, storage, getSignerProvider, chainId} = config;
+	const {provider, time, storage, getSignerProviderFor, chainId} = config;
 	const finality = config.finality;
 	const worstCaseBlockTime = config.worstCaseBlockTime;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
@@ -26,6 +42,8 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 		account: EIP1193Account,
 		submission: ExecutionSubmission
 	): Promise<TransactionInfo> {
+		submission = ExecutionSubmission.parse(submission);
+
 		const currentMaxFee = submission.broadcastSchedule[0];
 
 		const result = await _submitTransaction(
@@ -39,12 +57,13 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 	}
 
 	async function _signTransaction(
-		transactionData: Omit<EIP1193TransactionDataOfType2, 'nonce' | 'from'>,
+		transactionData: Omit<EIP1193TransactionDataOfType2, 'nonce' | 'from'> & {account: EIP1193Account},
 		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
 	): Promise<RawTransactionInfo> {
 		let actualTransactionData: EIP1193TransactionDataUsed;
-		const broadcasterAddress = '0xFF' as EIP1193Account; // TODO
-		const signer = await getSignerProvider(broadcasterAddress);
+
+		const signer = await getSignerProviderFor(transactionData.account);
+		const [broadcasterAddress] = await signer.request({method: 'eth_accounts'});
 
 		let broadcasterData: BroadcasterData;
 		const dataFromStorage = await storage.getBroadcaster({address: broadcasterAddress});
@@ -125,6 +144,8 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 				logger.error('already done, sending dummy transaction');
 
 				try {
+					// compute maxFeePerGas and maxPriorityFeePerGas to fill the total gas cost  * price that was alocated
+					// maybe not fill but increase from previoyus considering current fee and allowance
 					actualTransactionData = {
 						type: '0x2',
 						from: broadcasterAddress,
@@ -132,7 +153,8 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 						nonce: `0x${nonce.toString(16)}` as `0x${string}`,
 						maxFeePerGas: `0x${options.maxFeePerGas.toString(16)}` as `0x${string}`,
 						maxPriorityFeePerGas: `0x${options.maxPriorityFeePerGas.toString(16)}` as `0x${string}`,
-						chainId: chainIdAsHex,
+						chainId: transactionData.chainId,
+						gas: `0x${(21000).toString(16)}`,
 					};
 					const rawTx = await signer.request({
 						method: 'eth_signTransaction',
@@ -151,13 +173,20 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 			}
 		} else {
 			actualTransactionData = {
-				...transactionData,
+				type: transactionData.type,
+				accessList: transactionData.accessList,
+				chainId: transactionData.chainId,
+				data: transactionData.data,
+				gas: transactionData.gas,
+				to: transactionData.to,
+				value: transactionData.value,
 				nonce: `0x${nonce.toString(16)}` as `0x${string}`,
 				from: broadcasterAddress,
-				maxFeePerGas: '0x',
-				maxPriorityFeePerGas: '0x',
+				maxFeePerGas: `0x${options.maxFeePerGas.toString(16)}` as `0x${string}`,
+				maxPriorityFeePerGas: `0x${options.maxPriorityFeePerGas.toString(16)}` as `0x${string}`,
 			};
 
+			console.log(JSON.stringify(actualTransactionData, null, 2));
 			const rawTx = await await signer.request({
 				method: 'eth_signTransaction',
 				params: [actualTransactionData],
@@ -178,7 +207,7 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
 	): Promise<TransactionInfo> {
 		const rawTxInfo = await _signTransaction(transactionData, options);
-		const hash = '0xTODO';
+		const hash = toHex(keccak_256(fromHex(rawTxInfo.rawTx)));
 
 		const retries = typeof transactionData.retries === 'undefined' ? 0 : transactionData.retries + 1;
 
@@ -193,9 +222,14 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 			broadcastTime: timestamp,
 			retries,
 		};
-		storage.createPendingExecution(newTransactionData);
+		await storage.createPendingExecution(newTransactionData);
 
-		await provider.request({method: 'eth_sendRawTransaction', params: [rawTxInfo.rawTx]});
+		const hashBroadcasted = await provider.request({method: 'eth_sendRawTransaction', params: [rawTxInfo.rawTx]});
+		if (hash != hashBroadcasted) {
+			console.error(`non matching hashes, computed: ${hash}, broadcasted: ${hashBroadcasted}`);
+			newTransactionData.hash = hashBroadcasted;
+			await storage.updatePendingExecution(newTransactionData);
+		}
 
 		return {
 			transactionData: rawTxInfo.transactionData,
