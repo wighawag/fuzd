@@ -8,7 +8,12 @@ import {BroadcastSchedule} from './executor';
 // 	| RequiredKeys<EIP1193TransactionDataOfType2, 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas'>;
 export type EIP1193TransactionDataUsed = RequiredKeys<
 	EIP1193TransactionDataOfType2,
-	'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas'
+	'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type'
+>;
+
+export type EIP1193TransactionToFill = Omit<
+	EIP1193TransactionDataUsed,
+	'nonce' | 'from' | 'maxFeePerGas' | 'maxPriorityFeePerGas'
 >;
 
 export type BroadcasterData = {

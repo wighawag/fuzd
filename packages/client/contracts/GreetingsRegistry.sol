@@ -22,6 +22,12 @@ contract GreetingsRegistry is Proxied {
 	/// see: https://ethereum-magicians.org/t/proposal-for-adding-blocktimestamp-to-logs-object-returned-by-eth-getlogs-and-related-requests/11183
 	event MessageChanged(address indexed user, uint256 timestamp, string message, uint24 dayTimeInSeconds);
 
+	/// @notice emitted whenever a user delegate the right to set a message to another account
+	/// @param user the user that delegate its rights
+	/// @param delegated address that will be able to set message if delegated
+	/// @param yes whether to delegate or revoke
+	event Delegated(address indexed user, address indexed delegated, bool yes);
+
 	// ----------------------------------------------------------------------------------------------
 	// TYPES
 	// ----------------------------------------------------------------------------------------------
@@ -36,6 +42,7 @@ contract GreetingsRegistry is Proxied {
 	// ----------------------------------------------------------------------------------------------
 	mapping(address => Message) internal _messages;
 	string internal _prefix;
+	mapping(address => mapping(address => bool)) internal _delegates;
 
 	// ----------------------------------------------------------------------------------------------
 	// CONSTRUCTOR / INITIALIZER
@@ -95,10 +102,25 @@ contract GreetingsRegistry is Proxied {
 	/// @param message the value to set as content.
 	/// @param dayTimeInSeconds the time of the day in seconds the message was written.
 	function setMessageFor(address account, string calldata message, uint24 dayTimeInSeconds) external {
-		// we could add delegation here
-		// we added this function to showcase test expecting errors
-		require(msg.sender == account, 'NOT_AUTHORIZED');
+		require(msg.sender == account || _delegates[account][msg.sender], 'NOT_AUTHORIZED');
 		_setMessageFor(account, message, dayTimeInSeconds);
+	}
+
+	/// @notice delegate the right to set message to another account
+	/// @param to address which will be given the right to delegate
+	/// @param yes whether to give the right or revoke it
+	function delegate(address payable to, bool yes) external payable{
+		to.transfer(msg.value);
+		_delegates[msg.sender][to] = yes;
+		emit Delegated(msg.sender, to, yes);
+	}
+
+	/// @notice return whether an account has right to set message on behalf of another
+	/// @param account address being queried
+	/// @param delegated the account which has right to set message
+	/// @return yes whether `delegated` has the right to set message
+	function isDelegate(address account, address delegated) external view returns (bool yes){
+		return _delegates[account][delegated];
 	}
 
 	// ----------------------------------------------------------------------------------------------

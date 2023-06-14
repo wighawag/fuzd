@@ -39,8 +39,8 @@ describe('Executing on the registry', function () {
 
 		const data = encodeFunctionData({
 			...registry,
-			functionName: 'setMessage',
-			args: ['hello', 1],
+			functionName: 'setMessageFor',
+			args: [user, 'hello', 1],
 		});
 
 		const txData = {
@@ -50,8 +50,12 @@ describe('Executing on the registry', function () {
 			data,
 		} as const;
 
-		const gas = await publicClient.estimateGas({...txData, account: user});
+		const delegated = await registry.read.isDelegate([user, remoteAccount]);
+		if (!delegated) {
+			await registry.write.delegate([remoteAccount, true], {account: user, value: 0n});
+		}
 
+		const gas = await publicClient.estimateGas({...txData, account: remoteAccount});
 		const balance = await publicClient.getBalance({address: remoteAccount});
 		if (balance < gasPrice * gas) {
 			await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
@@ -62,7 +66,7 @@ describe('Executing on the registry', function () {
 			gas: `0x${gas.toString(16)}` as `0x${string}`,
 			broadcastSchedule: [
 				{
-					duration: '0x1000',
+					duration: '0x2000',
 					maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
 					maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
 				},

@@ -1,6 +1,12 @@
 import {logs} from 'named-logs';
-import {BroadcasterData, EIP1193TransactionDataUsed, PendingExecutionStored} from './types/executor-storage';
-import {EIP1193Account, EIP1193TransactionDataOfType2} from 'eip-1193';
+import ono from '@jsdevtools/ono';
+import {
+	BroadcasterData,
+	EIP1193TransactionDataUsed,
+	EIP1193TransactionToFill,
+	PendingExecutionStored,
+} from './types/executor-storage';
+import {EIP1193Account} from 'eip-1193';
 import {
 	ExecutionSubmission,
 	Executor,
@@ -57,7 +63,7 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 	}
 
 	async function _signTransaction(
-		transactionData: Omit<EIP1193TransactionDataOfType2, 'nonce' | 'from'> & {account: EIP1193Account},
+		transactionData: EIP1193TransactionToFill & {account: EIP1193Account},
 		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
 	): Promise<RawTransactionInfo> {
 		let actualTransactionData: EIP1193TransactionDataUsed;
@@ -188,7 +194,6 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 				maxPriorityFeePerGas: `0x${options.maxPriorityFeePerGas.toString(16)}` as `0x${string}`,
 			};
 
-			console.log(JSON.stringify(actualTransactionData, null, 2));
 			const rawTx = await await signer.request({
 				method: 'eth_signTransaction',
 				params: [actualTransactionData],
@@ -210,6 +215,27 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 	): Promise<TransactionInfo> {
 		const rawTxInfo = await _signTransaction(transactionData, options);
 		const hash = toHex(keccak_256(fromHex(rawTxInfo.rawTx)));
+
+		let gasRequired: `0x${string}`;
+		try {
+			gasRequired = await provider.request({
+				method: 'eth_estimateGas',
+				params: [
+					{
+						from: rawTxInfo.transactionData.from,
+						to: rawTxInfo.transactionData.to!,
+						data: rawTxInfo.transactionData.data,
+						value: rawTxInfo.transactionData.value,
+					},
+				],
+			});
+		} catch (err: any) {
+			throw ono(err, 'The transaction reverts. Aborting here');
+		}
+
+		if (BigInt(gasRequired) > BigInt(rawTxInfo.transactionData.gas)) {
+			throw new Error(`The transaction requires more gas than provided. Aborting here`);
+		}
 
 		const retries = typeof transactionData.retries === 'undefined' ? 0 : transactionData.retries + 1;
 
