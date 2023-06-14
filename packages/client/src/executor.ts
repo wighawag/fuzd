@@ -44,13 +44,16 @@ export type TestConfig = Omit<
 >;
 
 export function createTestExecutor(config: TestConfig) {
-	return createExecutor({
-		...config,
-		async getSignerProviderFor(address: EIP1193Account) {
-			return new EIP1193LocalSigner(account.deriveForAddress(address).privateKey);
-		},
-		storage: new KVExecutorStorage(db),
-		maxExpiry: 24 * 3600,
-		maxNumTransactionsToProcessInOneGo: 10,
-	});
+	return {
+		executor: createExecutor({
+			...config,
+			async getSignerProviderFor(address: EIP1193Account) {
+				return new EIP1193LocalSigner(account.deriveForAddress(address).privateKey);
+			},
+			storage: new KVExecutorStorage(db),
+			maxExpiry: 24 * 3600,
+			maxNumTransactionsToProcessInOneGo: 10,
+		}),
+		publicExtendedKey: account.publicExtendedKey,
+	};
 }

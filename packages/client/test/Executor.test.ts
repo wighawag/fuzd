@@ -8,10 +8,11 @@ import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {walletClient, contract, publicClient, getAccounts} from './viem';
 import artifacts from '../generated/artifacts';
 import {encodeFunctionData} from 'viem';
+import {deriveRemoteAddress} from 'remote-account';
 
 const time = initTime();
 
-const executor = createTestExecutor({
+const {executor, publicExtendedKey} = createTestExecutor({
 	chainId: '31337',
 	finality: 1,
 	worstCaseBlockTime: 2,
@@ -33,6 +34,9 @@ describe('Executing on the registry', function () {
 		const {registry, accounts} = await loadFixture(deploymentFixture);
 		const gasPrice = await publicClient.getGasPrice();
 
+		const user = accounts.deployer;
+		const remoteAccount = deriveRemoteAddress(publicExtendedKey, user);
+
 		const data = encodeFunctionData({
 			...registry,
 			functionName: 'setMessage',
@@ -46,9 +50,14 @@ describe('Executing on the registry', function () {
 			data,
 		} as const;
 
-		const gas = await publicClient.estimateGas({...txData, account: accounts.deployer});
+		const gas = await publicClient.estimateGas({...txData, account: user});
 
-		const txInfo = await executor.submitTransaction((++counter).toString(), accounts.deployer, {
+		const balance = await publicClient.getBalance({address: remoteAccount});
+		if (balance < gasPrice * gas) {
+			await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
+		}
+
+		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
 			...txData,
 			gas: `0x${gas.toString(16)}` as `0x${string}`,
 			broadcastSchedule: [
