@@ -18,11 +18,11 @@ export type StartTransaction = {
 	// };
 };
 
-export type DeltaExecution<T extends StartTransaction = StartTransaction> = {
+export type DeltaExecution<TimeValueType = number, TransactionType extends StartTransaction = StartTransaction> = {
 	type: 'delta';
 	expiry?: number;
-	startTransaction: T;
-	delta: number;
+	startTransaction: TransactionType;
+	delta: TimeValueType;
 };
 
 export type AssumedTransaction = {
@@ -35,32 +35,48 @@ export type AssumedTransaction = {
 	// };
 };
 
-export type FixedTimeExecution<T extends AssumedTransaction = AssumedTransaction> = {
+export type FixedTimeExecution<
+	TimeValueType = number,
+	TransactionType extends AssumedTransaction = AssumedTransaction
+> = {
 	type: 'fixed';
 	expiry?: number;
-	assumedTransaction?: T;
-	timestamp: number;
+	assumedTransaction?: TransactionType;
+	timestamp: TimeValueType;
 };
 
-export type DecryptedTransactionData = ExecutionSubmission;
-
-export type ExecutionDataInClear = {
-	type: 'clear';
-	execution: DecryptedTransactionData;
+export type PartiallyHiddenTimeValue = {
+	type: 'periodic';
+	value: number;
 };
 
-export type ExecutionDataTimedLocked = {
+export type TimeLockedExecution<
+	StartTransactionType extends StartTransaction = StartTransaction,
+	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
+> = {
 	type: 'time-locked';
 	payload: `0x${string}`;
-	// TODO algorithm?: string;
+	timing:
+		| FixedTimeExecution<number | PartiallyHiddenTimeValue, AssumedTransactionType>
+		| DeltaExecution<number | PartiallyHiddenTimeValue, StartTransactionType>;
+	// TODO algo:
 };
 
-export type ExecutionData = ExecutionDataInClear | ExecutionDataTimedLocked;
-
-export type Execution = {
-	tx: ExecutionData;
-	timing: FixedTimeExecution | DeltaExecution; // TODO time-locked should have different timing, at least for game like conquest
+export type ExecutionInClear<
+	StartTransactionType extends StartTransaction = StartTransaction,
+	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
+> = {
+	type: 'clear';
+	tx: ExecutionSubmission;
+	timing: FixedTimeExecution<number, AssumedTransactionType> | DeltaExecution<number, StartTransactionType>;
 };
+
+export type Execution<
+	StartTransactionType extends StartTransaction = StartTransaction,
+	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
+> =
+	| TimeLockedExecution<StartTransactionType, AssumedTransactionType>
+	| ExecutionInClear<StartTransactionType, AssumedTransactionType>;
 
 export type SchedulerConfig = {
 	executor: Executor;

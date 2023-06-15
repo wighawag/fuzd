@@ -72,11 +72,11 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 		// for encrypted payload we will attempt to decrypt
 		// if it fails, we will push it accoridng to time schedule
 
-		if (execution.tx.type === 'time-locked') {
+		if (execution.type === 'time-locked') {
 			throw new Error(`time-locked tx not supported for now`);
 		}
 
-		const {hash} = await executor.submitTransaction(execution.id, execution.account, execution.tx.execution);
+		const {hash} = await executor.submitTransaction(execution.id, execution.account, execution.tx);
 
 		console.log({hash});
 
