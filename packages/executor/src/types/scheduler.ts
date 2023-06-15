@@ -74,12 +74,12 @@ export type SchedulerConfig = {
 	maxNumTransactionsToProcessInOneGo?: number;
 };
 
+export type ScheduleInfo = {
+	executionTime: number;
+};
+
 export type Scheduler = {
-	submitExecution(
-		id: string,
-		account: EIP1193Account,
-		execution: Execution
-	): Promise<{id: string; executionTime: number}>;
+	submitExecution(id: string, account: EIP1193Account, execution: Execution): Promise<ScheduleInfo>;
 };
 
 export type SchedulerBackend = {

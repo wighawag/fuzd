@@ -5,7 +5,7 @@ import {time2text} from './utils/time';
 import {EIP1193Account, EIP1193TransactionDataOfType2} from 'eip-1193';
 import {computeExecutionTime, computeExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
-import {Execution, Scheduler, SchedulerBackend, SchedulerConfig} from './types/scheduler';
+import {Execution, ScheduleInfo, Scheduler, SchedulerBackend, SchedulerConfig} from './types/scheduler';
 import {ExecutionQueued} from './types/scheduler-storage';
 
 const logger = logs('dreveal-scheduler');
@@ -17,11 +17,7 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
-	async function submitExecution(
-		id: string,
-		account: EIP1193Account,
-		execution: Execution
-	): Promise<{id: string; executionTime: number}> {
+	async function submitExecution(id: string, account: EIP1193Account, execution: Execution): Promise<ScheduleInfo> {
 		const executionTime = computeExecutionTimeFromSubmission(execution);
 
 		const queuedExecution: ExecutionQueued = {
@@ -40,7 +36,7 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 						existingExecution
 					)}`
 				);
-				return {id, executionTime};
+				return {executionTime};
 			} else {
 				throw new Error(
 					`an execution with the same id as already been submitted and is still being processed, queueID: ${displayExecution(
@@ -50,7 +46,7 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 			}
 		}
 		await storage.queueExecution(queuedExecution);
-		return {executionTime, id};
+		return {executionTime};
 	}
 
 	async function retryLater(

@@ -32,8 +32,10 @@ export class KVSchedulerStorage implements SchedulerStorage {
 		await this.db.put(computeQueueID(executionUpdated.executionTime, executionUpdated.id), executionUpdated);
 	}
 	async reassignExecutionInQueue(oldExecutionTime: number, execution: ExecutionQueued): Promise<void> {
-		this.db.delete(computeQueueID(oldExecutionTime, execution.id));
-		await this.db.put<ExecutionQueued>(computeQueueID(execution.executionTime, execution.id), execution);
+		await this.db.transaction(async (txn) => {
+			await txn.delete(computeQueueID(oldExecutionTime, execution.id));
+			await txn.put<ExecutionQueued>(computeQueueID(execution.executionTime, execution.id), execution);
+		});
 	}
 	async getQueueTopMostExecutions(params: {limit: number}): Promise<ExecutionQueued[]> {
 		const map = await this.db.list<ExecutionQueued>({prefix: 'q_', limit: params.limit});

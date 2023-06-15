@@ -76,7 +76,7 @@ describe('Executing on the registry', function () {
 			],
 		});
 		const signature = await walletClient.signMessage({message: json, account: user});
-		const txInfo = await executorGateway.submitTransactionAsJsonString(json, signature);
+		const txInfo = await executorGateway.submitTransactionAsJsonString((++counter).toString(), json, signature);
 		expect(txInfo.isVoidTransaction).to.be.false;
 	});
 });

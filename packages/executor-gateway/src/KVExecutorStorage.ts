@@ -29,13 +29,17 @@ export class KVExecutorStorage implements ExecutorStorage {
 	}
 
 	async deletePendingExecution(params: {id: string; broadcastTime: number}): Promise<void> {
-		this.db.delete(computePendingIndex(params.id));
-		await this.db.delete(computePendingID(params.broadcastTime, params.id));
+		await this.db.transaction(async (txn) => {
+			await txn.delete(computePendingIndex(params.id));
+			await txn.delete(computePendingID(params.broadcastTime, params.id));
+		});
 	}
 	async createPendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored> {
 		const pendingID = computePendingID(executionToStore.broadcastTime, executionToStore.id);
-		this.db.put<IndexID>(computePendingIndex(executionToStore.id), {dbID: pendingID});
-		await this.db.put<PendingExecutionStored>(pendingID, executionToStore);
+		await this.db.transaction(async (txn) => {
+			await txn.put<IndexID>(computePendingIndex(executionToStore.id), {dbID: pendingID});
+			await txn.put<PendingExecutionStored>(pendingID, executionToStore);
+		});
 		return executionToStore;
 	}
 	async updatePendingExecution(udpated: PendingExecutionStored): Promise<void> {
