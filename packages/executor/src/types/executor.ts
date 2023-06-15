@@ -52,7 +52,7 @@ export type FeePerGasPeriod = z.infer<typeof FeePerGasPeriod>;
 const BroadcastSchedule = z.array(FeePerGasPeriod).nonempty();
 export type BroadcastSchedule = z.infer<typeof BroadcastSchedule>;
 
-export const ExecutionSubmission = z.object({
+export const TransactionSubmission = z.object({
 	to: EIP1193AccountSchema.optional(),
 	gas: EIP1193QuantitySchema,
 	data: hex.optional(),
@@ -61,7 +61,7 @@ export const ExecutionSubmission = z.object({
 	accessList: EIP1193AccessListSchema.optional(),
 	broadcastSchedule: BroadcastSchedule,
 });
-export type ExecutionSubmission = z.infer<typeof ExecutionSubmission>;
+export type TransactionSubmission = z.infer<typeof TransactionSubmission>;
 
 export type TransactionInfo = {
 	hash: EIP1193DATA;
@@ -89,7 +89,7 @@ export type ExecutorConfig = {
 };
 
 export type Executor = {
-	submitTransaction(id: string, account: EIP1193Account, submission: ExecutionSubmission): Promise<TransactionInfo>;
+	submitTransaction(id: string, account: EIP1193Account, submission: TransactionSubmission): Promise<TransactionInfo>;
 };
 
 export type ExecutorBackend = {

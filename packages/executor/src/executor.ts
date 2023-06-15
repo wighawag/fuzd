@@ -8,7 +8,7 @@ import {
 } from './types/executor-storage';
 import {EIP1193Account} from 'eip-1193';
 import {
-	ExecutionSubmission,
+	TransactionSubmission,
 	Executor,
 	ExecutorBackend,
 	ExecutorConfig,
@@ -47,9 +47,9 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 	async function submitTransaction(
 		id: string,
 		account: EIP1193Account,
-		submission: ExecutionSubmission
+		submission: TransactionSubmission
 	): Promise<TransactionInfo> {
-		submission = ExecutionSubmission.parse(submission);
+		submission = TransactionSubmission.parse(submission);
 
 		const existingExecution = await storage.getPendingExecution({id});
 		if (existingExecution) {

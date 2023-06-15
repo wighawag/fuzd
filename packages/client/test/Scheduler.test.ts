@@ -78,23 +78,21 @@ describe('Executing on the registry', function () {
 		const timestamp = await time.getTimestamp();
 		const executionTime = timestamp + 100;
 		const result = await scheduler.submitExecution((++counter).toString(), user, {
+			type: 'clear',
 			timing: {
 				type: 'fixed',
 				timestamp: executionTime,
 			},
-			tx: {
-				type: 'clear',
-				execution: {
-					...txData,
-					gas: `0x${gas.toString(16)}` as `0x${string}`,
-					broadcastSchedule: [
-						{
-							duration: '0x2000',
-							maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-							maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-						},
-					],
-				},
+			transaction: {
+				...txData,
+				gas: `0x${gas.toString(16)}` as `0x${string}`,
+				broadcastSchedule: [
+					{
+						duration: '0x2000',
+						maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
+						maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
+					},
+				],
 			},
 		});
 		expect(result.executionTime).to.equal(executionTime);

@@ -2,10 +2,10 @@ import {logs} from 'named-logs';
 import {dequals} from './utils/js';
 import {getTransactionStatus} from './utils/ethereum';
 import {time2text} from './utils/time';
-import {EIP1193Account, EIP1193TransactionDataOfType2} from 'eip-1193';
+import {EIP1193Account} from 'eip-1193';
 import {computeExecutionTime, computeExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
-import {Execution, ScheduleInfo, Scheduler, SchedulerBackend, SchedulerConfig} from './types/scheduler';
+import {ScheduledExecution, ScheduleInfo, Scheduler, SchedulerBackend, SchedulerConfig} from './types/scheduler';
 import {ExecutionQueued} from './types/scheduler-storage';
 
 const logger = logs('dreveal-scheduler');
@@ -17,7 +17,11 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
-	async function submitExecution(id: string, account: EIP1193Account, execution: Execution): Promise<ScheduleInfo> {
+	async function submitExecution(
+		id: string,
+		account: EIP1193Account,
+		execution: ScheduledExecution
+	): Promise<ScheduleInfo> {
 		const executionTime = computeExecutionTimeFromSubmission(execution);
 
 		const queuedExecution: ExecutionQueued = {
@@ -76,9 +80,7 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 			throw new Error(`time-locked tx not supported for now`);
 		}
 
-		const {hash} = await executor.submitTransaction(execution.id, execution.account, execution.tx);
-
-		console.log({hash});
+		const {hash} = await executor.submitTransaction(execution.id, execution.account, execution.transaction);
 
 		// if we reaches there, the execution is now handled by the executor
 		// the schedule has done its job

@@ -2,8 +2,7 @@ import {EIP1193Account, EIP1193ProviderWithoutEvents} from 'eip-1193';
 // import {AbiEvent} from 'abitype';
 import {SchedulerStorage} from './scheduler-storage';
 import {Time} from './common';
-import {Executor} from './executor';
-import {ExecutionSubmission} from './executor';
+import {Executor, TransactionSubmission} from './executor';
 
 export type StartTransaction = {
 	// the execution should only happen if that tx is included in a block
@@ -18,7 +17,10 @@ export type StartTransaction = {
 	// };
 };
 
-export type DeltaExecution<TimeValueType = number, TransactionType extends StartTransaction = StartTransaction> = {
+export type DeltaScheduledExecution<
+	TimeValueType = number,
+	TransactionType extends StartTransaction = StartTransaction
+> = {
 	type: 'delta';
 	expiry?: number;
 	startTransaction: TransactionType;
@@ -35,7 +37,7 @@ export type AssumedTransaction = {
 	// };
 };
 
-export type FixedTimeExecution<
+export type FixedTimeScheduledExecution<
 	TimeValueType = number,
 	TransactionType extends AssumedTransaction = AssumedTransaction
 > = {
@@ -50,33 +52,35 @@ export type PartiallyHiddenTimeValue = {
 	value: number;
 };
 
-export type TimeLockedExecution<
+export type ScheduledTimeLockedExecution<
 	StartTransactionType extends StartTransaction = StartTransaction,
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
 > = {
 	type: 'time-locked';
 	payload: `0x${string}`;
 	timing:
-		| FixedTimeExecution<number | PartiallyHiddenTimeValue, AssumedTransactionType>
-		| DeltaExecution<number | PartiallyHiddenTimeValue, StartTransactionType>;
+		| FixedTimeScheduledExecution<number | PartiallyHiddenTimeValue, AssumedTransactionType>
+		| DeltaScheduledExecution<number | PartiallyHiddenTimeValue, StartTransactionType>;
 	// TODO algo:
 };
 
-export type ExecutionInClear<
+export type ScheduledExecutionInClear<
 	StartTransactionType extends StartTransaction = StartTransaction,
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
 > = {
 	type: 'clear';
-	tx: ExecutionSubmission;
-	timing: FixedTimeExecution<number, AssumedTransactionType> | DeltaExecution<number, StartTransactionType>;
+	transaction: TransactionSubmission;
+	timing:
+		| FixedTimeScheduledExecution<number, AssumedTransactionType>
+		| DeltaScheduledExecution<number, StartTransactionType>;
 };
 
-export type Execution<
+export type ScheduledExecution<
 	StartTransactionType extends StartTransaction = StartTransaction,
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
 > =
-	| TimeLockedExecution<StartTransactionType, AssumedTransactionType>
-	| ExecutionInClear<StartTransactionType, AssumedTransactionType>;
+	| ScheduledTimeLockedExecution<StartTransactionType, AssumedTransactionType>
+	| ScheduledExecutionInClear<StartTransactionType, AssumedTransactionType>;
 
 export type SchedulerConfig = {
 	executor: Executor;
@@ -95,7 +99,7 @@ export type ScheduleInfo = {
 };
 
 export type Scheduler = {
-	submitExecution(id: string, account: EIP1193Account, execution: Execution): Promise<ScheduleInfo>;
+	submitExecution(id: string, account: EIP1193Account, execution: ScheduledExecution): Promise<ScheduleInfo>;
 };
 
 export type SchedulerBackend = {
