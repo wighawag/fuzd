@@ -9,58 +9,66 @@ import {walletClient, contract, publicClient, getAccounts} from './viem';
 import artifacts from '../generated/artifacts';
 import {encodeFunctionData} from 'viem';
 import {deriveRemoteAddress} from 'remote-account';
+import {hashRawTx, overrideProvider} from './utils/mock-provider';
 
 const time = initTime();
+
+const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
 
 const {executor, publicExtendedKey} = createTestExecutor({
 	chainId: '31337',
 	finality: 1,
 	worstCaseBlockTime: 2,
-	provider: network.provider as EIP1193ProviderWithoutEvents,
+	provider,
 	time,
 });
 
 async function deploymentFixture() {
 	const {deployments, accounts} = await loadAndExecuteDeployments({
-		provider: network.provider as any,
+		provider,
 	});
 	const registry = contract(deployments['Registry'] as Deployment<typeof artifacts.GreetingsRegistry.abi>);
 	return {registry, accounts};
 }
 
+async function prepareExecution() {
+	const {registry, accounts} = await loadFixture(deploymentFixture);
+	const gasPrice = await publicClient.getGasPrice();
+
+	const user = accounts.deployer;
+	const remoteAccount = deriveRemoteAddress(publicExtendedKey, user);
+
+	const data = encodeFunctionData({
+		...registry,
+		functionName: 'setMessageFor',
+		args: [user, 'hello', 1],
+	});
+
+	const txData = {
+		type: '0x2',
+		chainId: '0x7a69',
+		to: registry.address,
+		data,
+	} as const;
+
+	const delegated = await registry.read.isDelegate([user, remoteAccount]);
+	if (!delegated) {
+		await registry.write.delegate([remoteAccount, true], {account: user, value: 0n});
+	}
+
+	const gas = await publicClient.estimateGas({...txData, account: remoteAccount});
+	const balance = await publicClient.getBalance({address: remoteAccount});
+	if (balance < gasPrice * gas) {
+		await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
+	}
+
+	return {gas, gasPrice, txData, user, registry};
+}
+
 let counter = 0;
 describe('Executing on the registry', function () {
 	it('Should execute without issues', async function () {
-		const {registry, accounts} = await loadFixture(deploymentFixture);
-		const gasPrice = await publicClient.getGasPrice();
-
-		const user = accounts.deployer;
-		const remoteAccount = deriveRemoteAddress(publicExtendedKey, user);
-
-		const data = encodeFunctionData({
-			...registry,
-			functionName: 'setMessageFor',
-			args: [user, 'hello', 1],
-		});
-
-		const txData = {
-			type: '0x2',
-			chainId: '0x7a69',
-			to: registry.address,
-			data,
-		} as const;
-
-		const delegated = await registry.read.isDelegate([user, remoteAccount]);
-		if (!delegated) {
-			await registry.write.delegate([remoteAccount, true], {account: user, value: 0n});
-		}
-
-		const gas = await publicClient.estimateGas({...txData, account: remoteAccount});
-		const balance = await publicClient.getBalance({address: remoteAccount});
-		if (balance < gasPrice * gas) {
-			await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
-		}
-
+		const {gas, gasPrice, txData, user, registry} = await prepareExecution();
 		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
 			...txData,
 			gas: `0x${gas.toString(16)}` as `0x${string}`,
@@ -75,5 +83,30 @@ describe('Executing on the registry', function () {
 
 		expect(txInfo.isVoidTransaction).to.be.false;
 		expect((await registry.read.messages([user])).content).to.equal('hello');
+	});
+
+	it('Should fails to execute right away if tx is not broadcasted, it still pass', async function () {
+		const {gas, gasPrice, txData, user, registry} = await prepareExecution();
+		provider.override({
+			eth_sendRawTransaction: async (provider, params) => {
+				const rawTx = params[0];
+				const hash = hashRawTx(rawTx);
+				return hash;
+			},
+		});
+		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
+			...txData,
+			gas: `0x${gas.toString(16)}` as `0x${string}`,
+			broadcastSchedule: [
+				{
+					duration: '0x2000',
+					maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
+					maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
+				},
+			],
+		});
+
+		expect(txInfo.isVoidTransaction).to.be.false;
+		expect((await registry.read.messages([user])).content).to.equal('');
 	});
 });
