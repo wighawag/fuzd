@@ -140,4 +140,45 @@ describe('Executing on the registry', function () {
 
 		expect((await registry.read.messages([user])).content).to.equal('hello');
 	});
+
+	it('test reorg', async function () {
+		const {gas, gasPrice, txData, user, registry} = await prepareExecution();
+		provider.override({
+			// we do not broadcast
+			eth_sendRawTransaction: async (provider, params) => {
+				const rawTx = params[0];
+				const hash = hashRawTx(rawTx);
+				return hash;
+			},
+			// and we return as if the tx was subnitted
+			eth_getTransactionReceipt: async (provider, params) => {
+				const latestBlock = await provider.request({
+					method: 'eth_getBlockByNumber',
+					params: ['latest', false],
+				});
+				// TODO proper receipt
+				return {...txData, blockNumber: latestBlock?.number, blockhash: latestBlock?.hash};
+			},
+		});
+		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
+			...txData,
+			gas: `0x${gas.toString(16)}` as `0x${string}`,
+			broadcastSchedule: [
+				{
+					duration: '0x2000',
+					maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
+					maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
+				},
+			],
+		});
+
+		expect(txInfo.isVoidTransaction).to.be.false;
+		expect((await registry.read.messages([user])).content).to.equal('');
+
+		// provider.removeOverride();
+
+		await executor.processPendingTransactions();
+
+		expect((await registry.read.messages([user])).content).to.equal('hello');
+	});
 });
