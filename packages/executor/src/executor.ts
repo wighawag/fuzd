@@ -15,6 +15,7 @@ import {
 	FeePerGasPeriod,
 	RawTransactionInfo,
 	TransactionInfo,
+	TransactionParamsAndSigner,
 } from './types/executor';
 import {keccak_256} from '@noble/hashes/sha3';
 
@@ -50,7 +51,20 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 	): Promise<TransactionInfo> {
 		submission = ExecutionSubmission.parse(submission);
 
+		const existingExecution = await storage.getPendingExecution({id});
+		if (existingExecution) {
+			throw new Error(
+				`execution already submitted, the id field is used as identifier. You can reexcute the same tx data but you just need to change the id field.
+				This also means if you use different for the same data, that same tx data will be sent as many time as you submit different id
+				`
+			);
+		}
+
 		const currentMaxFee = submission.broadcastSchedule[0];
+
+		// TODO we use global broadcastSchedule using fixed time
+		// so if you sent a tx 2 hour ago and the current schedule 2hour later is smaller than
+		// the newly submitted tx schedule (for now) then we will resubmit the tx with that new fee schedule
 
 		const result = await _submitTransaction(
 			{...submission, account, id},
@@ -64,75 +78,30 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 
 	async function _signTransaction(
 		transactionData: EIP1193TransactionToFill & {account: EIP1193Account},
+		txParamsAndSigners: TransactionParamsAndSigner,
 		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
 	): Promise<RawTransactionInfo> {
 		let actualTransactionData: EIP1193TransactionDataUsed;
 
-		const signer = await getSignerProviderFor(transactionData.account);
-		const [broadcasterAddress] = await signer.request({method: 'eth_accounts'});
+		const signer = txParamsAndSigners.signer;
+		const from = txParamsAndSigners.broadcasterAddress;
 
-		let broadcasterData: BroadcasterData;
-		const dataFromStorage = await storage.getBroadcaster({address: broadcasterAddress});
-		if (dataFromStorage) {
-			broadcasterData = dataFromStorage;
-		} else {
-			const transactionCountAsHex = await provider.request({
-				method: 'eth_getTransactionCount',
-				params: [broadcasterAddress, 'latest'],
-			});
-			const transactionCount = parseInt(transactionCountAsHex.slice(2), 16);
-			if (isNaN(transactionCount)) {
-				throw new Error(`could not parse transactionCount`);
-			}
-			const dataFromStorage = await storage.getBroadcaster({address: broadcasterAddress});
-			if (!dataFromStorage) {
-				broadcasterData = {address: broadcasterAddress, nextNonce: transactionCount}; // ensure no duplicate id in the bucket even if exact same boradcastingTime
-				await storage.createBroadcaster(broadcasterData);
-			} else {
-				broadcasterData = dataFromStorage;
-			}
-		}
-		const expectedNonce = broadcasterData.nextNonce;
-
+		const expectedNonce = txParamsAndSigners.expectedNonce;
+		let nonce = txParamsAndSigners.nonce;
 		let nonceIncreased = false;
-		let nonce: number | undefined;
 		if (options.forceNonce) {
 			nonce = options.forceNonce;
 		} else {
-			if (!nonce) {
-				const nonceAsHex = await provider.request({
-					method: 'eth_getTransactionCount',
-					params: [broadcasterAddress, 'latest'],
-				});
-				nonce = parseInt(nonceAsHex.slice(2), 16);
-				if (isNaN(nonce)) {
-					throw new Error(`could not parse transaction count while checking for expected nonce`);
-				}
-			}
 			if (nonce !== expectedNonce) {
 				if (nonce > expectedNonce) {
-					const message = `nonce not matching, expected ${expectedNonce}, got ${nonce}, increasing...`;
+					const message = `nonce not matching, expected ${expectedNonce}, got ${nonce}. this means some tx went through in between`;
 					console.error(message);
 					nonceIncreased = true;
-					// return {error: {message, code: 5501}};
 				} else {
-					const message = `nonce not matching, expected ${expectedNonce}, got ${nonce}`;
+					const message = `nonce not matching, expected ${expectedNonce}, got ${nonce}, this means some tx has not been included yet and we should still keep using the exepected value. We prefer to throw and make the user retry`;
 					console.error(message);
-
-					// return {error: {message, code: 5501}};
 					throw new Error(message);
 				}
-			}
-		}
-
-		if (!nonce) {
-			const nonceAsHex = await provider.request({
-				method: 'eth_getTransactionCount',
-				params: [broadcasterAddress, 'latest'],
-			});
-			nonce = parseInt(nonceAsHex.slice(2), 16);
-			if (isNaN(nonce)) {
-				throw new Error(`could not parse transaction count while checking for expected nonce`);
 			}
 		}
 
@@ -143,7 +112,14 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 		if (options?.forceVoid || already_resolved) {
 			if (nonceIncreased) {
 				// return {error: {message: 'nonce increased but fleet already resolved', code: 5502}};
-				throw new Error(`nonce increased but already resolved`);
+				if (already_resolved) {
+					throw new Error(`nonce increased but already resolved. we can skip`);
+					// TODO delete instead of error ?
+				} else {
+					throw new Error(
+						`nonce increased but already resolved. this should never happen since forceNonce should have been used here`
+					);
+				}
 			} else {
 				logger.error('already done, sending dummy transaction');
 
@@ -152,8 +128,8 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 					// maybe not fill but increase from previoyus considering current fee and allowance
 					actualTransactionData = {
 						type: '0x2',
-						from: broadcasterAddress,
-						to: broadcasterAddress,
+						from: from,
+						to: from,
 						nonce: `0x${nonce.toString(16)}` as `0x${string}`,
 						maxFeePerGas: `0x${options.maxFeePerGas.toString(16)}` as `0x${string}`,
 						maxPriorityFeePerGas: `0x${options.maxPriorityFeePerGas.toString(16)}` as `0x${string}`,
@@ -187,7 +163,7 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 				to: transactionData.to,
 				value: transactionData.value,
 				nonce: `0x${nonce.toString(16)}` as `0x${string}`,
-				from: broadcasterAddress,
+				from: from,
 				maxFeePerGas: `0x${options.maxFeePerGas.toString(16)}` as `0x${string}`,
 				maxPriorityFeePerGas: `0x${options.maxPriorityFeePerGas.toString(16)}` as `0x${string}`,
 			};
@@ -204,15 +180,29 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 		}
 	}
 
-	async function _submitTransaction(
-		transactionData: Omit<
-			PendingExecutionStored,
-			'from' | 'hash' | 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'broadcastTime' | 'nextCheckTime'
-		>,
-		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
-	): Promise<TransactionInfo> {
-		const rawTxInfo = await _signTransaction(transactionData, options);
-		const hash = toHex(keccak_256(fromHex(rawTxInfo.rawTx)));
+	async function _getTxParams(
+		transactionData: EIP1193TransactionToFill & {account: EIP1193Account}
+	): Promise<TransactionParamsAndSigner> {
+		const signer = await getSignerProviderFor(transactionData.account);
+		const [broadcasterAddress] = await signer.request({method: 'eth_accounts'});
+
+		const nonceAsHex = await provider.request({
+			method: 'eth_getTransactionCount',
+			params: [broadcasterAddress, 'latest'],
+		});
+		const nonce = parseInt(nonceAsHex.slice(2), 16);
+		if (isNaN(nonce)) {
+			throw new Error(`could not parse transaction count while checking for expected nonce`);
+		}
+		let broadcasterData: BroadcasterData;
+		const dataFromStorage = await storage.getBroadcaster({address: broadcasterAddress});
+		if (dataFromStorage) {
+			broadcasterData = dataFromStorage;
+		} else {
+			broadcasterData = {address: broadcasterAddress, nextNonce: nonce};
+		}
+
+		const expectedNonce = broadcasterData.nextNonce;
 
 		let gasRequired: `0x${string}`;
 		try {
@@ -220,10 +210,10 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 				method: 'eth_estimateGas',
 				params: [
 					{
-						from: rawTxInfo.transactionData.from,
-						to: rawTxInfo.transactionData.to!,
-						data: rawTxInfo.transactionData.data,
-						value: rawTxInfo.transactionData.value,
+						from: broadcasterAddress,
+						to: transactionData.to!, // "!" needed, need to fix eip-1193
+						data: transactionData.data,
+						value: transactionData.value,
 					},
 				],
 			});
@@ -231,9 +221,25 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 			throw ono(err, 'The transaction reverts. Aborting here');
 		}
 
-		if (BigInt(gasRequired) > BigInt(rawTxInfo.transactionData.gas)) {
+		return {expectedNonce, nonce, broadcasterAddress, signer, gasRequired: BigInt(gasRequired)};
+	}
+
+	async function _submitTransaction(
+		transactionData: Omit<
+			PendingExecutionStored,
+			'from' | 'hash' | 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'broadcastTime' | 'nextCheckTime'
+		>,
+		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
+	): Promise<TransactionInfo> {
+		const txParams = await _getTxParams(transactionData);
+		const {gasRequired} = txParams;
+
+		if (gasRequired > BigInt(transactionData.gas)) {
 			throw new Error(`The transaction requires more gas than provided. Aborting here`);
 		}
+
+		const rawTxInfo = await _signTransaction(transactionData, txParams, options);
+		const hash = toHex(keccak_256(fromHex(rawTxInfo.rawTx)));
 
 		const retries = typeof transactionData.retries === 'undefined' ? 0 : transactionData.retries + 1;
 

@@ -95,3 +95,11 @@ export type Executor = {
 export type ExecutorBackend = {
 	processPendingTransactions(): Promise<void>;
 };
+
+export type TransactionParamsAndSigner = {
+	expectedNonce: number;
+	nonce: number;
+	broadcasterAddress: EIP1193Account;
+	signer: EIP1193SignerProvider;
+	gasRequired: bigint;
+};
