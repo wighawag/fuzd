@@ -94,8 +94,6 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 		}
 		const expectedNonce = broadcasterData.nextNonce;
 
-		// TODO pass it in to remove the await
-		const timestamp = await time.getTimestamp();
 		let nonceIncreased = false;
 		let nonce: number | undefined;
 		if (options.forceNonce) {
@@ -209,7 +207,7 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 	async function _submitTransaction(
 		transactionData: Omit<
 			PendingExecutionStored,
-			'from' | 'hash' | 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'broadcastTime'
+			'from' | 'hash' | 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'broadcastTime' | 'nextCheckTime'
 		>,
 		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
 	): Promise<TransactionInfo> {
@@ -240,6 +238,7 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 		const retries = typeof transactionData.retries === 'undefined' ? 0 : transactionData.retries + 1;
 
 		const timestamp = await time.getTimestamp();
+		const nextCheckTime = timestamp + 60; // TODO config
 
 		const newTransactionData: PendingExecutionStored = {
 			...rawTxInfo.transactionData,
@@ -248,16 +247,17 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 			account: transactionData.account,
 			hash,
 			broadcastTime: timestamp,
+			nextCheckTime,
 			retries,
 		};
-		await storage.createPendingExecution(newTransactionData);
+		await storage.createOrUpdatePendingExecution(newTransactionData);
 
-		const hashBroadcasted = await provider.request({method: 'eth_sendRawTransaction', params: [rawTxInfo.rawTx]});
-		if (hash != hashBroadcasted) {
-			console.error(`non matching hashes, computed: ${hash}, broadcasted: ${hashBroadcasted}`);
-			newTransactionData.hash = hashBroadcasted;
-			await storage.updatePendingExecution(newTransactionData);
-		}
+		// const hashBroadcasted = await provider.request({method: 'eth_sendRawTransaction', params: [rawTxInfo.rawTx]});
+		// if (hash != hashBroadcasted) {
+		// 	console.error(`non matching hashes, computed: ${hash}, broadcasted: ${hashBroadcasted}`);
+		// 	newTransactionData.hash = hashBroadcasted;
+		// 	await storage.updatePendingExecution(newTransactionData);
+		// }
 
 		return {
 			transactionData: rawTxInfo.transactionData,
