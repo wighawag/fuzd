@@ -1,4 +1,4 @@
-import {ExecutorConfig, createExecutor, initExecutorProvider} from 'dreveal-executor';
+import {ExecutorConfig, SchedulerConfig, createExecutor, createScheduler} from 'dreveal-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {createInMemoryKeyValueDB} from './InMemoryKeyValueDB';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
@@ -6,10 +6,10 @@ import {EIP1193Account} from 'eip-1193';
 import {initAccountFromHD} from 'remote-account';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
-import {KVExecutorStorage} from 'dreveal-executor-gateway';
+import {KVExecutorStorage, KVSchedulerStorage} from 'dreveal-executor-gateway';
 
 const provider = new JSONRPCHTTPProvider('http://localhost:8545');
-const db = createInMemoryKeyValueDB();
+
 const time = {
 	async getTimestamp() {
 		return Math.floor(Date.now() / 1000);
@@ -38,12 +38,13 @@ const account = initAccountFromHD(accountHDKey);
 
 // export const executorProvider = initExecutorProvider();
 
-export type TestConfig = Omit<
+export type TestExecutorConfig = Omit<
 	ExecutorConfig,
 	'getSignerProviderFor' | 'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
 >;
 
-export function createTestExecutor(config: TestConfig) {
+export function createTestExecutor(config: TestExecutorConfig) {
+	const db = createInMemoryKeyValueDB();
 	return {
 		executor: createExecutor({
 			...config,
@@ -55,5 +56,19 @@ export function createTestExecutor(config: TestConfig) {
 			maxNumTransactionsToProcessInOneGo: 10,
 		}),
 		publicExtendedKey: account.publicExtendedKey,
+	};
+}
+
+export type TestSchedulerConfig = Omit<SchedulerConfig, 'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'>;
+
+export function createTestScheduler(config: TestSchedulerConfig) {
+	const db = createInMemoryKeyValueDB();
+	return {
+		scheduler: createScheduler({
+			...config,
+			storage: new KVSchedulerStorage(db),
+			maxExpiry: 24 * 3600,
+			maxNumTransactionsToProcessInOneGo: 10,
+		}),
 	};
 }

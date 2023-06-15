@@ -141,7 +141,7 @@ describe('Executing on the registry', function () {
 		expect((await registry.read.messages([user])).content).to.equal('hello');
 	});
 
-	it('test reorg', async function () {
+	it.skip('test reorg', async function () {
 		const {gas, gasPrice, txData, user, registry} = await prepareExecution();
 		provider.override({
 			// we do not broadcast

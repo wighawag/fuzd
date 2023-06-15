@@ -58,19 +58,15 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 		if (execution.retries >= 10) {
 			logger.info(`deleting execution ${execution.id} after ${execution.retries} retries ...`);
 			// TODO hook await this._reduceSpending(reveal);
-			storage.deleteExecution({id: execution.id, executionTime: oldExecutionTime});
+			await storage.deleteExecution({id: execution.id, executionTime: oldExecutionTime});
 		} else {
 			execution.executionTime = newTimestamp;
-			storage.reassignExecutionInQueue(oldExecutionTime, execution);
+			await storage.reassignExecutionInQueue(oldExecutionTime, execution);
 		}
 		return execution;
 	}
 
 	async function execute(execution: ExecutionQueued) {
-		let transaction:
-			| Omit<EIP1193TransactionDataOfType2, 'nonce' | 'from' | 'maxFeePerGas' | 'maxPriorityFeePerGas'>
-			| undefined;
-
 		// now we are ready to execute, if we reached there, this means the execution is in the right time slot
 		// we will now process it and broadcast it
 		// for encrypted payload we will attempt to decrypt
@@ -80,11 +76,9 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 			throw new Error(`time-locked tx not supported for now`);
 		}
 
-		if (!transaction) {
-			throw new Error(`no transaction, only "clear" and "time-locked" are supported`);
-		}
+		const {hash} = await executor.submitTransaction(execution.id, execution.account, execution.tx.execution);
 
-		const {hash} = await executor.submitTransaction(execution.id, '0x', execution.tx.execution);
+		console.log({hash});
 
 		// if we reaches there, the execution is now handled by the executor
 		// the schedule has done its job
@@ -112,12 +106,12 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 					logger.debug(`the tx the execution depends on has not finalised and the timestamp has already passed`);
 					// TODO should we delete ?
 					// or retry later ?
-					storage.deleteExecution(execution);
+					await storage.deleteExecution(execution);
 					return {status: 'deleted'};
 				} else {
 					if (txStatus.failed) {
 						logger.debug(`deleting the execution as the tx it depends on failed...`);
-						storage.deleteExecution(execution);
+						await storage.deleteExecution(execution);
 						return {status: 'deleted'};
 					}
 					// we do not really need to store that, we can skip it and simply execute
@@ -143,7 +137,7 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 				} else {
 					if (txStatus.failed) {
 						logger.debug(`deleting the execution as the tx it depends on failed...`);
-						storage.deleteExecution(execution);
+						await storage.deleteExecution(execution);
 						return {status: 'deleted'};
 					}
 					// TODO implement event expectation with params extraction
@@ -174,6 +168,18 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 		// TODO only query up to a certain time
 		const executions = await storage.getQueueTopMostExecutions({limit});
 
+		if (executions.length === 0) {
+			console.log(`found zero executions to process`);
+		} else if (executions.length === 1) {
+			console.log(`found 1 queued execution for ${executions[0].executionTime}`);
+		} else {
+			console.log(
+				`found ${executions.length} queued execution from ${executions[0].executionTime} to ${
+					executions[executions.length].executionTime
+				}`
+			);
+		}
+
 		for (const execution of executions) {
 			const updates = await checkAndUpdateExecutionIfNeeded(execution);
 			if (updates.status === 'deleted' || updates.status === 'willRetry') {
@@ -192,7 +198,7 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 				// delete if execution expired
 				logger.info(`too late, deleting ${displayExecution(execution)}...`);
 
-				storage.deleteExecution(execution);
+				await storage.deleteExecution(execution);
 				continue;
 			}
 
@@ -202,7 +208,7 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 			} else {
 				// if not, then in most case we detected a change in the execution time
 				if (updates.status === 'changed') {
-					storage.updateExecutionInQueue(executionUpdated);
+					await storage.updateExecutionInQueue(executionUpdated);
 				} else {
 					// For now as we do not limit result to a certain time, we will reach there often
 					logger.info(`not yet time: ${time2text(executionTime - timestamp)} to wait...`);
