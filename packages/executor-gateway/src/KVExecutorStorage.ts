@@ -53,8 +53,8 @@ export class KVExecutorStorage implements ExecutorStorage {
 		// we get the keys from the index
 		const mapOfIndex = await this.db.list<IndexID>({prefix: `checkin_`, limit: params.limit});
 		const keys: string[] = [];
-		for (const key of mapOfIndex.values()) {
-			keys.push(key.dbID);
+		for (const value of mapOfIndex.values()) {
+			keys.push(value.dbID);
 		}
 		// we then fetch the items
 		const map = await this.db.get<PendingExecutionStored>(keys);

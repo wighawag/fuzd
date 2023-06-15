@@ -68,6 +68,9 @@ export function createInMemoryKeyValueDB(): KeyValueDB {
 			let i = start.index;
 			while (i < keys.length) {
 				const key = keys[i];
+				if (!key.startsWith(options.prefix)) {
+					break;
+				}
 
 				if (!end || key < end) {
 					keysFound.push(key);

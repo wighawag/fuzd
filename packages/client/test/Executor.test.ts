@@ -109,4 +109,35 @@ describe('Executing on the registry', function () {
 		expect(txInfo.isVoidTransaction).to.be.false;
 		expect((await registry.read.messages([user])).content).to.equal('');
 	});
+
+	it('Should fails to execute right away if tx is not broadcasted, but succeed on checks', async function () {
+		const {gas, gasPrice, txData, user, registry} = await prepareExecution();
+		provider.override({
+			eth_sendRawTransaction: async (provider, params) => {
+				const rawTx = params[0];
+				const hash = hashRawTx(rawTx);
+				return hash;
+			},
+		});
+		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
+			...txData,
+			gas: `0x${gas.toString(16)}` as `0x${string}`,
+			broadcastSchedule: [
+				{
+					duration: '0x2000',
+					maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
+					maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
+				},
+			],
+		});
+
+		expect(txInfo.isVoidTransaction).to.be.false;
+		expect((await registry.read.messages([user])).content).to.equal('');
+
+		provider.removeOverride();
+
+		await executor.processPendingTransactions();
+
+		expect((await registry.read.messages([user])).content).to.equal('hello');
+	});
 });
