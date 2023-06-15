@@ -252,12 +252,19 @@ export function createExecutor(config: ExecutorConfig): Executor & ExecutorBacke
 		};
 		await storage.createOrUpdatePendingExecution(newTransactionData);
 
-		// const hashBroadcasted = await provider.request({method: 'eth_sendRawTransaction', params: [rawTxInfo.rawTx]});
-		// if (hash != hashBroadcasted) {
-		// 	console.error(`non matching hashes, computed: ${hash}, broadcasted: ${hashBroadcasted}`);
-		// 	newTransactionData.hash = hashBroadcasted;
-		// 	await storage.updatePendingExecution(newTransactionData);
-		// }
+		try {
+			await provider.request({method: 'eth_sendRawTransaction', params: [rawTxInfo.rawTx]});
+		} catch (err) {
+			console.error(`The broadcast failed, we attempts one more time`, err);
+			try {
+				await provider.request({method: 'eth_sendRawTransaction', params: [rawTxInfo.rawTx]});
+			} catch (err) {
+				console.error(
+					`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.`,
+					err
+				);
+			}
+		}
 
 		return {
 			transactionData: rawTxInfo.transactionData,
