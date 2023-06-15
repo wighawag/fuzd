@@ -74,5 +74,6 @@ describe('Executing on the registry', function () {
 		});
 
 		expect(txInfo.isVoidTransaction).to.be.false;
+		expect((await registry.read.messages([user])).content).to.equal('hello');
 	});
 });
