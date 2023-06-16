@@ -47,8 +47,10 @@ export type FixedTimeScheduledExecution<
 	value: TimeValueType;
 };
 
+export type DecryptionResult = {success: true; transaction: TransactionSubmission} | {success: false; retry?: number};
+
 export type Decrypter = {
-	decrypt(payload: `0x${string}`): Promise<TransactionSubmission>;
+	decrypt(execution: ScheduledTimeLockedExecution): Promise<DecryptionResult>;
 };
 
 export type PartiallyHiddenTimeValue =
@@ -111,6 +113,7 @@ export type SchedulerConfig = {
 	executor: Executor;
 	chainId: string;
 	provider: EIP1193ProviderWithoutEvents;
+	decrypter?: Decrypter;
 	time: Time;
 	storage: SchedulerStorage;
 	finality: number;

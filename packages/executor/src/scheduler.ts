@@ -5,8 +5,16 @@ import {time2text} from './utils/time';
 import {EIP1193Account} from 'eip-1193';
 import {computePotentialExecutionTime, computeFirstExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
-import {ScheduledExecution, ScheduleInfo, Scheduler, SchedulerBackend, SchedulerConfig} from './types/scheduler';
+import {
+	ScheduledExecution,
+	ScheduleInfo,
+	Scheduler,
+	SchedulerBackend,
+	SchedulerConfig,
+	Decrypter,
+} from './types/scheduler';
 import {ExecutionQueued} from './types/scheduler-storage';
+import {TransactionSubmission} from '../dist';
 
 const logger = logs('dreveal-scheduler');
 
@@ -71,16 +79,38 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 	}
 
 	async function execute(execution: ExecutionQueued) {
+		let transaction: TransactionSubmission;
+		if (execution.type === 'time-locked') {
+			if (!config.decrypter) {
+				throw new Error(
+					`the scheduler has not been configured with a decrypter. As such it cannot support "time-locked" execution`
+				);
+			}
+
+			const decryptionResult = await config.decrypter.decrypt(execution);
+			if (decryptionResult.success) {
+				transaction = decryptionResult.transaction;
+			} else {
+				if (decryptionResult.retry) {
+					const oldCheckinTime = execution.checkinTime;
+					execution.checkinTime = decryptionResult.retry;
+					await storage.reassignExecutionInQueue(oldCheckinTime, execution);
+				} else {
+					// failed to decrypt and no retry, this means the decryption is failing
+					await storage.deleteExecution(execution);
+				}
+				return;
+			}
+		} else {
+			transaction = execution.transaction;
+		}
+
 		// now we are ready to execute, if we reached there, this means the execution is in the right time slot
 		// we will now process it and broadcast it
 		// for encrypted payload we will attempt to decrypt
 		// if it fails, we will push it accoridng to time schedule
 
-		if (execution.type === 'time-locked') {
-			throw new Error(`time-locked tx not supported for now`);
-		}
-
-		const {hash} = await executor.submitTransaction(execution.id, execution.account, execution.transaction);
+		const {hash} = await executor.submitTransaction(execution.id, execution.account, transaction);
 
 		// if we reaches there, the execution is now handled by the executor
 		// the schedule has done its job
