@@ -14,7 +14,7 @@ import {
 	Decrypter,
 } from './types/scheduler';
 import {ExecutionQueued} from './types/scheduler-storage';
-import {TransactionSubmission} from '../dist';
+import {TransactionSubmission} from './types/executor';
 
 const logger = logs('dreveal-scheduler');
 
