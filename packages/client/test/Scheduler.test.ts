@@ -9,7 +9,8 @@ import {walletClient, contract, publicClient, getAccounts} from './viem';
 import artifacts from '../generated/artifacts';
 import {encodeFunctionData} from 'viem';
 import {deriveRemoteAddress} from 'remote-account';
-import {hashRawTx, overrideProvider} from './utils/mock-provider';
+import {createMockDecrypter, hashRawTx, overrideProvider} from './utils/mock-provider';
+import {TransactionSubmission} from 'dreveal-executor';
 
 const time = initTime();
 
@@ -24,8 +25,11 @@ const executorConfig = {
 };
 const {executor, publicExtendedKey} = createTestExecutor(executorConfig);
 
+const decrypter = createMockDecrypter();
+
 const {scheduler} = createTestScheduler({
 	...executorConfig,
+	decrypter,
 	executor,
 });
 
@@ -68,7 +72,7 @@ async function prepareExecution() {
 		await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
 	}
 
-	return {gas, gasPrice, txData, user, registry};
+	return {gas, gasPrice, txData, user, registry, mockDecrypter: decrypter};
 }
 
 let counter = 0;
@@ -97,6 +101,41 @@ describe('Executing on the registry', function () {
 					},
 				],
 			},
+		});
+		expect(result.checkinTime).to.equal(checkinTime);
+
+		time.increaseTime(101);
+		await scheduler.processQueue();
+		expect((await registry.read.messages([user])).content).to.equal('hello');
+	});
+
+	it('Should execute encrypted data without issues', async function () {
+		const {gas, gasPrice, txData, user, registry, mockDecrypter} = await prepareExecution();
+		const timestamp = await time.getTimestamp();
+		const checkinTime = timestamp + 100;
+		const transaction: TransactionSubmission = {
+			...txData,
+			gas: `0x${gas.toString(16)}` as `0x${string}`,
+			broadcastSchedule: [
+				{
+					duration: '0x2000' as `0x${string}`,
+					maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
+					maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
+				},
+			],
+		};
+		const id = (++counter).toString();
+		mockDecrypter.addDecryptedResult(id, transaction);
+		const result = await scheduler.submitExecution(id, user, {
+			type: 'time-locked',
+			timing: {
+				type: 'fixed',
+				value: {
+					type: 'time',
+					time: checkinTime,
+				},
+			},
+			payload: '0xblabla',
 		});
 		expect(result.checkinTime).to.equal(checkinTime);
 

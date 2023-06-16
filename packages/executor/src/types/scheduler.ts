@@ -3,6 +3,7 @@ import {EIP1193Account, EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {SchedulerStorage} from './scheduler-storage';
 import {Time} from './common';
 import {Executor, TransactionSubmission} from './executor';
+import {ExecutionQueued} from '../../dist';
 
 export type StartTransaction = {
 	// the execution should only happen if that tx is included in a block
@@ -50,7 +51,7 @@ export type FixedTimeScheduledExecution<
 export type DecryptionResult = {success: true; transaction: TransactionSubmission} | {success: false; retry?: number};
 
 export type Decrypter = {
-	decrypt(execution: ScheduledTimeLockedExecution): Promise<DecryptionResult>;
+	decrypt(execution: ExecutionQueued): Promise<DecryptionResult>;
 };
 
 export type PartiallyHiddenTimeValue =
