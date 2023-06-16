@@ -3,7 +3,7 @@ import {dequals} from './utils/js';
 import {getTransactionStatus} from './utils/ethereum';
 import {time2text} from './utils/time';
 import {EIP1193Account} from 'eip-1193';
-import {computeExecutionTime, computeExecutionTimeFromSubmission} from './utils/execution';
+import {computePotentialExecutionTime, computeFirstExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
 import {ScheduledExecution, ScheduleInfo, Scheduler, SchedulerBackend, SchedulerConfig} from './types/scheduler';
 import {ExecutionQueued} from './types/scheduler-storage';
@@ -22,17 +22,17 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 		account: EIP1193Account,
 		execution: ScheduledExecution
 	): Promise<ScheduleInfo> {
-		const executionTime = computeExecutionTimeFromSubmission(execution);
+		const checkinTime = computeFirstExecutionTimeFromSubmission(execution);
 
 		const queuedExecution: ExecutionQueued = {
 			...execution,
 			account,
 			id,
-			executionTime,
+			checkinTime,
 			retries: 0,
 		};
 
-		const existingExecution = await storage.getQueuedExecution({id, executionTime});
+		const existingExecution = await storage.getQueuedExecution({id, checkinTime});
 		if (existingExecution) {
 			if (dequals(existingExecution, queuedExecution)) {
 				logger.info(
@@ -40,7 +40,7 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 						existingExecution
 					)}`
 				);
-				return {executionTime};
+				return {checkinTime};
 			} else {
 				throw new Error(
 					`an execution with the same id as already been submitted and is still being processed, queueID: ${displayExecution(
@@ -50,22 +50,22 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 			}
 		}
 		await storage.queueExecution(queuedExecution);
-		return {executionTime};
+		return {checkinTime};
 	}
 
 	async function retryLater(
-		oldExecutionTime: number,
+		oldCheckinTime: number,
 		execution: ExecutionQueued,
-		newTimestamp: number
+		newCheckinTime: number
 	): Promise<ExecutionQueued> {
 		execution.retries++;
 		if (execution.retries >= 10) {
 			logger.info(`deleting execution ${execution.id} after ${execution.retries} retries ...`);
 			// TODO hook await this._reduceSpending(reveal);
-			await storage.deleteExecution({id: execution.id, executionTime: oldExecutionTime});
+			await storage.deleteExecution({id: execution.id, checkinTime: oldCheckinTime});
 		} else {
-			execution.executionTime = newTimestamp;
-			await storage.reassignExecutionInQueue(oldExecutionTime, execution);
+			execution.checkinTime = newCheckinTime;
+			await storage.reassignExecutionInQueue(oldCheckinTime, execution);
 		}
 		return execution;
 	}
@@ -131,9 +131,9 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 				const txStatus = await getTransactionStatus(provider, execution.timing.startTransaction, finality);
 				if (!txStatus.finalised) {
 					const executionToRetry = await retryLater(
-						execution.executionTime,
+						execution.checkinTime,
 						execution,
-						computeExecutionTime(execution, txStatus.blockTime || timestamp)
+						computePotentialExecutionTime(execution, {startTimeToCountFrom: txStatus.blockTime || timestamp})
 					);
 					return {status: 'willRetry', execution: executionToRetry};
 				} else {
@@ -173,11 +173,11 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 		if (executions.length === 0) {
 			console.log(`found zero executions to process`);
 		} else if (executions.length === 1) {
-			console.log(`found 1 queued execution for ${executions[0].executionTime}`);
+			console.log(`found 1 queued execution for ${executions[0].checkinTime}`);
 		} else {
 			console.log(
-				`found ${executions.length} queued execution from ${executions[0].executionTime} to ${
-					executions[executions.length].executionTime
+				`found ${executions.length} queued execution from ${executions[0].checkinTime} to ${
+					executions[executions.length].checkinTime
 				}`
 			);
 		}
@@ -189,11 +189,13 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 			}
 
 			const executionUpdated = updates.execution;
-			const executionTime = computeExecutionTime(executionUpdated);
+			const newCheckinTime = computePotentialExecutionTime(executionUpdated, {
+				lastCheckin: executionUpdated.checkinTime,
+			});
 
 			if (
 				timestamp >
-				executionTime +
+				newCheckinTime +
 					Math.min(executionUpdated.timing.expiry || Number.MAX_SAFE_INTEGER, maxExpiry) +
 					finality * worstCaseBlockTime
 			) {
@@ -204,7 +206,7 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 				continue;
 			}
 
-			if (timestamp >= executionTime) {
+			if (timestamp >= newCheckinTime) {
 				// execute if it is the time
 				await execute(executionUpdated);
 			} else {
@@ -213,7 +215,7 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 					await storage.updateExecutionInQueue(executionUpdated);
 				} else {
 					// For now as we do not limit result to a certain time, we will reach there often
-					logger.info(`not yet time: ${time2text(executionTime - timestamp)} to wait...`);
+					logger.info(`not yet time: ${time2text(newCheckinTime - timestamp)} to wait...`);
 				}
 			}
 		}

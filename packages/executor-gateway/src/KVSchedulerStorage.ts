@@ -8,33 +8,33 @@ function lexicographicNumber(num: number, size: number): string {
 	return num.toString().padStart(size, '0');
 }
 
-function computeQueueID(executionTime: number, id: string): string {
-	return `q_${lexicographicNumber(executionTime, 12)}_${id}`;
+function computeQueueID(checkinTime: number, id: string): string {
+	return `q_${lexicographicNumber(checkinTime, 12)}_${id}`;
 }
 
 export class KVSchedulerStorage implements SchedulerStorage {
 	constructor(private db: KeyValueDB) {}
 
-	getQueuedExecution(params: {id: string; executionTime: number}): Promise<ExecutionQueued | undefined> {
-		return this.db.get<ExecutionQueued>(computeQueueID(params.executionTime, params.id));
+	getQueuedExecution(params: {id: string; checkinTime: number}): Promise<ExecutionQueued | undefined> {
+		return this.db.get<ExecutionQueued>(computeQueueID(params.checkinTime, params.id));
 	}
-	async deleteExecution(params: {id: string; executionTime: number}): Promise<void> {
-		await this.db.delete(computeQueueID(params.executionTime, params.id));
+	async deleteExecution(params: {id: string; checkinTime: number}): Promise<void> {
+		await this.db.delete(computeQueueID(params.checkinTime, params.id));
 	}
 	async queueExecution(executionToStore: ExecutionQueued): Promise<ExecutionQueued> {
 		await this.db.put<ExecutionQueued>(
-			computeQueueID(executionToStore.executionTime, executionToStore.id),
+			computeQueueID(executionToStore.checkinTime, executionToStore.id),
 			executionToStore
 		);
 		return executionToStore;
 	}
 	async updateExecutionInQueue(executionUpdated: ExecutionQueued): Promise<void> {
-		await this.db.put(computeQueueID(executionUpdated.executionTime, executionUpdated.id), executionUpdated);
+		await this.db.put(computeQueueID(executionUpdated.checkinTime, executionUpdated.id), executionUpdated);
 	}
 	async reassignExecutionInQueue(oldExecutionTime: number, execution: ExecutionQueued): Promise<void> {
 		await this.db.transaction(async (txn) => {
 			await txn.delete(computeQueueID(oldExecutionTime, execution.id));
-			await txn.put<ExecutionQueued>(computeQueueID(execution.executionTime, execution.id), execution);
+			await txn.put<ExecutionQueued>(computeQueueID(execution.checkinTime, execution.id), execution);
 		});
 	}
 	async getQueueTopMostExecutions(params: {limit: number}): Promise<ExecutionQueued[]> {

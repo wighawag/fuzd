@@ -76,12 +76,15 @@ describe('Executing on the registry', function () {
 	it('Should execute without issues', async function () {
 		const {gas, gasPrice, txData, user, registry} = await prepareExecution();
 		const timestamp = await time.getTimestamp();
-		const executionTime = timestamp + 100;
+		const checkinTime = timestamp + 100;
 		const result = await scheduler.submitExecution((++counter).toString(), user, {
 			type: 'clear',
 			timing: {
 				type: 'fixed',
-				timestamp: executionTime,
+				value: {
+					type: 'time',
+					time: checkinTime,
+				},
 			},
 			transaction: {
 				...txData,
@@ -95,7 +98,7 @@ describe('Executing on the registry', function () {
 				],
 			},
 		});
-		expect(result.executionTime).to.equal(executionTime);
+		expect(result.checkinTime).to.equal(checkinTime);
 
 		time.increaseTime(101);
 		await scheduler.processQueue();

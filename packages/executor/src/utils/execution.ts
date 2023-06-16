@@ -1,30 +1,85 @@
-import {Execution} from '../types/scheduler';
+import {ScheduledExecution} from '../types/scheduler';
 import {ExecutionQueued} from '../types/scheduler-storage';
 
-export function computeExecutionTimeFromSubmission(execution: Execution): number {
+export function computeFirstExecutionTimeFromSubmission(execution: ScheduledExecution): number {
 	if (execution.timing.type === 'fixed') {
-		return execution.timing.timestamp;
+		const value = execution.timing.value;
+		if (value.type === 'time') {
+			return value.time;
+		} else if (value.type === 'round') {
+			// TODO when execute check validity
+			return value.expectedTime;
+		} else if (value.type === 'round-period') {
+			// TODO recompute it when times come
+			return value.startTime + value.periodInRounds * value.averageSecondsPerRound;
+		} else {
+			// TODO recompute it when times come
+			return value.startTime + value.periodInSeconds;
+		}
 	} else if (execution.timing.type === 'delta') {
-		return execution.timing.delta + execution.timing.startTransaction.broadcastTime;
+		const delta = execution.timing.delta;
+		if (delta.type === 'round') {
+			return (
+				// TODO when execute check validity
+				delta.expectedTime + execution.timing.startTransaction.broadcastTime
+			);
+		} else {
+			return delta.time + execution.timing.startTransaction.broadcastTime;
+		}
 	} else {
 		throw new Error(`execution timing type must be "fixed" or "delta"`);
 	}
 }
 
-export function computeExecutionTime(execution: ExecutionQueued, expectedStartTime?: number): number {
+export function computePotentialExecutionTime(
+	execution: ExecutionQueued,
+	state?: {startTimeToCountFrom?: number; lastCheckin?: number}
+): number {
 	if (execution.timing.type === 'fixed') {
-		return execution.timing.timestamp;
+		const value = execution.timing.value;
+		if (value.type === 'time') {
+			return value.time;
+		} else if (value.type === 'round') {
+			// TODO when execute check validity
+			return value.expectedTime;
+		} else if (value.type === 'round-period') {
+			const averagePeriodInSeconds = value.periodInRounds * value.averageSecondsPerRound;
+			const roundedDownStartTime = state?.lastCheckin
+				? Math.floor(state?.lastCheckin / averagePeriodInSeconds) * averagePeriodInSeconds
+				: value.startTime;
+			return roundedDownStartTime + averagePeriodInSeconds;
+		} else {
+			const roundedDownStartTime = state?.lastCheckin
+				? Math.floor(state?.lastCheckin / value.periodInSeconds) * value.periodInSeconds
+				: value.startTime;
+			return roundedDownStartTime + value.periodInSeconds;
+		}
 	} else if (execution.timing.type === 'delta') {
-		return (
-			execution.timing.delta +
-			(execution.timing.startTransaction.confirmed
-				? execution.timing.startTransaction.confirmed?.startTime
+		const delta = execution.timing.delta;
+		if (delta.type === 'round') {
+			return (
+				// TODO when execute check validity
+				delta.expectedTime +
+				(execution.timing.startTransaction.confirmed
 					? execution.timing.startTransaction.confirmed?.startTime
-					: execution.timing.startTransaction.confirmed?.blockTime
-				: expectedStartTime
-				? expectedStartTime
-				: execution.timing.startTransaction.broadcastTime)
-		);
+						? execution.timing.startTransaction.confirmed?.startTime
+						: execution.timing.startTransaction.confirmed?.blockTime
+					: state?.startTimeToCountFrom
+					? state.startTimeToCountFrom
+					: execution.timing.startTransaction.broadcastTime)
+			);
+		} else {
+			return (
+				delta.time +
+				(execution.timing.startTransaction.confirmed
+					? execution.timing.startTransaction.confirmed?.startTime
+						? execution.timing.startTransaction.confirmed?.startTime
+						: execution.timing.startTransaction.confirmed?.blockTime
+					: state?.startTimeToCountFrom
+					? state.startTimeToCountFrom
+					: execution.timing.startTransaction.broadcastTime)
+			);
+		}
 	} else {
 		throw new Error(`execution timing type must be "fixed" or "delta"`);
 	}

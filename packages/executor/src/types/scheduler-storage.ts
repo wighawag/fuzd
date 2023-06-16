@@ -7,15 +7,15 @@ export type ExecutionQueued = ScheduledExecution<
 > & {
 	id: string;
 	account: EIP1193Account;
-	executionTime: number;
+	checkinTime: number;
 	retries: number;
 };
 
 export interface SchedulerStorage {
-	getQueuedExecution(params: {id: string; executionTime: number}): Promise<ExecutionQueued | undefined>;
-	deleteExecution(params: {id: string; executionTime: number}): Promise<void>;
+	getQueuedExecution(params: {id: string; checkinTime: number}): Promise<ExecutionQueued | undefined>;
+	deleteExecution(params: {id: string; checkinTime: number}): Promise<void>;
 	queueExecution(executionToStore: ExecutionQueued): Promise<ExecutionQueued>;
 	updateExecutionInQueue(executionUpdated: ExecutionQueued): Promise<void>;
-	reassignExecutionInQueue(oldExecutionTime: number, execution: ExecutionQueued): Promise<void>;
+	reassignExecutionInQueue(oldCheckinTime: number, execution: ExecutionQueued): Promise<void>;
 	getQueueTopMostExecutions(params: {limit: number}): Promise<ExecutionQueued[]>;
 }

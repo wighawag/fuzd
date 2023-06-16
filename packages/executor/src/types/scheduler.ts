@@ -18,7 +18,7 @@ export type StartTransaction = {
 };
 
 export type DeltaScheduledExecution<
-	TimeValueType = number,
+	TimeValueType extends FixedTiming = FixedTiming,
 	TransactionType extends StartTransaction = StartTransaction
 > = {
 	type: 'delta';
@@ -38,19 +38,44 @@ export type AssumedTransaction = {
 };
 
 export type FixedTimeScheduledExecution<
-	TimeValueType = number,
+	TimeValueType extends FixedTiming | PartiallyHiddenTimeValue = FixedTiming,
 	TransactionType extends AssumedTransaction = AssumedTransaction
 > = {
 	type: 'fixed';
 	expiry?: number;
 	assumedTransaction?: TransactionType;
-	timestamp: TimeValueType;
+	value: TimeValueType;
 };
 
-export type PartiallyHiddenTimeValue = {
-	type: 'periodic';
-	value: number;
+export type Decrypter = {
+	decrypt(payload: `0x${string}`): Promise<TransactionSubmission>;
 };
+
+export type PartiallyHiddenTimeValue =
+	| {
+			type: 'time-period';
+			startTime: number;
+			periodInSeconds: number;
+	  }
+	| {
+			type: 'round-period';
+			startTime: number;
+			periodInRounds: number;
+			averageSecondsPerRound: number;
+	  };
+
+export type RoundBasedTiming = {
+	type: 'round';
+	round: number;
+	expectedTime: number;
+};
+
+export type TimeBasedTiming = {
+	type: 'time';
+	time: number;
+};
+
+export type FixedTiming = TimeBasedTiming | RoundBasedTiming;
 
 export type ScheduledTimeLockedExecution<
 	StartTransactionType extends StartTransaction = StartTransaction,
@@ -59,8 +84,8 @@ export type ScheduledTimeLockedExecution<
 	type: 'time-locked';
 	payload: `0x${string}`;
 	timing:
-		| FixedTimeScheduledExecution<number | PartiallyHiddenTimeValue, AssumedTransactionType>
-		| DeltaScheduledExecution<number | PartiallyHiddenTimeValue, StartTransactionType>;
+		| FixedTimeScheduledExecution<FixedTiming | PartiallyHiddenTimeValue, AssumedTransactionType>
+		| DeltaScheduledExecution<FixedTiming, StartTransactionType>;
 	// TODO algo:
 };
 
@@ -71,8 +96,8 @@ export type ScheduledExecutionInClear<
 	type: 'clear';
 	transaction: TransactionSubmission;
 	timing:
-		| FixedTimeScheduledExecution<number, AssumedTransactionType>
-		| DeltaScheduledExecution<number, StartTransactionType>;
+		| FixedTimeScheduledExecution<FixedTiming | PartiallyHiddenTimeValue, AssumedTransactionType>
+		| DeltaScheduledExecution<FixedTiming, StartTransactionType>;
 };
 
 export type ScheduledExecution<
@@ -95,7 +120,7 @@ export type SchedulerConfig = {
 };
 
 export type ScheduleInfo = {
-	executionTime: number;
+	checkinTime: number;
 };
 
 export type Scheduler = {
