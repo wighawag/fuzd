@@ -1,8 +1,7 @@
 import {EIP1193Account, EIP1193ProviderWithoutEvents} from 'eip-1193';
 // import {AbiEvent} from 'abitype';
 import {ExecutionQueued, SchedulerStorage} from './scheduler-storage';
-import {Time} from './common';
-import {Executor, TransactionSubmission} from './executor';
+import {Executor, Time} from './common';
 
 export type StartTransaction = {
 	// the execution should only happen if that tx is included in a block

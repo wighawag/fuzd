@@ -18,6 +18,7 @@
     "atomikv": "workspace:*",
     "dreveal-executor": "workspace:*",
     "dreveal-executor-gateway": "workspace:*",
+    "dreveal-scheduler": "workspace:*",
     "named-logs": "^0.2.2",
     "viem": "^1.0.7"
   },

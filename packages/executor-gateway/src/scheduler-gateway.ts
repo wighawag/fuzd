@@ -1,5 +1,5 @@
 import ono from '@jsdevtools/ono';
-import {ScheduledExecution, ScheduleInfo, Scheduler} from 'dreveal-executor';
+import {ScheduledExecution, ScheduleInfo, Scheduler} from 'dreveal-scheduler';
 import {hashMessage, recoverAddress} from 'viem';
 import {SchedulerGateway} from './types/scheduler-gateway';
 

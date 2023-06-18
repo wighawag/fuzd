@@ -1,4 +1,4 @@
-import {ScheduleInfo} from 'dreveal-executor';
+import {ScheduleInfo} from 'dreveal-scheduler';
 
 export type SchedulerGateway = {
 	submitExecutionAsJsonString(id: string, execution: string, signature: `0x${string}`): Promise<ScheduleInfo>;

@@ -1,10 +1,5 @@
-import {
-	ExecutorConfig,
-	SchedulerConfig,
-	TransactionSubmission,
-	createExecutor,
-	createScheduler,
-} from 'dreveal-executor';
+import {ExecutorConfig, createExecutor} from 'dreveal-executor';
+import {SchedulerConfig, createScheduler} from 'dreveal-scheduler';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {createInMemoryKeyValueDB} from './InMemoryKeyValueDB';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
