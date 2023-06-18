@@ -88,8 +88,8 @@ export type ExecutorConfig = {
 	maxNumTransactionsToProcessInOneGo?: number;
 };
 
-export type Executor = {
-	submitTransaction(id: string, account: EIP1193Account, submission: TransactionSubmission): Promise<TransactionInfo>;
+export type Executor<TransactionDataType, TransactionInfoType> = {
+	submitTransaction(id: string, account: EIP1193Account, submission: TransactionDataType): Promise<TransactionInfoType>;
 };
 
 export type ExecutorBackend = {

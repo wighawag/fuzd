@@ -47,10 +47,12 @@ export type FixedTimeScheduledExecution<
 	value: TimeValueType;
 };
 
-export type DecryptionResult = {success: true; transaction: TransactionSubmission} | {success: false; retry?: number};
+export type DecryptionResult<TransactionDataType> =
+	| {success: true; transaction: TransactionDataType}
+	| {success: false; retry?: number};
 
-export type Decrypter = {
-	decrypt(execution: ExecutionQueued): Promise<DecryptionResult>;
+export type Decrypter<TransactionDataType> = {
+	decrypt(execution: ExecutionQueued<TransactionDataType>): Promise<DecryptionResult<TransactionDataType>>;
 };
 
 export type PartiallyHiddenTimeValue =
@@ -92,30 +94,32 @@ export type ScheduledTimeLockedExecution<
 };
 
 export type ScheduledExecutionInClear<
+	TransactionDataType,
 	StartTransactionType extends StartTransaction = StartTransaction,
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
 > = {
 	type: 'clear';
-	transaction: TransactionSubmission;
+	transaction: TransactionDataType;
 	timing:
 		| FixedTimeScheduledExecution<FixedTiming | PartiallyHiddenTimeValue, AssumedTransactionType>
 		| DeltaScheduledExecution<FixedTiming, StartTransactionType>;
 };
 
 export type ScheduledExecution<
+	TransactionDataType,
 	StartTransactionType extends StartTransaction = StartTransaction,
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
 > =
 	| ScheduledTimeLockedExecution<StartTransactionType, AssumedTransactionType>
-	| ScheduledExecutionInClear<StartTransactionType, AssumedTransactionType>;
+	| ScheduledExecutionInClear<TransactionDataType, StartTransactionType, AssumedTransactionType>;
 
-export type SchedulerConfig = {
-	executor: Executor;
+export type SchedulerConfig<TransactionDataType, TransactionInfoType> = {
+	executor: Executor<TransactionDataType, TransactionInfoType>;
 	chainId: string;
 	provider: EIP1193ProviderWithoutEvents;
-	decrypter?: Decrypter;
+	decrypter?: Decrypter<TransactionDataType>;
 	time: Time;
-	storage: SchedulerStorage;
+	storage: SchedulerStorage<TransactionDataType>;
 	finality: number;
 	worstCaseBlockTime: number;
 	maxExpiry?: number;
@@ -126,8 +130,12 @@ export type ScheduleInfo = {
 	checkinTime: number;
 };
 
-export type Scheduler = {
-	submitExecution(id: string, account: EIP1193Account, execution: ScheduledExecution): Promise<ScheduleInfo>;
+export type Scheduler<TransactionDataType> = {
+	submitExecution(
+		id: string,
+		account: EIP1193Account,
+		execution: ScheduledExecution<TransactionDataType>
+	): Promise<ScheduleInfo>;
 };
 
 export type SchedulerBackend = {

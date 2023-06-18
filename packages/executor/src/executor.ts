@@ -36,7 +36,9 @@ function fromHex(str: `0x${string}`): Uint8Array {
 	return new Uint8Array(0);
 }
 
-export function createExecutor(config: ExecutorConfig): Executor & ExecutorBackend {
+export function createExecutor(
+	config: ExecutorConfig
+): Executor<TransactionSubmission, TransactionInfo> & ExecutorBackend {
 	const {provider, time, storage, getSignerProviderFor, chainId} = config;
 	const finality = config.finality;
 	const worstCaseBlockTime = config.worstCaseBlockTime;

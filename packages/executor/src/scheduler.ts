@@ -5,20 +5,14 @@ import {time2text} from './utils/time';
 import {EIP1193Account} from 'eip-1193';
 import {computePotentialExecutionTime, computeFirstExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
-import {
-	ScheduledExecution,
-	ScheduleInfo,
-	Scheduler,
-	SchedulerBackend,
-	SchedulerConfig,
-	Decrypter,
-} from './types/scheduler';
+import {ScheduledExecution, ScheduleInfo, Scheduler, SchedulerBackend, SchedulerConfig} from './types/scheduler';
 import {ExecutionQueued} from './types/scheduler-storage';
-import {TransactionSubmission} from './types/executor';
 
 const logger = logs('dreveal-scheduler');
 
-export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerBackend {
+export function createScheduler<TransactionDataType, TransactionInfoType>(
+	config: SchedulerConfig<TransactionDataType, TransactionInfoType>
+): Scheduler<TransactionDataType> & SchedulerBackend {
 	const {provider, time, storage, executor, chainId} = config;
 	const finality = config.finality;
 	const worstCaseBlockTime = config.worstCaseBlockTime;
@@ -28,11 +22,11 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 	async function submitExecution(
 		id: string,
 		account: EIP1193Account,
-		execution: ScheduledExecution
+		execution: ScheduledExecution<TransactionDataType>
 	): Promise<ScheduleInfo> {
 		const checkinTime = computeFirstExecutionTimeFromSubmission(execution);
 
-		const queuedExecution: ExecutionQueued = {
+		const queuedExecution: ExecutionQueued<TransactionDataType> = {
 			...execution,
 			account,
 			id,
@@ -63,9 +57,9 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 
 	async function retryLater(
 		oldCheckinTime: number,
-		execution: ExecutionQueued,
+		execution: ExecutionQueued<TransactionDataType>,
 		newCheckinTime: number
-	): Promise<ExecutionQueued> {
+	): Promise<ExecutionQueued<TransactionDataType>> {
 		execution.retries++;
 		if (execution.retries >= 10) {
 			logger.info(`deleting execution ${execution.id} after ${execution.retries} retries ...`);
@@ -78,8 +72,8 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 		return execution;
 	}
 
-	async function execute(execution: ExecutionQueued) {
-		let transaction: TransactionSubmission;
+	async function execute(execution: ExecutionQueued<TransactionDataType>) {
+		let transaction: TransactionDataType;
 		if (execution.type === 'time-locked') {
 			if (!config.decrypter) {
 				throw new Error(
@@ -110,7 +104,7 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 		// for encrypted payload we will attempt to decrypt
 		// if it fails, we will push it accoridng to time schedule
 
-		const {hash} = await executor.submitTransaction(execution.id, execution.account, transaction);
+		await executor.submitTransaction(execution.id, execution.account, transaction);
 
 		// if we reaches there, the execution is now handled by the executor
 		// the schedule has done its job
@@ -120,12 +114,12 @@ export function createScheduler(config: SchedulerConfig): Scheduler & SchedulerB
 	}
 
 	async function checkAndUpdateExecutionIfNeeded(
-		execution: ExecutionQueued
+		execution: ExecutionQueued<TransactionDataType>
 	): Promise<
 		| {status: 'deleted'}
-		| {status: 'changed'; execution: ExecutionQueued}
-		| {status: 'unchanged'; execution: ExecutionQueued}
-		| {status: 'willRetry'; execution: ExecutionQueued}
+		| {status: 'changed'; execution: ExecutionQueued<TransactionDataType>}
+		| {status: 'unchanged'; execution: ExecutionQueued<TransactionDataType>}
+		| {status: 'willRetry'; execution: ExecutionQueued<TransactionDataType>}
 	> {
 		// TODO callback for balance checks ?
 		const timestamp = await time.getTimestamp();
