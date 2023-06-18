@@ -15,91 +15,6 @@ importers:
   packages/atomikv:
     specifiers: {}
 
-  packages/client:
-    specifiers:
-      '@noble/hashes': ^1.3.1
-      '@nomicfoundation/ethereumjs-rlp': ^5.0.1
-      '@nomicfoundation/hardhat-network-helpers': ^1.0.8
-      '@scure/bip32': ^1.3.0
-      '@scure/bip39': ^1.2.0
-      '@types/chai': ^4.3.5
-      '@types/chai-as-promised': ^7.1.5
-      '@types/mocha': ^10.0.1
-      abitype: ^0.8.9
-      as-soon: ^0.0.4
-      atomikv: workspace:*
-      chai: ^4.3.7
-      chai-as-promised: ^7.1.1
-      dreveal-executor: workspace:*
-      dreveal-executor-gateway: workspace:*
-      dreveal-scheduler: workspace:*
-      eip-1193: ^0.4.7
-      eip-1193-json-provider: ^0.1.8
-      eip-1193-signer: ^0.0.1
-      hardhat: ^2.15.0
-      hardhat-rocketh: ^0.5.23
-      ldenv: ^0.3.7
-      named-logs: ^0.2.2
-      named-logs-console: ^0.2.3
-      prettier: ^2.8.8
-      remote-account: workspace:^
-      rocketh: ^0.5.16
-      rocketh-deploy-proxy: ^0.5.17
-      rocketh-export: ^0.5.19
-      rocketh-signer: ^0.5.16
-      rocketh-verifier: ^0.5.16
-      set-defaults: ^0.0.1
-      solidity-coverage: ^0.8.2
-      solidity-proxy: ^0.0.0
-      ts-node: ^10.9.1
-      tsup: ^6.7.0
-      tsx: ^3.12.7
-      typescript: ^5.1.3
-      viem: ^1.0.7
-      viem-chai-matchers: ^0.0.3
-    dependencies:
-      '@nomicfoundation/ethereumjs-rlp': 5.0.1
-      '@scure/bip32': 1.3.0
-      '@scure/bip39': 1.2.0
-      atomikv: link:../atomikv
-      dreveal-executor: link:../executor
-      dreveal-executor-gateway: link:../executor-gateway
-      dreveal-scheduler: link:../scheduler
-      named-logs: 0.2.2
-      viem: 1.0.7_typescript@5.1.3
-    devDependencies:
-      '@noble/hashes': 1.3.1
-      '@nomicfoundation/hardhat-network-helpers': 1.0.8_hardhat@2.15.0
-      '@types/chai': 4.3.5
-      '@types/chai-as-promised': 7.1.5
-      '@types/mocha': 10.0.1
-      abitype: 0.8.10_typescript@5.1.3
-      as-soon: 0.0.4
-      chai: 4.3.7
-      chai-as-promised: 7.1.1_chai@4.3.7
-      eip-1193: 0.4.7
-      eip-1193-json-provider: 0.1.8
-      eip-1193-signer: 0.0.1_typescript@5.1.3
-      hardhat: 2.15.0_svbeilxtkdnrky2ijw4micj63u
-      hardhat-rocketh: 0.5.23_rocketh@0.5.16
-      ldenv: 0.3.7
-      named-logs-console: 0.2.3
-      prettier: 2.8.8
-      remote-account: link:../remote-account
-      rocketh: 0.5.16_typescript@5.1.3
-      rocketh-deploy-proxy: 0.5.17_74bfq2qcpvfd76q3tfxuhp7674
-      rocketh-export: 0.5.19_rocketh@0.5.16
-      rocketh-signer: 0.5.16_rocketh@0.5.16
-      rocketh-verifier: 0.5.16_typescript@5.1.3
-      set-defaults: 0.0.1
-      solidity-coverage: 0.8.2_hardhat@2.15.0
-      solidity-proxy: 0.0.0
-      ts-node: 10.9.1_typescript@5.1.3
-      tsup: 6.7.0_svbeilxtkdnrky2ijw4micj63u
-      tsx: 3.12.7
-      typescript: 5.1.3
-      viem-chai-matchers: 0.0.3_cdyqgtg3n6pce7iaoucdwbk3ta
-
   packages/executor:
     specifiers:
       '@jsdevtools/ono': ^7.1.3
@@ -207,21 +122,6 @@ importers:
       tsup: 6.7.0_typescript@5.1.3
       typescript: 5.1.3
 
-  packages/wighawag-itty-durable:
-    specifiers:
-      '@cloudflare/workers-types': ^4.20230518.0
-      itty-router: ^4.0.9
-      prettier: ^2.8.8
-      tsup: ^6.7.0
-      typescript: ^5.0.4
-    dependencies:
-      itty-router: 4.0.11
-    devDependencies:
-      '@cloudflare/workers-types': 4.20230518.0
-      prettier: 2.8.8
-      tsup: 6.7.0_typescript@5.1.3
-      typescript: 5.1.3
-
   platforms/cloudflare-worker:
     specifiers:
       '@cloudflare/workers-types': ^4.20230518.0
@@ -273,6 +173,91 @@ importers:
       named-logs-console: 0.2.3
       tsup: 6.7.0_typescript@4.9.5
       typescript: 4.9.5
+
+  tests:
+    specifiers:
+      '@noble/hashes': ^1.3.1
+      '@nomicfoundation/ethereumjs-rlp': ^5.0.1
+      '@nomicfoundation/hardhat-network-helpers': ^1.0.8
+      '@scure/bip32': ^1.3.0
+      '@scure/bip39': ^1.2.0
+      '@types/chai': ^4.3.5
+      '@types/chai-as-promised': ^7.1.5
+      '@types/mocha': ^10.0.1
+      abitype: ^0.8.9
+      as-soon: ^0.0.4
+      atomikv: workspace:*
+      chai: ^4.3.7
+      chai-as-promised: ^7.1.1
+      dreveal-executor: workspace:*
+      dreveal-executor-gateway: workspace:*
+      dreveal-scheduler: workspace:*
+      eip-1193: ^0.4.7
+      eip-1193-json-provider: ^0.1.8
+      eip-1193-signer: ^0.0.1
+      hardhat: ^2.15.0
+      hardhat-rocketh: ^0.5.23
+      ldenv: ^0.3.7
+      named-logs: ^0.2.2
+      named-logs-console: ^0.2.3
+      prettier: ^2.8.8
+      remote-account: workspace:^
+      rocketh: ^0.5.16
+      rocketh-deploy-proxy: ^0.5.17
+      rocketh-export: ^0.5.19
+      rocketh-signer: ^0.5.16
+      rocketh-verifier: ^0.5.16
+      set-defaults: ^0.0.1
+      solidity-coverage: ^0.8.2
+      solidity-proxy: ^0.0.0
+      ts-node: ^10.9.1
+      tsup: ^6.7.0
+      tsx: ^3.12.7
+      typescript: ^5.1.3
+      viem: ^1.0.7
+      viem-chai-matchers: ^0.0.3
+    dependencies:
+      '@nomicfoundation/ethereumjs-rlp': 5.0.1
+      '@scure/bip32': 1.3.0
+      '@scure/bip39': 1.2.0
+      atomikv: link:../packages/atomikv
+      dreveal-executor: link:../packages/executor
+      dreveal-executor-gateway: link:../packages/executor-gateway
+      dreveal-scheduler: link:../packages/scheduler
+      named-logs: 0.2.2
+      viem: 1.0.7_typescript@5.1.3
+    devDependencies:
+      '@noble/hashes': 1.3.1
+      '@nomicfoundation/hardhat-network-helpers': 1.0.8_hardhat@2.15.0
+      '@types/chai': 4.3.5
+      '@types/chai-as-promised': 7.1.5
+      '@types/mocha': 10.0.1
+      abitype: 0.8.10_typescript@5.1.3
+      as-soon: 0.0.4
+      chai: 4.3.7
+      chai-as-promised: 7.1.1_chai@4.3.7
+      eip-1193: 0.4.7
+      eip-1193-json-provider: 0.1.8
+      eip-1193-signer: 0.0.1_typescript@5.1.3
+      hardhat: 2.15.0_svbeilxtkdnrky2ijw4micj63u
+      hardhat-rocketh: 0.5.23_rocketh@0.5.16
+      ldenv: 0.3.7
+      named-logs-console: 0.2.3
+      prettier: 2.8.8
+      remote-account: link:../packages/remote-account
+      rocketh: 0.5.16_typescript@5.1.3
+      rocketh-deploy-proxy: 0.5.17_74bfq2qcpvfd76q3tfxuhp7674
+      rocketh-export: 0.5.19_rocketh@0.5.16
+      rocketh-signer: 0.5.16_rocketh@0.5.16
+      rocketh-verifier: 0.5.16_typescript@5.1.3
+      set-defaults: 0.0.1
+      solidity-coverage: 0.8.2_hardhat@2.15.0
+      solidity-proxy: 0.0.0
+      ts-node: 10.9.1_typescript@5.1.3
+      tsup: 6.7.0_svbeilxtkdnrky2ijw4micj63u
+      tsx: 3.12.7
+      typescript: 5.1.3
+      viem-chai-matchers: 0.0.3_cdyqgtg3n6pce7iaoucdwbk3ta
 
 packages:
 
@@ -2809,7 +2794,7 @@ packages:
       supports-color:
         optional: true
     dependencies:
-      ms: 2.1.1
+      ms: 2.1.3
       supports-color: 6.0.0
     dev: true
 
@@ -3684,7 +3669,7 @@ packages:
       fs.realpath: 1.0.0
       inflight: 1.0.6
       inherits: 2.0.4
-      minimatch: 3.0.4
+      minimatch: 3.1.2
       once: 1.4.0
       path-is-absolute: 1.0.1
     dev: true
@@ -5571,7 +5556,7 @@ packages:
     resolution: {integrity: sha512-uWjbaKIK3T1OSVptzX7Nl6PvQ3qAGtKEtVRjRuazjfL3Bx5eI409VZSqgND+4UNnmzLVdPj9FqFJNPqBZFve4w==}
     hasBin: true
     dependencies:
-      glob: 7.2.0
+      glob: 7.2.3
     dev: true
 
   /rimraf/4.4.1:

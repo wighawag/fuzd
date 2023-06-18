@@ -6,9 +6,11 @@ layout {
 			}
 		}
 		pane split_direction="vertical" {
-			pane name="client" command="bash" {
-				args "-c" "pnpm run --filter ./packages/client dev; cd packages/client; ${SHELL-bash}"
+			pane name="tests" command="bash" {
+				args "-c" "pnpm run --filter ./tests dev; cd tests; ${SHELL-bash}"
 			}
+		}
+		pane split_direction="vertical" {
 			pane name="executor" command="bash" {
 				args "-c" "pnpm run --filter ./packages/executor dev; cd packages/executor; ${SHELL-bash}"
 			}
