@@ -9,7 +9,7 @@ import type {Options} from './types';
 
 const program = new Command();
 const name = pkg.name;
-const cmdName = 'dreveal';
+const cmdName = 'fuzd';
 
 program.name(cmdName).version(pkg.version).usage(`${cmdName} -n <node-rpc-url>`).description('Run A reveal service');
 

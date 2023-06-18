@@ -1,7 +1,7 @@
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {keccak_256} from '@noble/hashes/sha3';
-import {TransactionSubmission} from 'dreveal-executor';
-import {Decrypter, DecryptionResult, ExecutionQueued} from 'dreveal-scheduler';
+import {TransactionSubmission} from 'fuzd-executor';
+import {Decrypter, DecryptionResult, ExecutionQueued} from 'fuzd-scheduler';
 
 function toHex(arr: Uint8Array): `0x${string}` {
 	let str = `0x`;

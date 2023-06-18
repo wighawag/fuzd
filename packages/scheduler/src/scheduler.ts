@@ -8,7 +8,7 @@ import {displayExecution} from './utils/debug';
 import {ScheduledExecution, ScheduleInfo, Scheduler, SchedulerBackend, SchedulerConfig} from './types/scheduler';
 import {ExecutionQueued} from './types/scheduler-storage';
 
-const logger = logs('dreveal-scheduler');
+const logger = logs('fuzd-scheduler');
 
 export function createScheduler<TransactionDataType, TransactionInfoType>(
 	config: SchedulerConfig<TransactionDataType, TransactionInfoType>

@@ -1,4 +1,4 @@
-name = "dreveal-worker"
+name = "fuzd-worker"
 main = "src/index.ts"
 compatibility_date = "2023-05-18"
 

@@ -9,7 +9,7 @@ import {walletClient, contract, publicClient, getAccounts} from './viem';
 import artifacts from '../generated/artifacts';
 import {encodeFunctionData} from 'viem';
 import {deriveRemoteAddress} from 'remote-account';
-import {initExecutorGateway} from 'dreveal-executor-gateway';
+import {initExecutorGateway} from 'fuzd-executor-gateway';
 
 const time = initTime();
 

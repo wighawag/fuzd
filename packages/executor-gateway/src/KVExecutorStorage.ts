@@ -1,5 +1,5 @@
 import {KeyValueDB} from 'atomikv';
-import type {ExecutorStorage, PendingExecutionStored, BroadcasterData} from 'dreveal-executor';
+import type {ExecutorStorage, PendingExecutionStored, BroadcasterData} from 'fuzd-executor';
 
 function lexicographicNumber(num: number, size: number): string {
 	if (num.toString().length > size) {

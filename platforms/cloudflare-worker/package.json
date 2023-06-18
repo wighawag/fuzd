@@ -1,5 +1,5 @@
 {
-  "name": "dreveal-cloudflare-worker",
+  "name": "fuzd-cloudflare-worker",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,8 +9,8 @@
     "wrangler": "^3.1.0"
   },
   "dependencies": {
-    "dreveal-executor": "workspace:*",
-    "dreveal-executor-gateway": "workspace:*",
+    "fuzd-executor": "workspace:*",
+    "fuzd-executor-gateway": "workspace:*",
     "eip-1193-json-provider": "^0.1.8",
     "eip-1193-signer": "^0.0.1",
     "itty-durable": "^2.0.0",

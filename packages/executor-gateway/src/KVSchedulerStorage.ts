@@ -1,5 +1,5 @@
 import {KeyValueDB} from 'atomikv';
-import type {ExecutionQueued, SchedulerStorage} from 'dreveal-scheduler';
+import type {ExecutionQueued, SchedulerStorage} from 'fuzd-scheduler';
 
 function lexicographicNumber(num: number, size: number): string {
 	if (num.toString().length > size) {

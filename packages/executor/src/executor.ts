@@ -19,7 +19,7 @@ import {
 } from './types/executor';
 import {keccak_256} from '@noble/hashes/sha3';
 
-const logger = logs('dreveal-executor');
+const logger = logs('fuzd-executor');
 
 function toHex(arr: Uint8Array): `0x${string}` {
 	let str = `0x`;

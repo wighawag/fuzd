@@ -10,7 +10,7 @@ import artifacts from '../generated/artifacts';
 import {encodeFunctionData} from 'viem';
 import {deriveRemoteAddress} from 'remote-account';
 import {createMockDecrypter, hashRawTx, overrideProvider} from './utils/mock-provider';
-import {TransactionSubmission} from 'dreveal-executor';
+import {TransactionSubmission} from 'fuzd-executor';
 
 const time = initTime();
 

@@ -1,5 +1,5 @@
 {
-  "name": "dreveal-executor",
+  "name": "fuzd-executor",
   "version": "0.1.0",
   "description": "execute transaction",
   "type": "module",

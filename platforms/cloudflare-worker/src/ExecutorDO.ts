@@ -1,10 +1,10 @@
 import {createDurable} from 'itty-durable';
-import {Executor, createExecutor} from 'dreveal-executor';
+import {Executor, createExecutor} from 'fuzd-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
-import {Execution} from 'dreveal-executor';
-import {KVExecutorStorage, initExecutorGateway} from 'dreveal-executor-gateway';
-import {ExecutorBackend} from 'dreveal-executor';
+import {Execution} from 'fuzd-executor';
+import {KVExecutorStorage, initExecutorGateway} from 'fuzd-executor-gateway';
+import {ExecutorBackend} from 'fuzd-executor';
 
 interface Env {}
 

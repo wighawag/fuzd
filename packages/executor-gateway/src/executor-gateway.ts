@@ -1,5 +1,5 @@
 import ono from '@jsdevtools/ono';
-import {Executor, TransactionSubmission, TransactionInfo} from 'dreveal-executor';
+import {Executor, TransactionSubmission, TransactionInfo} from 'fuzd-executor';
 import {hashMessage, recoverAddress} from 'viem';
 import {ExecutorGateway} from './types/executor-gateway';
 

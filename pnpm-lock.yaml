@@ -48,8 +48,8 @@ importers:
     specifiers:
       '@jsdevtools/ono': ^7.1.3
       atomikv: workspace:^
-      dreveal-executor: workspace:*
-      dreveal-scheduler: workspace:*
+      fuzd-executor: workspace:*
+      fuzd-scheduler: workspace:*
       ldenv: ^0.3.5
       named-logs: ^0.2.2
       prettier: ^2.8.8
@@ -58,8 +58,8 @@ importers:
       viem: ^1.0.5
     dependencies:
       '@jsdevtools/ono': 7.1.3
-      dreveal-executor: link:../executor
-      dreveal-scheduler: link:../scheduler
+      fuzd-executor: link:../executor
+      fuzd-scheduler: link:../scheduler
       named-logs: 0.2.2
       viem: 1.0.7_typescript@5.1.3
     devDependencies:
@@ -68,9 +68,6 @@ importers:
       prettier: 2.8.8
       tsup: 6.7.0_typescript@5.1.3
       typescript: 5.1.3
-
-  packages/fuzd:
-    specifiers: {}
 
   packages/remote-account:
     specifiers:
@@ -125,20 +122,20 @@ importers:
   platforms/cloudflare-worker:
     specifiers:
       '@cloudflare/workers-types': ^4.20230518.0
-      dreveal-executor: workspace:*
-      dreveal-executor-gateway: workspace:*
       eip-1193-json-provider: ^0.1.8
       eip-1193-signer: ^0.0.1
+      fuzd-executor: workspace:*
+      fuzd-executor-gateway: workspace:*
       itty-durable: ^2.0.0
       itty-router: ^4.0.9
       typescript: ^5.1.3
       viem: ^1.0.7
       wrangler: ^3.1.0
     dependencies:
-      dreveal-executor: link:../../packages/executor
-      dreveal-executor-gateway: link:../../packages/executor-gateway
       eip-1193-json-provider: 0.1.8
       eip-1193-signer: 0.0.1_typescript@5.1.3
+      fuzd-executor: link:../../packages/executor
+      fuzd-executor-gateway: link:../../packages/executor-gateway
       itty-durable: 2.0.0_itty-router@4.0.11
       itty-router: 4.0.11
       viem: 1.0.7_typescript@5.1.3
@@ -184,17 +181,18 @@ importers:
       '@types/chai': ^4.3.5
       '@types/chai-as-promised': ^7.1.5
       '@types/mocha': ^10.0.1
+      '@types/node': ^18.15.5
       abitype: ^0.8.9
       as-soon: ^0.0.4
       atomikv: workspace:*
       chai: ^4.3.7
       chai-as-promised: ^7.1.1
-      dreveal-executor: workspace:*
-      dreveal-executor-gateway: workspace:*
-      dreveal-scheduler: workspace:*
       eip-1193: ^0.4.7
       eip-1193-json-provider: ^0.1.8
       eip-1193-signer: ^0.0.1
+      fuzd-executor: workspace:*
+      fuzd-executor-gateway: workspace:*
+      fuzd-scheduler: workspace:*
       hardhat: ^2.15.0
       hardhat-rocketh: ^0.5.23
       ldenv: ^0.3.7
@@ -221,9 +219,9 @@ importers:
       '@scure/bip32': 1.3.0
       '@scure/bip39': 1.2.0
       atomikv: link:../packages/atomikv
-      dreveal-executor: link:../packages/executor
-      dreveal-executor-gateway: link:../packages/executor-gateway
-      dreveal-scheduler: link:../packages/scheduler
+      fuzd-executor: link:../packages/executor
+      fuzd-executor-gateway: link:../packages/executor-gateway
+      fuzd-scheduler: link:../packages/scheduler
       named-logs: 0.2.2
       viem: 1.0.7_typescript@5.1.3
     devDependencies:
@@ -232,6 +230,7 @@ importers:
       '@types/chai': 4.3.5
       '@types/chai-as-promised': 7.1.5
       '@types/mocha': 10.0.1
+      '@types/node': 18.16.18
       abitype: 0.8.10_typescript@5.1.3
       as-soon: 0.0.4
       chai: 4.3.7
@@ -253,7 +252,7 @@ importers:
       set-defaults: 0.0.1
       solidity-coverage: 0.8.2_hardhat@2.15.0
       solidity-proxy: 0.0.0
-      ts-node: 10.9.1_typescript@5.1.3
+      ts-node: 10.9.1_uc4mglbmg4gsgxc6hysq56typi
       tsup: 6.7.0_svbeilxtkdnrky2ijw4micj63u
       tsx: 3.12.7
       typescript: 5.1.3
@@ -2794,7 +2793,7 @@ packages:
       supports-color:
         optional: true
     dependencies:
-      ms: 2.1.3
+      ms: 2.1.1
       supports-color: 6.0.0
     dev: true
 
@@ -3669,7 +3668,7 @@ packages:
       fs.realpath: 1.0.0
       inflight: 1.0.6
       inherits: 2.0.4
-      minimatch: 3.1.2
+      minimatch: 3.0.4
       once: 1.4.0
       path-is-absolute: 1.0.1
     dev: true
@@ -3882,7 +3881,7 @@ packages:
       solc: 0.7.3_debug@4.3.4
       source-map-support: 0.5.21
       stacktrace-parser: 0.1.10
-      ts-node: 10.9.1_typescript@5.1.3
+      ts-node: 10.9.1_uc4mglbmg4gsgxc6hysq56typi
       tsort: 0.0.1
       typescript: 5.1.3
       undici: 5.22.1
@@ -5299,7 +5298,7 @@ packages:
         optional: true
     dependencies:
       lilconfig: 2.1.0
-      ts-node: 10.9.1_typescript@5.1.3
+      ts-node: 10.9.1_uc4mglbmg4gsgxc6hysq56typi
       yaml: 1.10.2
     dev: true
 
@@ -5556,7 +5555,7 @@ packages:
     resolution: {integrity: sha512-uWjbaKIK3T1OSVptzX7Nl6PvQ3qAGtKEtVRjRuazjfL3Bx5eI409VZSqgND+4UNnmzLVdPj9FqFJNPqBZFve4w==}
     hasBin: true
     dependencies:
-      glob: 7.2.3
+      glob: 7.2.0
     dev: true
 
   /rimraf/4.4.1:
@@ -6356,7 +6355,7 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
-  /ts-node/10.9.1_typescript@5.1.3:
+  /ts-node/10.9.1_uc4mglbmg4gsgxc6hysq56typi:
     resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
     hasBin: true
     peerDependencies:
@@ -6375,6 +6374,7 @@ packages:
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
+      '@types/node': 18.16.18
       acorn: 8.9.0
       acorn-walk: 8.2.0
       arg: 4.1.3
