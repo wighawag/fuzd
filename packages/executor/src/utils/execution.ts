@@ -1,7 +1,9 @@
 import {ScheduledExecution} from '../types/scheduler';
 import {ExecutionQueued} from '../types/scheduler-storage';
 
-export function computeFirstExecutionTimeFromSubmission(execution: ScheduledExecution): number {
+export function computeFirstExecutionTimeFromSubmission<TransactionDataType>(
+	execution: ScheduledExecution<TransactionDataType>
+): number {
 	if (execution.timing.type === 'fixed') {
 		const value = execution.timing.value;
 		if (value.type === 'time') {
@@ -31,8 +33,8 @@ export function computeFirstExecutionTimeFromSubmission(execution: ScheduledExec
 	}
 }
 
-export function computePotentialExecutionTime(
-	execution: ExecutionQueued,
+export function computePotentialExecutionTime<TransactionDataType>(
+	execution: ExecutionQueued<TransactionDataType>,
 	state?: {startTimeToCountFrom?: number; lastCheckin?: number}
 ): number {
 	if (execution.timing.type === 'fixed') {

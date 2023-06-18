@@ -3,7 +3,10 @@ import {ScheduledExecution, ScheduleInfo, Scheduler} from 'dreveal-executor';
 import {hashMessage, recoverAddress} from 'viem';
 import {SchedulerGateway} from './types/scheduler-gateway';
 
-export function initSchedulerGateway(scheduler: Scheduler, options?: {debug: boolean}): SchedulerGateway {
+export function initSchedulerGateway<TransactionDataType>(
+	scheduler: Scheduler<TransactionDataType>,
+	options?: {debug: boolean}
+): SchedulerGateway {
 	async function submitExecutionAsJsonString(
 		id: string,
 		execution: string,
@@ -24,7 +27,7 @@ export function initSchedulerGateway(scheduler: Scheduler, options?: {debug: boo
 			}
 		}
 		const actualID = `${account.toLowerCase()}_${id}`;
-		const parsed: ScheduledExecution = JSON.parse(execution);
+		const parsed: ScheduledExecution<TransactionDataType> = JSON.parse(execution);
 		return scheduler.submitExecution(actualID, account, parsed);
 	}
 

@@ -1,14 +1,6 @@
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {keccak_256} from '@noble/hashes/sha3';
-import {
-	Decrypter,
-	DecryptionResult,
-	ExecutionQueued,
-	ScheduledExecution,
-	ScheduledExecutionInClear,
-	ScheduledTimeLockedExecution,
-	TransactionSubmission,
-} from 'dreveal-executor';
+import {Decrypter, DecryptionResult, ExecutionQueued, TransactionSubmission} from 'dreveal-executor';
 
 function toHex(arr: Uint8Array): `0x${string}` {
 	let str = `0x`;
@@ -77,7 +69,7 @@ export function overrideProvider(
 	return obj;
 }
 
-export function createMockDecrypter(): Decrypter & {
+export function createMockDecrypter(): Decrypter<TransactionSubmission> & {
 	addDecryptedResult(id: string, transaction: TransactionSubmission): void;
 } {
 	const map: {[id: string]: TransactionSubmission} = {};
@@ -85,7 +77,9 @@ export function createMockDecrypter(): Decrypter & {
 		map[id] = transaction;
 	}
 
-	async function decrypt(execution: ExecutionQueued): Promise<DecryptionResult> {
+	async function decrypt(
+		execution: ExecutionQueued<TransactionSubmission>
+	): Promise<DecryptionResult<TransactionSubmission>> {
 		const transaction = map[execution.id];
 		if (transaction) {
 			return {

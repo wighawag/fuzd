@@ -1,4 +1,10 @@
-import {ExecutorConfig, SchedulerConfig, createExecutor, createScheduler} from 'dreveal-executor';
+import {
+	ExecutorConfig,
+	SchedulerConfig,
+	TransactionSubmission,
+	createExecutor,
+	createScheduler,
+} from 'dreveal-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {createInMemoryKeyValueDB} from './InMemoryKeyValueDB';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
@@ -59,9 +65,14 @@ export function createTestExecutor(config: TestExecutorConfig) {
 	};
 }
 
-export type TestSchedulerConfig = Omit<SchedulerConfig, 'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'>;
+export type TestSchedulerConfig<TransactionDataType, TransationInfoType> = Omit<
+	SchedulerConfig<TransactionDataType, TransationInfoType>,
+	'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
+>;
 
-export function createTestScheduler(config: TestSchedulerConfig) {
+export function createTestScheduler<TransactionDataType, TransationInfoType>(
+	config: TestSchedulerConfig<TransactionDataType, TransationInfoType>
+) {
 	const db = createInMemoryKeyValueDB();
 	return {
 		scheduler: createScheduler({

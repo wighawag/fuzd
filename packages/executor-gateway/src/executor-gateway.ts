@@ -3,7 +3,10 @@ import {Executor, TransactionSubmission, TransactionInfo} from 'dreveal-executor
 import {hashMessage, recoverAddress} from 'viem';
 import {ExecutorGateway} from './types/executor-gateway';
 
-export function initExecutorGateway(executor: Executor, options?: {debug: boolean}): ExecutorGateway {
+export function initExecutorGateway(
+	executor: Executor<TransactionSubmission, TransactionInfo>,
+	options?: {debug: boolean}
+): ExecutorGateway {
 	async function submitTransactionAsJsonString(
 		id: string,
 		submission: string,
