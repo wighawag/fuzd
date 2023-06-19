@@ -76,14 +76,19 @@ export type RawTransactionInfo = {
 	isVoidTransaction: boolean;
 };
 
-export type ExecutorConfig = {
-	chainId: string;
+export type ChainConfig = {
 	provider: EIP1193ProviderWithoutEvents;
+	finality: number;
+	worstCaseBlockTime: number;
+};
+
+export type ExecutorConfig = {
+	chainConfigs: {
+		[chainId: `0x${string}`]: ChainConfig;
+	};
 	time: Time;
 	storage: ExecutorStorage;
 	getSignerProviderFor: (account: EIP1193Account) => Promise<EIP1193SignerProvider>;
-	finality: number;
-	worstCaseBlockTime: number;
 	maxExpiry?: number;
 	maxNumTransactionsToProcessInOneGo?: number;
 };

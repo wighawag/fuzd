@@ -16,6 +16,7 @@ import {
 	RawTransactionInfo,
 	TransactionInfo,
 	TransactionParamsAndSigner,
+	ChainConfig,
 } from './types/executor';
 import {keccak_256} from '@noble/hashes/sha3';
 
@@ -39,12 +40,9 @@ function fromHex(str: `0x${string}`): Uint8Array {
 export function createExecutor(
 	config: ExecutorConfig
 ): Executor<TransactionSubmission, TransactionInfo> & ExecutorBackend {
-	const {provider, time, storage, getSignerProviderFor, chainId} = config;
-	const finality = config.finality;
-	const worstCaseBlockTime = config.worstCaseBlockTime;
+	const {chainConfigs, time, storage, getSignerProviderFor} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
-	const chainIdAsHex = `0x${BigInt(chainId).toString(16)}` as const;
 
 	async function submitTransaction(
 		id: string,
@@ -185,6 +183,7 @@ export function createExecutor(
 	async function _getTxParams(
 		transactionData: EIP1193TransactionToFill & {account: EIP1193Account}
 	): Promise<TransactionParamsAndSigner> {
+		const {provider, finality, worstCaseBlockTime} = _getChainConfig(transactionData.chainId);
 		const signer = await getSignerProviderFor(transactionData.account);
 		const [broadcasterAddress] = await signer.request({method: 'eth_accounts'});
 
@@ -226,6 +225,14 @@ export function createExecutor(
 		return {expectedNonce, nonce, broadcasterAddress, signer, gasRequired: BigInt(gasRequired)};
 	}
 
+	function _getChainConfig(chainId: `0x${string}`): ChainConfig {
+		const chainConfig = chainConfigs[chainId];
+		if (!chainConfig) {
+			throw new Error(`cannot get config for chain with id ${chainId}`);
+		}
+		return chainConfig;
+	}
+
 	async function _submitTransaction(
 		transactionData: Omit<
 			PendingExecutionStored,
@@ -233,6 +240,7 @@ export function createExecutor(
 		>,
 		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
 	): Promise<TransactionInfo> {
+		const {provider, finality, worstCaseBlockTime} = _getChainConfig(transactionData.chainId);
 		const txParams = await _getTxParams(transactionData);
 		const {gasRequired} = txParams;
 
@@ -261,11 +269,17 @@ export function createExecutor(
 		await storage.createOrUpdatePendingExecution(newTransactionData);
 
 		try {
-			await provider.request({method: 'eth_sendRawTransaction', params: [rawTxInfo.rawTx]});
+			await provider.request({
+				method: 'eth_sendRawTransaction',
+				params: [rawTxInfo.rawTx],
+			});
 		} catch (err) {
 			console.error(`The broadcast failed, we attempts one more time`, err);
 			try {
-				await provider.request({method: 'eth_sendRawTransaction', params: [rawTxInfo.rawTx]});
+				await provider.request({
+					method: 'eth_sendRawTransaction',
+					params: [rawTxInfo.rawTx],
+				});
 			} catch (err) {
 				console.error(
 					`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.`,
@@ -283,6 +297,7 @@ export function createExecutor(
 	}
 
 	async function _resubmitIfNeeded(pendingExecution: PendingExecutionStored): Promise<void> {
+		const {provider, finality, worstCaseBlockTime} = _getChainConfig(pendingExecution.chainId);
 		const timestamp = await time.getTimestamp();
 		const diff = timestamp - pendingExecution.broadcastTime;
 
@@ -332,6 +347,7 @@ export function createExecutor(
 	}
 
 	async function __processPendingTransaction(pendingExecution: PendingExecutionStored): Promise<void> {
+		const {provider, finality, worstCaseBlockTime} = _getChainConfig(pendingExecution.chainId);
 		const receipt = await provider.request({
 			method: 'eth_getTransactionReceipt',
 			params: [pendingExecution.hash],

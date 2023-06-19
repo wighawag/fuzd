@@ -6,6 +6,7 @@ import {
 	createExecutor,
 	ExecutorBackend,
 	ExecutorStorage,
+	ChainConfig,
 } from 'fuzd-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
@@ -23,7 +24,6 @@ export class SchedulerDO extends createDurable() {
 	constructor(state: DurableObjectState, env: Env) {
 		super(state, env);
 
-		const provider = new JSONRPCHTTPProvider('http://localhost:8545');
 		const db = state.storage;
 		this.executorStorage = new KVExecutorStorage(db);
 		this.schedulerStorage = new KVSchedulerStorage(db);
@@ -36,11 +36,6 @@ export class SchedulerDO extends createDurable() {
 		const privateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 		const signerProvider = new EIP1193LocalSigner(privateKey);
 		const baseConfig = {
-			chainId: '31337',
-			finality: 3,
-			worstCaseBlockTime: 15,
-			provider,
-
 			time,
 			async getSignerProviderFor(address: `0x${string}`) {
 				// TODO
@@ -48,6 +43,13 @@ export class SchedulerDO extends createDurable() {
 			},
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
+			chainConfigs: {
+				'0x31337': {
+					provider: new JSONRPCHTTPProvider('http://localhost:8545'),
+					finality: 3,
+					worstCaseBlockTime: 5,
+				} as ChainConfig,
+			},
 		};
 		const executorConfig = {
 			...baseConfig,

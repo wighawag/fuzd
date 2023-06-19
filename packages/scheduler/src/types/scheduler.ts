@@ -80,10 +80,14 @@ export type TimeBasedTiming = {
 
 export type FixedTiming = TimeBasedTiming | RoundBasedTiming;
 
+type BaseExecution = {
+	chainId: `0x${string}`;
+};
+
 export type ScheduledTimeLockedExecution<
 	StartTransactionType extends StartTransaction = StartTransaction,
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
-> = {
+> = BaseExecution & {
 	type: 'time-locked';
 	payload: `0x${string}`;
 	timing:
@@ -96,7 +100,7 @@ export type ScheduledExecutionInClear<
 	TransactionDataType,
 	StartTransactionType extends StartTransaction = StartTransaction,
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
-> = {
+> = BaseExecution & {
 	type: 'clear';
 	transaction: TransactionDataType;
 	timing:
@@ -112,15 +116,20 @@ export type ScheduledExecution<
 	| ScheduledTimeLockedExecution<StartTransactionType, AssumedTransactionType>
 	| ScheduledExecutionInClear<TransactionDataType, StartTransactionType, AssumedTransactionType>;
 
+export type ChainConfig = {
+	provider: EIP1193ProviderWithoutEvents;
+	finality: number;
+	worstCaseBlockTime: number;
+};
+
 export type SchedulerConfig<TransactionDataType, TransactionInfoType> = {
 	executor: Executor<TransactionDataType, TransactionInfoType>;
-	chainId: string;
-	provider: EIP1193ProviderWithoutEvents;
+	chainConfigs: {
+		[chainId: `0x${string}`]: ChainConfig;
+	};
 	decrypter?: Decrypter<TransactionDataType>;
 	time: Time;
 	storage: SchedulerStorage<TransactionDataType>;
-	finality: number;
-	worstCaseBlockTime: number;
 	maxExpiry?: number;
 	maxNumTransactionsToProcessInOneGo?: number;
 };

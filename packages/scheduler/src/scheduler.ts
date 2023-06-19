@@ -5,7 +5,14 @@ import {time2text} from './utils/time';
 import {EIP1193Account} from 'eip-1193';
 import {computePotentialExecutionTime, computeFirstExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
-import {ScheduledExecution, ScheduleInfo, Scheduler, SchedulerBackend, SchedulerConfig} from './types/scheduler';
+import {
+	ChainConfig,
+	ScheduledExecution,
+	ScheduleInfo,
+	Scheduler,
+	SchedulerBackend,
+	SchedulerConfig,
+} from './types/scheduler';
 import {ExecutionQueued} from './types/scheduler-storage';
 
 const logger = logs('fuzd-scheduler');
@@ -13,9 +20,7 @@ const logger = logs('fuzd-scheduler');
 export function createScheduler<TransactionDataType, TransactionInfoType>(
 	config: SchedulerConfig<TransactionDataType, TransactionInfoType>
 ): Scheduler<TransactionDataType> & SchedulerBackend {
-	const {provider, time, storage, executor, chainId} = config;
-	const finality = config.finality;
-	const worstCaseBlockTime = config.worstCaseBlockTime;
+	const {chainConfigs, time, storage, executor} = config;
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
@@ -113,6 +118,14 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		await storage.deleteExecution(execution);
 	}
 
+	function _getChainConfig(chainId: `0x${string}`): ChainConfig {
+		const chainConfig = chainConfigs[chainId];
+		if (!chainConfig) {
+			throw new Error(`cannot get config for chain with id ${chainId}`);
+		}
+		return chainConfig;
+	}
+
 	async function checkAndUpdateExecutionIfNeeded(
 		execution: ExecutionQueued<TransactionDataType>
 	): Promise<
@@ -121,6 +134,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		| {status: 'unchanged'; execution: ExecutionQueued<TransactionDataType>}
 		| {status: 'willRetry'; execution: ExecutionQueued<TransactionDataType>}
 	> {
+		const {provider, finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
 		// TODO callback for balance checks ?
 		const timestamp = await time.getTimestamp();
 
@@ -207,6 +221,8 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		}
 
 		for (const execution of executions) {
+			const {finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
+
 			const updates = await checkAndUpdateExecutionIfNeeded(execution);
 			if (updates.status === 'deleted' || updates.status === 'willRetry') {
 				continue;
