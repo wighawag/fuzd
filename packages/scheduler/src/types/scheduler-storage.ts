@@ -14,10 +14,11 @@ export type ExecutionQueued<TransactionDataType> = ScheduledExecution<
 
 export interface SchedulerStorage<TransactionDataType> {
 	getQueuedExecution(params: {
+		chainId: `0x${string}`;
 		id: string;
 		checkinTime: number;
 	}): Promise<ExecutionQueued<TransactionDataType> | undefined>;
-	deleteExecution(params: {id: string; checkinTime: number}): Promise<void>;
+	deleteExecution(params: {chainId: `0x${string}`; id: string; checkinTime: number}): Promise<void>;
 	queueExecution(executionToStore: ExecutionQueued<TransactionDataType>): Promise<ExecutionQueued<TransactionDataType>>;
 	updateExecutionInQueue(executionUpdated: ExecutionQueued<TransactionDataType>): Promise<void>;
 	reassignExecutionInQueue(oldCheckinTime: number, execution: ExecutionQueued<TransactionDataType>): Promise<void>;

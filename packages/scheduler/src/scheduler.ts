@@ -46,7 +46,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 			retries: 0,
 		};
 
-		const existingExecution = await storage.getQueuedExecution({id, checkinTime});
+		const existingExecution = await storage.getQueuedExecution({chainId: execution.chainId, id, checkinTime});
 		if (existingExecution) {
 			if (dequals(existingExecution, queuedExecution)) {
 				logger.info(
@@ -76,7 +76,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		if (execution.retries >= 10) {
 			logger.info(`deleting execution ${execution.id} after ${execution.retries} retries ...`);
 			// TODO hook await this._reduceSpending(reveal);
-			await storage.deleteExecution({id: execution.id, checkinTime: oldCheckinTime});
+			await storage.deleteExecution({chainId: execution.chainId, id: execution.id, checkinTime: oldCheckinTime});
 		} else {
 			execution.checkinTime = newCheckinTime;
 			await storage.reassignExecutionInQueue(oldCheckinTime, execution);

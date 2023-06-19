@@ -56,7 +56,7 @@ export function createExecutor(
 			throw new Error(`cannot proceed, this executor is not configured to support chain with id ${submission.chainId}`);
 		}
 
-		const existingExecution = await storage.getPendingExecution({id});
+		const existingExecution = await storage.getPendingExecution({chainId: submission.chainId, id});
 		if (existingExecution) {
 			throw new Error(
 				`execution already submitted, the id field is used as identifier. You can reexcute the same tx data but you just need to change the id field.

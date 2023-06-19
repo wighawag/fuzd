@@ -8,8 +8,8 @@ function lexicographicNumber(num: number, size: number): string {
 	return num.toString().padStart(size, '0');
 }
 
-function computeNextCheckID(chainId: `0x${string}`, broadcastTime: number, id: string): string {
-	return `checkin_${chainId}_${lexicographicNumber(broadcastTime, 12)}_${id}`;
+function computeNextCheckID(broadcastTime: number, chainId: `0x${string}`, id: string): string {
+	return `checkin_${lexicographicNumber(broadcastTime, 12)}_${chainId}_${id}`;
 }
 
 function computeExecutionID(chainId: `0x${string}`, id: string) {
@@ -21,30 +21,33 @@ type IndexID = {dbID: string};
 export class KVExecutorStorage implements ExecutorStorage {
 	constructor(private db: KeyValueDB) {}
 
-	async getPendingExecution(params: {id: string}): Promise<PendingExecutionStored | undefined> {
-		return this.db.get<PendingExecutionStored>(computeExecutionID(params.id));
+	async getPendingExecution(params: {chainId: `0x${string}`; id: string}): Promise<PendingExecutionStored | undefined> {
+		return this.db.get<PendingExecutionStored>(computeExecutionID(params.chainId, params.id));
 	}
 
-	async deletePendingExecution(params: {id: string}): Promise<void> {
+	async deletePendingExecution(params: {chainId: `0x${string}`; id: string}): Promise<void> {
 		await this.db.transaction(async (txn) => {
-			const execution = await this.db.get<PendingExecutionStored>(computeExecutionID(params.id));
+			const execution = await this.db.get<PendingExecutionStored>(computeExecutionID(params.chainId, params.id));
 			if (execution) {
-				await txn.delete(computeExecutionID(params.id));
-				await txn.delete(computeNextCheckID(execution.nextCheckTime, params.id));
+				await txn.delete(computeExecutionID(params.chainId, params.id));
+				await txn.delete(computeNextCheckID(execution.nextCheckTime, params.chainId, params.id));
 			}
 		});
 	}
 	async createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored> {
-		const dbID = computeExecutionID(executionToStore.id);
+		const dbID = computeExecutionID(executionToStore.chainId, executionToStore.id);
 		await this.db.transaction(async (txn) => {
 			const oldExecution = await txn.get<PendingExecutionStored>(dbID);
 			if (oldExecution) {
-				await txn.delete(computeNextCheckID(oldExecution.nextCheckTime, oldExecution.id));
+				await txn.delete(computeNextCheckID(oldExecution.nextCheckTime, oldExecution.chainId, oldExecution.id));
 			}
 			await txn.put<PendingExecutionStored>(dbID, executionToStore);
-			await txn.put<IndexID>(computeNextCheckID(executionToStore.nextCheckTime, executionToStore.id), {
-				dbID: dbID,
-			});
+			await txn.put<IndexID>(
+				computeNextCheckID(executionToStore.nextCheckTime, executionToStore.chainId, executionToStore.id),
+				{
+					dbID: dbID,
+				}
+			);
 		});
 		return executionToStore;
 	}

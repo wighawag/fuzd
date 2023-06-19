@@ -8,42 +8,48 @@ function lexicographicNumber(num: number, size: number): string {
 	return num.toString().padStart(size, '0');
 }
 
-function computeQueueID(chainId: `0x${string}`, checkinTime: number, id: string): string {
-	return `q_${chainId}_${lexicographicNumber(checkinTime, 12)}_${id}`;
+function computeQueueID(checkinTime: number, chainId: `0x${string}`, id: string): string {
+	return `q_${lexicographicNumber(checkinTime, 12)}_${chainId}_${id}`;
 }
 
 export class KVSchedulerStorage<TransactionDataType> implements SchedulerStorage<TransactionDataType> {
 	constructor(private db: KeyValueDB) {}
 
 	getQueuedExecution(params: {
+		chainId: `0x${string}`;
 		id: string;
 		checkinTime: number;
 	}): Promise<ExecutionQueued<TransactionDataType> | undefined> {
-		return this.db.get<ExecutionQueued<TransactionDataType>>(computeQueueID(params.checkinTime, params.id));
+		return this.db.get<ExecutionQueued<TransactionDataType>>(
+			computeQueueID(params.checkinTime, params.chainId, params.id)
+		);
 	}
-	async deleteExecution(params: {id: string; checkinTime: number}): Promise<void> {
-		await this.db.delete(computeQueueID(params.checkinTime, params.id));
+	async deleteExecution(params: {chainId: `0x${string}`; id: string; checkinTime: number}): Promise<void> {
+		await this.db.delete(computeQueueID(params.checkinTime, params.chainId, params.id));
 	}
 	async queueExecution(
 		executionToStore: ExecutionQueued<TransactionDataType>
 	): Promise<ExecutionQueued<TransactionDataType>> {
 		await this.db.put<ExecutionQueued<TransactionDataType>>(
-			computeQueueID(executionToStore.checkinTime, executionToStore.id),
+			computeQueueID(executionToStore.checkinTime, executionToStore.chainId, executionToStore.id),
 			executionToStore
 		);
 		return executionToStore;
 	}
 	async updateExecutionInQueue(executionUpdated: ExecutionQueued<TransactionDataType>): Promise<void> {
-		await this.db.put(computeQueueID(executionUpdated.checkinTime, executionUpdated.id), executionUpdated);
+		await this.db.put(
+			computeQueueID(executionUpdated.checkinTime, executionUpdated.chainId, executionUpdated.id),
+			executionUpdated
+		);
 	}
 	async reassignExecutionInQueue(
 		oldExecutionTime: number,
 		execution: ExecutionQueued<TransactionDataType>
 	): Promise<void> {
 		await this.db.transaction(async (txn) => {
-			await txn.delete(computeQueueID(oldExecutionTime, execution.id));
+			await txn.delete(computeQueueID(oldExecutionTime, execution.chainId, execution.id));
 			await txn.put<ExecutionQueued<TransactionDataType>>(
-				computeQueueID(execution.checkinTime, execution.id),
+				computeQueueID(execution.checkinTime, execution.chainId, execution.id),
 				execution
 			);
 		});
