@@ -51,6 +51,11 @@ export function createExecutor(
 	): Promise<TransactionInfo> {
 		submission = TransactionSubmission.parse(submission);
 
+		const chainConfig = chainConfigs[submission.chainId];
+		if (!chainConfig) {
+			throw new Error(`cannot proceed, this executor is not configured to support chain with id ${submission.chainId}`);
+		}
+
 		const existingExecution = await storage.getPendingExecution({id});
 		if (existingExecution) {
 			throw new Error(

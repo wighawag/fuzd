@@ -29,6 +29,13 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		account: EIP1193Account,
 		execution: ScheduledExecution<TransactionDataType>
 	): Promise<ScheduleInfo> {
+		const chainConfig = chainConfigs[execution.chainId];
+		if (!chainConfig) {
+			throw new Error(
+				`cannot proceed, this schjeduler is not configured to support chain with id ${execution.chainId}`
+			);
+		}
+
 		const checkinTime = computeFirstExecutionTimeFromSubmission(execution);
 
 		const queuedExecution: ExecutionQueued<TransactionDataType> = {
