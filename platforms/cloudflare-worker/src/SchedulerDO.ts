@@ -1,9 +1,16 @@
 import {createDurable} from 'itty-durable';
-import {Executor, TransactionInfo, TransactionSubmission, createExecutor, ExecutorBackend} from 'fuzd-executor';
+import {
+	Executor,
+	TransactionInfo,
+	TransactionSubmission,
+	createExecutor,
+	ExecutorBackend,
+	ExecutorStorage,
+} from 'fuzd-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {KVExecutorStorage, KVSchedulerStorage, initExecutorGateway, initSchedulerGateway} from 'fuzd-executor-gateway';
-import {Scheduler, SchedulerBackend, createScheduler} from 'fuzd-scheduler';
+import {Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
 
 interface Env {}
 
@@ -11,13 +18,15 @@ export class SchedulerDO extends createDurable() {
 	protected executor: Executor<TransactionSubmission, TransactionInfo> & ExecutorBackend;
 	protected scheduler: Scheduler<TransactionSubmission> & SchedulerBackend;
 	protected gateway: ReturnType<typeof initSchedulerGateway>;
+	protected executorStorage: ExecutorStorage;
+	protected schedulerStorage: SchedulerStorage<TransactionSubmission>;
 	constructor(state: DurableObjectState, env: Env) {
 		super(state, env);
 
 		const provider = new JSONRPCHTTPProvider('http://localhost:8545');
 		const db = state.storage;
-		const executorStorage = new KVExecutorStorage(db);
-		const schedulerStorage = new KVSchedulerStorage(db);
+		this.executorStorage = new KVExecutorStorage(db);
+		this.schedulerStorage = new KVSchedulerStorage(db);
 		const time = {
 			async getTimestamp() {
 				return Math.floor(Date.now() / 1000);
@@ -42,7 +51,7 @@ export class SchedulerDO extends createDurable() {
 		};
 		const executorConfig = {
 			...baseConfig,
-			storage: executorStorage,
+			storage: this.executorStorage,
 		};
 		this.executor = createExecutor(executorConfig);
 
@@ -50,7 +59,7 @@ export class SchedulerDO extends createDurable() {
 			...baseConfig,
 			executor: this.executor,
 			// TODO decrypter: ,
-			storage: schedulerStorage,
+			storage: this.schedulerStorage,
 		};
 		this.scheduler = createScheduler(schedulerConfig);
 
@@ -74,5 +83,13 @@ export class SchedulerDO extends createDurable() {
 
 	processPendingTransactions() {
 		return this.executor.processPendingTransactions();
+	}
+
+	getPendingTransactions() {
+		return this.executorStorage.getPendingExecutions({limit: 100});
+	}
+
+	getQueue() {
+		return this.schedulerStorage.getQueueTopMostExecutions({limit: 100});
 	}
 }

@@ -22,23 +22,19 @@ router
 	// get the durable itself... returns json response, so no need to wrap
 	.get('/json', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').toJSON())
 
-	.post('/sendTransaction', async (request) => {
+	.post('/scheduleExecution', async (request) => {
 		const jsonAsString = await request.text();
 		const signature = request.headers.get('signature') as `0x${string}`;
 		const result = await request.SCHEDULER.get('SINGLETON').submitExecution(jsonAsString, signature);
 		return json(result);
 	})
 
-	// // By using { autoReturn: true } in createDurable(), this method returns the contents
-	// .get('/increment', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').increment())
+	// get the durable itself... returns json response, so no need to wrap
+	.get('/queue', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').getQueue())
 
-	// // you can pass any serializable params to a method... (e.g. /counter/add/3/4 => 7)
-	// .get('/add/:a?/:b?', withParams, ({SCHEDULER, a, b}) => SCHEDULER.get('SINGLETON').add(Number(a), Number(b)))
+	// get the durable itself... returns json response, so no need to wrap
+	.get('/transactions', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').getPendingTransactions())
 
-	// // reset the durable
-	// .get('/reset', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').reset())
-
-	// 404 for everything else
 	.all('*', () => error(404, 'Are you sure about that?'));
 
 const fetch = (request: Request, ...args: any[]) => {
