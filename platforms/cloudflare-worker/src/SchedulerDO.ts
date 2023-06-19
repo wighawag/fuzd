@@ -67,7 +67,7 @@ export class SchedulerDO extends createDurable() {
 	}
 
 	home() {
-		return 'hello';
+		return 'fuzd';
 	}
 
 	async submitExecution(executionAsString: string, signature: `0x${string}`) {
