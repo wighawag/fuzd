@@ -17,7 +17,6 @@ importers:
 
   packages/executor:
     specifiers:
-      '@jsdevtools/ono': ^7.1.3
       '@noble/hashes': ^1.3.1
       '@nomicfoundation/ethereumjs-rlp': ^5.0.1
       abitype: ^0.8.5
@@ -28,12 +27,13 @@ importers:
       prettier: ^2.8.8
       tsup: ^6.7.0
       typescript: ^5.0.4
+      wighawag-ono: ^7.1.3
       zod: ^3.21.4
     dependencies:
-      '@jsdevtools/ono': 7.1.3
       '@noble/hashes': 1.3.1
       '@nomicfoundation/ethereumjs-rlp': 5.0.1
       named-logs: 0.2.2
+      wighawag-ono: 7.1.3
       zod: 3.21.4
     devDependencies:
       abitype: 0.8.10_i2fvzue2cjjncoywjfv7hcm7mu
@@ -46,7 +46,6 @@ importers:
 
   packages/executor-abi-encoded-gateway:
     specifiers:
-      '@jsdevtools/ono': ^7.1.3
       atomikv: workspace:^
       fuzd-executor: workspace:*
       fuzd-scheduler: workspace:*
@@ -56,12 +55,13 @@ importers:
       tsup: ^6.7.0
       typescript: ^5.0.4
       viem: ^1.0.5
+      wighawag-ono: ^7.1.3
     dependencies:
-      '@jsdevtools/ono': 7.1.3
       fuzd-executor: link:../executor
       fuzd-scheduler: link:../scheduler
       named-logs: 0.2.2
       viem: 1.0.7_typescript@5.1.3
+      wighawag-ono: 7.1.3
     devDependencies:
       atomikv: link:../atomikv
       ldenv: 0.3.7
@@ -71,7 +71,6 @@ importers:
 
   packages/executor-gateway:
     specifiers:
-      '@jsdevtools/ono': ^7.1.3
       atomikv: workspace:^
       fuzd-executor: workspace:*
       fuzd-scheduler: workspace:*
@@ -81,12 +80,13 @@ importers:
       tsup: ^6.7.0
       typescript: ^5.0.4
       viem: ^1.0.5
+      wighawag-ono: ^7.1.3
     dependencies:
-      '@jsdevtools/ono': 7.1.3
       fuzd-executor: link:../executor
       fuzd-scheduler: link:../scheduler
       named-logs: 0.2.2
       viem: 1.0.7_typescript@5.1.3
+      wighawag-ono: 7.1.3
     devDependencies:
       atomikv: link:../atomikv
       ldenv: 0.3.7
@@ -117,7 +117,6 @@ importers:
 
   packages/scheduler:
     specifiers:
-      '@jsdevtools/ono': ^7.1.3
       '@noble/hashes': ^1.3.1
       '@nomicfoundation/ethereumjs-rlp': ^5.0.1
       abitype: ^0.8.5
@@ -128,12 +127,13 @@ importers:
       prettier: ^2.8.8
       tsup: ^6.7.0
       typescript: ^5.0.4
+      wighawag-ono: ^7.1.3
       zod: ^3.21.4
     dependencies:
-      '@jsdevtools/ono': 7.1.3
       '@noble/hashes': 1.3.1
       '@nomicfoundation/ethereumjs-rlp': 5.0.1
       named-logs: 0.2.2
+      wighawag-ono: 7.1.3
       zod: 3.21.4
     devDependencies:
       abitype: 0.8.10_i2fvzue2cjjncoywjfv7hcm7mu
@@ -151,6 +151,7 @@ importers:
       eip-1193-signer: ^0.0.1
       fuzd-executor: workspace:*
       fuzd-executor-gateway: workspace:*
+      fuzd-scheduler: workspace:*
       itty-durable: ^2.0.0
       itty-router: ^4.0.9
       typescript: ^5.1.3
@@ -161,6 +162,7 @@ importers:
       eip-1193-signer: 0.0.1_typescript@5.1.3
       fuzd-executor: link:../../packages/executor
       fuzd-executor-gateway: link:../../packages/executor-gateway
+      fuzd-scheduler: link:../../packages/scheduler
       itty-durable: 2.0.0_itty-router@4.0.11
       itty-router: 4.0.11
       viem: 1.0.7_typescript@5.1.3
@@ -1388,10 +1390,6 @@ packages:
       '@jridgewell/resolve-uri': 3.1.1
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
-
-  /@jsdevtools/ono/7.1.3:
-    resolution: {integrity: sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg==}
-    dev: false
 
   /@manypkg/find-root/1.1.0:
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
@@ -6866,6 +6864,10 @@ packages:
     dependencies:
       string-width: 2.1.1
     dev: true
+
+  /wighawag-ono/7.1.3:
+    resolution: {integrity: sha512-5AutMWc2ig5QAOEBAPIiAscwJETr9qSHh7Q1UpwUgiB/LmVZ2mpxSRD4t4suJPSQTAnktVfBo5TFJ3gZJpZ++w==}
+    dev: false
 
   /word-wrap/1.2.3:
     resolution: {integrity: sha512-Hz/mrNwitNRh/HUAtM/VT/5VH+ygD6DV7mYKZAtHOrbs8U7lvPS6xf7EJKMF0uW1KJCl0H701g3ZGus+muE5vQ==}

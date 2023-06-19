@@ -1,5 +1,5 @@
 import {logs} from 'named-logs';
-import ono from '@jsdevtools/ono';
+import ono from 'wighawag-ono';
 import {
 	BroadcasterData,
 	EIP1193TransactionDataUsed,

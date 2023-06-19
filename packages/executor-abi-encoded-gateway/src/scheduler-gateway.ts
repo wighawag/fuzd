@@ -1,4 +1,4 @@
-import ono from '@jsdevtools/ono';
+import ono from 'wighawag-ono';
 import {ScheduledExecution, ScheduleInfo, Scheduler} from 'fuzd-scheduler';
 import {hashMessage, recoverAddress, encodeAbiParameters} from 'viem';
 import {SchedulerGateway, SignedScheduledExecution} from './types/scheduler-gateway';

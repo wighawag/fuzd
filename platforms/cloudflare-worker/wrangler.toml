@@ -4,9 +4,9 @@ compatibility_date = "2023-05-18"
 
 [durable_objects]
 bindings = [
-  { name = "EXECUTOR", class_name = "ExecutorDO" }
+  { name = "SCHEDULER", class_name = "SchedulerDO" }
 ]
 
 [[migrations]]
 tag = "v1"
-new_classes = ["ExecutorDO"]
+new_classes = ["SchedulerDO"]

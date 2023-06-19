@@ -1,4 +1,4 @@
-import ono from '@jsdevtools/ono';
+import ono from 'wighawag-ono';
 import {Executor, TransactionSubmission, TransactionInfo} from 'fuzd-executor';
 import {hashMessage, recoverAddress} from 'viem';
 import {ExecutorGateway} from './types/executor-gateway';
