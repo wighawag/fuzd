@@ -8,8 +8,8 @@ function lexicographicNumber(num: number, size: number): string {
 	return num.toString().padStart(size, '0');
 }
 
-function computeQueueID(checkinTime: number, id: string): string {
-	return `q_${lexicographicNumber(checkinTime, 12)}_${id}`;
+function computeQueueID(chainId: `0x${string}`, checkinTime: number, id: string): string {
+	return `q_${chainId}_${lexicographicNumber(checkinTime, 12)}_${id}`;
 }
 
 export class KVSchedulerStorage<TransactionDataType> implements SchedulerStorage<TransactionDataType> {

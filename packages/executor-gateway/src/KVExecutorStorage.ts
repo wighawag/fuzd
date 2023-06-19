@@ -8,12 +8,12 @@ function lexicographicNumber(num: number, size: number): string {
 	return num.toString().padStart(size, '0');
 }
 
-function computeNextCheckID(broadcastTime: number, id: string): string {
-	return `checkin_${lexicographicNumber(broadcastTime, 12)}_${id}`;
+function computeNextCheckID(chainId: `0x${string}`, broadcastTime: number, id: string): string {
+	return `checkin_${chainId}_${lexicographicNumber(broadcastTime, 12)}_${id}`;
 }
 
-function computeExecutionID(id: string) {
-	return `tx_${id}`;
+function computeExecutionID(chainId: `0x${string}`, id: string) {
+	return `tx_${chainId}_${id}`;
 }
 
 type IndexID = {dbID: string};
