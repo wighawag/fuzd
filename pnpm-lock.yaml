@@ -44,6 +44,31 @@ importers:
       tsup: 6.7.0_typescript@5.1.3
       typescript: 5.1.3
 
+  packages/executor-abi-encoded-gateway:
+    specifiers:
+      '@jsdevtools/ono': ^7.1.3
+      atomikv: workspace:^
+      fuzd-executor: workspace:*
+      fuzd-scheduler: workspace:*
+      ldenv: ^0.3.5
+      named-logs: ^0.2.2
+      prettier: ^2.8.8
+      tsup: ^6.7.0
+      typescript: ^5.0.4
+      viem: ^1.0.5
+    dependencies:
+      '@jsdevtools/ono': 7.1.3
+      fuzd-executor: link:../executor
+      fuzd-scheduler: link:../scheduler
+      named-logs: 0.2.2
+      viem: 1.0.7_typescript@5.1.3
+    devDependencies:
+      atomikv: link:../atomikv
+      ldenv: 0.3.7
+      prettier: 2.8.8
+      tsup: 6.7.0_typescript@5.1.3
+      typescript: 5.1.3
+
   packages/executor-gateway:
     specifiers:
       '@jsdevtools/ono': ^7.1.3

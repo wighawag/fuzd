@@ -10,7 +10,6 @@ export default execute(
 			{
 				account: accounts.deployer,
 				artifact: artifacts.ExecutionOnChain,
-				args: [''],
 			},
 			{
 				owner: accounts.deployer,
