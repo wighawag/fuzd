@@ -122,11 +122,13 @@ export type ChainConfig = {
 	worstCaseBlockTime: number;
 };
 
+export type ChainConfigs = {
+	[chainId: `0x${string}`]: ChainConfig;
+};
+
 export type SchedulerConfig<TransactionDataType, TransactionInfoType> = {
 	executor: Executor<TransactionDataType, TransactionInfoType>;
-	chainConfigs: {
-		[chainId: `0x${string}`]: ChainConfig;
-	};
+	chainConfigs: ChainConfigs;
 	decrypter?: Decrypter<TransactionDataType>;
 	time: Time;
 	storage: SchedulerStorage<TransactionDataType>;

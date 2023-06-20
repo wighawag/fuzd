@@ -12,19 +12,18 @@ import {
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {KVExecutorStorage, KVSchedulerStorage, initExecutorGateway, initSchedulerGateway} from 'fuzd-executor-gateway';
-import {Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
+import {ChainConfigs, Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
 import {initAccountFromHD} from 'remote-account';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import type {EIP1193Account} from 'eip-1193';
 
-interface Env {}
+interface Env {
+	HD_MNEMONIC?: string;
+	[chainId: `CHAIN_0x${string}`]: string | undefined;
+}
 
 const defaultPath = "m/44'/60'/0'/0/0";
-const seed = bip39.mnemonicToSeedSync('test test test test test test test test test test test junk');
-const masterKey = HDKey.fromMasterSeed(seed);
-const accountHDKey = masterKey.derive(defaultPath);
-const account = initAccountFromHD(accountHDKey);
 
 export class SchedulerDO extends createDurable() {
 	protected executor: Executor<TransactionSubmission, TransactionInfo> & ExecutorBackend;
@@ -32,8 +31,61 @@ export class SchedulerDO extends createDurable() {
 	protected gateway: ReturnType<typeof initSchedulerGateway>;
 	protected executorStorage: ExecutorStorage;
 	protected schedulerStorage: SchedulerStorage<TransactionSubmission>;
+	protected account: ReturnType<typeof initAccountFromHD>;
 	constructor(state: DurableObjectState, env: Env) {
 		super(state, env);
+		const DO = this;
+
+		const chainConfigs: ChainConfigs = {
+			'0x7169': {
+				provider: new JSONRPCHTTPProvider('http://localhost:8545'),
+				finality: 3,
+				worstCaseBlockTime: 5,
+			} as ChainConfig,
+		};
+
+		const envKeys = Object.keys(env);
+		for (const envKey of envKeys) {
+			if (envKey.startsWith('CHAIN_0x')) {
+				const chainId = envKey.substring(6) as `0x${string}`;
+				const chainString = env[envKey as `CHAIN_0x${string}`] as string;
+				const [nodeURL, paramsString] = chainString.split('#');
+
+				let finality = 12;
+				let worstCaseBlockTime = 15;
+				const paramsSplits = paramsString.split('&');
+				for (const split of paramsSplits) {
+					const [key, value] = split.split('=');
+					if (value) {
+						if (key === 'finality') {
+							const intValue = parseInt(value);
+							if (!isNaN(intValue)) {
+								finality = intValue;
+							}
+						} else if (key === 'worstCaseBlockTime') {
+							const intValue = parseInt(value);
+							if (!isNaN(intValue)) {
+								worstCaseBlockTime = intValue;
+							}
+						}
+					}
+				}
+				chainConfigs[chainId] = {
+					provider: new JSONRPCHTTPProvider(nodeURL),
+					finality,
+					worstCaseBlockTime,
+				};
+			}
+		}
+
+		const mnemonic = env.HD_MNEMONIC;
+		if (!mnemonic) {
+			throw new Error(`no HD_MNEMONIC defined`);
+		}
+		const seed = bip39.mnemonicToSeedSync(mnemonic);
+		const masterKey = HDKey.fromMasterSeed(seed);
+		const accountHDKey = masterKey.derive(defaultPath);
+		this.account = initAccountFromHD(accountHDKey);
 
 		const db = state.storage;
 		this.executorStorage = new KVExecutorStorage(db);
@@ -43,22 +95,20 @@ export class SchedulerDO extends createDurable() {
 				return Math.floor(Date.now() / 1000);
 			},
 		};
-		// account 0 of test test ... junk : 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-		const privateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
-		const signerProvider = new EIP1193LocalSigner(privateKey);
+
 		const baseConfig = {
 			time,
 			signers: {
 				async assignProviderFor(chainId: `0x${string}`, forAddress: EIP1193Account): Promise<BroadcasterSignerData> {
-					const derivedAccount = account.deriveForAddress(forAddress);
+					const derivedAccount = DO.account.deriveForAddress(forAddress);
 					return {
 						signer: new EIP1193LocalSigner(derivedAccount.privateKey),
-						assignerID: account.publicExtendedKey,
+						assignerID: DO.account.publicExtendedKey,
 						address: derivedAccount.address,
 					};
 				},
 				async getProviderByAssignerID(assignerID: string, forAddress: EIP1193Account): Promise<BroadcasterSignerData> {
-					const derivedAccount = account.deriveForAddress(forAddress);
+					const derivedAccount = DO.account.deriveForAddress(forAddress);
 					// TODO get it from assignerID
 					return {
 						signer: new EIP1193LocalSigner(derivedAccount.privateKey),
@@ -69,13 +119,7 @@ export class SchedulerDO extends createDurable() {
 			},
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
-			chainConfigs: {
-				'0x31337': {
-					provider: new JSONRPCHTTPProvider('http://localhost:8545'),
-					finality: 3,
-					worstCaseBlockTime: 5,
-				} as ChainConfig,
-			},
+			chainConfigs,
 		};
 		const executorConfig = {
 			...baseConfig,

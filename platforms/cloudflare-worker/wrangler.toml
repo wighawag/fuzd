@@ -2,6 +2,15 @@ name = "fuzd-worker"
 main = "src/index.ts"
 compatibility_date = "2023-05-18"
 
+[vars]
+
+# The necessary secrets are:
+# - HD_MNEMONIC
+# - CHAIN_0x<CHAINID>
+# see in .dev.vars.default
+# Run `echo <VALUE> | wrangler secret put <NAME>` for each of these
+
+
 [durable_objects]
 bindings = [
   { name = "SCHEDULER", class_name = "SchedulerDO" }

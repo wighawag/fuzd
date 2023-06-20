@@ -82,6 +82,10 @@ export type ChainConfig = {
 	worstCaseBlockTime: number;
 };
 
+export type ChainConfigs = {
+	[chainId: `0x${string}`]: ChainConfig;
+};
+
 export type BroadcasterSignerData = {assignerID: string; signer: EIP1193SignerProvider; address: EIP1193Account};
 
 export type Signers = {
@@ -90,9 +94,7 @@ export type Signers = {
 };
 
 export type ExecutorConfig = {
-	chainConfigs: {
-		[chainId: `0x${string}`]: ChainConfig;
-	};
+	chainConfigs: ChainConfigs;
 	time: Time;
 	storage: ExecutorStorage;
 	signers: Signers;
