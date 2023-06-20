@@ -17,10 +17,13 @@ const time = initTime();
 const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
 
 const executorConfig = {
-	chainId: '31337',
-	finality: 1,
-	worstCaseBlockTime: 2,
-	provider,
+	chainConfigs: {
+		'0x7a69': {
+			finality: 1,
+			worstCaseBlockTime: 3,
+			provider,
+		},
+	},
 	time,
 };
 const {executor, publicExtendedKey} = createTestExecutor(executorConfig);
@@ -82,6 +85,7 @@ describe('Executing on the registry', function () {
 		const timestamp = await time.getTimestamp();
 		const checkinTime = timestamp + 100;
 		const result = await scheduler.submitExecution((++counter).toString(), user, {
+			chainId: '0x7a69',
 			type: 'clear',
 			timing: {
 				type: 'fixed',
@@ -127,6 +131,7 @@ describe('Executing on the registry', function () {
 		const id = (++counter).toString();
 		mockDecrypter.addDecryptedResult(id, transaction);
 		const result = await scheduler.submitExecution(id, user, {
+			chainId: '0x7a69',
 			type: 'time-locked',
 			timing: {
 				type: 'fixed',

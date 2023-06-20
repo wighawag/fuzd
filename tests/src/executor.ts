@@ -1,4 +1,4 @@
-import {ExecutorConfig, createExecutor} from 'fuzd-executor';
+import {BroadcasterSignerData, ExecutorConfig, createExecutor} from 'fuzd-executor';
 import {SchedulerConfig, createScheduler} from 'fuzd-scheduler';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {createInMemoryKeyValueDB} from './InMemoryKeyValueDB';
@@ -41,7 +41,7 @@ const account = initAccountFromHD(accountHDKey);
 
 export type TestExecutorConfig = Omit<
 	ExecutorConfig,
-	'getSignerProviderFor' | 'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
+	'signers' | 'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
 >;
 
 export function createTestExecutor(config: TestExecutorConfig) {
@@ -49,8 +49,24 @@ export function createTestExecutor(config: TestExecutorConfig) {
 	return {
 		executor: createExecutor({
 			...config,
-			async getSignerProviderFor(address: EIP1193Account) {
-				return new EIP1193LocalSigner(account.deriveForAddress(address).privateKey);
+			signers: {
+				async getProviderByAssignerID(assignerID: string, forAddress: EIP1193Account): Promise<BroadcasterSignerData> {
+					const derivedAccount = account.deriveForAddress(forAddress);
+					// TODO get it from id
+					return {
+						signer: new EIP1193LocalSigner(derivedAccount.privateKey),
+						assignerID,
+						address: derivedAccount.address,
+					};
+				},
+				async assignProviderFor(chainId: `0x${string}`, forAddress: EIP1193Account): Promise<BroadcasterSignerData> {
+					const derivedAccount = account.deriveForAddress(forAddress);
+					return {
+						signer: new EIP1193LocalSigner(derivedAccount.privateKey),
+						assignerID: account.publicExtendedKey,
+						address: derivedAccount.address,
+					};
+				},
 			},
 			storage: new KVExecutorStorage(db),
 			maxExpiry: 24 * 3600,

@@ -23,6 +23,7 @@ export type BroadcasterData = {
 
 export type PendingExecutionStored = EIP1193TransactionDataUsed & {
 	id: string;
+	broadcasterAssignerID: string;
 	broadcastTime: number;
 	nextCheckTime: number;
 	hash: EIP1193DATA;

@@ -16,10 +16,13 @@ const time = initTime();
 const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
 
 const {executor, publicExtendedKey} = createTestExecutor({
-	chainId: '31337',
-	finality: 1,
-	worstCaseBlockTime: 2,
-	provider,
+	chainConfigs: {
+		'0x7a69': {
+			finality: 1,
+			worstCaseBlockTime: 3,
+			provider,
+		},
+	},
 	time,
 });
 

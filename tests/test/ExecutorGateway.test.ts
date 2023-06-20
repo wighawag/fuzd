@@ -14,10 +14,13 @@ import {initExecutorGateway} from 'fuzd-executor-gateway';
 const time = initTime();
 
 const {executor, publicExtendedKey} = createTestExecutor({
-	chainId: '31337',
-	finality: 1,
-	worstCaseBlockTime: 2,
-	provider: network.provider as EIP1193ProviderWithoutEvents,
+	chainConfigs: {
+		'0x7a69': {
+			finality: 1,
+			worstCaseBlockTime: 3,
+			provider: network.provider as EIP1193ProviderWithoutEvents,
+		},
+	},
 	time,
 });
 

@@ -6,7 +6,7 @@ import {
 	EIP1193TransactionToFill,
 	PendingExecutionStored,
 } from './types/executor-storage';
-import {EIP1193Account} from 'eip-1193';
+import {EIP1193Account, EIP1193SignerProvider} from 'eip-1193';
 import {
 	TransactionSubmission,
 	Executor,
@@ -15,12 +15,18 @@ import {
 	FeePerGasPeriod,
 	RawTransactionInfo,
 	TransactionInfo,
-	TransactionParamsAndSigner,
 	ChainConfig,
+	TransactionParams,
+	BroadcasterSignerData,
 } from './types/executor';
 import {keccak_256} from '@noble/hashes/sha3';
 
 const logger = logs('fuzd-executor');
+
+type TransactionToStore = Omit<
+	PendingExecutionStored,
+	'hash' | 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'broadcastTime' | 'nextCheckTime'
+>;
 
 function toHex(arr: Uint8Array): `0x${string}` {
 	let str = `0x`;
@@ -40,7 +46,7 @@ function fromHex(str: `0x${string}`): Uint8Array {
 export function createExecutor(
 	config: ExecutorConfig
 ): Executor<TransactionSubmission, TransactionInfo> & ExecutorBackend {
-	const {chainConfigs, time, storage, getSignerProviderFor} = config;
+	const {chainConfigs, time, storage, signers} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
@@ -65,34 +71,48 @@ export function createExecutor(
 			);
 		}
 
+		const broadcaster = await signers.assignProviderFor(submission.chainId, account);
+		const pendingExecutionToStore: TransactionToStore = {
+			...submission,
+			account,
+			id,
+			from: broadcaster.address,
+			broadcasterAssignerID: broadcaster.assignerID,
+		};
+
+		await _updateFees(pendingExecutionToStore);
+
 		const currentMaxFee = submission.broadcastSchedule[0];
 
 		// TODO we use global broadcastSchedule using fixed time
 		// so if you sent a tx 2 hour ago and the current schedule 2hour later is smaller than
 		// the newly submitted tx schedule (for now) then we will resubmit the tx with that new fee schedule
 
-		const result = await _submitTransaction(
-			{...submission, account, id},
-			{
-				maxFeePerGas: BigInt(currentMaxFee.maxFeePerGas),
-				maxPriorityFeePerGas: BigInt(currentMaxFee.maxPriorityFeePerGas),
-			}
-		);
+		const result = await _submitTransaction(broadcaster, pendingExecutionToStore, {
+			maxFeePerGas: BigInt(currentMaxFee.maxFeePerGas),
+			maxPriorityFeePerGas: BigInt(currentMaxFee.maxPriorityFeePerGas),
+		});
 		return result;
+	}
+
+	async function _updateFees(latestTransaction: TransactionToStore) {
+		console.log(`TODO update fees of existing pending transactions to ensure new execution get a chance...`);
+		// const txs = await storage.getPendingExecutionsForBroadcaster(account);
 	}
 
 	async function _signTransaction(
 		transactionData: EIP1193TransactionToFill & {account: EIP1193Account},
-		txParamsAndSigners: TransactionParamsAndSigner,
+		broadcaster: BroadcasterSignerData,
+		txParams: TransactionParams,
 		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
 	): Promise<RawTransactionInfo> {
 		let actualTransactionData: EIP1193TransactionDataUsed;
 
-		const signer = txParamsAndSigners.signer;
-		const from = txParamsAndSigners.broadcasterAddress;
+		const signer = broadcaster.signer;
+		const from = broadcaster.address;
 
-		const expectedNonce = txParamsAndSigners.expectedNonce;
-		let nonce = txParamsAndSigners.nonce;
+		const expectedNonce = txParams.expectedNonce;
+		let nonce = txParams.nonce;
 		let nonceIncreased = false;
 		if (options.forceNonce) {
 			nonce = options.forceNonce;
@@ -186,11 +206,10 @@ export function createExecutor(
 	}
 
 	async function _getTxParams(
+		broadcasterAddress: EIP1193Account,
 		transactionData: EIP1193TransactionToFill & {account: EIP1193Account}
-	): Promise<TransactionParamsAndSigner> {
-		const {provider, finality, worstCaseBlockTime} = _getChainConfig(transactionData.chainId);
-		const signer = await getSignerProviderFor(transactionData.account);
-		const [broadcasterAddress] = await signer.request({method: 'eth_accounts'});
+	): Promise<TransactionParams> {
+		const {provider} = _getChainConfig(transactionData.chainId);
 
 		const nonceAsHex = await provider.request({
 			method: 'eth_getTransactionCount',
@@ -227,7 +246,7 @@ export function createExecutor(
 			throw ono(err, 'The transaction reverts. Aborting here');
 		}
 
-		return {expectedNonce, nonce, broadcasterAddress, signer, gasRequired: BigInt(gasRequired)};
+		return {expectedNonce, nonce, gasRequired: BigInt(gasRequired)};
 	}
 
 	function _getChainConfig(chainId: `0x${string}`): ChainConfig {
@@ -239,21 +258,19 @@ export function createExecutor(
 	}
 
 	async function _submitTransaction(
-		transactionData: Omit<
-			PendingExecutionStored,
-			'from' | 'hash' | 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'broadcastTime' | 'nextCheckTime'
-		>,
+		broadcaster: BroadcasterSignerData,
+		transactionData: TransactionToStore,
 		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
 	): Promise<TransactionInfo> {
-		const {provider, finality, worstCaseBlockTime} = _getChainConfig(transactionData.chainId);
-		const txParams = await _getTxParams(transactionData);
+		const {provider} = _getChainConfig(transactionData.chainId);
+		const txParams = await _getTxParams(broadcaster.address, transactionData);
 		const {gasRequired} = txParams;
 
 		if (gasRequired > BigInt(transactionData.gas)) {
 			throw new Error(`The transaction requires more gas than provided. Aborting here`);
 		}
 
-		const rawTxInfo = await _signTransaction(transactionData, txParams, options);
+		const rawTxInfo = await _signTransaction(transactionData, broadcaster, txParams, options);
 		const hash = toHex(keccak_256(fromHex(rawTxInfo.rawTx)));
 
 		const retries = typeof transactionData.retries === 'undefined' ? 0 : transactionData.retries + 1;
@@ -270,6 +287,7 @@ export function createExecutor(
 			broadcastTime: timestamp,
 			nextCheckTime,
 			retries,
+			broadcasterAssignerID: broadcaster.assignerID,
 		};
 		await storage.createOrUpdatePendingExecution(newTransactionData);
 
@@ -343,7 +361,14 @@ export function createExecutor(
 			maxFeePerGasUsed < maxFeePerGas ||
 			(maxFeePerGasUsed === maxFeePerGas && maxPriorityFeePerGasUsed < maxPriorityFeePerGas)
 		) {
-			await _submitTransaction(pendingExecution, {
+			const signer = await signers.getProviderByAssignerID(
+				pendingExecution.broadcasterAssignerID,
+				pendingExecution.account
+			);
+			if (!signer) {
+				// TODO
+			}
+			await _submitTransaction(signer, pendingExecution, {
 				forceNonce: parseInt(pendingExecution.nonce.slice(2), 16),
 				maxFeePerGas,
 				maxPriorityFeePerGas,

@@ -82,13 +82,20 @@ export type ChainConfig = {
 	worstCaseBlockTime: number;
 };
 
+export type BroadcasterSignerData = {assignerID: string; signer: EIP1193SignerProvider; address: EIP1193Account};
+
+export type Signers = {
+	assignProviderFor: (chainId: `0x${string}`, account: EIP1193Account) => Promise<BroadcasterSignerData>;
+	getProviderByAssignerID: (assignerID: string, address: EIP1193Account) => Promise<BroadcasterSignerData>;
+};
+
 export type ExecutorConfig = {
 	chainConfigs: {
 		[chainId: `0x${string}`]: ChainConfig;
 	};
 	time: Time;
 	storage: ExecutorStorage;
-	getSignerProviderFor: (account: EIP1193Account) => Promise<EIP1193SignerProvider>;
+	signers: Signers;
 	maxExpiry?: number;
 	maxNumTransactionsToProcessInOneGo?: number;
 };
@@ -101,10 +108,8 @@ export type ExecutorBackend = {
 	processPendingTransactions(): Promise<void>;
 };
 
-export type TransactionParamsAndSigner = {
+export type TransactionParams = {
 	expectedNonce: number;
 	nonce: number;
-	broadcasterAddress: EIP1193Account;
-	signer: EIP1193SignerProvider;
 	gasRequired: bigint;
 };
