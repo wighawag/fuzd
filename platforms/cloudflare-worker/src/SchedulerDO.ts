@@ -53,23 +53,26 @@ export class SchedulerDO extends createDurable() {
 
 				let finality = 12;
 				let worstCaseBlockTime = 15;
-				const paramsSplits = paramsString.split('&');
-				for (const split of paramsSplits) {
-					const [key, value] = split.split('=');
-					if (value) {
-						if (key === 'finality') {
-							const intValue = parseInt(value);
-							if (!isNaN(intValue)) {
-								finality = intValue;
-							}
-						} else if (key === 'worstCaseBlockTime') {
-							const intValue = parseInt(value);
-							if (!isNaN(intValue)) {
-								worstCaseBlockTime = intValue;
+				if (paramsString) {
+					const paramsSplits = paramsString.split('&');
+					for (const split of paramsSplits) {
+						const [key, value] = split.split('=');
+						if (value) {
+							if (key === 'finality') {
+								const intValue = parseInt(value);
+								if (!isNaN(intValue)) {
+									finality = intValue;
+								}
+							} else if (key === 'worstCaseBlockTime') {
+								const intValue = parseInt(value);
+								if (!isNaN(intValue)) {
+									worstCaseBlockTime = intValue;
+								}
 							}
 						}
 					}
 				}
+
 				chainConfigs[chainId] = {
 					provider: new JSONRPCHTTPProvider(nodeURL),
 					finality,
@@ -151,6 +154,10 @@ export class SchedulerDO extends createDurable() {
 			console.error(err);
 			throw err;
 		}
+	}
+
+	getPublicKey() {
+		return new Response(this.account.publicExtendedKey);
 	}
 
 	processPendingTransactions() {

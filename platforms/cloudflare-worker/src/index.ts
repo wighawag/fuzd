@@ -20,7 +20,7 @@ router
 	.get('/', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').home())
 
 	// get the durable itself... returns json response, so no need to wrap
-	.get('/json', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').toJSON())
+	.get('/publicKey', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').getPublicKey())
 
 	.post('/scheduleExecution', async (request) => {
 		const jsonAsString = await request.text();
