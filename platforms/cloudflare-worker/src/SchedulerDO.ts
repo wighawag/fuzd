@@ -7,13 +7,24 @@ import {
 	ExecutorBackend,
 	ExecutorStorage,
 	ChainConfig,
+	BroadcasterSignerData,
 } from 'fuzd-executor';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {KVExecutorStorage, KVSchedulerStorage, initExecutorGateway, initSchedulerGateway} from 'fuzd-executor-gateway';
 import {Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
+import {initAccountFromHD} from 'remote-account';
+import * as bip39 from '@scure/bip39';
+import {HDKey} from '@scure/bip32';
+import type {EIP1193Account} from 'eip-1193';
 
 interface Env {}
+
+const defaultPath = "m/44'/60'/0'/0/0";
+const seed = bip39.mnemonicToSeedSync('test test test test test test test test test test test junk');
+const masterKey = HDKey.fromMasterSeed(seed);
+const accountHDKey = masterKey.derive(defaultPath);
+const account = initAccountFromHD(accountHDKey);
 
 export class SchedulerDO extends createDurable() {
 	protected executor: Executor<TransactionSubmission, TransactionInfo> & ExecutorBackend;
@@ -37,9 +48,24 @@ export class SchedulerDO extends createDurable() {
 		const signerProvider = new EIP1193LocalSigner(privateKey);
 		const baseConfig = {
 			time,
-			async getSignerProviderFor(address: `0x${string}`) {
-				// TODO
-				return signerProvider;
+			signers: {
+				async assignProviderFor(chainId: `0x${string}`, forAddress: EIP1193Account): Promise<BroadcasterSignerData> {
+					const derivedAccount = account.deriveForAddress(forAddress);
+					return {
+						signer: new EIP1193LocalSigner(derivedAccount.privateKey),
+						assignerID: account.publicExtendedKey,
+						address: derivedAccount.address,
+					};
+				},
+				async getProviderByAssignerID(assignerID: string, forAddress: EIP1193Account): Promise<BroadcasterSignerData> {
+					const derivedAccount = account.deriveForAddress(forAddress);
+					// TODO get it from assignerID
+					return {
+						signer: new EIP1193LocalSigner(derivedAccount.privateKey),
+						assignerID,
+						address: derivedAccount.address,
+					};
+				},
 			},
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
