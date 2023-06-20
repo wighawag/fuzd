@@ -98,7 +98,7 @@ export type ScheduledTimeLockedExecution<
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
 > = BaseExecution & {
 	type: 'time-locked';
-	payload: `0x${string}`;
+	payload: string;
 	timing:
 		| FixedTimeScheduledExecution<FixedTimingType, AssumedTransactionType>
 		| DeltaScheduledExecution<DeltaTimingType, StartTransactionType>;
