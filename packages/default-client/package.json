@@ -1,0 +1,37 @@
+{
+  "name": "fuzd-default-client",
+  "version": "0.1.0",
+  "description": "default client for fuzd using tlock-js",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "volta": {
+    "node": "18.7.0"
+  },
+  "dependencies": {
+    "fuzd-executor": "workspace:*",
+    "fuzd-scheduler": "workspace:*",
+    "isomorphic-unfetch": "^3.1.0",
+    "named-logs": "^0.2.2",
+    "tlock-js": "^0.6.1",
+    "viem": "^1.0.7"
+  },
+  "devDependencies": {
+    "ldenv": "^0.3.5",
+    "prettier": "^2.8.8",
+    "tsup": "^6.7.0",
+    "tsx": "^3.12.7",
+    "typescript": "^5.0.4"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --dts --sourcemap --format esm,cjs",
+    "dev": "tsup src/index.ts --dts --sourcemap --format esm,cjs --watch",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "tsx": "tsx"
+  }
+}

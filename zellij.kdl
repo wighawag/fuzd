@@ -14,6 +14,12 @@ layout {
 			pane name="executor" command="bash" {
 				args "-c" "pnpm run --filter ./packages/executor dev; cd packages/executor; ${SHELL-bash}"
 			}
+			pane name="tlock-decrypter" command="bash" {
+				args "-c" "pnpm run --filter ./packages/tlock-decrypter dev; cd packages/tlock-decrypter; ${SHELL-bash}"
+			}
+			pane name="default-client" command="bash" {
+				args "-c" "pnpm run --filter ./packages/default-client dev; cd packages/default-client; ${SHELL-bash}"
+			}
 			pane name="scheduler" command="bash" {
 				args "-c" "pnpm run --filter ./packages/scheduler dev; cd packages/scheduler; ${SHELL-bash}"
 			}

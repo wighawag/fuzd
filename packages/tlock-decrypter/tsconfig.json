@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		"moduleResolution": "node",
+		"target": "es2020",
+		"lib": ["es2022", "dom"],
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSourceMap": true,
+		"strict": true
+	}
+}

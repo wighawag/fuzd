@@ -1,4 +1,4 @@
-import {EIP1193Account, EIP1193ProviderWithoutEvents} from 'eip-1193';
+import {EIP1193Account, EIP1193DATA, EIP1193ProviderWithoutEvents} from 'eip-1193';
 // import {AbiEvent} from 'abitype';
 import {ExecutionQueued, SchedulerStorage} from './scheduler-storage';
 import {Executor, Time} from './common';
@@ -48,7 +48,12 @@ export type FixedTimeScheduledExecution<
 
 export type DecryptionResult<TransactionDataType> =
 	| {success: true; transaction: TransactionDataType}
-	| {success: false; retry?: number};
+	| {
+			success: false;
+			newPayload?: EIP1193DATA;
+			newTimeValue?: FixedTiming | PartiallyHiddenTimeValue;
+			retry?: number;
+	  };
 
 export type Decrypter<TransactionDataType> = {
 	decrypt(execution: ExecutionQueued<TransactionDataType>): Promise<DecryptionResult<TransactionDataType>>;
@@ -84,37 +89,51 @@ type BaseExecution = {
 	chainId: `0x${string}`;
 };
 
+export type TimingTypes = FixedTiming | PartiallyHiddenTimeValue;
+
 export type ScheduledTimeLockedExecution<
+	FixedTimingType extends TimingTypes,
+	DeltaTimingType extends FixedTiming,
 	StartTransactionType extends StartTransaction = StartTransaction,
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
 > = BaseExecution & {
 	type: 'time-locked';
 	payload: `0x${string}`;
 	timing:
-		| FixedTimeScheduledExecution<FixedTiming | PartiallyHiddenTimeValue, AssumedTransactionType>
-		| DeltaScheduledExecution<FixedTiming, StartTransactionType>;
+		| FixedTimeScheduledExecution<FixedTimingType, AssumedTransactionType>
+		| DeltaScheduledExecution<DeltaTimingType, StartTransactionType>;
 	// TODO algo:
 };
 
 export type ScheduledExecutionInClear<
 	TransactionDataType,
+	FixedTimingType extends TimingTypes,
+	DeltaTimingType extends FixedTiming,
 	StartTransactionType extends StartTransaction = StartTransaction,
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
 > = BaseExecution & {
 	type: 'clear';
 	transaction: TransactionDataType;
 	timing:
-		| FixedTimeScheduledExecution<FixedTiming | PartiallyHiddenTimeValue, AssumedTransactionType>
-		| DeltaScheduledExecution<FixedTiming, StartTransactionType>;
+		| FixedTimeScheduledExecution<FixedTimingType, AssumedTransactionType>
+		| DeltaScheduledExecution<DeltaTimingType, StartTransactionType>;
 };
 
 export type ScheduledExecution<
 	TransactionDataType,
+	FixedTimingType extends TimingTypes = TimingTypes,
+	DeltaTimingType extends FixedTiming = FixedTiming,
 	StartTransactionType extends StartTransaction = StartTransaction,
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
 > =
-	| ScheduledTimeLockedExecution<StartTransactionType, AssumedTransactionType>
-	| ScheduledExecutionInClear<TransactionDataType, StartTransactionType, AssumedTransactionType>;
+	| ScheduledTimeLockedExecution<FixedTimingType, DeltaTimingType, StartTransactionType, AssumedTransactionType>
+	| ScheduledExecutionInClear<
+			TransactionDataType,
+			FixedTimingType,
+			DeltaTimingType,
+			StartTransactionType,
+			AssumedTransactionType
+	  >;
 
 export type ChainConfig = {
 	provider: EIP1193ProviderWithoutEvents;
