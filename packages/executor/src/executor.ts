@@ -96,8 +96,9 @@ export function createExecutor(
 	}
 
 	async function _updateFees(latestTransaction: TransactionToStore) {
-		console.log(`TODO update fees of existing pending transactions to ensure new execution get a chance...`);
-		// const txs = await storage.getPendingExecutionsForBroadcaster(account);
+		// TODO
+		// console.log(`TODO update fees of existing pending transactions to ensure new execution get a chance...`);
+		// await storage.updateFees(account);
 	}
 
 	async function _signTransaction(
