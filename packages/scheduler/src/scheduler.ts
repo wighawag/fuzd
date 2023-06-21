@@ -106,7 +106,9 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 					return {type: 'reassigned', reason: 'decryption retry'};
 				} else {
 					// failed to decrypt and no retry, this means the decryption is failing
-					await storage.deleteExecution(execution);
+					// TODO
+					// await storage.deleteExecution(execution);
+					logger.info(decryptionResult);
 					return {type: 'deleted', reason: 'failed to decrypt'};
 				}
 			}

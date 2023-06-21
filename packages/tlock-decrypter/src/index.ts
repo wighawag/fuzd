@@ -1,7 +1,11 @@
 import {ExecutionQueued, FixedTiming} from 'fuzd-scheduler';
 import {RoundBasedTiming} from 'fuzd-scheduler';
 import {Decrypter, DecryptionResult} from 'fuzd-scheduler';
-import {timelockDecrypt, HttpChainClient, roundTime} from 'tlock-js';
+import {timelockDecrypt, HttpChainClient, roundTime, Buffer} from 'tlock-js';
+globalThis.Buffer = Buffer; // required
+import {logs} from 'named-logs';
+
+const logger = logs('fuzd-tlock-decrypter');
 
 export type DecrypterConfig = {
 	client: HttpChainClient;
@@ -30,6 +34,7 @@ export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Dec
 		try {
 			decrypted = await timelockDecrypt(execution.payload, config.client);
 		} catch (err) {
+			logger.error(err);
 			return {
 				success: false,
 				retry: 0, // TODO
