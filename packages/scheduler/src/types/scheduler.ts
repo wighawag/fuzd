@@ -167,6 +167,14 @@ export type Scheduler<TransactionDataType> = {
 	): Promise<ScheduleInfo>;
 };
 
+export type ExecutionStatus = 'broadcasted' | 'deleted' | 'reassigned' | 'skipped';
+
+export type QueueProcessingResult = {
+	timestamp: number;
+	limit: number;
+	executions: {id: string; checkinTime: number; status: ExecutionStatus}[];
+};
+
 export type SchedulerBackend = {
-	processQueue(): Promise<void>;
+	processQueue(): Promise<QueueProcessingResult>;
 };

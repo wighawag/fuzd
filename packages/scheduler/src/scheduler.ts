@@ -7,6 +7,8 @@ import {computePotentialExecutionTime, computeFirstExecutionTimeFromSubmission} 
 import {displayExecution} from './utils/debug';
 import {
 	ChainConfig,
+	ExecutionStatus,
+	QueueProcessingResult,
 	ScheduledExecution,
 	ScheduleInfo,
 	Scheduler,
@@ -84,7 +86,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		return execution;
 	}
 
-	async function execute(execution: ExecutionQueued<TransactionDataType>) {
+	async function execute(execution: ExecutionQueued<TransactionDataType>): Promise<ExecutionStatus> {
 		let transaction: TransactionDataType;
 		if (execution.type === 'time-locked') {
 			if (!config.decrypter) {
@@ -101,11 +103,12 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 					const oldCheckinTime = execution.checkinTime;
 					execution.checkinTime = decryptionResult.retry;
 					await storage.reassignExecutionInQueue(oldCheckinTime, execution);
+					return 'reassigned';
 				} else {
 					// failed to decrypt and no retry, this means the decryption is failing
 					await storage.deleteExecution(execution);
+					return 'deleted';
 				}
-				return;
 			}
 		} else {
 			transaction = execution.transaction;
@@ -123,6 +126,8 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		// if for some reason `executor.submitTransaction(...)` fails to return but has actually broadcasted the tx
 		// the scheduler will attempt again. the id tell the executor to not reexecute
 		await storage.deleteExecution(execution);
+
+		return 'broadcasted';
 	}
 
 	function _getChainConfig(chainId: `0x${string}`): ChainConfig {
@@ -210,8 +215,14 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 
 	async function processQueue() {
 		const timestamp = await time.getTimestamp();
-
 		const limit = maxNumTransactionsToProcessInOneGo;
+
+		const result: QueueProcessingResult = {
+			timestamp,
+			limit,
+			executions: [],
+		};
+
 		// TODO only query up to a certain time
 		const executions = await storage.getQueueTopMostExecutions({limit});
 
@@ -232,6 +243,11 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 
 			const updates = await checkAndUpdateExecutionIfNeeded(execution);
 			if (updates.status === 'deleted' || updates.status === 'willRetry') {
+				result.executions.push({
+					id: execution.id,
+					checkinTime: execution.checkinTime,
+					status: updates.status === 'deleted' ? 'deleted' : 'reassigned',
+				});
 				continue;
 			}
 
@@ -250,22 +266,44 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 				logger.info(`too late, deleting ${displayExecution(execution)}...`);
 
 				await storage.deleteExecution(execution);
+				result.executions.push({
+					id: execution.id,
+					checkinTime: execution.checkinTime,
+					status: 'deleted',
+				});
 				continue;
 			}
 
 			if (timestamp >= newCheckinTime) {
 				// execute if it is the time
-				await execute(executionUpdated);
+				const status = await execute(executionUpdated);
+				result.executions.push({
+					id: execution.id,
+					checkinTime: execution.checkinTime,
+					status,
+				});
 			} else {
 				// if not, then in most case we detected a change in the execution time
 				if (updates.status === 'changed') {
 					await storage.updateExecutionInQueue(executionUpdated);
+					result.executions.push({
+						id: execution.id,
+						checkinTime: execution.checkinTime,
+						status: 'reassigned',
+					});
 				} else {
 					// For now as we do not limit result to a certain time, we will reach there often
 					logger.info(`not yet time: ${time2text(newCheckinTime - timestamp)} to wait...`);
+					result.executions.push({
+						id: execution.id,
+						checkinTime: execution.checkinTime,
+						status: 'skipped',
+					});
 				}
 			}
 		}
+
+		return result;
 	}
 
 	return {
