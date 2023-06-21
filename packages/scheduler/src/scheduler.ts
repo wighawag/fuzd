@@ -235,7 +235,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		} else {
 			logger.info(
 				`found ${executions.length} queued execution from ${executions[0].checkinTime} to ${
-					executions[executions.length].checkinTime
+					executions[executions.length - 1].checkinTime
 				}`
 			);
 		}
