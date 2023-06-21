@@ -2,6 +2,11 @@ import {IRequest, Router, createCors, error, json} from 'itty-router';
 import {withDurables} from 'itty-durable';
 import {SchedulerDO} from './SchedulerDO';
 
+// TODO named-console detect _logFactory if exist
+const Logger = (globalThis as any)._logFactory;
+Logger.enable('*');
+Logger.level = 6;
+
 const {preflight, corsify} = createCors();
 
 export {SchedulerDO} from './SchedulerDO';
