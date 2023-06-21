@@ -103,11 +103,11 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 					const oldCheckinTime = execution.checkinTime;
 					execution.checkinTime = decryptionResult.retry;
 					await storage.reassignExecutionInQueue(oldCheckinTime, execution);
-					return 'reassigned';
+					return {type: 'reassigned', reason: 'decryption retry'};
 				} else {
 					// failed to decrypt and no retry, this means the decryption is failing
 					await storage.deleteExecution(execution);
-					return 'deleted';
+					return {type: 'deleted', reason: 'failed to decrypt'};
 				}
 			}
 		} else {
@@ -119,7 +119,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		// for encrypted payload we will attempt to decrypt
 		// if it fails, we will push it accoridng to time schedule
 
-		await executor.submitTransaction(execution.id, execution.account, transaction);
+		const executionResult = await executor.submitTransaction(execution.id, execution.account, transaction);
 
 		// if we reaches there, the execution is now handled by the executor
 		// the schedule has done its job
@@ -127,7 +127,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		// the scheduler will attempt again. the id tell the executor to not reexecute
 		await storage.deleteExecution(execution);
 
-		return 'broadcasted';
+		return {type: 'broadcasted', reason: `broadcasted via tx ${executionResult && (executionResult as any).hash}`};
 	}
 
 	function _getChainConfig(chainId: `0x${string}`): ChainConfig {
@@ -243,10 +243,22 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 
 			const updates = await checkAndUpdateExecutionIfNeeded(execution);
 			if (updates.status === 'deleted' || updates.status === 'willRetry') {
+				let status: ExecutionStatus;
+				if (updates.status === 'deleted') {
+					status = {
+						type: 'deleted',
+						reason: 'udpates deleted',
+					};
+				} else {
+					status = {
+						type: 'reassigned',
+						reason: 'updates willRetry',
+					};
+				}
 				result.executions.push({
 					id: execution.id,
 					checkinTime: execution.checkinTime,
-					status: updates.status === 'deleted' ? 'deleted' : 'reassigned',
+					status,
 				});
 				continue;
 			}
@@ -269,7 +281,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 				result.executions.push({
 					id: execution.id,
 					checkinTime: execution.checkinTime,
-					status: 'deleted',
+					status: {type: 'deleted', reason: 'too late'},
 				});
 				continue;
 			}
@@ -289,7 +301,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 					result.executions.push({
 						id: execution.id,
 						checkinTime: execution.checkinTime,
-						status: 'reassigned',
+						status: {type: 'reassigned', reason: 'changed'},
 					});
 				} else {
 					// For now as we do not limit result to a certain time, we will reach there often
@@ -297,7 +309,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 					result.executions.push({
 						id: execution.id,
 						checkinTime: execution.checkinTime,
-						status: 'skipped',
+						status: {type: 'skipped', reason: 'not yet time'},
 					});
 				}
 			}
