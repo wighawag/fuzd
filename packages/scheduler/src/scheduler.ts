@@ -216,11 +216,11 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		const executions = await storage.getQueueTopMostExecutions({limit});
 
 		if (executions.length === 0) {
-			console.log(`found zero executions to process`);
+			logger.info(`found zero executions to process`);
 		} else if (executions.length === 1) {
-			console.log(`found 1 queued execution for ${executions[0].checkinTime}`);
+			logger.info(`found 1 queued execution for ${executions[0].checkinTime}`);
 		} else {
-			console.log(
+			logger.info(
 				`found ${executions.length} queued execution from ${executions[0].checkinTime} to ${
 					executions[executions.length].checkinTime
 				}`

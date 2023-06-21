@@ -21,6 +21,7 @@
     "fuzd-tlock-decrypter": "workspace:*",
     "itty-durable": "^2.0.0",
     "itty-router": "^4.0.9",
+    "named-logs": "^0.2.2",
     "remote-account": "workspace:*",
     "tlock-js": "^0.6.1",
     "viem": "^1.0.7"

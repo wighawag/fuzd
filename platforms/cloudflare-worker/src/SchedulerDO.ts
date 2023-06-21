@@ -19,6 +19,9 @@ import {HDKey} from '@scure/bip32';
 import type {EIP1193Account} from 'eip-1193';
 import {initDecrypter} from 'fuzd-tlock-decrypter';
 import {testnetClient} from 'tlock-js';
+import {logs} from 'named-logs';
+
+const logger = logs('fuzd-cf-worker');
 
 interface Env {
 	HD_MNEMONIC?: string;
@@ -153,10 +156,9 @@ export class SchedulerDO extends createDurable() {
 	async submitExecution(executionAsString: string, signature: `0x${string}`) {
 		try {
 			const scheduled = await this.gateway.submitExecutionAsJsonString(signature, executionAsString, signature);
-			console.log(scheduled);
 			return scheduled;
 		} catch (err) {
-			console.error(err);
+			logger.error(err);
 			throw err;
 		}
 	}

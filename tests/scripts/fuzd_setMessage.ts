@@ -8,7 +8,6 @@ import {privateKeyToAccount, generatePrivateKey} from 'viem/accounts';
 import {createClient} from 'fuzd-default-client';
 import {testnetClient} from 'tlock-js';
 import {deriveRemoteAddress} from 'remote-account';
-import {waitForTransactionReceipt} from 'viem/src/actions/public/waitForTransactionReceipt';
 
 async function main() {
 	const env = await loadEnvironment(
@@ -29,11 +28,11 @@ async function main() {
 	const Registry = env.deployments.Registry as Deployment<typeof context.artifacts.GreetingsRegistry.abi>;
 	const data = await encodeFunctionData({...Registry, functionName: 'setMessage', args: [message, 2]});
 
-	const schedulerEndPoint = 'http://127.0.0.1:8787';
+	const schedulerHost = 'http://127.0.0.1:8787';
 
-	const privateKey = generatePrivateKey();
+	const privateKey = `0x31672bc8a7a0462ba57920bf7ab60690f60ba1fb7711423cc0d9eedce19f62b7`; // generatePrivateKey();
 	const wallet = privateKeyToAccount(privateKey);
-	const publicKey = await fetch(`${schedulerEndPoint}/publicKey`).then((v) => v.text());
+	const publicKey = await fetch(`${schedulerHost}/publicKey`).then((v) => v.text());
 	const remoteAddress = deriveRemoteAddress(publicKey, wallet.address);
 
 	const remoteAddressBalance = await publicClient.getBalance({address: remoteAddress});
@@ -77,7 +76,7 @@ async function main() {
 	const client = createClient({
 		drand: testnetClient(),
 		privateKey: privateKey,
-		schedulerEndPoint,
+		schedulerEndPoint: `${schedulerHost}/scheduleExecution`,
 	});
 
 	const scheduleInfo = await client.submitExecution({
@@ -93,8 +92,6 @@ async function main() {
 		gas,
 	});
 
-	const checkinTime = scheduleInfo.checkinTime;
-
-	console.log({remoteAddress, checkinTime, gas, account: wallet.address});
+	console.log({remoteAddress, scheduleInfo, gas, account: wallet.address});
 }
 main();

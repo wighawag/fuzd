@@ -295,6 +295,9 @@ importers:
       itty-router:
         specifier: ^4.0.9
         version: 4.0.11
+      named-logs:
+        specifier: ^0.2.2
+        version: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
       remote-account:
         specifier: workspace:*
         version: link:../../packages/remote-account
