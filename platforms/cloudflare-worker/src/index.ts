@@ -29,11 +29,11 @@ router
 		return json(result);
 	})
 
-	// get the durable itself... returns json response, so no need to wrap
 	.get('/queue', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').getQueue())
+	.get('/processQueue', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').processQueue())
 
-	// get the durable itself... returns json response, so no need to wrap
 	.get('/transactions', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').getPendingTransactions())
+	.get('/processTransactions', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').processPendingTransactions())
 
 	.all('*', () => error(404, 'Are you sure about that?'));
 

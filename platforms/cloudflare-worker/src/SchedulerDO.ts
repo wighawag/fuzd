@@ -17,6 +17,8 @@ import {initAccountFromHD} from 'remote-account';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import type {EIP1193Account} from 'eip-1193';
+import {initDecrypter} from 'fuzd-tlock-decrypter';
+import {testnetClient} from 'tlock-js';
 
 interface Env {
 	HD_MNEMONIC?: string;
@@ -130,10 +132,13 @@ export class SchedulerDO extends createDurable() {
 		};
 		this.executor = createExecutor(executorConfig);
 
+		const decrypter = initDecrypter({
+			client: testnetClient(),
+		});
 		const schedulerConfig = {
 			...baseConfig,
 			executor: this.executor,
-			// TODO decrypter: ,
+			decrypter,
 			storage: this.schedulerStorage,
 		};
 		this.scheduler = createScheduler(schedulerConfig);
@@ -158,6 +163,10 @@ export class SchedulerDO extends createDurable() {
 
 	getPublicKey() {
 		return new Response(this.account.publicExtendedKey);
+	}
+
+	processQueue() {
+		return this.scheduler.processQueue();
 	}
 
 	processPendingTransactions() {

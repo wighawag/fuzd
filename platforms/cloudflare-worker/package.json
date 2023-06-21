@@ -18,9 +18,11 @@
     "fuzd-executor": "workspace:*",
     "fuzd-executor-gateway": "workspace:*",
     "fuzd-scheduler": "workspace:*",
+    "fuzd-tlock-decrypter": "workspace:*",
     "itty-durable": "^2.0.0",
     "itty-router": "^4.0.9",
     "remote-account": "workspace:*",
+    "tlock-js": "^0.6.1",
     "viem": "^1.0.7"
   },
   "scripts": {

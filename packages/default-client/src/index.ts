@@ -4,6 +4,7 @@ import fetch from 'isomorphic-unfetch';
 import {privateKeyToAccount} from 'viem/accounts';
 import {TimeBasedTiming} from 'fuzd-scheduler';
 import {RoundBasedTiming} from 'fuzd-scheduler';
+import {BroadcastSchedule, TransactionSubmission} from 'fuzd-executor';
 
 export type ClientConfig = {
 	drand: HttpChainClient;
@@ -11,7 +12,19 @@ export type ClientConfig = {
 	privateKey: `0x${string}`;
 };
 
-export function createClient<TransactionDataType>(config: ClientConfig) {
+// TODO share with decrypter
+export type DecryptedPayload<TransactionDataType> =
+	| {
+			type: 'time-locked';
+			payload: string;
+			timing: RoundBasedTiming;
+	  }
+	| {
+			type: 'clear';
+			transaction: TransactionDataType;
+	  };
+
+export function createClient(config: ClientConfig) {
 	const wallet = privateKeyToAccount(config.privateKey);
 	async function submitExecution(execution: {
 		chainId: `0x${string}` | string;
@@ -28,23 +41,35 @@ export function createClient<TransactionDataType>(config: ClientConfig) {
 		time: number;
 	}): Promise<ScheduleInfo> {
 		let executionToSend: ScheduledExecution<
-			TransactionDataType,
+			TransactionSubmission,
 			RoundBasedTiming | TimeBasedTiming,
 			RoundBasedTiming | TimeBasedTiming
 		>;
-		const payloadJSON = {};
-		const payloadAsJSONString = JSON.stringify(payloadJSON);
-		let round: number;
-		let expectedTime: number;
-		// const latestBeacon = await config.drand.latest();
-		// const currentRound = latestBeacon.round;
-		const drandChainInfo = await config.drand.chain().info();
-		round = roundAt(execution.time, drandChainInfo);
-		expectedTime = roundTime(drandChainInfo, round);
 
 		const chainId = (
 			execution.chainId.startsWith('0x') ? execution.chainId : `0x` + parseInt(execution.chainId).toString(16)
 		) as `0x${string}`;
+
+		const payloadJSON: DecryptedPayload<TransactionSubmission> = {
+			type: 'clear',
+			transaction: {
+				type: '0x2',
+				chainId,
+				gas: ('0x' + execution.gas.toString(16)) as `0x${string}`,
+				broadcastSchedule: execution.broadcastSchedule.map((v) => ({
+					duration: ('0x' + v.duration.toString(16)) as `0x${string}`,
+					maxFeePerGas: ('0x' + v.maxFeePerGas.toString(16)) as `0x${string}`,
+					maxPriorityFeePerGas: ('0x' + v.maxPriorityFeePerGas.toString(16)) as `0x${string}`,
+				})) as BroadcastSchedule,
+				data: execution.data,
+				to: execution.to,
+			},
+		};
+		const payloadAsJSONString = JSON.stringify(payloadJSON);
+
+		let round: number;
+		const drandChainInfo = await config.drand.chain().info();
+		round = roundAt(execution.time * 1000, drandChainInfo);
 
 		const payload = await timelockEncrypt(round, Buffer.from(payloadAsJSONString, 'utf-8'), config.drand);
 		executionToSend = {
@@ -53,7 +78,7 @@ export function createClient<TransactionDataType>(config: ClientConfig) {
 				type: 'fixed',
 				value: {
 					type: 'round',
-					expectedTime,
+					expectedTime: execution.time,
 					round,
 				},
 			},

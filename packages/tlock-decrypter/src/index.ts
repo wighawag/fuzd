@@ -1,10 +1,22 @@
-import {ExecutionQueued} from 'fuzd-scheduler';
+import {ExecutionQueued, FixedTiming} from 'fuzd-scheduler';
+import {RoundBasedTiming} from 'fuzd-scheduler';
 import {Decrypter, DecryptionResult} from 'fuzd-scheduler';
-import {timelockDecrypt, HttpChainClient} from 'tlock-js';
+import {timelockDecrypt, HttpChainClient, roundTime} from 'tlock-js';
 
 export type DecrypterConfig = {
 	client: HttpChainClient;
 };
+
+export type DecryptedPayload<TransactionDataType> =
+	| {
+			type: 'time-locked';
+			payload: string;
+			timing: RoundBasedTiming;
+	  }
+	| {
+			type: 'clear';
+			transaction: TransactionDataType;
+	  };
 
 export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Decrypter<TransactionDataType> {
 	async function decrypt(
@@ -24,7 +36,7 @@ export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Dec
 			};
 		}
 
-		const json = JSON.parse(decrypted);
+		const json: DecryptedPayload<TransactionDataType> = JSON.parse(decrypted);
 
 		if (json.type === 'time-locked') {
 			// onion decryption
@@ -32,11 +44,14 @@ export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Dec
 			} else {
 				throw new Error(`execution timing of type "${execution.timing.type}" is not supported with tlock decrypter`);
 			}
+			const round = json.timing.round;
+			const drandChainInfo = await config.client.chain().info();
+			const retry = roundTime(drandChainInfo, round);
 			return {
 				success: false,
 				newPayload: json.payload,
-				newTimeValue: json.timeValue,
-				retry: json.retry,
+				newTimimg: json.timing,
+				retry,
 			};
 		} else {
 			return {

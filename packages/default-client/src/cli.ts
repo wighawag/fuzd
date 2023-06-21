@@ -1,10 +1,9 @@
 import {testnetClient} from 'tlock-js';
 import {createClient} from '.';
-import {TransactionSubmission} from 'fuzd-executor';
 
 async function main() {
-	const privateKey = '0x';
-	const client = createClient<TransactionSubmission>({
+	const privateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+	const client = createClient({
 		drand: testnetClient(),
 		privateKey,
 		schedulerEndPoint: 'http://127.0.0.1:8787/scheduleExecution',
@@ -23,7 +22,7 @@ async function main() {
 		],
 		data: '0x',
 		to: '0x',
-		time: Math.floor(Date.now() / 1000) + 10,
+		time: Math.floor(Date.now() / 1000) + 100,
 	});
 }
 main();

@@ -50,8 +50,8 @@ export type DecryptionResult<TransactionDataType> =
 	| {success: true; transaction: TransactionDataType}
 	| {
 			success: false;
-			newPayload?: EIP1193DATA;
-			newTimeValue?: FixedTiming | PartiallyHiddenTimeValue;
+			newPayload?: string;
+			newTimimg?: RoundBasedTiming;
 			retry?: number;
 	  };
 

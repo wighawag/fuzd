@@ -1,0 +1,20 @@
+layout {
+	pane {
+		pane split_direction="vertical" {
+			pane name="shell" command="bash" {
+				args "-c" "${SHELL-bash}"
+			}
+		}
+		pane split_direction="vertical" {
+			pane name="local_node" command="bash" {
+				args "-c" "pnpm run local_node; ${SHELL-bash}"
+			}
+			pane command="bash"  {
+				args "-c" "pnpm watch_compile; ${SHELL-bash}"
+			}
+			pane command="bash"  {
+				args "-c" "pnpm watch_deploy localhost; ${SHELL-bash}"
+			}
+		}
+	}
+}
