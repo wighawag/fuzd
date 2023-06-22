@@ -131,6 +131,13 @@ export function createExecutor(
 			}
 		}
 
+		const maxFeePerGas = options.maxFeePerGas;
+		// then we ensure maxPriorityFeePerGas do not exceeed maxFeePerGas
+		const maxPriorityFeePerGas =
+			options.maxPriorityFeePerGas > maxFeePerGas ? maxFeePerGas : options.maxPriorityFeePerGas;
+		const maxFeePerGasAs0xString = `0x${maxFeePerGas.toString(16)}` as `0x${string}`;
+		const maxPriorityFeePerGasAs0xString = `0x${maxPriorityFeePerGas.toString(16)}` as `0x${string}`;
+
 		logger.info('checcking if tx should still be submitted');
 		const already_resolved = false;
 		// TODO allow execution of logic
@@ -157,8 +164,8 @@ export function createExecutor(
 						from: from,
 						to: from,
 						nonce: `0x${nonce.toString(16)}` as `0x${string}`,
-						maxFeePerGas: `0x${options.maxFeePerGas.toString(16)}` as `0x${string}`,
-						maxPriorityFeePerGas: `0x${options.maxPriorityFeePerGas.toString(16)}` as `0x${string}`,
+						maxFeePerGas: maxFeePerGasAs0xString,
+						maxPriorityFeePerGas: maxPriorityFeePerGasAs0xString,
 						chainId: transactionData.chainId,
 						gas: `0x${(21000).toString(16)}`,
 					};
@@ -190,8 +197,8 @@ export function createExecutor(
 				value: transactionData.value,
 				nonce: `0x${nonce.toString(16)}` as `0x${string}`,
 				from: from,
-				maxFeePerGas: `0x${options.maxFeePerGas.toString(16)}` as `0x${string}`,
-				maxPriorityFeePerGas: `0x${options.maxPriorityFeePerGas.toString(16)}` as `0x${string}`,
+				maxFeePerGas: maxFeePerGasAs0xString,
+				maxPriorityFeePerGas: maxPriorityFeePerGasAs0xString,
 			};
 
 			const rawTx = await await signer.request({

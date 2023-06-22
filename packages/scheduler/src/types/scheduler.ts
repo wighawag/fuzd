@@ -172,6 +172,8 @@ export type QueueProcessingResult = {
 	executions: {id: string; checkinTime: number; status: ExecutionStatus}[];
 };
 
+export type WithTimeContract = {chainId: EIP1193DATA; timeContract: EIP1193Account};
+
 export type SchedulerBackend = {
-	processQueue(): Promise<QueueProcessingResult>;
+	processQueue(onlyWithTimeContract?: WithTimeContract): Promise<QueueProcessingResult>;
 };

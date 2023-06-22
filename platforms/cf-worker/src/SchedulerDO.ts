@@ -9,7 +9,14 @@ import {
 	BroadcasterSignerData,
 } from 'fuzd-executor';
 import {KVExecutorStorage, KVSchedulerStorage, initSchedulerGateway} from 'fuzd-gateways';
-import {ChainConfigs, Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
+import {
+	ChainConfigs,
+	Scheduler,
+	SchedulerBackend,
+	SchedulerStorage,
+	WithTimeContract,
+	createScheduler,
+} from 'fuzd-scheduler';
 import {initDecrypter} from 'fuzd-tlock-decrypter';
 
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
@@ -160,8 +167,8 @@ export class SchedulerDO extends createDurable() {
 		return new Response(this.account.publicExtendedKey);
 	}
 
-	processQueue() {
-		return this.scheduler.processQueue();
+	processQueue(onlyWithTimeContract?: WithTimeContract) {
+		return this.scheduler.processQueue(onlyWithTimeContract);
 	}
 
 	processPendingTransactions() {

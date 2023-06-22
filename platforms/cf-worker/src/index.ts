@@ -57,11 +57,21 @@ router
 	.get('/transactions', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).getPendingTransactions())
 
 	// TODO authentication
+	.get('/processQueue/:chainId/:timeContract', ({SCHEDULER, params}) =>
+		SCHEDULER.get(SINGELTON).processQueue(
+			params.chainId && params.timeContract
+				? {
+						chainId: params.chainId as `0x${string}`,
+						timeContract: params.timeContract as `0x${string}`,
+				  }
+				: undefined
+		)
+	)
 	.get('/processQueue', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).processQueue())
 	.get('/processTransactions', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).processPendingTransactions())
 
 	.get('/clear/:token', ({params}) => clear(params.token))
-	.all('*', withAuthorization('TOKEN_ADMIN'))
+	.post('*', withAuthorization('TOKEN_ADMIN'))
 	.post('/clear', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).clear())
 
 	.all('*', () => error(404, 'Are you sure about that?'));

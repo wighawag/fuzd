@@ -14,6 +14,7 @@ import {
 	Scheduler,
 	SchedulerBackend,
 	SchedulerConfig,
+	WithTimeContract,
 } from './types/scheduler';
 import {ExecutionQueued} from './types/scheduler-storage';
 
@@ -247,7 +248,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		}
 	}
 
-	async function processQueue(onlyWithTimeContract?: {chainId: EIP1193DATA; timeContract: EIP1193Account}) {
+	async function processQueue(onlyWithTimeContract?: WithTimeContract) {
 		const realTime = await time.getTimestamp();
 		const currentTimestamp = onlyWithTimeContract
 			? await _getVirtualTime({
