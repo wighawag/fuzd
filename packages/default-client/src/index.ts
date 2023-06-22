@@ -1,10 +1,9 @@
-import {ScheduleInfo, ScheduledExecution} from 'fuzd-scheduler';
-import {timelockEncrypt, HttpChainClient, roundAt, roundTime} from 'tlock-js';
+import {ScheduleInfo, ScheduledExecution, TimeBasedTiming, RoundBasedTiming} from 'fuzd-scheduler';
+import {timelockEncrypt, HttpChainClient, roundAt} from 'tlock-js';
 import fetch from 'isomorphic-unfetch';
 import {privateKeyToAccount} from 'viem/accounts';
-import {TimeBasedTiming} from 'fuzd-scheduler';
-import {RoundBasedTiming} from 'fuzd-scheduler';
 import {BroadcastSchedule, TransactionSubmission} from 'fuzd-executor';
+export {testnetClient, mainnetClient} from 'tlock-js';
 
 export type ClientConfig = {
 	drand: HttpChainClient;

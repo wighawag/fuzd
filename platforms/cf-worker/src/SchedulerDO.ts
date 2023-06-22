@@ -6,18 +6,19 @@ import {
 	createExecutor,
 	ExecutorBackend,
 	ExecutorStorage,
-	ChainConfig,
 	BroadcasterSignerData,
 } from 'fuzd-executor';
+import {KVExecutorStorage, KVSchedulerStorage, initSchedulerGateway} from 'fuzd-gateways';
+import {ChainConfigs, Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
+import {initDecrypter} from 'fuzd-tlock-decrypter';
+
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
-import {KVExecutorStorage, KVSchedulerStorage, initExecutorGateway, initSchedulerGateway} from 'fuzd-executor-gateway';
-import {ChainConfigs, Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
 import {initAccountFromHD} from 'remote-account';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import type {EIP1193Account} from 'eip-1193';
-import {initDecrypter} from 'fuzd-tlock-decrypter';
+
 import {testnetClient} from 'tlock-js';
 import {logs} from 'named-logs';
 

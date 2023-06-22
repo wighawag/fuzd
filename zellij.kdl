@@ -23,19 +23,19 @@ layout {
 			pane name="scheduler" command="bash" {
 				args "-c" "pnpm run --filter ./packages/scheduler dev; cd packages/scheduler; ${SHELL-bash}"
 			}
-			pane name="executor-gateway" command="bash" {
-				args "-c" "pnpm run --filter ./packages/executor-gateway dev; cd packages/executor-gateway; ${SHELL-bash}"
+			pane name="gateways" command="bash" {
+				args "-c" "pnpm run --filter ./packages/gateways dev; cd packages/gateways; ${SHELL-bash}"
 			}
 			pane name="remote-account" command="bash" {
 				args "-c" "pnpm run --filter ./packages/remote-account dev; cd packages/remote-account; ${SHELL-bash}"
 			}
 		}
 		pane split_direction="vertical" {
-			pane name="cloudflare-worker" command="bash" {
-				args "-c" "pnpm run --filter ./platforms/cloudflare-worker dev; cd platforms/cloudflare-worker; ${SHELL-bash}"
+			pane name="cf-worker" command="bash" {
+				args "-c" "pnpm run --filter ./platforms/cf-worker dev; cd platforms/cf-worker; ${SHELL-bash}"
 			}
-			pane name="nodejs-server" command="bash" {
-				args "-c" "pnpm run --filter ./platforms/nodejs-server dev; cd platforms/nodejs-server; ${SHELL-bash}"
+			pane name="server" command="bash" {
+				args "-c" "pnpm run --filter ./platforms/server dev; cd platforms/server; ${SHELL-bash}"
 			}
 		}
 	}

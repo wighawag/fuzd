@@ -9,7 +9,7 @@ import {walletClient, contract, publicClient, getAccounts} from './viem';
 import artifacts from '../generated/artifacts';
 import {encodeFunctionData} from 'viem';
 import {deriveRemoteAddress} from 'remote-account';
-import {createMockDecrypter, hashRawTx, overrideProvider} from './utils/mock-provider';
+import {createMockDecrypter, overrideProvider} from './utils/mock-provider';
 import {TransactionSubmission} from 'fuzd-executor';
 
 const time = initTime();

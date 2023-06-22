@@ -1,5 +1,5 @@
 {
-  "name": "fuzd-executor-gateway",
+  "name": "fuzd-gateways",
   "version": "0.1.0",
   "description": "verify submission and execute them",
   "type": "module",

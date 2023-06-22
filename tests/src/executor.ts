@@ -1,5 +1,6 @@
 import {BroadcasterSignerData, ExecutorConfig, createExecutor} from 'fuzd-executor';
 import {SchedulerConfig, createScheduler} from 'fuzd-scheduler';
+import {KVExecutorStorage, KVSchedulerStorage} from 'fuzd-gateways';
 import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
 import {createInMemoryKeyValueDB} from './InMemoryKeyValueDB';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
@@ -7,7 +8,6 @@ import {EIP1193Account} from 'eip-1193';
 import {initAccountFromHD} from 'remote-account';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
-import {KVExecutorStorage, KVSchedulerStorage} from 'fuzd-executor-gateway';
 
 const provider = new JSONRPCHTTPProvider('http://localhost:8545');
 

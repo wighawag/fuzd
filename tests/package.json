@@ -17,7 +17,7 @@
     "@scure/bip39": "^1.2.0",
     "atomikv": "workspace:*",
     "fuzd-executor": "workspace:*",
-    "fuzd-executor-gateway": "workspace:*",
+    "fuzd-gateways": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "named-logs": "^0.2.2",
     "tlock-js": "^0.6.1",

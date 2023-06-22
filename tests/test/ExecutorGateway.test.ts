@@ -5,11 +5,11 @@ import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {initTime} from './utils/time';
 import {createTestExecutor} from '../src/executor';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {walletClient, contract, publicClient, getAccounts} from './viem';
+import {walletClient, contract, publicClient} from './viem';
 import artifacts from '../generated/artifacts';
 import {encodeFunctionData} from 'viem';
 import {deriveRemoteAddress} from 'remote-account';
-import {initExecutorGateway} from 'fuzd-executor-gateway';
+import {initExecutorGateway} from 'fuzd-gateways';
 
 const time = initTime();
 

@@ -6,7 +6,7 @@ import {
 	EIP1193TransactionToFill,
 	PendingExecutionStored,
 } from './types/executor-storage';
-import {EIP1193Account, EIP1193SignerProvider} from 'eip-1193';
+import {EIP1193Account} from 'eip-1193';
 import {
 	TransactionSubmission,
 	Executor,
