@@ -41,13 +41,7 @@ export class SchedulerDO extends createDurable() {
 		super(state, env);
 		const DO = this;
 
-		const chainConfigs: ChainConfigs = {
-			'0x7169': {
-				provider: new JSONRPCHTTPProvider('http://localhost:8545'),
-				finality: 3,
-				worstCaseBlockTime: 5,
-			} as ChainConfig,
-		};
+		const chainConfigs: ChainConfigs = {};
 
 		const envKeys = Object.keys(env);
 		for (const envKey of envKeys) {
@@ -147,10 +141,6 @@ export class SchedulerDO extends createDurable() {
 		this.scheduler = createScheduler(schedulerConfig);
 
 		this.gateway = initSchedulerGateway(this.scheduler);
-	}
-
-	home() {
-		return 'fuzd';
 	}
 
 	async submitExecution(executionAsString: string, signature: `0x${string}`) {

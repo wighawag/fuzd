@@ -22,7 +22,7 @@ router
 	.all('*', withDurables())
 
 	// get the durable itself... returns json response, so no need to wrap
-	.get('/', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').home())
+	.get('/', ({SCHEDULER}) => new Response('fuzd api'))
 
 	// get the durable itself... returns json response, so no need to wrap
 	.get('/publicKey', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').getPublicKey())
