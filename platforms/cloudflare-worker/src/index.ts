@@ -1,6 +1,8 @@
 import {IRequest, Router, createCors, error, json} from 'itty-router';
 import {withDurables} from 'itty-durable';
 import {SchedulerDO} from './SchedulerDO';
+import {withAuthorization} from './authentication';
+import {clear} from './pages/clear';
 
 // TODO named-console detect _logFactory if exist
 const Logger = (globalThis as any)._logFactory;
@@ -16,29 +18,39 @@ interface Env {
 
 export const router = Router<IRequest & {SCHEDULER: {get(str: string): SchedulerDO}}>({base: '/'});
 
+const SINGELTON = 'SINGLETON';
+
 router
 	.all('*', preflight)
 	// add upstream middleware, allowing Durable access off the request
 	.all('*', withDurables())
 
+	.get('/robots.txt', () => new Response(''))
+
 	// get the durable itself... returns json response, so no need to wrap
 	.get('/', ({SCHEDULER}) => new Response('fuzd api'))
 
 	// get the durable itself... returns json response, so no need to wrap
-	.get('/publicKey', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').getPublicKey())
+	.get('/publicKey', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).getPublicKey())
 
 	.post('/scheduleExecution', async (request) => {
 		const jsonAsString = await request.text();
 		const signature = request.headers.get('signature') as `0x${string}`;
-		const result = await request.SCHEDULER.get('SINGLETON').submitExecution(jsonAsString, signature);
+		const result = await request.SCHEDULER.get(SINGELTON).submitExecution(jsonAsString, signature);
 		return json(result);
 	})
 
-	.get('/queue', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').getQueue())
-	.get('/processQueue', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').processQueue())
+	// TODO authentication
+	.get('/queue', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).getQueue())
+	.get('/transactions', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).getPendingTransactions())
 
-	.get('/transactions', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').getPendingTransactions())
-	.get('/processTransactions', ({SCHEDULER}) => SCHEDULER.get('SINGLETON').processPendingTransactions())
+	// TODO authentication
+	.get('/processQueue', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).processQueue())
+	.get('/processTransactions', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).processPendingTransactions())
+
+	.get('/clear/:token', ({params}) => clear(params.token))
+	.all('*', withAuthorization('TOKEN_ADMIN'))
+	.post('/clear', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).clear())
 
 	.all('*', () => error(404, 'Are you sure about that?'));
 

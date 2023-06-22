@@ -37,6 +37,7 @@ export class SchedulerDO extends createDurable() {
 	protected executorStorage: ExecutorStorage;
 	protected schedulerStorage: SchedulerStorage<TransactionSubmission>;
 	protected account: ReturnType<typeof initAccountFromHD>;
+	protected storage: DurableObjectStorage;
 	constructor(state: DurableObjectState, env: Env) {
 		super(state, env);
 		const DO = this;
@@ -89,6 +90,7 @@ export class SchedulerDO extends createDurable() {
 		const accountHDKey = masterKey.derive(defaultPath);
 		this.account = initAccountFromHD(accountHDKey);
 
+		this.storage = state.storage;
 		const db = state.storage;
 		this.executorStorage = new KVExecutorStorage(db);
 		this.schedulerStorage = new KVSchedulerStorage(db);
@@ -171,5 +173,9 @@ export class SchedulerDO extends createDurable() {
 
 	getQueue() {
 		return this.schedulerStorage.getQueueTopMostExecutions({limit: 100});
+	}
+
+	clear() {
+		this.storage.deleteAll();
 	}
 }
