@@ -28,7 +28,7 @@
   },
   "scripts": {
     "prepare": "set-defaults .",
-    "deploy": "wrangler publish",
+    "deploy": "wrangler deploy",
     "dev": "wrangler dev"
   }
 }
