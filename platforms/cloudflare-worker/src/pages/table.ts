@@ -13,33 +13,35 @@ export type TablifyOptions = {
 	header_mapping?: {[key: string]: string};
 	pretty?: boolean;
 	css?: string;
+	whenNoData?: string;
 };
 
 export function tablify(options?: TablifyOptions) {
 	options = options || {};
-	var tableData = options.data || [];
-	var header = options.header;
-	var border = isDefined(options.border) ? options.border : 1;
-	var cellspacing = isDefined(options.cellspacing) ? options.cellspacing : 0;
-	var cellpadding = isDefined(options.cellpadding) ? options.cellpadding : 0;
-	var tableId = options.table_id || 'tablify';
-	var tableClass = options.table_class || 'tablify';
-	var header_mapping = options.header_mapping || {};
-	var pretty = options.pretty;
+	const border = isDefined(options.border) ? options.border : 1;
+	const cellspacing = isDefined(options.cellspacing) ? options.cellspacing : 0;
+	const cellpadding = isDefined(options.cellpadding) ? options.cellpadding : 0;
+	const tableId = options.table_id || 'tablify';
+	const tableClass = options.table_class || 'tablify';
+	const header_mapping = options.header_mapping || {};
+	let pretty = options.pretty;
 	if (pretty === undefined) {
 		pretty = true;
 	}
-	var isSingleRow = false;
+
+	let tableData = options.data || [];
+	let isSingleRow = false;
 	if (!Array.isArray(tableData)) {
 		isSingleRow = true;
 		tableData = [tableData];
 	}
 
+	let header = options.header;
 	// If header exists in options use that else create it.
 	if (!header) {
 		var headerObj: {[field: string]: boolean} = {};
 		tableData.forEach(function (json) {
-			var keys = Object.keys(json);
+			const keys = Object.keys(json);
 			keys.forEach(function (key) {
 				headerObj[key] = true;
 			});
@@ -57,15 +59,15 @@ export function tablify(options?: TablifyOptions) {
 	}
 
 	// Generate table
-	var htmlTable = '';
-	var cellArray: string[][] = [];
-	var cellRow: string[] = [];
-	cellArray.push(cellRow);
+	let htmlTable = '';
+	let cellArray: string[][] = [];
+	const headerRow: string[] = [];
+	cellArray.push(headerRow);
 	headerToUse.forEach(function (key) {
-		cellRow.push('<th>' + (header_mapping[key] || key) + '</th>');
+		headerRow.push('<th>' + (header_mapping[key] || key) + '</th>');
 	});
 	tableData.forEach(function (json) {
-		cellRow = [];
+		const cellRow: string[] = [];
 		cellArray.push(cellRow);
 		headerToUse.forEach(function (key) {
 			var value = json[key];
@@ -126,6 +128,10 @@ export function tablify(options?: TablifyOptions) {
 		}
 		htmlTable += newLine;
 		htmlTable += '</table>';
+	}
+
+	if (headerToUse.length === 0 && options.whenNoData) {
+		htmlTable += options.whenNoData;
 	}
 	return htmlTable;
 }

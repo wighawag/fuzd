@@ -2,7 +2,7 @@ import {IRequest, Router, createCors, error, json} from 'itty-router';
 import {withDurables} from 'itty-durable';
 import {SchedulerDO} from './SchedulerDO';
 import {withAuthorization} from './authentication';
-import {clear} from './pages/clear';
+import {clear, table} from './pages/clear';
 
 // TODO named-console detect _logFactory if exist
 const Logger = (globalThis as any)._logFactory;
@@ -16,7 +16,15 @@ interface Env {
 	SCHEDULER: DurableObjectNamespace;
 }
 
-export const router = Router<IRequest & {SCHEDULER: {get(str: string): SchedulerDO}}>({base: '/'});
+type Responsify<Type> = {
+	[Property in keyof Type]: Type[Property] extends (...args: any[]) => Promise<any>
+		? (
+				...args: Parameters<Type[Property]>
+		  ) => Promise<Omit<Response, 'json'> & {json: () => ReturnType<Type[Property]>}>
+		: Type[Property];
+};
+
+export const router = Router<IRequest & {SCHEDULER: {get(str: string): Responsify<SchedulerDO>}}>({base: '/'});
 
 const SINGELTON = 'SINGLETON';
 
@@ -41,7 +49,11 @@ router
 	})
 
 	// TODO authentication
-	.get('/queue', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).getQueue())
+	.get('/queue', async ({SCHEDULER}) => {
+		const response = await SCHEDULER.get(SINGELTON).getQueue();
+		const data = await response.json();
+		return table({data, border: 1, whenNoData: 'No DATA'});
+	})
 	.get('/transactions', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).getPendingTransactions())
 
 	// TODO authentication
