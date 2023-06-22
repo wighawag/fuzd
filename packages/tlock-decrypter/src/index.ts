@@ -1,7 +1,10 @@
-import {ExecutionQueued, FixedTiming} from 'fuzd-scheduler';
+import {ExecutionQueued} from 'fuzd-scheduler';
 import {RoundBasedTiming} from 'fuzd-scheduler';
 import {Decrypter, DecryptionResult} from 'fuzd-scheduler';
 import {timelockDecrypt, HttpChainClient, roundTime, Buffer} from 'tlock-js';
+
+export {testnetClient, mainnetClient} from 'tlock-js';
+
 globalThis.Buffer = Buffer; // required
 import {logs} from 'named-logs';
 
