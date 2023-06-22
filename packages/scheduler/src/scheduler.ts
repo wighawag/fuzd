@@ -2,7 +2,7 @@ import {logs} from 'named-logs';
 import {dequals} from './utils/js';
 import {getTransactionStatus} from './utils/ethereum';
 import {time2text} from './utils/time';
-import {EIP1193Account} from 'eip-1193';
+import {EIP1193Account, EIP1193DATA} from 'eip-1193';
 import {computePotentialExecutionTime, computeFirstExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
 import {
@@ -25,6 +25,39 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 	const {chainConfigs, time, storage, executor} = config;
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
+
+	async function _getTimes({contract, chainId}: {chainId: `0x${string}`; contract?: EIP1193Account}) {
+		const realTime = await time.getTimestamp();
+		const virtualTime = contract ? await _getVirtualTime({chainId, contract}) : realTime;
+		return {
+			virtualTime,
+			realTime,
+		};
+	}
+
+	async function _getVirtualTime({
+		chainId,
+		contract,
+	}: {
+		chainId: `0x${string}`;
+		contract: EIP1193Account;
+	}): Promise<number> {
+		const provider = config.chainConfigs[chainId].provider;
+		if (!provider) {
+			throw new Error(`no provider for chain ${chainId}`);
+		}
+		const result = await provider.request({
+			method: 'eth_call',
+			params: [
+				{
+					to: contract,
+					data: '0xb80777ea', // timestamp()
+				},
+			],
+		});
+		const value = parseInt(result.slice(2), 16);
+		return value;
+	}
 
 	async function submitExecution(
 		id: string,
@@ -141,7 +174,8 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 	}
 
 	async function checkAndUpdateExecutionIfNeeded(
-		execution: ExecutionQueued<TransactionDataType>
+		execution: ExecutionQueued<TransactionDataType>,
+		currentTimestamp: number
 	): Promise<
 		| {status: 'deleted'}
 		| {status: 'changed'; execution: ExecutionQueued<TransactionDataType>}
@@ -150,7 +184,6 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 	> {
 		const {provider, finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
 		// TODO callback for balance checks ?
-		const timestamp = await time.getTimestamp();
 
 		if (execution.timing.type === 'fixed') {
 			if (execution.timing.assumedTransaction && !execution.timing.assumedTransaction.confirmed) {
@@ -182,11 +215,10 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 			if (!execution.timing.startTransaction.confirmed) {
 				const txStatus = await getTransactionStatus(provider, execution.timing.startTransaction, finality);
 				if (!txStatus.finalised) {
-					const executionToRetry = await retryLater(
-						execution.checkinTime,
-						execution,
-						computePotentialExecutionTime(execution, {startTimeToCountFrom: txStatus.blockTime || timestamp})
-					);
+					const newCheckinTime = computePotentialExecutionTime(execution, {
+						startTimeToCountFrom: txStatus.blockTime || currentTimestamp,
+					});
+					const executionToRetry = await retryLater(execution.checkinTime, execution, newCheckinTime);
 					return {status: 'willRetry', execution: executionToRetry};
 				} else {
 					if (txStatus.failed) {
@@ -215,17 +247,26 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		}
 	}
 
-	async function processQueue() {
-		const timestamp = await time.getTimestamp();
+	async function processQueue(options?: {chainId: EIP1193DATA; to: string; timeContract?: EIP1193Account}) {
+		const realTime = await time.getTimestamp();
+		const currentTimestamp = options?.timeContract
+			? await _getVirtualTime({
+					chainId: options?.chainId,
+					contract: options?.timeContract,
+			  })
+			: realTime;
+
 		const limit = maxNumTransactionsToProcessInOneGo;
 
 		const result: QueueProcessingResult = {
-			timestamp,
+			realTime: realTime,
+			virtualTime: currentTimestamp,
 			limit,
 			executions: [],
 		};
 
 		// TODO only query up to a certain time
+		// TODO add a filter for "to, chainId"
 		const executions = await storage.getQueueTopMostExecutions({limit});
 
 		if (executions.length === 0) {
@@ -242,8 +283,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 
 		for (const execution of executions) {
 			const {finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
-
-			const updates = await checkAndUpdateExecutionIfNeeded(execution);
+			const updates = await checkAndUpdateExecutionIfNeeded(execution, currentTimestamp);
 			if (updates.status === 'deleted' || updates.status === 'willRetry') {
 				let status: ExecutionStatus;
 				if (updates.status === 'deleted') {
@@ -267,11 +307,11 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 
 			const executionUpdated = updates.execution;
 			const newCheckinTime = computePotentialExecutionTime(executionUpdated, {
-				lastCheckin: executionUpdated.checkinTime,
+				lastCheckin: currentTimestamp,
 			});
 
 			if (
-				timestamp >
+				currentTimestamp >
 				newCheckinTime +
 					Math.min(executionUpdated.timing.expiry || Number.MAX_SAFE_INTEGER, maxExpiry) +
 					finality * worstCaseBlockTime
@@ -288,7 +328,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 				continue;
 			}
 
-			if (timestamp >= newCheckinTime) {
+			if (currentTimestamp >= newCheckinTime) {
 				// execute if it is the time
 				const status = await execute(executionUpdated);
 				result.executions.push({
@@ -307,7 +347,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 					});
 				} else {
 					// For now as we do not limit result to a certain time, we will reach there often
-					logger.info(`not yet time: ${time2text(newCheckinTime - timestamp)} to wait...`);
+					logger.info(`not yet time: ${time2text(newCheckinTime - currentTimestamp)} to wait...`);
 					result.executions.push({
 						id: execution.id,
 						checkinTime: execution.checkinTime,

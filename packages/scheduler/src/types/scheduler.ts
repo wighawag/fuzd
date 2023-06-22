@@ -87,21 +87,20 @@ export type FixedTiming = TimeBasedTiming | RoundBasedTiming;
 
 type BaseExecution = {
 	chainId: `0x${string}`;
+	timeProvider?: {
+		contract: EIP1193Account;
+	};
 };
 
 export type TimingTypes = FixedTiming | PartiallyHiddenTimeValue;
 
 export type ScheduledTimeLockedExecution<
 	FixedTimingType extends TimingTypes,
-	DeltaTimingType extends FixedTiming,
-	StartTransactionType extends StartTransaction = StartTransaction,
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
 > = BaseExecution & {
 	type: 'time-locked';
 	payload: string;
-	timing:
-		| FixedTimeScheduledExecution<FixedTimingType, AssumedTransactionType>
-		| DeltaScheduledExecution<DeltaTimingType, StartTransactionType>;
+	timing: FixedTimeScheduledExecution<FixedTimingType, AssumedTransactionType>;
 	// TODO algo:
 };
 
@@ -126,7 +125,7 @@ export type ScheduledExecution<
 	StartTransactionType extends StartTransaction = StartTransaction,
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
 > =
-	| ScheduledTimeLockedExecution<FixedTimingType, DeltaTimingType, StartTransactionType, AssumedTransactionType>
+	| ScheduledTimeLockedExecution<FixedTimingType, AssumedTransactionType>
 	| ScheduledExecutionInClear<
 			TransactionDataType,
 			FixedTimingType,
@@ -170,7 +169,8 @@ export type Scheduler<TransactionDataType> = {
 export type ExecutionStatus = {type: 'broadcasted' | 'deleted' | 'reassigned' | 'skipped'; reason: string};
 
 export type QueueProcessingResult = {
-	timestamp: number;
+	realTime: number;
+	virtualTime: number;
 	limit: number;
 	executions: {id: string; checkinTime: number; status: ExecutionStatus}[];
 };
