@@ -87,9 +87,7 @@ export type FixedTiming = TimeBasedTiming | RoundBasedTiming;
 
 type BaseExecution = {
 	chainId: `0x${string}`;
-	timeProvider?: {
-		contract: EIP1193Account;
-	};
+	timeContract?: EIP1193Account;
 };
 
 export type TimingTypes = FixedTiming | PartiallyHiddenTimeValue;
@@ -169,8 +167,7 @@ export type Scheduler<TransactionDataType> = {
 export type ExecutionStatus = {type: 'broadcasted' | 'deleted' | 'reassigned' | 'skipped'; reason: string};
 
 export type QueueProcessingResult = {
-	realTime: number;
-	virtualTime: number;
+	timestamp: number;
 	limit: number;
 	executions: {id: string; checkinTime: number; status: ExecutionStatus}[];
 };

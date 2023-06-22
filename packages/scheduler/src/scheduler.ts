@@ -247,27 +247,25 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		}
 	}
 
-	async function processQueue(options?: {chainId: EIP1193DATA; to: string; timeContract?: EIP1193Account}) {
+	async function processQueue(onlyWithTimeContract?: {chainId: EIP1193DATA; timeContract: EIP1193Account}) {
 		const realTime = await time.getTimestamp();
-		const currentTimestamp = options?.timeContract
+		const currentTimestamp = onlyWithTimeContract
 			? await _getVirtualTime({
-					chainId: options?.chainId,
-					contract: options?.timeContract,
+					chainId: onlyWithTimeContract.chainId,
+					contract: onlyWithTimeContract.timeContract,
 			  })
 			: realTime;
 
 		const limit = maxNumTransactionsToProcessInOneGo;
 
 		const result: QueueProcessingResult = {
-			realTime: realTime,
-			virtualTime: currentTimestamp,
+			timestamp: currentTimestamp,
 			limit,
 			executions: [],
 		};
 
 		// TODO only query up to a certain time
-		// TODO add a filter for "to, chainId"
-		const executions = await storage.getQueueTopMostExecutions({limit});
+		const executions = await storage.getQueueTopMostExecutions({limit}, onlyWithTimeContract);
 
 		if (executions.length === 0) {
 			logger.info(`found zero executions to process`);
@@ -283,6 +281,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 
 		for (const execution of executions) {
 			const {finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
+
 			const updates = await checkAndUpdateExecutionIfNeeded(execution, currentTimestamp);
 			if (updates.status === 'deleted' || updates.status === 'willRetry') {
 				let status: ExecutionStatus;
