@@ -1,5 +1,8 @@
 {
     "name": "atomikv",
     "version": "0.0.2",
+    "publishConfig": {
+		"access": "public"
+	},
     "types": "index.d.ts"
 }

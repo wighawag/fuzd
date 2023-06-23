@@ -2,6 +2,9 @@
   "name": "fuzd-gateways",
   "version": "0.1.1",
   "description": "verify submission and execute them",
+  "publishConfig": {
+		"access": "public"
+	},
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
