@@ -1,6 +1,6 @@
 {
   "name": "fuzd-gateways",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "verify submission and execute them",
   "type": "module",
   "main": "dist/index.cjs",

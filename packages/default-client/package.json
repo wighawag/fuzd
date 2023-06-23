@@ -1,6 +1,6 @@
 {
   "name": "fuzd-default-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "default client for fuzd using tlock-js",
   "type": "module",
   "main": "dist/index.cjs",

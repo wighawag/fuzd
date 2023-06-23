@@ -1,6 +1,6 @@
 {
   "name": "fuzd-scheduler",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "execute transaction in future plus tx can be sealed using drand tlock",
   "type": "module",
   "main": "dist/index.cjs",

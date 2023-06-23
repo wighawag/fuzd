@@ -1,4 +1,10 @@
-# rocketh-deploy
+# remote-account
+
+## 0.0.2
+
+### Patch Changes
+
+- first release
 
 ## 0.5.17
 
