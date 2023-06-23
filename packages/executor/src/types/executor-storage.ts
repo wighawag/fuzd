@@ -36,9 +36,14 @@ export type PendingExecutionStored = EIP1193TransactionDataUsed & {
 export interface ExecutorStorage {
 	getPendingExecution(params: {chainId: `0x${string}`; id: string}): Promise<PendingExecutionStored | undefined>;
 
-	deletePendingExecution(params: {chainId: `0x${string}`; id: string}): Promise<void>;
+	deletePendingExecution(params: {chainId: `0x${string}`; id: string; nonce: `0x${string}`}): Promise<void>;
 	createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored>;
 	getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored[]>;
+	getPendingExecutionsPerBroadcaster(params: {
+		chainId: `0x${string}`;
+		broadcaster: `0x${string}`;
+		limit: number;
+	}): Promise<PendingExecutionStored[]>;
 
 	getBroadcaster(params: {chainId: `0x${string}`; address: string}): Promise<BroadcasterData | undefined>;
 	createBroadcaster(broadcaster: BroadcasterData): Promise<void>;

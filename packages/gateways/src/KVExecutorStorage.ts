@@ -29,12 +29,14 @@ export class KVExecutorStorage implements ExecutorStorage {
 		return this.db.get<PendingExecutionStored>(computeExecutionID(params.chainId, params.id));
 	}
 
-	async deletePendingExecution(params: {chainId: `0x${string}`; id: string}): Promise<void> {
+	async deletePendingExecution(params: {chainId: `0x${string}`; id: string; nonce: `0x${string}`}): Promise<void> {
 		await this.db.transaction(async (txn) => {
 			const execution = await this.db.get<PendingExecutionStored>(computeExecutionID(params.chainId, params.id));
 			if (execution) {
 				await txn.delete(computeExecutionID(params.chainId, params.id));
 				await txn.delete(computeNextCheckID(execution.nextCheckTime, params.chainId, params.id));
+				const nonce = parseInt(params.nonce.slice(2), 16);
+				await txn.delete(computePerAccountID(execution.from, params.chainId, nonce));
 			}
 		});
 	}
@@ -52,8 +54,21 @@ export class KVExecutorStorage implements ExecutorStorage {
 					dbID: dbID,
 				}
 			);
+			const nonce = parseInt(executionToStore.nonce.slice(2), 16);
+			await txn.put<IndexID>(computePerAccountID(executionToStore.from, executionToStore.chainId, nonce), {
+				dbID: dbID,
+			});
 		});
 		return executionToStore;
+	}
+
+	protected async _getPendingExecutions(keys: string[]): Promise<PendingExecutionStored[]> {
+		const map = await this.db.get<PendingExecutionStored>(keys);
+		const values: PendingExecutionStored[] = [];
+		for (const value of map.values()) {
+			values.push(value);
+		}
+		return values;
 	}
 
 	async getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored[]> {
@@ -64,12 +79,26 @@ export class KVExecutorStorage implements ExecutorStorage {
 			keys.push(value.dbID);
 		}
 		// we then fetch the items
-		const map = await this.db.get<PendingExecutionStored>(keys);
-		const values: PendingExecutionStored[] = [];
-		for (const value of map.values()) {
-			values.push(value);
+		return this._getPendingExecutions(keys);
+	}
+
+	// TODO use this to update teh tx
+	async getPendingExecutionsPerBroadcaster(params: {
+		chainId: `0x${string}`;
+		broadcaster: `0x${string}`;
+		limit: number;
+	}): Promise<PendingExecutionStored[]> {
+		// we get the keys from the index
+		const mapOfIndex = await this.db.list<IndexID>({
+			prefix: `broadcaster_tx_${params.broadcaster}_${params.chainId}_`,
+			limit: params.limit,
+		});
+		const keys: string[] = [];
+		for (const value of mapOfIndex.values()) {
+			keys.push(value.dbID);
 		}
-		return values;
+		// we then fetch the items
+		return this._getPendingExecutions(keys);
 	}
 
 	getBroadcaster(params: {chainId: `0x${string}`; address: string}): Promise<BroadcasterData | undefined> {
