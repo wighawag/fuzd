@@ -12,6 +12,10 @@ function computeNextCheckID(broadcastTime: number, chainId: `0x${string}`, id: s
 	return `checkin_${lexicographicNumber(broadcastTime, 12)}_${chainId}_${id}`;
 }
 
+function computePerAccountID(broadcaster: `0x${string}`, chainId: `0x${string}`, nonce: number): string {
+	return `broadcaster_tx_${broadcaster}_${chainId}_${lexicographicNumber(nonce, 12)}`;
+}
+
 function computeExecutionID(chainId: `0x${string}`, id: string) {
 	return `tx_${chainId}_${id}`;
 }
@@ -68,12 +72,12 @@ export class KVExecutorStorage implements ExecutorStorage {
 		return values;
 	}
 
-	getBroadcaster(params: {address: string}): Promise<BroadcasterData | undefined> {
-		const broadcasterID = `broadcaster_${params.address}`;
+	getBroadcaster(params: {chainId: `0x${string}`; address: string}): Promise<BroadcasterData | undefined> {
+		const broadcasterID = `broadcaster_${params.address}_${params.chainId}`;
 		return this.db.get<BroadcasterData>(broadcasterID);
 	}
 	async createBroadcaster(broadcaster: BroadcasterData): Promise<void> {
-		const broadcasterID = `broadcaster_${broadcaster.address}`;
+		const broadcasterID = `broadcaster_${broadcaster.address}_${broadcaster.chainId}`;
 		return this.db.put<BroadcasterData>(broadcasterID, broadcaster);
 	}
 }

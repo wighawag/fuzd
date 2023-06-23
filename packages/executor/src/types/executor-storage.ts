@@ -17,6 +17,7 @@ export type EIP1193TransactionToFill = Omit<
 >;
 
 export type BroadcasterData = {
+	chainId: `0x${string}`;
 	nextNonce: number;
 	address: EIP1193Account;
 };
@@ -39,6 +40,6 @@ export interface ExecutorStorage {
 	createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored>;
 	getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored[]>;
 
-	getBroadcaster(params: {address: string}): Promise<BroadcasterData | undefined>;
+	getBroadcaster(params: {chainId: `0x${string}`; address: string}): Promise<BroadcasterData | undefined>;
 	createBroadcaster(broadcaster: BroadcasterData): Promise<void>;
 }

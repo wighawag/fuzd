@@ -228,11 +228,14 @@ export function createExecutor(
 			throw new Error(`could not parse transaction count while checking for expected nonce`);
 		}
 		let broadcasterData: BroadcasterData;
-		const dataFromStorage = await storage.getBroadcaster({address: broadcasterAddress});
+		const dataFromStorage = await storage.getBroadcaster({
+			chainId: transactionData.chainId,
+			address: broadcasterAddress,
+		});
 		if (dataFromStorage) {
 			broadcasterData = dataFromStorage;
 		} else {
-			broadcasterData = {address: broadcasterAddress, nextNonce: nonce};
+			broadcasterData = {chainId: transactionData.chainId, address: broadcasterAddress, nextNonce: nonce};
 		}
 
 		const expectedNonce = broadcasterData.nextNonce;
