@@ -34,7 +34,7 @@ export default defineConfig({
 
 		socialLinks: [{icon: 'github', link: 'https://github.com/wighawag/fuzd'}],
 	},
-	base: '/fuzd/',
+	// base: '/fuzd/',
 	// vite: {
 	// 	resolve: {
 	// 		alias: [
