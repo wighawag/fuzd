@@ -2,4 +2,3 @@ packages:
   - 'tests'
   - 'packages/*'
   - 'platforms/*'
-  - 'docs'

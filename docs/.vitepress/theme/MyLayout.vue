@@ -12,7 +12,7 @@ const {frontmatter} = useData();
 	<Layout>
 		<template #home-hero-info>
 			<!-- <h1 class="name"><img src="/logo-white.svg" /></h1> -->
-			<!-- <p v-if="frontmatter.hero.text" class="text">{{ frontmatter.hero.text }}</p> -->
+			<p v-if="frontmatter.hero.text" class="text">{{ frontmatter.hero.text }}</p>
 			<p v-if="frontmatter.hero.tagline" class="tagline">{{ frontmatter.hero.tagline }}</p>
 		</template>
 	</Layout>

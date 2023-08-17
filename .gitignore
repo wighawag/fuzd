@@ -3,3 +3,11 @@
 
 # node modules
 node_modules
+
+/docs/.vitepress/*
+!/docs/.vitepress/config.mts
+/docs/api
+
+# this need to be copied in
+/docs/examples 
+/docs/media
