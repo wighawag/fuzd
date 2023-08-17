@@ -17,7 +17,7 @@
     "build": "pnpm -r build",
     "sync-deps": "syncpack fix-mismatches",
     "start": "zellij --layout zellij.kdl a $npm_package_name || zellij --layout zellij.kdl -s $npm_package_name",
-    "publish-typedoc": "typedoc --options typedoc.json ",
+    "publish-typedoc": "typedoc --options typedoc.json --excludeExternals",
     "serve-docs": "ipfs-emulator --only -d docs -p 8080",
     "docs:dev": "npm run publish-typedoc && vitepress dev docs",
     "docs:build": "npm run publish-typedoc && vitepress build docs",

@@ -4,5 +4,16 @@
 	"entryPoints": ["packages/executor"],
 	// "packages/gateways", "packages/remote-account", "packages/scheduler"],
 	"media": "media",
-	"out": "docs/api"
+	"out": "docs/api",
+	"excludePrivate": true,
+	"excludeExternals": true,
+	"excludeReferences": true
+	// "excludeTags": [
+	// 	"@override",
+	// 	"@virtual",
+	// 	"@privateRemarks",
+	// 	"@satisfies",
+	// 	"@overload"
+	// ]
+	// "excludeNotDocumented": true
 }

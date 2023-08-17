@@ -2,6 +2,20 @@ import {defineConfig} from 'vitepress';
 import typedocSidebar from '../api/typedoc-sidebar.json';
 // import {fileURLToPath, URL} from 'node:url';
 
+function removeDuplicates(arr: any) {
+	const newArray: any[] = [];
+	const dict = {};
+	for (const elem of arr) {
+		const id = elem.text;
+		if (!dict[id]) {
+			dict[id] = true;
+			newArray.push(elem);
+		}
+	}
+
+	return newArray;
+}
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
 	title: 'FUZD',
@@ -28,7 +42,7 @@ export default defineConfig({
 			{
 				text: 'API',
 				link: '/api/',
-				items: typedocSidebar,
+				items: removeDuplicates(typedocSidebar),
 			},
 		],
 
