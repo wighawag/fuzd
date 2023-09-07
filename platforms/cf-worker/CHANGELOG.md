@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.0.4
+
+### Patch Changes
+
+- remove Logger hard deps
+
 ## 0.0.3
 
 ### Patch Changes

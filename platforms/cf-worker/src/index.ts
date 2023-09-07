@@ -6,8 +6,10 @@ import {clear, table} from './pages/clear';
 
 // TODO named-console detect _logFactory if exist
 const Logger = (globalThis as any)._logFactory;
-Logger.enable('*');
-Logger.level = 6;
+if (Logger) {
+	Logger.enable('*');
+	Logger.level = 6;
+}
 
 const {preflight, corsify} = createCors();
 
