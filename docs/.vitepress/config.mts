@@ -2,6 +2,26 @@ import {defineConfig} from 'vitepress';
 import typedocSidebar from '../api/typedoc-sidebar.json';
 // import {fileURLToPath, URL} from 'node:url';
 
+function order(arr: any, startWith?: string) {
+	return arr.sort((a,b) => {
+		if (startWith) {
+			if (a.text  === startWith) {
+				return -1;
+			}
+			if (b.text  === startWith) {
+				return 1;
+			}
+		}
+		if (a <b) {
+			return -1;
+		}
+		if (a > b) {
+			return 1;
+		}
+		return 0;
+	})
+}
+
 function removeDuplicates(arr: any) {
 	const newArray: any[] = [];
 	const dict = {};
@@ -42,7 +62,7 @@ export default defineConfig({
 			{
 				text: 'API',
 				link: '/api/',
-				items: removeDuplicates(typedocSidebar),
+				items: order(removeDuplicates(typedocSidebar), "createExecutor"),
 			},
 		],
 
