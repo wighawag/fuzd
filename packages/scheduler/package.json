@@ -1,6 +1,6 @@
 {
   "name": "fuzd-scheduler",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "execute transaction in future plus tx can be sealed using drand tlock",
   "publishConfig": {
     "access": "public"
@@ -16,18 +16,18 @@
     "node": "18.7.0"
   },
   "dependencies": {
-    "wighawag-ono": "^7.1.3",
     "named-logs": "^0.2.2",
-    "zod": "^3.21.4"
+    "wighawag-ono": "^7.1.3",
+    "zod": "^3.22.2"
   },
   "devDependencies": {
-    "abitype": "^0.8.5",
+    "abitype": "^0.9.8",
     "eip-1193": "^0.4.7",
     "eip-1193-signer": "^0.0.1",
     "ldenv": "^0.3.5",
-    "prettier": "^2.8.8",
-    "tsup": "^6.7.0",
-    "typescript": "^5.0.4"
+    "prettier": "^3.0.3",
+    "tsup": "^7.2.0",
+    "typescript": "^5.2.2"
   },
   "scripts": {
     "build": "tsup src/index.ts --dts --sourcemap --format esm,cjs",

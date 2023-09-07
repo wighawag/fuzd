@@ -1,6 +1,6 @@
 {
   "name": "fuzd-server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "type": "module",
   "main": "dist/index.cjs",
@@ -11,18 +11,18 @@
   },
   "dependencies": {
     "commander": "^10.0.0",
-    "ldenv": "^0.3.0",
     "eip-1193-json-provider": "^0.1.0",
+    "ldenv": "^0.3.0",
     "named-logs": "^0.2.2"
   },
   "devDependencies": {
-    "named-logs-console": "^0.2.3",
     "@types/fs-extra": "^11.0.1",
-    "@types/node": "^18.15.5",
+    "@types/node": "^20.5.9",
     "eip-1193": "^0.4.7",
     "fs-extra": "^11.1.1",
-    "tsup": "^6.7.0",
-    "typescript": "^4.9.5"
+    "named-logs-console": "^0.3.0",
+    "tsup": "^7.2.0",
+    "typescript": "^5.2.2"
   },
   "scripts": {
     "build": "tsup --entry src/index.ts --entry src/cli.ts --dts --format esm,cjs",

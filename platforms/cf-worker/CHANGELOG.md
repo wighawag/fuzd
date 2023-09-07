@@ -1,5 +1,17 @@
 # fuzd-cf-worker
 
+## 0.0.3
+
+### Patch Changes
+
+- update latest deps
+- Updated dependencies
+  - fuzd-tlock-decrypter@0.1.3
+  - remote-account@0.0.3
+  - fuzd-scheduler@0.1.3
+  - fuzd-executor@0.1.3
+  - fuzd-gateways@0.1.3
+
 ## 0.0.2
 
 ### Patch Changes

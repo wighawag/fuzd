@@ -31,6 +31,9 @@ export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Dec
 			throw new Error(`expect an execution of type "time-locked"`);
 		}
 
+		// TODO option to
+		// - provide round for t-lock
+		// - provide aproximate round for t-lock
 		let decrypted: string;
 		try {
 			decrypted = await timelockDecrypt(execution.payload, config.client);

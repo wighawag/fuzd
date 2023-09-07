@@ -1,5 +1,11 @@
 # fuzd-server
 
+## 0.0.2
+
+### Patch Changes
+
+- update latest deps
+
 ## 0.0.1
 
 ### Patch Changes

@@ -1,32 +1,36 @@
 {
   "name": "fuzd-cf-worker",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publishConfig": {
     "access": "public"
   },
   "type": "module",
+  "files": [
+    "src",
+    "tsconfig.json"
+  ],
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20230518.0",
+    "@cloudflare/workers-types": "^4.20230904.0",
     "eip-1193": "^0.4.7",
     "set-defaults": "^0.0.1",
-    "typescript": "^5.1.3",
-    "wrangler": "^3.1.0"
+    "typescript": "^5.2.2",
+    "wrangler": "^3.7.0"
   },
   "dependencies": {
-    "@scure/bip32": "^1.3.0",
-    "@scure/bip39": "^1.2.0",
+    "@scure/bip32": "^1.3.2",
+    "@scure/bip39": "^1.2.1",
     "eip-1193-json-provider": "^0.1.8",
     "eip-1193-signer": "^0.0.1",
     "fuzd-executor": "workspace:*",
     "fuzd-gateways": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "fuzd-tlock-decrypter": "workspace:*",
-    "itty-durable": "^2.0.0",
-    "itty-router": "^4.0.9",
+    "itty-durable": "^2.1.0",
+    "itty-router": "^4.0.22",
     "named-logs": "^0.2.2",
     "remote-account": "workspace:*",
     "tlock-js": "^0.6.1",
-    "viem": "^1.0.7"
+    "viem": "^1.10.4"
   },
   "scripts": {
     "prepare": "set-defaults .",
