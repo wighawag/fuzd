@@ -7,5 +7,6 @@
 		"declarationMap": true,
 		"inlineSourceMap": true,
 		"strict": true
-	}
+	},
+	"include": ["packages/executor/src/index.ts"]
 }

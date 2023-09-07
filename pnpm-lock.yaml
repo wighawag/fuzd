@@ -23,17 +23,17 @@ importers:
         specifier: ^11.2.1
         version: 11.2.1
       typedoc:
-        specifier: ^0.25.1
-        version: 0.25.1(typescript@5.2.2)
+        specifier: ^0.24.8
+        version: 0.24.8(typescript@5.1.6)
       typedoc-plugin-markdown:
         specifier: 4.0.0-next.18
-        version: 4.0.0-next.18(typedoc@0.25.1)
+        version: 4.0.0-next.18(typedoc@0.24.8)
       typedoc-vitepress-theme:
         specifier: 1.0.0-next.3
         version: 1.0.0-next.3(typedoc-plugin-markdown@4.0.0-next.18)
       typescript:
-        specifier: ^5.2.2
-        version: 5.2.2
+        specifier: ^5.1.6
+        version: 5.1.6
       vitepress:
         specifier: 1.0.0-rc.10
         version: 1.0.0-rc.10(@algolia/client-search@4.19.1)(search-insights@2.8.2)
@@ -7494,12 +7494,12 @@ packages:
       is-typed-array: 1.1.12
     dev: true
 
-  /typedoc-plugin-markdown@4.0.0-next.18(typedoc@0.25.1):
+  /typedoc-plugin-markdown@4.0.0-next.18(typedoc@0.24.8):
     resolution: {integrity: sha512-Qf4tUrAsZLcJ1TzCJc5NWP+ulPsQh7v1cxNCeJqeIQovnbpMOkZPQogEhZBUvMjHxABS64EQ9PkpDFJuE0IpGw==}
     peerDependencies:
       typedoc: '>=0.24.0'
     dependencies:
-      typedoc: 0.25.1(typescript@5.2.2)
+      typedoc: 0.24.8(typescript@5.1.6)
     dev: true
 
   /typedoc-vitepress-theme@1.0.0-next.3(typedoc-plugin-markdown@4.0.0-next.18):
@@ -7507,21 +7507,27 @@ packages:
     peerDependencies:
       typedoc-plugin-markdown: '>=4.0.0-next.19'
     dependencies:
-      typedoc-plugin-markdown: 4.0.0-next.18(typedoc@0.25.1)
+      typedoc-plugin-markdown: 4.0.0-next.18(typedoc@0.24.8)
     dev: true
 
-  /typedoc@0.25.1(typescript@5.2.2):
-    resolution: {integrity: sha512-c2ye3YUtGIadxN2O6YwPEXgrZcvhlZ6HlhWZ8jQRNzwLPn2ylhdGqdR8HbyDRyALP8J6lmSANILCkkIdNPFxqA==}
-    engines: {node: '>= 16'}
+  /typedoc@0.24.8(typescript@5.1.6):
+    resolution: {integrity: sha512-ahJ6Cpcvxwaxfu4KtjA8qZNqS43wYt6JL27wYiIgl1vd38WW/KWX11YuAeZhuz9v+ttrutSsgK+XO1CjL1kA3w==}
+    engines: {node: '>= 14.14'}
     hasBin: true
     peerDependencies:
-      typescript: 4.6.x || 4.7.x || 4.8.x || 4.9.x || 5.0.x || 5.1.x || 5.2.x
+      typescript: 4.6.x || 4.7.x || 4.8.x || 4.9.x || 5.0.x || 5.1.x
     dependencies:
       lunr: 2.3.9
       marked: 4.3.0
       minimatch: 9.0.3
       shiki: 0.14.4
-      typescript: 5.2.2
+      typescript: 5.1.6
+    dev: true
+
+  /typescript@5.1.6:
+    resolution: {integrity: sha512-zaWCozRZ6DLEWAWFrVDz1H6FVXzUSfTy5FUMWsQlU8Ym5JP9eO4xkTIROFCQvhQf61z6O/G6ugw3SgAnvvm+HA==}
+    engines: {node: '>=14.17'}
+    hasBin: true
     dev: true
 
   /typescript@5.2.2:

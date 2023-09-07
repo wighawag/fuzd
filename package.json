@@ -6,10 +6,10 @@
     "@changesets/cli": "^2.26.2",
     "set-defaults": "^0.0.1",
     "syncpack": "^11.2.1",
-    "typedoc": "^0.25.1",
+    "typedoc": "^0.24.8",
     "typedoc-plugin-markdown": "4.0.0-next.18",
     "typedoc-vitepress-theme": "1.0.0-next.3",
-    "typescript": "^5.2.2",
+    "typescript": "^5.1.6",
     "vitepress": "1.0.0-rc.10"
   },
   "scripts": {
@@ -19,8 +19,8 @@
     "start": "zellij --layout zellij.kdl a $npm_package_name || zellij --layout zellij.kdl -s $npm_package_name",
     "publish-typedoc": "typedoc --options typedoc.json --excludeExternals",
     "serve-docs": "ipfs-emulator --only -d docs -p 8080",
-    "docs:dev": "npm run publish-typedoc && vitepress dev docs",
-    "docs:build": "npm run publish-typedoc && vitepress build docs",
+    "docs:dev": "pnpm run publish-typedoc && vitepress dev docs",
+    "docs:build": "pnpm run publish-typedoc && vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
   "pnpm": {
