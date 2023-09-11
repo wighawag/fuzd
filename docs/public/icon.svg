@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="512"
+   height="512"
+   viewBox="0 0 135.46667 135.46667"
+   version="1.1"
+   id="svg831"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="icon.svg"
+   inkscape:export-filename="/home/wighawag/dev/github.com/wighawag/fuzd/docs/public/maskable_icon_512x512.png"
+   inkscape:export-xdpi="96.000008"
+   inkscape:export-ydpi="96.000008"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview833"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     units="px"
+     inkscape:zoom="0.55945567"
+     inkscape:cx="397.70801"
+     inkscape:cy="561.25984"
+     inkscape:window-width="1920"
+     inkscape:window-height="1127"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1-3" />
+  <defs
+     id="defs828" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="layer1-3"
+       transform="matrix(3.2496553,0,0,3.2496553,-307.44197,-270.95204)">
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:11.2477px;line-height:1.25;font-family:'Droid Sans Fallback';-inkscape-font-specification:'Droid Sans Fallback';fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.281193"
+         x="99.460754"
+         y="101.21109"
+         id="text2013"><tspan
+           id="tspan2011"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Blade Runner Movie Font';-inkscape-font-specification:'Blade Runner Movie Font';stroke-width:0.281193"
+           x="99.460754"
+           y="101.21109">FUZD</tspan></text>
+      <g
+         id="g985"
+         transform="matrix(1.0577119,0,0,1.0577119,-6.4167473,11.227543)">
+        <g
+           id="g977">
+          <rect
+             id="rect5820"
+             width="32.79921"
+             height="0.74503821"
+             x="100.01853"
+             y="100.0849"
+             style="stroke-width:0.264583" />
+          <rect
+             id="rect5924"
+             width="0.7590611"
+             height="1.7033038"
+             x="20.62018"
+             y="137.29163"
+             style="stroke-width:0.264583"
+             transform="rotate(-36.544204)" />
+          <rect
+             id="rect5924-3"
+             width="0.7590611"
+             height="1.7033038"
+             x="-110.40536"
+             y="86.816132"
+             style="stroke-width:0.264583"
+             transform="rotate(-95.674648)" />
+          <rect
+             id="rect5924-6"
+             width="0.7590611"
+             height="1.7033038"
+             x="136.3833"
+             y="41.25349"
+             style="stroke-width:0.264583"
+             transform="rotate(28.780627)" />
+        </g>
+        <circle
+           id="path6073"
+           cx="100.63107"
+           cy="100.43603"
+           r="0.74141574"
+           style="stroke-width:0.125523" />
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,16 @@
+{
+	"name": "FUZD",
+	"title": "FUZD - Delayed and Blindfolded Execution",
+	"description": "Execute Delayed Transactions Without Knowing Their Content Until Execution Time.",
+	"canonicalURL": "https://fuzd.dev",
+	"themeColor": "#000000",
+	"appleStatusBarStyle": "black-translucent",
+	"icon": "public/icon.svg",
+	"maskableIcons": [
+		{
+			"src": "../maskable_icon_512x512.png",
+			"type": "image/png",
+			"sizes": "512x512"
+		}
+	]
+}

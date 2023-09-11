@@ -2,6 +2,8 @@
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
 
+title: FUZD | Blindfolded Execution
+
 hero:
   # name: 'Blindfolded Execution'
   text: Blindfolded Execution
