@@ -29,39 +29,28 @@
      fit-margin-bottom="0"
      inkscape:zoom="0.40758934"
      inkscape:cx="79.73712"
-     inkscape:cy="728.6746"
+     inkscape:cy="728.67461"
      inkscape:window-width="1920"
      inkscape:window-height="1127"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="svg5" />
   <defs
      id="defs2" />
   <g
      id="layer1"
      transform="matrix(7.5612798,0,0,7.5612798,-735.20175,-686.57529)">
-    <g
-       aria-label="FUZD"
-       id="text2013"
-       style="font-size:10.5833px;line-height:1.25;font-family:'Droid Sans Fallback';-inkscape-font-specification:'Droid Sans Fallback';stroke-width:0.264583">
-      <path
-         d="m 110.26773,90.812048 -0.508,1.777994 h -6.86856 l 1.13241,-1.777994 z m -0.65616,2.465909 -0.58209,1.936744 h -3.39723 l -0.79375,2.889241 h -2.78341 l 1.34408,-4.825985 z"
-         style="font-family:'Blade Runner Movie Font';-inkscape-font-specification:'Blade Runner Movie Font'"
-         id="path1036" />
-      <path
-         d="m 117.94061,90.843798 -0.49742,1.746244 h -2.41299 l 0.48683,-1.746244 z m -4.40266,0 -0.48683,1.746244 h -2.38124 l 0.49741,-1.735661 z m 3.73591,2.434159 -1.3335,4.825985 -3.87349,0.01058 q -1.82032,0 -2.25424,-1.09008 -0.11641,-0.296332 -0.11641,-0.592665 0,-0.169333 0.0423,-0.317499 l 0.78316,-2.836324 h 2.34949 l -0.75141,2.624658 q -0.0529,0.179916 -0.0529,0.264583 0,0.211666 0.21167,0.275165 h 1.69333 l 0.889,-3.164406 z"
-         style="font-family:'Blade Runner Movie Font';-inkscape-font-specification:'Blade Runner Movie Font'"
-         id="path1038" />
-      <path
-         d="m 125.71931,90.801465 -0.45508,1.767411 h -7.02731 l 1.143,-1.756828 z m -0.58208,2.465909 -3.94757,2.88924 h 3.10091 l -0.53975,1.947328 h -6.37115 l 0.5715,-1.968494 4.14865,-2.857491 z"
-         style="font-family:'Blade Runner Movie Font';-inkscape-font-specification:'Blade Runner Movie Font'"
-         id="path1040" />
-      <path
-         d="m 132.93712,92.590042 h -7.33422 l 1.13241,-1.777994 h 4.26507 q 0.6985,0 1.30175,0.550332 0.60324,0.539748 0.63499,1.227662 z m 0.127,0.687915 q 0,1.862661 -0.71966,2.920991 -0.58208,0.857247 -1.05833,1.217079 -0.9525,0.709081 -2.40241,0.709081 h -4.20157 l 1.38641,-4.847151 h 2.60349 l -0.87841,2.952741 q 0.254,0.105833 0.53975,0.105833 0.52916,0 1.10066,-0.328083 0.92075,-0.518581 1.2065,-1.492245 0.14816,-0.497415 0.16933,-1.238246 z"
-         style="font-family:'Blade Runner Movie Font';-inkscape-font-specification:'Blade Runner Movie Font'"
-         id="path1042" />
-    </g>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.5833px;line-height:1.25;font-family:'Droid Sans Fallback';-inkscape-font-specification:'Droid Sans Fallback';fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="102.19267"
+       y="98.114525"
+       id="text2013"><tspan
+         id="tspan2011"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Blade Runner Movie Font';-inkscape-font-specification:'Blade Runner Movie Font';stroke-width:0.264583"
+         x="102.19267"
+         y="98.114525">FUZD</tspan></text>
     <rect
        id="rect5820"
        width="32.79921"
