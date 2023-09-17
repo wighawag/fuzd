@@ -104,6 +104,10 @@ export default defineConfig({
 		],
 
 		socialLinks: [{icon: 'github', link: 'https://github.com/wighawag/fuzd'}],
+
+		search: {
+			provider: 'local',
+		},
 	},
 	// base: '/fuzd/',
 	// vite: {

@@ -50,7 +50,8 @@ const FeePerGasPeriod = FeePerGas.extend({
 export type FeePerGasPeriod = z.infer<typeof FeePerGasPeriod>;
 
 const BroadcastSchedule = z.array(FeePerGasPeriod).nonempty();
-export type BroadcastSchedule = z.infer<typeof BroadcastSchedule>;
+// export type BroadcastSchedule = z.infer<typeof BroadcastSchedule>;
+export type BroadcastSchedule = FeePerGasPeriod[];
 
 export const TransactionSubmission = z.object({
 	to: EIP1193AccountSchema.optional(),
