@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.0.9
+
+### Patch Changes
+
+- use mainnet drand (old?)
+
 ## 0.0.8
 
 ### Patch Changes

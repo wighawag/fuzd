@@ -1,6 +1,6 @@
 {
   "name": "fuzd-cf-worker",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "publishConfig": {
     "access": "public"
   },
@@ -36,6 +36,6 @@
   "scripts": {
     "prepare": "set-defaults .",
     "deploy": "wrangler deploy",
-    "dev": "wrangler dev"
+    "dev": "wrangler dev -c ./wrangler.toml --port 34002"
   }
 }

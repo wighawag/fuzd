@@ -19,7 +19,7 @@ import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import type {EIP1193Account, EIP1193CallProvider, EIP1193GetBlockByNumberProvider} from 'eip-1193';
 
-import {testnetClient} from 'tlock-js';
+import {mainnetClient} from 'tlock-js';
 import {logs} from 'named-logs';
 import {Time, getTimeFromContractTimestamp} from 'fuzd-common';
 
@@ -152,7 +152,7 @@ export class SchedulerDO extends createDurable() {
 		this.executor = createExecutor(executorConfig);
 
 		const decrypter = initDecrypter({
-			client: testnetClient(),
+			client: mainnetClient(),
 		});
 		const schedulerConfig = {
 			...baseConfig,
