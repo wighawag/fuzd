@@ -44,7 +44,7 @@ function fromHex(str: `0x${string}`): Uint8Array {
 }
 
 export function createExecutor(
-	config: ExecutorConfig
+	config: ExecutorConfig,
 ): Executor<TransactionSubmission, TransactionInfo> & ExecutorBackend {
 	const {chainConfigs, time, storage, signers} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
@@ -53,7 +53,7 @@ export function createExecutor(
 	async function submitTransaction(
 		id: string,
 		account: EIP1193Account,
-		submission: TransactionSubmission
+		submission: TransactionSubmission,
 	): Promise<TransactionInfo> {
 		submission = TransactionSubmission.parse(submission);
 
@@ -67,7 +67,7 @@ export function createExecutor(
 			throw new Error(
 				`execution already submitted, the id field is used as identifier. You can reexcute the same tx data but you just need to change the id field.
 				This also means if you use different for the same data, that same tx data will be sent as many time as you submit different id
-				`
+				`,
 			);
 		}
 
@@ -105,7 +105,7 @@ export function createExecutor(
 		transactionData: EIP1193TransactionToFill & {account: EIP1193Account},
 		broadcaster: BroadcasterSignerData,
 		txParams: TransactionParams,
-		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
+		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean},
 	): Promise<RawTransactionInfo> {
 		let actualTransactionData: EIP1193TransactionDataUsed;
 
@@ -150,7 +150,7 @@ export function createExecutor(
 					// TODO delete instead of error ?
 				} else {
 					throw new Error(
-						`nonce increased but already resolved. this should never happen since forceNonce should have been used here`
+						`nonce increased but already resolved. this should never happen since forceNonce should have been used here`,
 					);
 				}
 			} else {
@@ -215,7 +215,7 @@ export function createExecutor(
 
 	async function _getTxParams(
 		broadcasterAddress: EIP1193Account,
-		transactionData: EIP1193TransactionToFill & {account: EIP1193Account}
+		transactionData: EIP1193TransactionToFill & {account: EIP1193Account},
 	): Promise<TransactionParams> {
 		const {provider} = _getChainConfig(transactionData.chainId);
 
@@ -271,7 +271,7 @@ export function createExecutor(
 	async function _submitTransaction(
 		broadcaster: BroadcasterSignerData,
 		transactionData: TransactionToStore,
-		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean}
+		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean},
 	): Promise<TransactionInfo> {
 		const {provider} = _getChainConfig(transactionData.chainId);
 		const txParams = await _getTxParams(broadcaster.address, transactionData);
@@ -286,7 +286,7 @@ export function createExecutor(
 
 		const retries = typeof transactionData.retries === 'undefined' ? 0 : transactionData.retries + 1;
 
-		const timestamp = await time.getTimestamp();
+		const timestamp = await time.getTimestamp(provider);
 		const nextCheckTime = timestamp + 60; // TODO config
 
 		const newTransactionData: PendingExecutionStored = {
@@ -317,7 +317,7 @@ export function createExecutor(
 			} catch (err) {
 				console.error(
 					`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.`,
-					err
+					err,
 				);
 			}
 		}
@@ -332,7 +332,7 @@ export function createExecutor(
 
 	async function _resubmitIfNeeded(pendingExecution: PendingExecutionStored): Promise<void> {
 		const {provider, finality, worstCaseBlockTime} = _getChainConfig(pendingExecution.chainId);
-		const timestamp = await time.getTimestamp();
+		const timestamp = await time.getTimestamp(provider);
 		const diff = timestamp - pendingExecution.broadcastTime;
 
 		// TODO validation aty submission time
@@ -374,7 +374,7 @@ export function createExecutor(
 		) {
 			const signer = await signers.getProviderByAssignerID(
 				pendingExecution.broadcasterAssignerID,
-				pendingExecution.account
+				pendingExecution.account,
 			);
 			if (!signer) {
 				// TODO

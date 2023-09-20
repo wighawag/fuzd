@@ -1,7 +1,8 @@
 import {EIP1193Account, EIP1193DATA, EIP1193ProviderWithoutEvents} from 'eip-1193';
 // import {AbiEvent} from 'abitype';
 import {ExecutionQueued, SchedulerStorage} from './scheduler-storage';
-import {Executor, Time} from './common';
+import {Executor} from './common';
+import type {Time} from 'fuzd-common';
 
 export type StartTransaction = {
 	// the execution should only happen if that tx is included in a block
@@ -18,7 +19,7 @@ export type StartTransaction = {
 
 export type DeltaScheduledExecution<
 	TimeValueType extends FixedTiming = FixedTiming,
-	TransactionType extends StartTransaction = StartTransaction
+	TransactionType extends StartTransaction = StartTransaction,
 > = {
 	type: 'delta';
 	expiry?: number;
@@ -38,7 +39,7 @@ export type AssumedTransaction = {
 
 export type FixedTimeScheduledExecution<
 	TimeValueType extends FixedTiming | PartiallyHiddenTimeValue = FixedTiming,
-	TransactionType extends AssumedTransaction = AssumedTransaction
+	TransactionType extends AssumedTransaction = AssumedTransaction,
 > = {
 	type: 'fixed';
 	expiry?: number;
@@ -87,14 +88,13 @@ export type FixedTiming = TimeBasedTiming | RoundBasedTiming;
 
 type BaseExecution = {
 	chainId: `0x${string}`;
-	timeContract?: EIP1193Account;
 };
 
 export type TimingTypes = FixedTiming | PartiallyHiddenTimeValue;
 
 export type ScheduledTimeLockedExecution<
 	FixedTimingType extends TimingTypes,
-	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
+	AssumedTransactionType extends AssumedTransaction = AssumedTransaction,
 > = BaseExecution & {
 	type: 'time-locked';
 	payload: string;
@@ -107,7 +107,7 @@ export type ScheduledExecutionInClear<
 	FixedTimingType extends TimingTypes,
 	DeltaTimingType extends FixedTiming,
 	StartTransactionType extends StartTransaction = StartTransaction,
-	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
+	AssumedTransactionType extends AssumedTransaction = AssumedTransaction,
 > = BaseExecution & {
 	type: 'clear';
 	transaction: TransactionDataType;
@@ -121,7 +121,7 @@ export type ScheduledExecution<
 	FixedTimingType extends TimingTypes = TimingTypes,
 	DeltaTimingType extends FixedTiming = FixedTiming,
 	StartTransactionType extends StartTransaction = StartTransaction,
-	AssumedTransactionType extends AssumedTransaction = AssumedTransaction
+	AssumedTransactionType extends AssumedTransaction = AssumedTransaction,
 > =
 	| ScheduledTimeLockedExecution<FixedTimingType, AssumedTransactionType>
 	| ScheduledExecutionInClear<
@@ -160,20 +160,18 @@ export type Scheduler<TransactionDataType> = {
 	submitExecution(
 		id: string,
 		account: EIP1193Account,
-		execution: ScheduledExecution<TransactionDataType>
+		execution: ScheduledExecution<TransactionDataType>,
 	): Promise<ScheduleInfo>;
 };
 
 export type ExecutionStatus = {type: 'broadcasted' | 'deleted' | 'reassigned' | 'skipped'; reason: string};
 
 export type QueueProcessingResult = {
-	timestamp: number;
 	limit: number;
 	executions: {id: string; checkinTime: number; status: ExecutionStatus}[];
+	chainTimetamps: {[chainid: string]: number};
 };
 
-export type WithTimeContract = {chainId: EIP1193DATA; timeContract: EIP1193Account};
-
 export type SchedulerBackend = {
-	processQueue(onlyWithTimeContract?: WithTimeContract): Promise<QueueProcessingResult>;
+	processQueue(): Promise<QueueProcessingResult>;
 };

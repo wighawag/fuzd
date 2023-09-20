@@ -1,4 +1,4 @@
-# fuzd-scheduler
+# fuzd-executor
 
 ## 0.1.4
 

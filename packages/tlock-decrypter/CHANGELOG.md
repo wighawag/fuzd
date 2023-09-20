@@ -1,5 +1,13 @@
 # fuzd-tlock-decrypter
 
+## 0.1.4
+
+### Patch Changes
+
+- remove timeContract tracking
+- Updated dependencies
+  - fuzd-scheduler@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes

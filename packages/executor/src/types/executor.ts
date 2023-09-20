@@ -1,6 +1,6 @@
 import {EIP1193Account, EIP1193DATA, EIP1193ProviderWithoutEvents, EIP1193SignerProvider} from 'eip-1193';
 import {EIP1193TransactionDataUsed, ExecutorStorage} from './executor-storage';
-import {Time} from './common';
+import type {Time} from 'fuzd-common';
 import {z} from 'zod';
 
 // ------------------------------------------------------------------------------------------------

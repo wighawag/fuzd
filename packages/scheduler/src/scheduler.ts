@@ -2,7 +2,7 @@ import {logs} from 'named-logs';
 import {dequals} from './utils/js';
 import {getTransactionStatus} from './utils/ethereum';
 import {time2text} from './utils/time';
-import {EIP1193Account, EIP1193DATA} from 'eip-1193';
+import {EIP1193Account} from 'eip-1193';
 import {computePotentialExecutionTime, computeFirstExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
 import {
@@ -14,61 +14,27 @@ import {
 	Scheduler,
 	SchedulerBackend,
 	SchedulerConfig,
-	WithTimeContract,
 } from './types/scheduler';
 import {ExecutionQueued} from './types/scheduler-storage';
 
 const logger = logs('fuzd-scheduler');
 
 export function createScheduler<TransactionDataType, TransactionInfoType>(
-	config: SchedulerConfig<TransactionDataType, TransactionInfoType>
+	config: SchedulerConfig<TransactionDataType, TransactionInfoType>,
 ): Scheduler<TransactionDataType> & SchedulerBackend {
 	const {chainConfigs, time, storage, executor} = config;
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
-	async function _getTimes({contract, chainId}: {chainId: `0x${string}`; contract?: EIP1193Account}) {
-		const realTime = await time.getTimestamp();
-		const virtualTime = contract ? await _getVirtualTime({chainId, contract}) : realTime;
-		return {
-			virtualTime,
-			realTime,
-		};
-	}
-
-	async function _getVirtualTime({
-		chainId,
-		contract,
-	}: {
-		chainId: `0x${string}`;
-		contract: EIP1193Account;
-	}): Promise<number> {
-		const provider = config.chainConfigs[chainId].provider;
-		if (!provider) {
-			throw new Error(`no provider for chain ${chainId}`);
-		}
-		const result = await provider.request({
-			method: 'eth_call',
-			params: [
-				{
-					to: contract,
-					data: '0xb80777ea', // timestamp()
-				},
-			],
-		});
-		const value = parseInt(result.slice(2), 16);
-		return value;
-	}
-
 	async function submitExecution(
 		id: string,
 		account: EIP1193Account,
-		execution: ScheduledExecution<TransactionDataType>
+		execution: ScheduledExecution<TransactionDataType>,
 	): Promise<ScheduleInfo> {
 		const chainConfig = chainConfigs[execution.chainId];
 		if (!chainConfig) {
 			throw new Error(
-				`cannot proceed, this schjeduler is not configured to support chain with id ${execution.chainId}`
+				`cannot proceed, this schjeduler is not configured to support chain with id ${execution.chainId}`,
 			);
 		}
 
@@ -87,15 +53,15 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 			if (dequals(existingExecution, queuedExecution)) {
 				logger.info(
 					`execution has already been submitted and has not been completed or cancelled, queueID: ${displayExecution(
-						existingExecution
-					)}`
+						existingExecution,
+					)}`,
 				);
 				return {checkinTime};
 			} else {
 				throw new Error(
 					`an execution with the same id as already been submitted and is still being processed, queueID: ${displayExecution(
-						existingExecution
-					)}`
+						existingExecution,
+					)}`,
 				);
 			}
 		}
@@ -106,7 +72,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 	async function retryLater(
 		oldCheckinTime: number,
 		execution: ExecutionQueued<TransactionDataType>,
-		newCheckinTime: number
+		newCheckinTime: number,
 	): Promise<ExecutionQueued<TransactionDataType>> {
 		execution.retries++;
 		if (execution.retries >= 10) {
@@ -125,7 +91,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		if (execution.type === 'time-locked') {
 			if (!config.decrypter) {
 				throw new Error(
-					`the scheduler has not been configured with a decrypter. As such it cannot support "time-locked" execution`
+					`the scheduler has not been configured with a decrypter. As such it cannot support "time-locked" execution`,
 				);
 			}
 
@@ -176,7 +142,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 
 	async function checkAndUpdateExecutionIfNeeded(
 		execution: ExecutionQueued<TransactionDataType>,
-		currentTimestamp: number
+		currentTimestamp: number,
 	): Promise<
 		| {status: 'deleted'}
 		| {status: 'changed'; execution: ExecutionQueued<TransactionDataType>}
@@ -248,25 +214,16 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		}
 	}
 
-	async function processQueue(onlyWithTimeContract?: WithTimeContract) {
-		const realTime = await time.getTimestamp();
-		const currentTimestamp = onlyWithTimeContract
-			? await _getVirtualTime({
-					chainId: onlyWithTimeContract.chainId,
-					contract: onlyWithTimeContract.timeContract,
-			  })
-			: realTime;
-
+	async function processQueue() {
 		const limit = maxNumTransactionsToProcessInOneGo;
-
 		const result: QueueProcessingResult = {
-			timestamp: currentTimestamp,
 			limit,
 			executions: [],
+			chainTimetamps: {},
 		};
 
 		// TODO only query up to a certain time
-		const executions = await storage.getQueueTopMostExecutions({limit}, onlyWithTimeContract);
+		const executions = await storage.getQueueTopMostExecutions({limit});
 
 		if (executions.length === 0) {
 			logger.info(`found zero executions to process`);
@@ -276,12 +233,27 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 			logger.info(
 				`found ${executions.length} queued execution from ${executions[0].checkinTime} to ${
 					executions[executions.length - 1].checkinTime
-				}`
+				}`,
 			);
 		}
 
 		for (const execution of executions) {
-			const {finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
+			const chainIdDecimal = parseInt(execution.chainId.slice(2), 16).toString();
+			const {provider, finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
+
+			// Note here that if the service use a contract timestamp or a network who has its own deviating timestamp
+			// then the system mostyl assume that only one of such network/contract is being used
+			// Otherwise, tx ordering will affect the priority of these tx
+			// this is because tx using normal time will always be fetched first
+			// an option to processQueue only with specific contract/network could be used
+			// or alternatively a startTime option to diregard past transaction
+			// but this comes with its own risk.
+
+			let currentTimestamp = result.chainTimetamps[chainIdDecimal];
+			if (!currentTimestamp) {
+				currentTimestamp = await time.getTimestamp(provider);
+				result.chainTimetamps[chainIdDecimal] = currentTimestamp;
+			}
 
 			const updates = await checkAndUpdateExecutionIfNeeded(execution, currentTimestamp);
 			if (updates.status === 'deleted' || updates.status === 'willRetry') {

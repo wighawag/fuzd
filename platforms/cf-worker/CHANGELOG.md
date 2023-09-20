@@ -1,5 +1,16 @@
 # fuzd-cf-worker
 
+## 0.0.5
+
+### Patch Changes
+
+- remove timeContract tracking
+- Updated dependencies
+  - fuzd-tlock-decrypter@0.1.4
+  - fuzd-scheduler@0.1.4
+  - fuzd-executor@0.1.4
+  - fuzd-gateways@0.1.4
+
 ## 0.0.4
 
 ### Patch Changes

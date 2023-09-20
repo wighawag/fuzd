@@ -19,19 +19,10 @@ export interface SchedulerStorage<TransactionDataType> {
 		chainId: `0x${string}`;
 		id: string;
 		checkinTime: number;
-		timeContract?: `0x${string}`;
 	}): Promise<ExecutionQueued<TransactionDataType> | undefined>;
-	deleteExecution(params: {
-		chainId: `0x${string}`;
-		id: string;
-		checkinTime: number;
-		timeContract?: `0x${string}`;
-	}): Promise<void>;
+	deleteExecution(params: {chainId: `0x${string}`; id: string; checkinTime: number}): Promise<void>;
 	queueExecution(executionToStore: ExecutionQueued<TransactionDataType>): Promise<ExecutionQueued<TransactionDataType>>;
 	updateExecutionInQueue(executionUpdated: ExecutionQueued<TransactionDataType>): Promise<void>;
 	reassignExecutionInQueue(oldCheckinTime: number, execution: ExecutionQueued<TransactionDataType>): Promise<void>;
-	getQueueTopMostExecutions(
-		params: {limit: number},
-		onlyWithTimeContract?: {chainId: `0x${string}`; timeContract: `0x${string}`}
-	): Promise<ExecutionQueued<TransactionDataType>[]>;
+	getQueueTopMostExecutions(params: {limit: number}): Promise<ExecutionQueued<TransactionDataType>[]>;
 }

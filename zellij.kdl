@@ -11,6 +11,9 @@ layout {
 			}
 		}
 		pane split_direction="vertical" {
+			pane name="default-client" command="bash" {
+				args "-c" "pnpm run --filter ./packages/common dev; cd packages/common; ${SHELL-bash}"
+			}
 			pane name="executor" command="bash" {
 				args "-c" "pnpm run --filter ./packages/executor dev; cd packages/executor; ${SHELL-bash}"
 			}

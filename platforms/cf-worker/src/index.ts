@@ -59,16 +59,6 @@ router
 	.get('/transactions', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).getPendingTransactions())
 
 	// TODO authentication
-	.get('/processQueue/:chainId/:timeContract', ({SCHEDULER, params}) =>
-		SCHEDULER.get(SINGELTON).processQueue(
-			params.chainId && params.timeContract
-				? {
-						chainId: params.chainId as `0x${string}`,
-						timeContract: params.timeContract as `0x${string}`,
-				  }
-				: undefined
-		)
-	)
 	.get('/processQueue', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).processQueue())
 	.get('/processTransactions', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).processPendingTransactions())
 

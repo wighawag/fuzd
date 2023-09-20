@@ -1,5 +1,15 @@
 # fuzd-tests
 
+## 0.1.4
+
+### Patch Changes
+
+- remove timeContract tracking
+- Updated dependencies
+  - fuzd-scheduler@0.1.4
+  - fuzd-executor@0.1.4
+  - fuzd-gateways@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes
