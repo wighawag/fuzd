@@ -1,6 +1,6 @@
 {
 	"name": "remote-account",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "remote account based on hd keys",
 	"publishConfig": {
 		"access": "public"
@@ -9,6 +9,13 @@
 	"main": "dist/index.cjs",
 	"module": "dist/index.js",
 	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"require": "./dist/index.cjs",
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
 	"devDependencies": {
 		"@scure/bip39": "^1.2.1",
 		"rimraf": "^5.0.1",

@@ -1,6 +1,6 @@
 {
   "name": "fuzd-default-client",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "default client for fuzd using tlock-js",
   "publishConfig": {
     "access": "public"
@@ -9,6 +9,13 @@
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "keywords": [],
   "author": "",
   "license": "MIT",
