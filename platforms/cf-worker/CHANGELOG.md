@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.0.7
+
+### Patch Changes
+
+- CONTRACT_TIMESTAMP
+
 ## 0.0.6
 
 ### Patch Changes

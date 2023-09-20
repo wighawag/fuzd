@@ -289,6 +289,9 @@ importers:
       eip-1193-signer:
         specifier: ^0.0.1
         version: 0.0.1(typescript@5.2.2)(zod@3.22.2)
+      fuzd-common:
+        specifier: workspace:*
+        version: link:../../packages/common
       fuzd-executor:
         specifier: workspace:*
         version: link:../../packages/executor

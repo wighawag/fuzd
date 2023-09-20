@@ -17,15 +17,17 @@ import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {initAccountFromHD} from 'remote-account';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
-import type {EIP1193Account} from 'eip-1193';
+import type {EIP1193Account, EIP1193CallProvider, EIP1193GetBlockByNumberProvider} from 'eip-1193';
 
 import {testnetClient} from 'tlock-js';
 import {logs} from 'named-logs';
+import {getTimeFromContractTimestamp} from 'fuzd-common';
 
 const logger = logs('fuzd-cf-worker');
 
 interface Env {
 	HD_MNEMONIC?: string;
+	CONTRACT_TIMESTAMP?: `0x${string};`;
 	[chainId: `CHAIN_0x${string}`]: string | undefined;
 }
 
@@ -95,11 +97,24 @@ export class SchedulerDO extends createDurable() {
 		const db = state.storage;
 		this.executorStorage = new KVExecutorStorage(db);
 		this.schedulerStorage = new KVSchedulerStorage(db);
-		const time = {
-			async getTimestamp() {
-				return Math.floor(Date.now() / 1000);
+
+		let time = {
+			async getTimestamp(provider: EIP1193GetBlockByNumberProvider & EIP1193CallProvider) {
+				const block = await provider.request({method: 'eth_getBlockByNumber', params: ['latest', false]});
+				if (!block) {
+					throw new Error(`cannot get latest block`);
+				}
+				return parseInt(block.timestamp.slice(2), 16);
 			},
 		};
+		const contractTimestamp = env.CONTRACT_TIMESTAMP;
+		if (contractTimestamp) {
+			time = {
+				async getTimestamp(provider: EIP1193CallProvider) {
+					return getTimeFromContractTimestamp(provider, contractTimestamp);
+				},
+			};
+		}
 
 		const baseConfig = {
 			time,
