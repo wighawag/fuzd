@@ -21,7 +21,7 @@ import type {EIP1193Account, EIP1193CallProvider, EIP1193GetBlockByNumberProvide
 
 import {testnetClient} from 'tlock-js';
 import {logs} from 'named-logs';
-import {getTimeFromContractTimestamp} from 'fuzd-common';
+import {Time, getTimeFromContractTimestamp} from 'fuzd-common';
 
 const logger = logs('fuzd-cf-worker');
 
@@ -41,11 +41,15 @@ export class SchedulerDO extends createDurable() {
 	protected schedulerStorage: SchedulerStorage<TransactionSubmission>;
 	protected account: ReturnType<typeof initAccountFromHD>;
 	protected storage: DurableObjectStorage;
+	protected time: Time;
+	protected chainConfigs: ChainConfigs;
+	protected env: Env;
 	constructor(state: DurableObjectState, env: Env) {
 		super(state, env);
 		const DO = this;
+		this.env = env;
 
-		const chainConfigs: ChainConfigs = {};
+		this.chainConfigs = {};
 
 		const envKeys = Object.keys(env);
 		for (const envKey of envKeys) {
@@ -76,7 +80,7 @@ export class SchedulerDO extends createDurable() {
 					}
 				}
 
-				chainConfigs[chainId] = {
+				this.chainConfigs[chainId] = {
 					provider: new JSONRPCHTTPProvider(nodeURL),
 					finality,
 					worstCaseBlockTime,
@@ -98,7 +102,7 @@ export class SchedulerDO extends createDurable() {
 		this.executorStorage = new KVExecutorStorage(db);
 		this.schedulerStorage = new KVSchedulerStorage(db);
 
-		let time = {
+		this.time = {
 			async getTimestamp(provider: EIP1193GetBlockByNumberProvider & EIP1193CallProvider) {
 				const block = await provider.request({method: 'eth_getBlockByNumber', params: ['latest', false]});
 				if (!block) {
@@ -109,7 +113,7 @@ export class SchedulerDO extends createDurable() {
 		};
 		const contractTimestamp = env.CONTRACT_TIMESTAMP;
 		if (contractTimestamp) {
-			time = {
+			this.time = {
 				async getTimestamp(provider: EIP1193CallProvider) {
 					return getTimeFromContractTimestamp(provider, contractTimestamp);
 				},
@@ -117,7 +121,7 @@ export class SchedulerDO extends createDurable() {
 		}
 
 		const baseConfig = {
-			time,
+			time: this.time,
 			signers: {
 				async assignProviderFor(chainId: `0x${string}`, forAddress: EIP1193Account): Promise<BroadcasterSignerData> {
 					const derivedAccount = DO.account.deriveForAddress(forAddress);
@@ -139,7 +143,7 @@ export class SchedulerDO extends createDurable() {
 			},
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
-			chainConfigs,
+			chainConfigs: this.chainConfigs,
 		};
 		const executorConfig = {
 			...baseConfig,
@@ -169,6 +173,16 @@ export class SchedulerDO extends createDurable() {
 			logger.error(err);
 			throw err;
 		}
+	}
+
+	getContractTimestamp() {
+		return this.env.CONTRACT_TIMESTAMP;
+	}
+
+	getTime(chainId: string) {
+		const {provider} =
+			this.chainConfigs[(chainId.startsWith('0x') ? chainId : `0x${parseInt(chainId).toString(16)}`) as `0x${string}`];
+		return this.time.getTimestamp(provider);
 	}
 
 	getPublicKey() {

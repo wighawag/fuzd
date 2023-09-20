@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.0.8
+
+### Patch Changes
+
+- time
+
 ## 0.0.7
 
 ### Patch Changes

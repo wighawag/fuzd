@@ -43,6 +43,10 @@ router
 	// get the durable itself... returns json response, so no need to wrap
 	.get('/publicKey', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).getPublicKey())
 
+	.get('/time/:chainId', ({SCHEDULER, params}) => SCHEDULER.get(SINGELTON).getTime(params.chainId))
+
+	.get('/contractTimestamp', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).getContractTimestamp())
+
 	.post('/scheduleExecution', async (request) => {
 		const jsonAsString = await request.text();
 		const signature = request.headers.get('signature') as `0x${string}`;
