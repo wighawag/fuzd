@@ -20,6 +20,7 @@
     "fuzd-scheduler": "workspace:*",
     "isomorphic-unfetch": "^4.0.2",
     "named-logs": "^0.2.2",
+    "remote-account": "workspace:*",
     "tlock-js": "^0.6.1",
     "viem": "^1.10.4"
   },

@@ -85,6 +85,9 @@ importers:
       named-logs:
         specifier: ^0.2.2
         version: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+      remote-account:
+        specifier: workspace:*
+        version: link:../remote-account
       tlock-js:
         specifier: ^0.6.1
         version: 0.6.1

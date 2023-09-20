@@ -3,6 +3,7 @@ import {timelockEncrypt, HttpChainClient, roundAt} from 'tlock-js';
 import fetch from 'isomorphic-unfetch';
 import {privateKeyToAccount} from 'viem/accounts';
 import {BroadcastSchedule, TransactionSubmission} from 'fuzd-executor';
+import {deriveRemoteAddress} from 'remote-account';
 export {testnetClient, mainnetClient} from 'tlock-js';
 
 export type ClientConfig = {
@@ -25,6 +26,12 @@ export type DecryptedPayload<TransactionDataType> =
 
 export function createClient(config: ClientConfig) {
 	const wallet = privateKeyToAccount(config.privateKey);
+
+	async function getRemoteAccount() {
+		const publicKey = await fetch(`${config.schedulerEndPoint}/publicKey`).then((v) => v.text());
+		const remoteAddress = deriveRemoteAddress(publicKey, wallet.address);
+		return remoteAddress;
+	}
 	async function submitExecution(execution: {
 		chainId: `0x${string}` | string;
 		gas: bigint;
@@ -33,7 +40,7 @@ export function createClient(config: ClientConfig) {
 				duration: number;
 				maxFeePerGas: bigint;
 				maxPriorityFeePerGas: bigint;
-			}
+			},
 		];
 		data: `0x${string}`;
 		to: `0x${string}`;
@@ -103,5 +110,6 @@ export function createClient(config: ClientConfig) {
 
 	return {
 		submitExecution,
+		getRemoteAccount,
 	};
 }
