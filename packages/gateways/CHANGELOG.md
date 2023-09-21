@@ -1,5 +1,11 @@
 # fuzd-gateways
 
+## 0.1.6
+
+### Patch Changes
+
+- .toLowerCase for db id
+
 ## 0.1.5
 
 ### Patch Changes
