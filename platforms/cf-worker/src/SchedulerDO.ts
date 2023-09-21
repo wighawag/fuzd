@@ -201,6 +201,14 @@ export class SchedulerDO extends createDurable() {
 		return this.executorStorage.getPendingExecutions({limit: 100});
 	}
 
+	getQueuedExecution(chainId: `0x${string}`, account: `0x${string}`, slot: string) {
+		return this.schedulerStorage.getQueuedExecution({chainId, account, slot});
+	}
+
+	getQueuedExecutionsForAccount(chainId: `0x${string}`, account: `0x${string}`) {
+		return this.schedulerStorage.getQueuedExecutionsForAccount({chainId, account});
+	}
+
 	getQueue() {
 		return this.schedulerStorage.getQueueTopMostExecutions({limit: 100});
 	}

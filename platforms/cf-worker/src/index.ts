@@ -62,6 +62,21 @@ router
 	})
 	.get('/transactions', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).getPendingTransactions())
 
+	.get('/queuedExecution/:chainId/:account/:slot', ({SCHEDULER, params}) =>
+		SCHEDULER.get(SINGELTON).getQueuedExecution(
+			params.chainId as `0x${string}`,
+			params.account.toLowerCase() as `0x${string}`,
+			params.slot,
+		),
+	)
+
+	.get('/queuedExecution/:chainId/:account', ({SCHEDULER, params}) =>
+		SCHEDULER.get(SINGELTON).getQueuedExecutionsForAccount(
+			params.chainId as `0x${string}`,
+			params.account.toLowerCase() as `0x${string}`,
+		),
+	)
+
 	// TODO authentication
 	.get('/processQueue', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).processQueue())
 	.get('/processTransactions', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).processPendingTransactions())
