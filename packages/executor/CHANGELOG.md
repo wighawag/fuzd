@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.1.5
+
+### Patch Changes
+
+- rework the system to allow slot and fetching list per account
+
 ## 0.1.4
 
 ### Patch Changes

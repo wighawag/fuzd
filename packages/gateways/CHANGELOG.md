@@ -1,5 +1,14 @@
 # fuzd-gateways
 
+## 0.1.5
+
+### Patch Changes
+
+- rework the system to allow slot and fetching list per account
+- Updated dependencies
+  - fuzd-executor@0.1.5
+  - fuzd-scheduler@0.1.5
+
 ## 0.1.4
 
 ### Patch Changes

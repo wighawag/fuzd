@@ -1,5 +1,16 @@
 # fuzd-cf-worker
 
+## 0.0.10
+
+### Patch Changes
+
+- rework the system to allow slot and fetching list per account
+- Updated dependencies
+  - fuzd-executor@0.1.5
+  - fuzd-gateways@0.1.5
+  - fuzd-scheduler@0.1.5
+  - fuzd-tlock-decrypter@0.1.5
+
 ## 0.0.9
 
 ### Patch Changes
