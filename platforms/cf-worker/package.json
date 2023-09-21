@@ -36,6 +36,7 @@
   "scripts": {
     "prepare": "set-defaults .",
     "deploy": "wrangler deploy",
-    "dev": "wrangler dev -c ./wrangler.toml --port 34002"
+    "dev": "wrangler dev -c ./wrangler.toml",
+    "dev:local": "wrangler dev -c ./wrangler.toml --port 34002"
   }
 }

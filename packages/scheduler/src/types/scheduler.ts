@@ -88,6 +88,7 @@ export type FixedTiming = TimeBasedTiming | RoundBasedTiming;
 
 type BaseExecution = {
 	chainId: `0x${string}`;
+	slot: string;
 };
 
 export type TimingTypes = FixedTiming | PartiallyHiddenTimeValue;
@@ -154,22 +155,21 @@ export type SchedulerConfig<TransactionDataType, TransactionInfoType> = {
 
 export type ScheduleInfo = {
 	checkinTime: number;
+	chainId: `0x${string}`;
+	account: `0x${string}`;
+	slot: string;
 };
 
 export type Scheduler<TransactionDataType> = {
-	submitExecution(
-		id: string,
-		account: EIP1193Account,
-		execution: ScheduledExecution<TransactionDataType>,
-	): Promise<ScheduleInfo>;
+	submitExecution(account: EIP1193Account, execution: ScheduledExecution<TransactionDataType>): Promise<ScheduleInfo>;
 };
 
 export type ExecutionStatus = {type: 'broadcasted' | 'deleted' | 'reassigned' | 'skipped'; reason: string};
 
 export type QueueProcessingResult = {
 	limit: number;
-	executions: {id: string; checkinTime: number; status: ExecutionStatus}[];
-	chainTimetamps: {[chainid: string]: number};
+	executions: {chainId: string; account: `0x${string}`; slot: string; checkinTime: number; status: ExecutionStatus}[];
+	chainTimetamps: {[chainId: string]: number};
 };
 
 export type SchedulerBackend = {

@@ -8,7 +8,7 @@ export {testnetClient, mainnetClient} from 'tlock-js';
 
 export type ClientConfig = {
 	drand: HttpChainClient;
-	schedulerEndPoint: string | ((id: string, execution: string, signature: `0x${string}`) => Promise<ScheduleInfo>);
+	schedulerEndPoint: string | ((execution: string, signature: `0x${string}`) => Promise<ScheduleInfo>);
 	privateKey: `0x${string}`;
 };
 
@@ -80,6 +80,7 @@ export function createClient(config: ClientConfig) {
 		const payload = await timelockEncrypt(round, Buffer.from(payloadAsJSONString, 'utf-8'), config.drand);
 		executionToSend = {
 			chainId,
+			slot: `1`,
 			timing: {
 				type: 'fixed',
 				value: {
@@ -104,7 +105,7 @@ export function createClient(config: ClientConfig) {
 			});
 			return response.json();
 		} else {
-			return config.schedulerEndPoint(signature, jsonAsString, signature);
+			return config.schedulerEndPoint(jsonAsString, signature);
 		}
 	}
 

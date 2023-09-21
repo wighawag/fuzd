@@ -51,7 +51,7 @@ export function createExecutor(
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
 	async function submitTransaction(
-		id: string,
+		slot: string,
 		account: EIP1193Account,
 		submission: TransactionSubmission,
 	): Promise<TransactionInfo> {
@@ -62,11 +62,15 @@ export function createExecutor(
 			throw new Error(`cannot proceed, this executor is not configured to support chain with id ${submission.chainId}`);
 		}
 
-		const existingExecution = await storage.getPendingExecution({chainId: submission.chainId, id});
+		const existingExecution = await storage.getPendingExecution({
+			chainId: submission.chainId,
+			slot,
+			account,
+		});
 		if (existingExecution) {
 			throw new Error(
-				`execution already submitted, the id field is used as identifier. You can reexcute the same tx data but you just need to change the id field.
-				This also means if you use different for the same data, that same tx data will be sent as many time as you submit different id
+				`execution already submitted (chainId: ${submission.chainId}, account: ${account}, slot: ${slot}), the slot field is used as identifier. You can reexcute the same tx data but you just need to change the slot field.
+				This also means if you use different for the same data, that same tx data will be sent as many time as you submit different slot
 				`,
 			);
 		}
@@ -75,7 +79,7 @@ export function createExecutor(
 		const pendingExecutionToStore: TransactionToStore = {
 			...submission,
 			account,
-			id,
+			slot,
 			from: broadcaster.address,
 			broadcasterAssignerID: broadcaster.assignerID,
 		};
@@ -292,7 +296,7 @@ export function createExecutor(
 		const newTransactionData: PendingExecutionStored = {
 			...rawTxInfo.transactionData,
 			broadcastSchedule: transactionData.broadcastSchedule,
-			id: transactionData.id,
+			slot: transactionData.slot,
 			account: transactionData.account,
 			hash,
 			broadcastTime: timestamp,

@@ -5,12 +5,12 @@ import {ExecutorGateway} from './types/executor-gateway';
 
 export function initExecutorGateway(
 	executor: Executor<TransactionSubmission, TransactionInfo>,
-	options?: {debug: boolean}
+	options?: {debug: boolean},
 ): ExecutorGateway {
 	async function submitTransactionAsJsonString(
-		id: string,
+		slot: string,
 		submission: string,
-		signature: `0x${string}`
+		signature: `0x${string}`,
 	): Promise<TransactionInfo> {
 		const hash = hashMessage(submission);
 		if (!signature) {
@@ -27,8 +27,7 @@ export function initExecutorGateway(
 			}
 		}
 		const parsed: TransactionSubmission = JSON.parse(submission);
-		// const id = submission.id ? `${account}_${submission.id}` : hash;
-		return executor.submitTransaction(`${account.toLowerCase()}_${id}`, account, parsed);
+		return executor.submitTransaction(slot, account, parsed);
 	}
 
 	return {

@@ -167,7 +167,7 @@ export class SchedulerDO extends createDurable() {
 
 	async submitExecution(executionAsString: string, signature: `0x${string}`) {
 		try {
-			const scheduled = await this.gateway.submitExecutionAsJsonString(signature, executionAsString, signature);
+			const scheduled = await this.gateway.submitExecutionAsJsonString(executionAsString, signature);
 			return scheduled;
 		} catch (err) {
 			logger.error(err);

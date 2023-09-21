@@ -27,61 +27,51 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
 	async function submitExecution(
-		id: string,
 		account: EIP1193Account,
 		execution: ScheduledExecution<TransactionDataType>,
 	): Promise<ScheduleInfo> {
-		const chainConfig = chainConfigs[execution.chainId];
-		if (!chainConfig) {
-			throw new Error(
-				`cannot proceed, this schjeduler is not configured to support chain with id ${execution.chainId}`,
-			);
+		if (!execution.slot) {
+			throw new Error(`cannot proceed. missing slot`);
 		}
 
+		const chainConfig = chainConfigs[execution.chainId];
+		if (!chainConfig) {
+			throw new Error(`cannot proceed, this scheduler is not configured to support chain with id ${execution.chainId}`);
+		}
+
+		const currentTime = await time.getTimestamp(chainConfig.provider);
+
 		const checkinTime = computeFirstExecutionTimeFromSubmission(execution);
+
+		if (checkinTime < currentTime) {
+			throw new Error(`cannot proceed. the expected time to execute is already passed.`);
+		}
 
 		const queuedExecution: ExecutionQueued<TransactionDataType> = {
 			...execution,
 			account,
-			id,
 			checkinTime,
 			retries: 0,
 		};
 
-		const existingExecution = await storage.getQueuedExecution({chainId: execution.chainId, id, checkinTime});
-		if (existingExecution) {
-			if (dequals(existingExecution, queuedExecution)) {
-				logger.info(
-					`execution has already been submitted and has not been completed or cancelled, queueID: ${displayExecution(
-						existingExecution,
-					)}`,
-				);
-				return {checkinTime};
-			} else {
-				throw new Error(
-					`an execution with the same id as already been submitted and is still being processed, queueID: ${displayExecution(
-						existingExecution,
-					)}`,
-				);
-			}
-		}
-		await storage.queueExecution(queuedExecution);
-		return {checkinTime};
+		await storage.createOrUpdateQueuedExecution(queuedExecution);
+		return {chainId: execution.chainId, slot: execution.slot, account, checkinTime};
 	}
 
 	async function retryLater(
-		oldCheckinTime: number,
 		execution: ExecutionQueued<TransactionDataType>,
 		newCheckinTime: number,
 	): Promise<ExecutionQueued<TransactionDataType>> {
 		execution.retries++;
 		if (execution.retries >= 10) {
-			logger.info(`deleting execution ${execution.id} after ${execution.retries} retries ...`);
+			logger.info(
+				`deleting execution (chainid: ${execution.chainId}, account: ${execution.slot}, slot: ${execution.slot}) after ${execution.retries} retries ...`,
+			);
 			// TODO hook await this._reduceSpending(reveal);
-			await storage.deleteExecution({chainId: execution.chainId, id: execution.id, checkinTime: oldCheckinTime});
+			await storage.deleteExecution(execution);
 		} else {
 			execution.checkinTime = newCheckinTime;
-			await storage.reassignExecutionInQueue(oldCheckinTime, execution);
+			await storage.createOrUpdateQueuedExecution(execution);
 		}
 		return execution;
 	}
@@ -100,9 +90,8 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 				transaction = decryptionResult.transaction;
 			} else {
 				if (decryptionResult.retry) {
-					const oldCheckinTime = execution.checkinTime;
 					execution.checkinTime = decryptionResult.retry;
-					await storage.reassignExecutionInQueue(oldCheckinTime, execution);
+					await storage.createOrUpdateQueuedExecution(execution);
 					return {type: 'reassigned', reason: 'decryption retry'};
 				} else {
 					// failed to decrypt and no retry, this means the decryption is failing
@@ -121,7 +110,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		// for encrypted payload we will attempt to decrypt
 		// if it fails, we will push it accoridng to time schedule
 
-		const executionResult = await executor.submitTransaction(execution.id, execution.account, transaction);
+		const executionResult = await executor.submitTransaction(execution.slot, execution.account, transaction);
 
 		// if we reaches there, the execution is now handled by the executor
 		// the schedule has done its job
@@ -185,7 +174,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 					const newCheckinTime = computePotentialExecutionTime(execution, {
 						startTimeToCountFrom: txStatus.blockTime || currentTimestamp,
 					});
-					const executionToRetry = await retryLater(execution.checkinTime, execution, newCheckinTime);
+					const executionToRetry = await retryLater(execution, newCheckinTime);
 					return {status: 'willRetry', execution: executionToRetry};
 				} else {
 					if (txStatus.failed) {
@@ -270,7 +259,9 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 					};
 				}
 				result.executions.push({
-					id: execution.id,
+					chainId: execution.chainId,
+					account: execution.account,
+					slot: execution.slot,
 					checkinTime: execution.checkinTime,
 					status,
 				});
@@ -293,7 +284,9 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 
 				await storage.deleteExecution(execution);
 				result.executions.push({
-					id: execution.id,
+					chainId: execution.chainId,
+					account: execution.account,
+					slot: execution.slot,
 					checkinTime: execution.checkinTime,
 					status: {type: 'deleted', reason: 'too late'},
 				});
@@ -304,16 +297,20 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 				// execute if it is the time
 				const status = await execute(executionUpdated);
 				result.executions.push({
-					id: execution.id,
+					chainId: execution.chainId,
+					account: execution.account,
+					slot: execution.slot,
 					checkinTime: execution.checkinTime,
 					status,
 				});
 			} else {
 				// if not, then in most case we detected a change in the execution time
 				if (updates.status === 'changed') {
-					await storage.updateExecutionInQueue(executionUpdated);
+					await storage.createOrUpdateQueuedExecution(executionUpdated);
 					result.executions.push({
-						id: execution.id,
+						chainId: execution.chainId,
+						account: execution.account,
+						slot: execution.slot,
 						checkinTime: execution.checkinTime,
 						status: {type: 'reassigned', reason: 'changed'},
 					});
@@ -321,7 +318,9 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 					// For now as we do not limit result to a certain time, we will reach there often
 					logger.info(`not yet time: ${time2text(newCheckinTime - currentTimestamp)} to wait...`);
 					result.executions.push({
-						id: execution.id,
+						chainId: execution.chainId,
+						account: execution.account,
+						slot: execution.slot,
 						checkinTime: execution.checkinTime,
 						status: {type: 'skipped', reason: 'not yet time'},
 					});

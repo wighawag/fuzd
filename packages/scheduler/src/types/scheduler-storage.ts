@@ -8,7 +8,7 @@ export type ExecutionQueued<TransactionDataType> = ScheduledExecution<
 	StartTransaction & {confirmed?: {blockTime: number; startTime?: number}},
 	AssumedTransaction & {confirmed?: {blockTime: number}}
 > & {
-	id: string;
+	slot: string;
 	account: EIP1193Account;
 	checkinTime: number;
 	retries: number;
@@ -17,12 +17,16 @@ export type ExecutionQueued<TransactionDataType> = ScheduledExecution<
 export interface SchedulerStorage<TransactionDataType> {
 	getQueuedExecution(params: {
 		chainId: `0x${string}`;
-		id: string;
-		checkinTime: number;
+		account: `0x${string}`;
+		slot: string;
 	}): Promise<ExecutionQueued<TransactionDataType> | undefined>;
-	deleteExecution(params: {chainId: `0x${string}`; id: string; checkinTime: number}): Promise<void>;
-	queueExecution(executionToStore: ExecutionQueued<TransactionDataType>): Promise<ExecutionQueued<TransactionDataType>>;
-	updateExecutionInQueue(executionUpdated: ExecutionQueued<TransactionDataType>): Promise<void>;
-	reassignExecutionInQueue(oldCheckinTime: number, execution: ExecutionQueued<TransactionDataType>): Promise<void>;
+	getQueuedExecutionsForAccount(params: {
+		chainId: `0x${string}`;
+		account: `0x${string}`;
+	}): Promise<ExecutionQueued<TransactionDataType>[]>;
+	deleteExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void>;
+	createOrUpdateQueuedExecution(
+		executionToStore: ExecutionQueued<TransactionDataType>,
+	): Promise<ExecutionQueued<TransactionDataType>>;
 	getQueueTopMostExecutions(params: {limit: number}): Promise<ExecutionQueued<TransactionDataType>[]>;
 }

@@ -5,13 +5,9 @@ import {SchedulerGateway} from './types/scheduler-gateway';
 
 export function initSchedulerGateway<TransactionDataType>(
 	scheduler: Scheduler<TransactionDataType>,
-	options?: {debug: boolean}
+	options?: {debug: boolean},
 ): SchedulerGateway {
-	async function submitExecutionAsJsonString(
-		id: string,
-		execution: string,
-		signature: `0x${string}`
-	): Promise<ScheduleInfo> {
+	async function submitExecutionAsJsonString(execution: string, signature: `0x${string}`): Promise<ScheduleInfo> {
 		const hash = hashMessage(execution);
 		if (!signature) {
 			throw new Error(`signature not provided`);
@@ -26,9 +22,8 @@ export function initSchedulerGateway<TransactionDataType>(
 				throw ono(err, 'failed to recover address from message and signature');
 			}
 		}
-		const actualID = `${account.toLowerCase()}_${id}`;
 		const parsed: ScheduledExecution<TransactionDataType> = JSON.parse(execution);
-		return scheduler.submitExecution(actualID, account, parsed);
+		return scheduler.submitExecution(account, parsed);
 	}
 
 	return {

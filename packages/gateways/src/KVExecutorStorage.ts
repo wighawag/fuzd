@@ -8,16 +8,21 @@ function lexicographicNumber(num: number, size: number): string {
 	return num.toString().padStart(size, '0');
 }
 
-function computeNextCheckID(broadcastTime: number, chainId: `0x${string}`, id: string): string {
-	return `checkin_${lexicographicNumber(broadcastTime, 12)}_${chainId}_${id}`;
+function computeNextCheckID(
+	broadcastTime: number,
+	chainId: `0x${string}`,
+	account: `0x${string}`,
+	slot: string,
+): string {
+	return `checkin_${lexicographicNumber(broadcastTime, 12)}_${chainId}_${account}_${slot}`;
 }
 
 function computePerAccountID(broadcaster: `0x${string}`, chainId: `0x${string}`, nonce: number): string {
 	return `broadcaster_tx_${broadcaster}_${chainId}_${lexicographicNumber(nonce, 12)}`;
 }
 
-function computeExecutionID(chainId: `0x${string}`, id: string) {
-	return `tx_${chainId}_${id}`;
+function computeExecutionID(chainId: `0x${string}`, account: `0x${string}`, slot: string) {
+	return `tx_${chainId}_${account}_${slot}`;
 }
 
 type IndexID = {dbID: string};
@@ -25,34 +30,47 @@ type IndexID = {dbID: string};
 export class KVExecutorStorage implements ExecutorStorage {
 	constructor(private db: KeyValueDB) {}
 
-	async getPendingExecution(params: {chainId: `0x${string}`; id: string}): Promise<PendingExecutionStored | undefined> {
-		return this.db.get<PendingExecutionStored>(computeExecutionID(params.chainId, params.id));
+	async getPendingExecution(params: {
+		chainId: `0x${string}`;
+		account: `0x${string}`;
+		slot: string;
+	}): Promise<PendingExecutionStored | undefined> {
+		return this.db.get<PendingExecutionStored>(computeExecutionID(params.chainId, params.account, params.slot));
 	}
 
-	async deletePendingExecution(params: {chainId: `0x${string}`; id: string; nonce: `0x${string}`}): Promise<void> {
+	async deletePendingExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void> {
 		await this.db.transaction(async (txn) => {
-			const execution = await this.db.get<PendingExecutionStored>(computeExecutionID(params.chainId, params.id));
+			const execution = await this.db.get<PendingExecutionStored>(
+				computeExecutionID(params.chainId, params.account, params.slot),
+			);
 			if (execution) {
-				await txn.delete(computeExecutionID(params.chainId, params.id));
-				await txn.delete(computeNextCheckID(execution.nextCheckTime, params.chainId, params.id));
-				const nonce = parseInt(params.nonce.slice(2), 16);
+				await txn.delete(computeExecutionID(params.chainId, params.account, params.slot));
+				await txn.delete(computeNextCheckID(execution.nextCheckTime, params.chainId, params.account, params.slot));
+				const nonce = parseInt(execution.nonce.slice(2), 16);
 				await txn.delete(computePerAccountID(execution.from, params.chainId, nonce));
 			}
 		});
 	}
 	async createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored> {
-		const dbID = computeExecutionID(executionToStore.chainId, executionToStore.id);
+		const dbID = computeExecutionID(executionToStore.chainId, executionToStore.account, executionToStore.slot);
 		await this.db.transaction(async (txn) => {
 			const oldExecution = await txn.get<PendingExecutionStored>(dbID);
 			if (oldExecution) {
-				await txn.delete(computeNextCheckID(oldExecution.nextCheckTime, oldExecution.chainId, oldExecution.id));
+				await txn.delete(
+					computeNextCheckID(oldExecution.nextCheckTime, oldExecution.chainId, oldExecution.account, oldExecution.slot),
+				);
 			}
 			await txn.put<PendingExecutionStored>(dbID, executionToStore);
 			await txn.put<IndexID>(
-				computeNextCheckID(executionToStore.nextCheckTime, executionToStore.chainId, executionToStore.id),
+				computeNextCheckID(
+					executionToStore.nextCheckTime,
+					executionToStore.chainId,
+					executionToStore.account,
+					executionToStore.slot,
+				),
 				{
 					dbID: dbID,
-				}
+				},
 			);
 			const nonce = parseInt(executionToStore.nonce.slice(2), 16);
 			await txn.put<IndexID>(computePerAccountID(executionToStore.from, executionToStore.chainId, nonce), {
