@@ -14,15 +14,15 @@ function computeNextCheckID(
 	account: `0x${string}`,
 	slot: string,
 ): string {
-	return `checkin_${lexicographicNumber(broadcastTime, 12)}_${chainId}_${account}_${slot}`;
+	return `checkin_${lexicographicNumber(broadcastTime, 12)}_${chainId}_${account.toLowerCase()}_${slot}`;
 }
 
 function computePerAccountID(broadcaster: `0x${string}`, chainId: `0x${string}`, nonce: number): string {
-	return `broadcaster_tx_${broadcaster}_${chainId}_${lexicographicNumber(nonce, 12)}`;
+	return `broadcaster_tx_${broadcaster.toLowerCase()}_${chainId}_${lexicographicNumber(nonce, 12)}`;
 }
 
 function computeExecutionID(chainId: `0x${string}`, account: `0x${string}`, slot: string) {
-	return `tx_${chainId}_${account}_${slot}`;
+	return `tx_${chainId}_${account.toLowerCase()}_${slot}`;
 }
 
 type IndexID = {dbID: string};
@@ -108,7 +108,7 @@ export class KVExecutorStorage implements ExecutorStorage {
 	}): Promise<PendingExecutionStored[]> {
 		// we get the keys from the index
 		const mapOfIndex = await this.db.list<IndexID>({
-			prefix: `broadcaster_tx_${params.broadcaster}_${params.chainId}_`,
+			prefix: `broadcaster_tx_${params.broadcaster.toLowerCase()}_${params.chainId}_`,
 			limit: params.limit,
 		});
 		const keys: string[] = [];
@@ -120,11 +120,11 @@ export class KVExecutorStorage implements ExecutorStorage {
 	}
 
 	getBroadcaster(params: {chainId: `0x${string}`; address: string}): Promise<BroadcasterData | undefined> {
-		const broadcasterID = `broadcaster_${params.address}_${params.chainId}`;
+		const broadcasterID = `broadcaster_${params.address.toLowerCase()}_${params.chainId}`;
 		return this.db.get<BroadcasterData>(broadcasterID);
 	}
 	async createBroadcaster(broadcaster: BroadcasterData): Promise<void> {
-		const broadcasterID = `broadcaster_${broadcaster.address}_${broadcaster.chainId}`;
+		const broadcasterID = `broadcaster_${broadcaster.address.toLowerCase()}_${broadcaster.chainId}`;
 		return this.db.put<BroadcasterData>(broadcasterID, broadcaster);
 	}
 }

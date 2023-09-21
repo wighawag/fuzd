@@ -10,12 +10,12 @@ function lexicographicNumber(num: number, size: number): string {
 
 function computeQueueID(checkinTime: number, chainId: `0x${string}`, account: `0x${string}`, slot: string): string {
 	const prefix = 'q__';
-	const suffix = `${lexicographicNumber(checkinTime, 12)}_${chainId}_${account}_${slot}`;
+	const suffix = `${lexicographicNumber(checkinTime, 12)}_${chainId}_${account.toLowerCase()}_${slot}`;
 	return `${prefix}${suffix}`;
 }
 
 function computeExecutionID(chainId: `0x${string}`, account: `0x${string}`, slot: string) {
-	return `execution_${chainId}_${account}_${slot}`;
+	return `execution_${chainId}_${account.toLowerCase()}_${slot}`;
 }
 
 type IndexID = {dbID: string};
@@ -37,7 +37,7 @@ export class KVSchedulerStorage<TransactionDataType> implements SchedulerStorage
 		account: `0x${string}`;
 		limit: number;
 	}): Promise<ExecutionQueued<TransactionDataType>[]> {
-		const prefix = `execution_${params.chainId}_${params.account}_`;
+		const prefix = `execution_${params.chainId}_${params.account.toLowerCase()}_`;
 		const map = await this.db.list<ExecutionQueued<TransactionDataType>>({prefix, limit: params.limit});
 		const values: ExecutionQueued<TransactionDataType>[] = [];
 		for (const value of map.values()) {
