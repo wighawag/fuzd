@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.0.11
+
+### Patch Changes
+
+- allow fetching queued executions
+
 ## 0.0.10
 
 ### Patch Changes
