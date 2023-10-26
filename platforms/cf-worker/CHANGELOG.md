@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.0.13
+
+### Patch Changes
+
+- add scheduled handler
+
 ## 0.0.12
 
 ### Patch Changes

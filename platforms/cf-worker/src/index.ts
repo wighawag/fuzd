@@ -99,7 +99,13 @@ const fetch = (request: Request, ...args: any[]) => {
 	);
 };
 
+const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+	await (env.SCHEDULER.get(SINGELTON as any) as unknown as SchedulerDO).processQueue();
+	await (env.SCHEDULER.get(SINGELTON as any) as unknown as SchedulerDO).processPendingTransactions();
+};
+
 // with itty, and using ES6 module syntax (required for DO), this is all you need
 export default {
 	fetch,
+	scheduled,
 };
