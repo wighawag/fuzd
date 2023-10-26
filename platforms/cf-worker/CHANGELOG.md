@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.0.16
+
+### Patch Changes
+
+- fix router.handle on scheduled call
+
 ## 0.0.15
 
 ### Patch Changes
