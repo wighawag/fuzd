@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.0.15
+
+### Patch Changes
+
+- fix again
+
 ## 0.0.14
 
 ### Patch Changes
