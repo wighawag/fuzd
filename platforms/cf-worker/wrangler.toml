@@ -16,6 +16,9 @@ bindings = [
   { name = "SCHEDULER", class_name = "SchedulerDO" }
 ]
 
+[triggers]
+crons = ["* * * * *", "*/1 * * * *"]
+
 [[migrations]]
 tag = "v1"
 new_classes = ["SchedulerDO"]
