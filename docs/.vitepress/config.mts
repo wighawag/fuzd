@@ -82,25 +82,22 @@ export default defineConfig({
 		logo: {dark: '/logo-white.svg', light: '/logo.svg'},
 		nav: [
 			{text: 'Home', link: '/'},
-			{text: 'Examples', link: '/examples'},
-			{text: 'API', link: '/api/'},
+			{text: 'Getting Started', link: '/guide/getting-started/'},
+			// {text: 'API', link: '/api/'},
 		],
 
 		siteTitle: ' ',
 
 		sidebar: [
 			{
-				text: 'Examples',
-				items: [
-					// {text: 'Markdown Examples', link: '/markdown-examples'},
-					{text: 'Client Examples', link: '/examples'},
-				],
+				text: 'Guide',
+				items: [{text: 'Getting Started', link: '/guide/getting-started/'}],
 			},
-			{
-				text: 'API',
-				link: '/api/',
-				items: order(removeDuplicates(typedocSidebar), 'createExecutor'),
-			},
+			// {
+			// 	text: 'API',
+			// 	link: '/api/',
+			// 	items: order(removeDuplicates(typedocSidebar), 'createExecutor'),
+			// },
 		],
 
 		socialLinks: [{icon: 'github', link: 'https://github.com/wighawag/fuzd'}],

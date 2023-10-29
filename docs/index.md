@@ -16,10 +16,10 @@ hero:
     alt: FUZD logo
   actions:
     - theme: brand
-      text: Examples
-      link: /examples
+      text: Getting Started
+      link: /guide/getting-started/
     - theme: alt
-      text: Repo
+      text: Git Repository
       link: https://github.com/wighawag/fuzd
 
 features:
