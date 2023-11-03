@@ -319,9 +319,6 @@ importers:
       tlock-js:
         specifier: ^0.6.1
         version: 0.6.1
-      viem:
-        specifier: ^1.10.4
-        version: 1.10.4(typescript@5.2.2)
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20230904.0
@@ -335,6 +332,9 @@ importers:
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
+      viem:
+        specifier: ^1.10.4
+        version: 1.10.4(typescript@5.2.2)
       vitest:
         specifier: ^0.34.6
         version: 0.34.6
