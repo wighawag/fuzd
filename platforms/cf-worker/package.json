@@ -14,6 +14,7 @@
     "eip-1193": "^0.4.7",
     "set-defaults": "^0.0.1",
     "typescript": "^5.2.2",
+    "vitest": "^0.34.6",
     "wrangler": "^3.7.0"
   },
   "dependencies": {
@@ -37,6 +38,7 @@
     "prepare": "set-defaults .",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev -c ./wrangler.toml",
-    "dev:local": "wrangler dev -c ./wrangler.toml --port 34002"
+    "dev:local": "wrangler dev -c ./wrangler.toml --port 34002",
+    "test": "vitest"
   }
 }
