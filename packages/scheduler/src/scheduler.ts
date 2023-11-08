@@ -227,6 +227,10 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 			result.chainTimetamps[chainIdDecimal] = currentTimestamp;
 		}
 
+		if (!currentTimestamp) {
+			logger.error(`currentTimestamp: ${currentTimestamp}`);
+		}
+
 		const updates = await checkAndUpdateExecutionIfNeeded(execution, currentTimestamp);
 		if (updates.status === 'deleted' || updates.status === 'willRetry') {
 			let status: ExecutionStatus;

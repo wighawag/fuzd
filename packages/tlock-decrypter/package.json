@@ -1,6 +1,6 @@
 {
   "name": "fuzd-tlock-decrypter",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "decrypt scheduled execution using drand's tlock-js",
   "publishConfig": {
     "access": "public"

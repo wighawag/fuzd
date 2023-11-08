@@ -1,5 +1,11 @@
 # fuzd-scheduler
 
+## 0.1.7
+
+### Patch Changes
+
+- log error when currentTimestamp is zero
+
 ## 0.1.6
 
 ### Patch Changes
