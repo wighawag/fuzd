@@ -1,5 +1,11 @@
 # fuzd-scheduler
 
+## 0.1.6
+
+### Patch Changes
+
+- catch error when processing execution
+
 ## 0.1.5
 
 ### Patch Changes

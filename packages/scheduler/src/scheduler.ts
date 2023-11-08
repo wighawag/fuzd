@@ -19,6 +19,12 @@ import {ExecutionQueued} from './types/scheduler-storage';
 
 const logger = logs('fuzd-scheduler');
 
+/**
+ * Create a scheduler instance for a specific TransactionData format
+ * The instance contains 2 method:
+ * - submitExecution: add the provided execution to a queue and send it to the executor for broadcast when times come
+ * - processQueue: check the current queue and send any scheduled execution for which the time has come, to the executor
+ */
 export function createScheduler<TransactionDataType, TransactionInfoType>(
 	config: SchedulerConfig<TransactionDataType, TransactionInfoType>,
 ): Scheduler<TransactionDataType> & SchedulerBackend {
@@ -203,6 +209,108 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		}
 	}
 
+	async function processExecution(execution: ExecutionQueued<TransactionDataType>, result: QueueProcessingResult) {
+		const chainIdDecimal = parseInt(execution.chainId.slice(2), 16).toString();
+		const {provider, finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
+
+		// Note here that if the service use a contract timestamp or a network who has its own deviating timestamp
+		// then the system mostyl assume that only one of such network/contract is being used
+		// Otherwise, tx ordering will affect the priority of these tx
+		// this is because tx using normal time will always be fetched first
+		// an option to processQueue only with specific contract/network could be used
+		// or alternatively a startTime option to diregard past transaction
+		// but this comes with its own risk.
+
+		let currentTimestamp = result.chainTimetamps[chainIdDecimal];
+		if (!currentTimestamp) {
+			currentTimestamp = await time.getTimestamp(provider);
+			result.chainTimetamps[chainIdDecimal] = currentTimestamp;
+		}
+
+		const updates = await checkAndUpdateExecutionIfNeeded(execution, currentTimestamp);
+		if (updates.status === 'deleted' || updates.status === 'willRetry') {
+			let status: ExecutionStatus;
+			if (updates.status === 'deleted') {
+				status = {
+					type: 'deleted',
+					reason: 'udpates deleted',
+				};
+			} else {
+				status = {
+					type: 'reassigned',
+					reason: 'updates willRetry',
+				};
+			}
+			result.executions.push({
+				chainId: execution.chainId,
+				account: execution.account,
+				slot: execution.slot,
+				checkinTime: execution.checkinTime,
+				status,
+			});
+			return;
+		}
+
+		const executionUpdated = updates.execution;
+		const newCheckinTime = computePotentialExecutionTime(executionUpdated, {
+			lastCheckin: currentTimestamp,
+		});
+
+		if (
+			currentTimestamp >
+			newCheckinTime +
+				Math.min(executionUpdated.timing.expiry || Number.MAX_SAFE_INTEGER, maxExpiry) +
+				finality * worstCaseBlockTime
+		) {
+			// delete if execution expired
+			logger.info(`too late, deleting ${displayExecution(execution)}...`);
+
+			await storage.deleteExecution(execution);
+			result.executions.push({
+				chainId: execution.chainId,
+				account: execution.account,
+				slot: execution.slot,
+				checkinTime: execution.checkinTime,
+				status: {type: 'deleted', reason: 'too late'},
+			});
+			return;
+		}
+
+		if (currentTimestamp >= newCheckinTime) {
+			// execute if it is the time
+			const status = await execute(executionUpdated);
+			result.executions.push({
+				chainId: execution.chainId,
+				account: execution.account,
+				slot: execution.slot,
+				checkinTime: execution.checkinTime,
+				status,
+			});
+		} else {
+			// if not, then in most case we detected a change in the execution time
+			if (updates.status === 'changed') {
+				await storage.createOrUpdateQueuedExecution(executionUpdated);
+				result.executions.push({
+					chainId: execution.chainId,
+					account: execution.account,
+					slot: execution.slot,
+					checkinTime: execution.checkinTime,
+					status: {type: 'reassigned', reason: 'changed'},
+				});
+			} else {
+				// For now as we do not limit result to a certain time, we will reach there often
+				logger.info(`not yet time: ${time2text(newCheckinTime - currentTimestamp)} to wait...`);
+				result.executions.push({
+					chainId: execution.chainId,
+					account: execution.account,
+					slot: execution.slot,
+					checkinTime: execution.checkinTime,
+					status: {type: 'skipped', reason: 'not yet time'},
+				});
+			}
+		}
+	}
+
 	async function processQueue() {
 		const limit = maxNumTransactionsToProcessInOneGo;
 		const result: QueueProcessingResult = {
@@ -227,104 +335,25 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		}
 
 		for (const execution of executions) {
-			const chainIdDecimal = parseInt(execution.chainId.slice(2), 16).toString();
-			const {provider, finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
+			try {
+				await processExecution(execution, result);
+			} catch (processExecutionError) {
+				logger.error(
+					`Processing of execution "${execution.chainId}_${execution.account}_${execution.slot}" thrown an exception`,
+					processExecutionError,
+				);
 
-			// Note here that if the service use a contract timestamp or a network who has its own deviating timestamp
-			// then the system mostyl assume that only one of such network/contract is being used
-			// Otherwise, tx ordering will affect the priority of these tx
-			// this is because tx using normal time will always be fetched first
-			// an option to processQueue only with specific contract/network could be used
-			// or alternatively a startTime option to diregard past transaction
-			// but this comes with its own risk.
-
-			let currentTimestamp = result.chainTimetamps[chainIdDecimal];
-			if (!currentTimestamp) {
-				currentTimestamp = await time.getTimestamp(provider);
-				result.chainTimetamps[chainIdDecimal] = currentTimestamp;
-			}
-
-			const updates = await checkAndUpdateExecutionIfNeeded(execution, currentTimestamp);
-			if (updates.status === 'deleted' || updates.status === 'willRetry') {
-				let status: ExecutionStatus;
-				if (updates.status === 'deleted') {
-					status = {
-						type: 'deleted',
-						reason: 'udpates deleted',
-					};
-				} else {
-					status = {
-						type: 'reassigned',
-						reason: 'updates willRetry',
-					};
-				}
-				result.executions.push({
-					chainId: execution.chainId,
-					account: execution.account,
-					slot: execution.slot,
-					checkinTime: execution.checkinTime,
-					status,
-				});
-				continue;
-			}
-
-			const executionUpdated = updates.execution;
-			const newCheckinTime = computePotentialExecutionTime(executionUpdated, {
-				lastCheckin: currentTimestamp,
-			});
-
-			if (
-				currentTimestamp >
-				newCheckinTime +
-					Math.min(executionUpdated.timing.expiry || Number.MAX_SAFE_INTEGER, maxExpiry) +
-					finality * worstCaseBlockTime
-			) {
-				// delete if execution expired
-				logger.info(`too late, deleting ${displayExecution(execution)}...`);
-
-				await storage.deleteExecution(execution);
-				result.executions.push({
-					chainId: execution.chainId,
-					account: execution.account,
-					slot: execution.slot,
-					checkinTime: execution.checkinTime,
-					status: {type: 'deleted', reason: 'too late'},
-				});
-				continue;
-			}
-
-			if (currentTimestamp >= newCheckinTime) {
-				// execute if it is the time
-				const status = await execute(executionUpdated);
-				result.executions.push({
-					chainId: execution.chainId,
-					account: execution.account,
-					slot: execution.slot,
-					checkinTime: execution.checkinTime,
-					status,
-				});
-			} else {
-				// if not, then in most case we detected a change in the execution time
-				if (updates.status === 'changed') {
-					await storage.createOrUpdateQueuedExecution(executionUpdated);
-					result.executions.push({
-						chainId: execution.chainId,
-						account: execution.account,
-						slot: execution.slot,
-						checkinTime: execution.checkinTime,
-						status: {type: 'reassigned', reason: 'changed'},
-					});
-				} else {
-					// For now as we do not limit result to a certain time, we will reach there often
-					logger.info(`not yet time: ${time2text(newCheckinTime - currentTimestamp)} to wait...`);
-					result.executions.push({
-						chainId: execution.chainId,
-						account: execution.account,
-						slot: execution.slot,
-						checkinTime: execution.checkinTime,
-						status: {type: 'skipped', reason: 'not yet time'},
-					});
-				}
+				// TODO ?
+				// logger.info(`we ll push to 5 min later`)
+				// execution.checkinTime += 5 * 60;
+				// await storage.createOrUpdateQueuedExecution(execution);
+				// result.executions.push({
+				// 	chainId: execution.chainId,
+				// 	account: execution.account,
+				// 	slot: execution.slot,
+				// 	checkinTime: execution.checkinTime,
+				// 	status: {type: 'reassigned', reason: 'changed'},
+				// });
 			}
 		}
 
