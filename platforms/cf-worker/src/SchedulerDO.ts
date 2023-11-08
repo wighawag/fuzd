@@ -22,14 +22,9 @@ import type {EIP1193Account, EIP1193CallProvider, EIP1193GetBlockByNumberProvide
 import {mainnetClient} from 'tlock-js';
 import {logs} from 'named-logs';
 import {Time, getTimeFromContractTimestamp} from 'fuzd-common';
+import {Env} from './env';
 
 const logger = logs('fuzd-cf-worker');
-
-interface Env {
-	HD_MNEMONIC?: string;
-	CONTRACT_TIMESTAMP?: `0x${string};`;
-	[chainId: `CHAIN_0x${string}`]: string | undefined;
-}
 
 const defaultPath = "m/44'/60'/0'/0/0";
 
@@ -151,9 +146,12 @@ export class SchedulerDO extends createDurable() {
 		};
 		this.executor = createExecutor(executorConfig);
 
-		const decrypter = initDecrypter({
-			client: mainnetClient(),
-		});
+		const decrypter =
+			env.TIME_LOCK_DECRYPTION === 'false'
+				? undefined
+				: initDecrypter({
+						client: mainnetClient(),
+				  });
 		const schedulerConfig = {
 			...baseConfig,
 			executor: this.executor,

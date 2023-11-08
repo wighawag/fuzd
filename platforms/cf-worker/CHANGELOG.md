@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.0.18
+
+### Patch Changes
+
+- allow fuzd-worker to not enable time-lock decryption
+
 ## 0.0.17
 
 ### Patch Changes

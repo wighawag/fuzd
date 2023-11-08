@@ -3,6 +3,7 @@ import {withDurables} from 'itty-durable';
 import {SchedulerDO} from './SchedulerDO';
 import {withAuthorization} from './authentication';
 import {clear, table} from './pages/clear';
+import {Env} from './env';
 
 // TODO named-console detect _logFactory if exist
 const Logger = (globalThis as any)._logFactory;
@@ -14,9 +15,6 @@ if (Logger) {
 const {preflight, corsify} = createCors();
 
 export {SchedulerDO} from './SchedulerDO';
-interface Env {
-	SCHEDULER: DurableObjectNamespace;
-}
 
 type Responsify<Type> = {
 	[Property in keyof Type]: Type[Property] extends (...args: any[]) => Promise<any>
