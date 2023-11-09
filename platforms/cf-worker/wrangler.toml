@@ -10,11 +10,15 @@ compatibility_date = "2023-05-18"
 # see in .dev.vars.default
 # Run `echo <VALUE> | wrangler secret put <NAME>` for each of these
 
-
-[durable_objects]
-bindings = [
-  { name = "SCHEDULER", class_name = "SchedulerDO" }
+durable_objects.bindings = [
+   { name = "SCHEDULER", class_name = "SchedulerDO" }
 ]
+
+[env.dev]
+durable_objects.bindings = [
+   { name = "SCHEDULER", class_name = "SchedulerDO" }
+]
+
 
 [triggers]
 crons = ["* * * * *", "*/1 * * * *"]
