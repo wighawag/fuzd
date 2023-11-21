@@ -10,6 +10,16 @@ compatibility_date = "2023-05-18"
 # see in .dev.vars.default
 # Run `echo <VALUE> | wrangler secret put <NAME>` for each of these
 
+
+[triggers]
+crons = ["* * * * *", "*/1 * * * *"]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["SchedulerDO"]
+
+
+[env.production]
 durable_objects.bindings = [
    { name = "SCHEDULER", class_name = "SchedulerDO" }
 ]
@@ -20,9 +30,3 @@ durable_objects.bindings = [
 ]
 
 
-[triggers]
-crons = ["* * * * *", "*/1 * * * *"]
-
-[[migrations]]
-tag = "v1"
-new_classes = ["SchedulerDO"]
