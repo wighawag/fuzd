@@ -1,5 +1,11 @@
 # remote-account
 
+## 0.0.5
+
+### Patch Changes
+
+- latest deps + remove isomorphic-unfetch
+
 ## 0.0.4
 
 ### Patch Changes

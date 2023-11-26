@@ -1,5 +1,13 @@
 # fuzd-executor
 
+## 0.1.6
+
+### Patch Changes
+
+- latest deps + remove isomorphic-unfetch
+- Updated dependencies
+  - fuzd-common@0.1.5
+
 ## 0.1.5
 
 ### Patch Changes

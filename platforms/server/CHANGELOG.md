@@ -1,5 +1,11 @@
 # fuzd-server
 
+## 0.0.3
+
+### Patch Changes
+
+- latest deps + remove isomorphic-unfetch
+
 ## 0.0.2
 
 ### Patch Changes

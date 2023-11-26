@@ -1,5 +1,15 @@
 # fuzd-default-client
 
+## 0.1.10
+
+### Patch Changes
+
+- latest deps + remove isomorphic-unfetch
+- Updated dependencies
+  - remote-account@0.0.5
+  - fuzd-scheduler@0.1.8
+  - fuzd-executor@0.1.6
+
 ## 0.1.9
 
 ### Patch Changes

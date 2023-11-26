@@ -1,6 +1,5 @@
 import {ScheduleInfo, ScheduledExecution, TimeBasedTiming, RoundBasedTiming} from 'fuzd-scheduler';
 import {timelockEncrypt, HttpChainClient, roundAt} from 'tlock-js';
-import fetch from 'isomorphic-unfetch';
 import {privateKeyToAccount} from 'viem/accounts';
 import {BroadcastSchedule, TransactionSubmission} from 'fuzd-executor';
 import {deriveRemoteAddress} from 'remote-account';

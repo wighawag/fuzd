@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.1.5
+
+### Patch Changes
+
+- latest deps + remove isomorphic-unfetch
+
 ## 0.1.4
 
 ### Patch Changes

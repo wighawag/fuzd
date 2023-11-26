@@ -1,5 +1,13 @@
 # fuzd-tlock-decrypter
 
+## 0.1.8
+
+### Patch Changes
+
+- latest deps + remove isomorphic-unfetch
+- Updated dependencies
+  - fuzd-scheduler@0.1.8
+
 ## 0.1.7
 
 ### Patch Changes

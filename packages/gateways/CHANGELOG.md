@@ -1,5 +1,14 @@
 # fuzd-gateways
 
+## 0.1.9
+
+### Patch Changes
+
+- latest deps + remove isomorphic-unfetch
+- Updated dependencies
+  - fuzd-scheduler@0.1.8
+  - fuzd-executor@0.1.6
+
 ## 0.1.8
 
 ### Patch Changes

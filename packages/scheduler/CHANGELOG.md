@@ -1,5 +1,11 @@
 # fuzd-scheduler
 
+## 0.1.8
+
+### Patch Changes
+
+- latest deps + remove isomorphic-unfetch
+
 ## 0.1.7
 
 ### Patch Changes
