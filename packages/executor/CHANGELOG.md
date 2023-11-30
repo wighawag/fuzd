@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.1.7
+
+### Patch Changes
+
+- fixes
+
 ## 0.1.6
 
 ### Patch Changes

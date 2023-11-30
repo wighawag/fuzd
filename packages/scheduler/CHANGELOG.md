@@ -1,5 +1,11 @@
 # fuzd-scheduler
 
+## 0.1.9
+
+### Patch Changes
+
+- fixes
+
 ## 0.1.8
 
 ### Patch Changes

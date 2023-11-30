@@ -1,6 +1,6 @@
 {
   "name": "fuzd-scheduler",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "execute transaction in future plus tx can be sealed using drand tlock",
   "publishConfig": {
     "access": "public"

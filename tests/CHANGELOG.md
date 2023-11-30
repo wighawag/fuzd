@@ -1,5 +1,14 @@
 # fuzd-tests
 
+## 0.1.10
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-executor@0.1.7
+  - fuzd-scheduler@0.1.9
+  - fuzd-gateways@0.1.10
+
 ## 0.1.9
 
 ### Patch Changes
