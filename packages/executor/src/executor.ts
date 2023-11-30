@@ -6,7 +6,7 @@ import {
 	EIP1193TransactionToFill,
 	PendingExecutionStored,
 } from './types/executor-storage';
-import {EIP1193Account} from 'eip-1193';
+import {EIP1193Account, EIP1193Transaction, EIP1193TransactionReceipt} from 'eip-1193';
 import {
 	TransactionSubmission,
 	Executor,
@@ -20,6 +20,7 @@ import {
 	BroadcasterSignerData,
 } from './types/executor';
 import {keccak_256} from '@noble/hashes/sha3';
+import {time2text} from './utils/time';
 
 const logger = logs('fuzd-executor');
 
@@ -359,10 +360,16 @@ export function createExecutor(
 		const maxFeePerGasUsed = BigInt(pendingExecution.maxFeePerGas);
 		const maxPriorityFeePerGasUsed = BigInt(pendingExecution.maxFeePerGas);
 
-		const pendingTansaction = await provider.request({
-			method: 'eth_getTransactionByHash',
-			params: [pendingExecution.hash],
-		});
+		let pendingTansaction: EIP1193Transaction | null;
+		try {
+			pendingTansaction = await provider.request({
+				method: 'eth_getTransactionByHash',
+				params: [pendingExecution.hash],
+			});
+		} catch (err) {
+			console.error(`failed to get pending transaction`, err);
+			pendingTansaction = null;
+		}
 
 		if (
 			!pendingTansaction ||
@@ -386,18 +393,25 @@ export function createExecutor(
 
 	async function __processPendingTransaction(pendingExecution: PendingExecutionStored): Promise<void> {
 		const {provider, finality, worstCaseBlockTime} = _getChainConfig(pendingExecution.chainId);
-		const receipt = await provider.request({
-			method: 'eth_getTransactionReceipt',
-			params: [pendingExecution.hash],
-		});
+
+		let receipt: EIP1193TransactionReceipt | null;
+		try {
+			receipt = await provider.request({
+				method: 'eth_getTransactionReceipt',
+				params: [pendingExecution.hash],
+			});
+		} catch (err) {
+			console.error('ERROR fetching receipt', err);
+			receipt = null;
+		}
 
 		let finalised = false;
 		if (receipt) {
 			const latestBlocknumberAshex = await provider.request({
 				method: 'eth_blockNumber',
 			});
-			const latestBlockNumber = parseInt(latestBlocknumberAshex.slice(2), 16);
-			const transactionBlockNumber = parseInt(receipt.blockNumber.slice(2), 16);
+			const latestBlockNumber = Number(latestBlocknumberAshex);
+			const transactionBlockNumber = Number(receipt.blockNumber);
 			finalised = latestBlockNumber - finality >= transactionBlockNumber;
 		}
 
@@ -417,6 +431,8 @@ export function createExecutor(
 				await __processPendingTransaction(pendingExecution);
 			}
 		}
+		// TODO make returning the pending transaction part of the api
+		return pendingExecutions as unknown as void;
 	}
 
 	return {

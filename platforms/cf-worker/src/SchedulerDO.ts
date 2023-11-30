@@ -7,6 +7,7 @@ import {
 	ExecutorBackend,
 	ExecutorStorage,
 	BroadcasterSignerData,
+	PendingExecutionStored,
 } from 'fuzd-executor';
 import {KVExecutorStorage, KVSchedulerStorage, initSchedulerGateway} from 'fuzd-gateways';
 import {ChainConfigs, Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
@@ -29,7 +30,7 @@ const logger = logs('fuzd-cf-worker');
 const defaultPath = "m/44'/60'/0'/0/0";
 
 export class SchedulerDO extends createDurable() {
-	protected executor: Executor<TransactionSubmission, TransactionInfo> & ExecutorBackend;
+	protected executor: Executor<TransactionSubmission, PendingExecutionStored> & ExecutorBackend;
 	protected scheduler: Scheduler<TransactionSubmission> & SchedulerBackend;
 	protected gateway: ReturnType<typeof initSchedulerGateway>;
 	protected executorStorage: ExecutorStorage;

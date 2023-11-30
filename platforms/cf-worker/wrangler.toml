@@ -2,8 +2,7 @@ name = "fuzd-worker"
 main = "src/index.ts"
 compatibility_date = "2023-05-18"
 
-[vars]
-
+#[vars]
 # The necessary secrets are:
 # - HD_MNEMONIC
 # - CHAIN_0x<CHAINID>
