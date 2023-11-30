@@ -118,6 +118,9 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 
 		const executionResult = await executor.submitTransaction(execution.slot, execution.account, transaction);
 
+		// TODO if trying to execute different data when previous tx is already broadcasted: we should throw here
+		// because now the executor skip it
+
 		// if we reaches there, the execution is now handled by the executor
 		// the schedule has done its job
 		// if for some reason `executor.submitTransaction(...)` fails to return but has actually broadcasted the tx

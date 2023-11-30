@@ -45,7 +45,7 @@ function fromHex(str: `0x${string}`): Uint8Array {
 
 export function createExecutor(
 	config: ExecutorConfig,
-): Executor<TransactionSubmission, TransactionInfo> & ExecutorBackend {
+): Executor<TransactionSubmission, PendingExecutionStored> & ExecutorBackend {
 	const {chainConfigs, time, storage, signers} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
@@ -54,7 +54,7 @@ export function createExecutor(
 		slot: string,
 		account: EIP1193Account,
 		submission: TransactionSubmission,
-	): Promise<TransactionInfo> {
+	): Promise<PendingExecutionStored> {
 		submission = TransactionSubmission.parse(submission);
 
 		const chainConfig = chainConfigs[submission.chainId];
@@ -68,11 +68,7 @@ export function createExecutor(
 			account,
 		});
 		if (existingExecution) {
-			throw new Error(
-				`execution already submitted (chainId: ${submission.chainId}, account: ${account}, slot: ${slot}), the slot field is used as identifier. You can reexcute the same tx data but you just need to change the slot field.
-				This also means if you use different for the same data, that same tx data will be sent as many time as you submit different slot
-				`,
-			);
+			return existingExecution;
 		}
 
 		const broadcaster = await signers.assignProviderFor(submission.chainId, account);
@@ -82,6 +78,7 @@ export function createExecutor(
 			slot,
 			from: broadcaster.address,
 			broadcasterAssignerID: broadcaster.assignerID,
+			isVoidTransaction: false,
 		};
 
 		await _updateFees(pendingExecutionToStore);
@@ -276,7 +273,7 @@ export function createExecutor(
 		broadcaster: BroadcasterSignerData,
 		transactionData: TransactionToStore,
 		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean},
-	): Promise<TransactionInfo> {
+	): Promise<PendingExecutionStored> {
 		const {provider} = _getChainConfig(transactionData.chainId);
 		const txParams = await _getTxParams(broadcaster.address, transactionData);
 		const {gasRequired} = txParams;
@@ -303,6 +300,7 @@ export function createExecutor(
 			nextCheckTime,
 			retries,
 			broadcasterAssignerID: broadcaster.assignerID,
+			isVoidTransaction: rawTxInfo.isVoidTransaction,
 		};
 		await storage.createOrUpdatePendingExecution(newTransactionData);
 
@@ -326,12 +324,7 @@ export function createExecutor(
 			}
 		}
 
-		return {
-			transactionData: rawTxInfo.transactionData,
-			hash,
-			broadcastTime: timestamp,
-			isVoidTransaction: rawTxInfo.isVoidTransaction,
-		};
+		return newTransactionData;
 	}
 
 	async function _resubmitIfNeeded(pendingExecution: PendingExecutionStored): Promise<void> {

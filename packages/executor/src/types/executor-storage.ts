@@ -30,6 +30,7 @@ export type PendingExecutionStored = EIP1193TransactionDataUsed & {
 	hash: EIP1193DATA;
 	account: EIP1193Account;
 	broadcastSchedule: BroadcastSchedule;
+	isVoidTransaction: boolean;
 	retries?: number;
 };
 
