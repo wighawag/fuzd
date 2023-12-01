@@ -76,7 +76,7 @@ export class KVSchedulerStorage<TransactionDataType> implements SchedulerStorage
 			// we then write/update the actuall data
 			await txn.put<ExecutionQueued<TransactionDataType>>(dbID, executionToStore);
 			// we then queue it in the checkinTime ordered list, our index
-			await this.db.put<IndexID>(
+			await txn.put<IndexID>(
 				computeQueueID(
 					executionToStore.checkinTime,
 					executionToStore.chainId,

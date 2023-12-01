@@ -40,7 +40,7 @@ export class KVExecutorStorage implements ExecutorStorage {
 
 	async deletePendingExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void> {
 		await this.db.transaction(async (txn) => {
-			const execution = await this.db.get<PendingExecutionStored>(
+			const execution = await txn.get<PendingExecutionStored>(
 				computeExecutionID(params.chainId, params.account, params.slot),
 			);
 			if (execution) {
