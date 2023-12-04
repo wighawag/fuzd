@@ -13,7 +13,7 @@ import {KVExecutorStorage, KVSchedulerStorage, initSchedulerGateway} from 'fuzd-
 import {ChainConfigs, Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
 import {initDecrypter} from 'fuzd-tlock-decrypter';
 
-import {JSONRPCHTTPProvider} from 'eip-1193-json-provider';
+import {JSONRPCHTTPProvider} from 'eip-1193-jsonrpc-provider';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {initAccountFromHD} from 'remote-account';
 import * as bip39 from '@scure/bip39';
