@@ -1,6 +1,6 @@
 {
   "name": "fuzd-cf-worker",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "publishConfig": {
     "access": "public"
   },
@@ -21,7 +21,7 @@
   "dependencies": {
     "@scure/bip32": "^1.3.2",
     "@scure/bip39": "^1.2.1",
-    "eip-1193-json-provider": "^0.2.1",
+    "eip-1193-jsonrpc-provider": "^0.3.0",
     "eip-1193-signer": "^0.0.1",
     "fuzd-common": "workspace:*",
     "fuzd-executor": "workspace:*",

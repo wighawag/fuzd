@@ -1,6 +1,6 @@
 {
   "name": "fuzd-server",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": true,
   "type": "module",
   "main": "dist/index.cjs",
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "commander": "^11.1.0",
-    "eip-1193-json-provider": "^0.2.1",
+    "eip-1193-jsonrpc-provider": "^0.3.0",
     "ldenv": "^0.3.0",
     "named-logs": "^0.2.2"
   },

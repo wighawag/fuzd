@@ -1,6 +1,6 @@
 {
   "name": "fuzd-tests",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": true,
   "description": "test client for fuzd",
   "main": "dist/index.js",
@@ -35,7 +35,7 @@
     "chai": "^4.3.10",
     "chai-as-promised": "^7.1.1",
     "eip-1193": "^0.4.7",
-    "eip-1193-json-provider": "^0.2.1",
+    "eip-1193-jsonrpc-provider": "^0.3.0",
     "eip-1193-signer": "^0.0.1",
     "fuzd-default-client": "workspace:*",
     "hardhat": "^2.19.1",

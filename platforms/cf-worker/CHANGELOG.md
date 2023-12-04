@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.0.23
+
+### Patch Changes
+
+- make of eip-1193-jsonrpc-provider new name
+
 ## 0.0.22
 
 ### Patch Changes

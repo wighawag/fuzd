@@ -1,5 +1,11 @@
 # fuzd-tests
 
+## 0.1.12
+
+### Patch Changes
+
+- make of eip-1193-jsonrpc-provider new name
+
 ## 0.1.11
 
 ### Patch Changes

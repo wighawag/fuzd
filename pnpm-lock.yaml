@@ -280,9 +280,9 @@ importers:
       '@scure/bip39':
         specifier: ^1.2.1
         version: 1.2.1
-      eip-1193-json-provider:
-        specifier: ^0.2.1
-        version: 0.2.1
+      eip-1193-jsonrpc-provider:
+        specifier: ^0.3.0
+        version: 0.3.0
       eip-1193-signer:
         specifier: ^0.0.1
         version: 0.0.1(typescript@5.3.2)(zod@3.22.4)
@@ -344,9 +344,9 @@ importers:
       commander:
         specifier: ^11.1.0
         version: 11.1.0
-      eip-1193-json-provider:
-        specifier: ^0.2.1
-        version: 0.2.1
+      eip-1193-jsonrpc-provider:
+        specifier: ^0.3.0
+        version: 0.3.0
       ldenv:
         specifier: ^0.3.0
         version: 0.3.7
@@ -442,9 +442,9 @@ importers:
       eip-1193:
         specifier: ^0.4.7
         version: 0.4.7
-      eip-1193-json-provider:
-        specifier: ^0.2.1
-        version: 0.2.1
+      eip-1193-jsonrpc-provider:
+        specifier: ^0.3.0
+        version: 0.3.0
       eip-1193-signer:
         specifier: ^0.0.1
         version: 0.0.1(typescript@5.3.2)(zod@3.22.4)
@@ -4338,6 +4338,13 @@ packages:
 
   /eip-1193-json-provider@0.2.1:
     resolution: {integrity: sha512-yFwMx0LpNFgpktSXtXJyoDnQOllPfjvleJyIiHYZi/ZFWdlgTglevLT+Th6dmgE0IT1E4UFtxZqZ+Jr9vNK5qA==}
+    dependencies:
+      named-logs: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+      promise-throttle: 1.1.2
+    dev: true
+
+  /eip-1193-jsonrpc-provider@0.3.0:
+    resolution: {integrity: sha512-27+csyR21UTIsh7YadNY60QefJcGBL7NX78jCbPZrNMOV5Yx3XbWpvAIvd3TwaYn4mPoWqonOHVfaoNh5ay6tw==}
     dependencies:
       named-logs: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
       promise-throttle: 1.1.2
