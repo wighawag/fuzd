@@ -28,4 +28,9 @@ durable_objects.bindings = [
    { name = "SCHEDULER", class_name = "SchedulerDO" }
 ]
 
+[env.composablelabs]
+durable_objects.bindings = [
+   { name = "SCHEDULER", class_name = "SchedulerDO" }
+]
+
 
