@@ -33,4 +33,9 @@ durable_objects.bindings = [
    { name = "SCHEDULER", class_name = "SchedulerDO" }
 ]
 
+[env.sepolia]
+durable_objects.bindings = [
+   { name = "SCHEDULER", class_name = "SchedulerDO" }
+]
+
 
