@@ -1,6 +1,6 @@
 {
   "name": "fuzd-default-client",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "default client for fuzd using tlock-js",
   "publishConfig": {
     "access": "public"
@@ -27,15 +27,15 @@
     "fuzd-scheduler": "workspace:*",
     "named-logs": "^0.2.2",
     "remote-account": "workspace:*",
-    "tlock-js": "^0.6.1",
-    "viem": "^1.19.9"
+    "tlock-js": "^0.7.0",
+    "viem": "^2.7.9"
   },
   "devDependencies": {
-    "ldenv": "^0.3.5",
-    "prettier": "^3.1.0",
-    "tsup": "^8.0.1",
-    "tsx": "^4.5.0",
-    "typescript": "^5.3.2"
+    "ldenv": "^0.3.9",
+    "prettier": "^3.2.5",
+    "tsup": "^8.0.2",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
   },
   "scripts": {
     "build": "tsup src/index.ts --dts --sourcemap --format esm,cjs",

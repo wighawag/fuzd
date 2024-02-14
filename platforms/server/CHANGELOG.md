@@ -1,5 +1,11 @@
 # fuzd-server
 
+## 0.0.5
+
+### Patch Changes
+
+- latest deps (including tlock-js)
+
 ## 0.0.4
 
 ### Patch Changes

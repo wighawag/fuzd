@@ -1,5 +1,13 @@
 # fuzd-tlock-decrypter
 
+## 0.2.2
+
+### Patch Changes
+
+- latest deps (including tlock-js)
+- Updated dependencies
+  - fuzd-scheduler@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

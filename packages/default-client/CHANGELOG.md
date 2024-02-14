@@ -1,5 +1,15 @@
 # fuzd-default-client
 
+## 0.1.15
+
+### Patch Changes
+
+- latest deps (including tlock-js)
+- Updated dependencies
+  - remote-account@0.0.6
+  - fuzd-scheduler@0.2.2
+  - fuzd-executor@0.1.9
+
 ## 0.1.14
 
 ### Patch Changes

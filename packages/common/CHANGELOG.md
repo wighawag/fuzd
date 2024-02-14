@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.1.6
+
+### Patch Changes
+
+- latest deps (including tlock-js)
+
 ## 0.1.5
 
 ### Patch Changes

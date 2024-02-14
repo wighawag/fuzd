@@ -1,5 +1,11 @@
 # fuzd-scheduler
 
+## 0.2.2
+
+### Patch Changes
+
+- latest deps (including tlock-js)
+
 ## 0.2.1
 
 ### Patch Changes

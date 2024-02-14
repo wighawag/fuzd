@@ -1,5 +1,14 @@
 # fuzd-gateways
 
+## 0.1.14
+
+### Patch Changes
+
+- latest deps (including tlock-js)
+- Updated dependencies
+  - fuzd-scheduler@0.2.2
+  - fuzd-executor@0.1.9
+
 ## 0.1.13
 
 ### Patch Changes

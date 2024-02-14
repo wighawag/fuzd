@@ -1,5 +1,18 @@
 # fuzd-cf-worker
 
+## 0.0.27
+
+### Patch Changes
+
+- latest deps (including tlock-js)
+- Updated dependencies
+  - fuzd-tlock-decrypter@0.2.2
+  - remote-account@0.0.6
+  - fuzd-scheduler@0.2.2
+  - fuzd-executor@0.1.9
+  - fuzd-gateways@0.1.14
+  - fuzd-common@0.1.6
+
 ## 0.0.26
 
 ### Patch Changes

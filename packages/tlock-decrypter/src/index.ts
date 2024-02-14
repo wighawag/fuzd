@@ -23,7 +23,7 @@ export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Dec
 		// TODO option to
 		// - provide round for t-lock
 		// - provide aproximate round for t-lock
-		let decrypted: string;
+		let decrypted: Buffer;
 		try {
 			decrypted = await timelockDecrypt(execution.payload, config.client);
 		} catch (err) {
@@ -34,7 +34,7 @@ export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Dec
 			};
 		}
 
-		const json: DecryptedPayload<TransactionDataType> = JSON.parse(decrypted);
+		const json: DecryptedPayload<TransactionDataType> = JSON.parse(decrypted.toString('utf-8'));
 
 		if (json.type === 'time-locked') {
 			// onion decryption
