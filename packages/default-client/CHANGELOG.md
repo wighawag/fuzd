@@ -1,5 +1,13 @@
 # fuzd-default-client
 
+## 0.1.14
+
+### Patch Changes
+
+- export DecryptedPayload + fix
+- Updated dependencies
+  - fuzd-scheduler@0.2.1
+
 ## 0.1.13
 
 ### Patch Changes

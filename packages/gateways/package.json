@@ -1,6 +1,6 @@
 {
   "name": "fuzd-gateways",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "verify submission and execute them",
   "publishConfig": {
     "access": "public"

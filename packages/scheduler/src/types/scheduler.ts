@@ -175,3 +175,14 @@ export type QueueProcessingResult = {
 export type SchedulerBackend = {
 	processQueue(): Promise<QueueProcessingResult>;
 };
+
+export type DecryptedPayload<TransactionDataType> =
+	| {
+			type: 'time-locked';
+			payload: string;
+			timing: RoundBasedTiming;
+	  }
+	| {
+			type: 'clear';
+			transactions: TransactionDataType[];
+	  };
