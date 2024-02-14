@@ -83,7 +83,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 	}
 
 	async function execute(execution: ExecutionQueued<TransactionDataType>): Promise<ExecutionStatus> {
-		let transaction: TransactionDataType;
+		let transactions: TransactionDataType[];
 		if (execution.type === 'time-locked') {
 			if (!config.decrypter) {
 				throw new Error(
@@ -93,7 +93,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 
 			const decryptionResult = await config.decrypter.decrypt(execution);
 			if (decryptionResult.success) {
-				transaction = decryptionResult.transaction;
+				transactions = decryptionResult.transactions;
 			} else {
 				if (decryptionResult.retry) {
 					execution.checkinTime = decryptionResult.retry;
@@ -108,7 +108,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 				}
 			}
 		} else {
-			transaction = execution.transaction;
+			transactions = execution.transactions;
 		}
 
 		// now we are ready to execute, if we reached there, this means the execution is in the right time slot
@@ -116,18 +116,25 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		// for encrypted payload we will attempt to decrypt
 		// if it fails, we will push it accoridng to time schedule
 
-		const executionResult = await executor.submitTransaction(execution.slot, execution.account, transaction);
+		const results: TransactionInfoType[] = [];
+		for (const transaction of transactions) {
+			const executionResult = await executor.submitTransaction(execution.slot, execution.account, transaction);
+			results.push(executionResult);
+		}
 
 		// TODO if trying to execute different data when previous tx is already broadcasted: we should throw here
 		// because now the executor skip it
 
 		// if we reaches there, the execution is now handled by the executor
 		// the schedule has done its job
-		// if for some reason `executor.submitTransaction(...)` fails to return but has actually broadcasted the tx
+		// if for some reason `executor.submitTransactions(...)` fails to return but has actually broadcasted the tx
 		// the scheduler will attempt again. the id tell the executor to not reexecute
 		await storage.deleteExecution(execution);
 
-		return {type: 'broadcasted', reason: `broadcasted via tx ${executionResult && (executionResult as any).hash}`};
+		return {
+			type: 'broadcasted',
+			reason: `broadcasted via txs ${results && results.map((v) => (v as any).hash).join(',')}`,
+		};
 	}
 
 	function _getChainConfig(chainId: `0x${string}`): ChainConfig {

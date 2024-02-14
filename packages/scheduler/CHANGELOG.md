@@ -1,5 +1,11 @@
 # fuzd-scheduler
 
+## 0.2.0
+
+### Minor Changes
+
+- batch of tx in scheduler
+
 ## 0.1.9
 
 ### Patch Changes

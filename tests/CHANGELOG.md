@@ -1,5 +1,13 @@
 # fuzd-tests
 
+## 0.1.13
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-scheduler@0.2.0
+  - fuzd-gateways@0.1.12
+
 ## 0.1.12
 
 ### Patch Changes

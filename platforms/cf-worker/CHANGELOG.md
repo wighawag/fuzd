@@ -1,5 +1,14 @@
 # fuzd-cf-worker
 
+## 0.0.25
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-tlock-decrypter@0.2.0
+  - fuzd-scheduler@0.2.0
+  - fuzd-gateways@0.1.12
+
 ## 0.0.24
 
 ### Patch Changes

@@ -48,7 +48,7 @@ export type FixedTimeScheduledExecution<
 };
 
 export type DecryptionResult<TransactionDataType> =
-	| {success: true; transaction: TransactionDataType}
+	| {success: true; transactions: TransactionDataType[]}
 	| {
 			success: false;
 			newPayload?: string;
@@ -111,7 +111,7 @@ export type ScheduledExecutionInClear<
 	AssumedTransactionType extends AssumedTransaction = AssumedTransaction,
 > = BaseExecution & {
 	type: 'clear';
-	transaction: TransactionDataType;
+	transactions: TransactionDataType[];
 	timing:
 		| FixedTimeScheduledExecution<FixedTimingType, AssumedTransactionType>
 		| DeltaScheduledExecution<DeltaTimingType, StartTransactionType>;

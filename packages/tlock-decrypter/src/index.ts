@@ -20,12 +20,12 @@ export type DecryptedPayload<TransactionDataType> =
 	  }
 	| {
 			type: 'clear';
-			transaction: TransactionDataType;
+			transactions: TransactionDataType[];
 	  };
 
 export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Decrypter<TransactionDataType> {
 	async function decrypt(
-		execution: ExecutionQueued<TransactionDataType>
+		execution: ExecutionQueued<TransactionDataType>,
 	): Promise<DecryptionResult<TransactionDataType>> {
 		if (execution.type !== 'time-locked') {
 			throw new Error(`expect an execution of type "time-locked"`);
@@ -65,7 +65,7 @@ export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Dec
 		} else {
 			return {
 				success: true,
-				transaction: json.transaction,
+				transactions: json.transactions,
 			};
 		}
 	}
