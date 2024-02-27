@@ -20,7 +20,6 @@
     "fuzd-gateways": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "named-logs": "^0.2.2",
-    "tlock-js": "^0.7.0",
     "viem": "^2.7.9"
   },
   "devDependencies": {
@@ -52,6 +51,7 @@
     "set-defaults": "^0.0.2",
     "solidity-coverage": "^0.8.7",
     "solidity-proxy": "^0.2.4",
+    "tlock-js": "^0.7.0",
     "ts-node": "^10.9.2",
     "tsup": "^8.0.2",
     "tsx": "^4.7.1",

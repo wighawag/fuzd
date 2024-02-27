@@ -84,7 +84,8 @@ describe('Executing on the registry', function () {
 		const {gas, gasPrice, txData, user, registry} = await prepareExecution();
 		const timestamp = await time.getTimestamp();
 		const checkinTime = timestamp + 100;
-		const result = await scheduler.submitExecution((++counter).toString(), user, {
+		const result = await scheduler.submitExecution(user, {
+			slot: (++counter).toString(),
 			chainId: '0x7a69',
 			type: 'clear',
 			timing: {
@@ -94,17 +95,19 @@ describe('Executing on the registry', function () {
 					time: checkinTime,
 				},
 			},
-			transaction: {
-				...txData,
-				gas: `0x${gas.toString(16)}` as `0x${string}`,
-				broadcastSchedule: [
-					{
-						duration: '0x2000',
-						maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-						maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-					},
-				],
-			},
+			transactions: [
+				{
+					...txData,
+					gas: `0x${gas.toString(16)}` as `0x${string}`,
+					broadcastSchedule: [
+						{
+							duration: '0x2000',
+							maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
+							maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
+						},
+					],
+				},
+			],
 		});
 		expect(result.checkinTime).to.equal(checkinTime);
 
@@ -130,7 +133,8 @@ describe('Executing on the registry', function () {
 		};
 		const id = (++counter).toString();
 		mockDecrypter.addDecryptedResult(id, transaction);
-		const result = await scheduler.submitExecution(id, user, {
+		const result = await scheduler.submitExecution(user, {
+			slot: id,
 			chainId: '0x7a69',
 			type: 'time-locked',
 			timing: {
