@@ -137,7 +137,7 @@ export function createExecutor(
 
 		// this fix ancient8 testnet
 		// TODO investigate more robust ways to handle this
-		const maxPriorityFeePerGasTMP = options.maxPriorityFeePerGas == 0n ? 10 : options.maxPriorityFeePerGas;
+		const maxPriorityFeePerGasTMP = options.maxPriorityFeePerGas == 0n ? 10n : options.maxPriorityFeePerGas;
 
 		// then we ensure maxPriorityFeePerGas do not exceeed maxFeePerGas
 		const maxPriorityFeePerGas = maxPriorityFeePerGasTMP > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTMP;
@@ -359,7 +359,13 @@ export function createExecutor(
 		}
 
 		const maxFeePerGas = BigInt(feeSlot.maxFeePerGas);
-		const maxPriorityFeePerGas = BigInt(feeSlot.maxPriorityFeePerGas);
+		const maxPriorityFeePerGasAsBigInt = BigInt(feeSlot.maxPriorityFeePerGas);
+
+		// this fix ancient8 testnet
+		// TODO investigate more robust ways to handle this
+		const maxPriorityFeePerGasTMP = maxPriorityFeePerGasAsBigInt == 0n ? 10n : maxPriorityFeePerGasAsBigInt;
+		// then we ensure maxPriorityFeePerGas do not exceeed maxFeePerGas
+		const maxPriorityFeePerGas = maxPriorityFeePerGasTMP > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTMP;
 
 		const maxFeePerGasUsed = BigInt(pendingExecution.maxFeePerGas);
 		const maxPriorityFeePerGasUsed = BigInt(pendingExecution.maxFeePerGas);
