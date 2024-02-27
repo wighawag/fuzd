@@ -134,9 +134,13 @@ export function createExecutor(
 		}
 
 		const maxFeePerGas = options.maxFeePerGas;
+
+		// this fix ancient8 testnet
+		// TODO investigate more robust ways to handle this
+		const maxPriorityFeePerGasTMP = options.maxPriorityFeePerGas == 0n ? 10 : options.maxPriorityFeePerGas;
+
 		// then we ensure maxPriorityFeePerGas do not exceeed maxFeePerGas
-		const maxPriorityFeePerGas =
-			options.maxPriorityFeePerGas > maxFeePerGas ? maxFeePerGas : options.maxPriorityFeePerGas;
+		const maxPriorityFeePerGas = maxPriorityFeePerGasTMP > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTMP;
 		const maxFeePerGasAs0xString = `0x${maxFeePerGas.toString(16)}` as `0x${string}`;
 		const maxPriorityFeePerGasAs0xString = `0x${maxPriorityFeePerGas.toString(16)}` as `0x${string}`;
 

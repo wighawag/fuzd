@@ -20,7 +20,7 @@ type Responsify<Type> = {
 	[Property in keyof Type]: Type[Property] extends (...args: any[]) => Promise<any>
 		? (
 				...args: Parameters<Type[Property]>
-		  ) => Promise<Omit<Response, 'json'> & {json: () => ReturnType<Type[Property]>}>
+			) => Promise<Omit<Response, 'json'> & {json: () => ReturnType<Type[Property]>}>
 		: Type[Property];
 };
 
