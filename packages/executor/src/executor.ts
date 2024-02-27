@@ -357,7 +357,6 @@ export function createExecutor(
 			// we do not have more to resubmit
 			return;
 		}
-
 		const maxFeePerGas = BigInt(feeSlot.maxFeePerGas);
 		const maxPriorityFeePerGasAsBigInt = BigInt(feeSlot.maxPriorityFeePerGas);
 
@@ -393,6 +392,9 @@ export function createExecutor(
 			if (!signer) {
 				// TODO
 			}
+			console.log(
+				`resubmit with maxFeePerGas: ${maxFeePerGas} and maxPriorityFeePerGas: ${maxPriorityFeePerGas} \n(maxFeePerGasUsed: ${maxFeePerGasUsed}, maxPriorityFeePerGasUsed: ${maxPriorityFeePerGasUsed})`,
+			);
 			await _submitTransaction(signer, pendingExecution, {
 				forceNonce: parseInt(pendingExecution.nonce.slice(2), 16),
 				maxFeePerGas,
