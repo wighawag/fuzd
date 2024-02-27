@@ -38,4 +38,9 @@ durable_objects.bindings = [
    { name = "SCHEDULER", class_name = "SchedulerDO" }
 ]
 
+[env.alpha1test]
+durable_objects.bindings = [
+   { name = "SCHEDULER", class_name = "SchedulerDO" }
+]
+
 
