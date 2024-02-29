@@ -1,6 +1,6 @@
 {
   "name": "fuzd-tests",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "private": true,
   "description": "test client for fuzd",
   "main": "dist/index.js",

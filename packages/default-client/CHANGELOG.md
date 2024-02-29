@@ -1,5 +1,12 @@
 # fuzd-default-client
 
+## 0.1.17
+
+### Patch Changes
+
+- fuzd-executor@0.1.11
+- fuzd-scheduler@0.2.3
+
 ## 0.1.16
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # fuzd-executor
 
+## 0.1.11
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-common@0.1.8
+
 ## 0.1.10
 
 ### Patch Changes

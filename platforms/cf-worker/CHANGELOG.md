@@ -1,5 +1,15 @@
 # fuzd-cf-worker
 
+## 0.0.29
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-common@0.1.8
+  - fuzd-executor@0.1.11
+  - fuzd-scheduler@0.2.3
+  - fuzd-gateways@0.1.16
+
 ## 0.0.28
 
 ### Patch Changes
