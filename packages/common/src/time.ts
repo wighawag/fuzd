@@ -13,6 +13,6 @@ export async function getTimeFromContractTimestamp(
 			},
 		],
 	});
-	const value = parseInt(result.slice(2), 16);
+	const value = Number(result.slice);
 	return value;
 }

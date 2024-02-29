@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.1.7
+
+### Patch Changes
+
+- use expiry in executor + save timedout in archive + save lastError
+
 ## 0.1.6
 
 ### Patch Changes

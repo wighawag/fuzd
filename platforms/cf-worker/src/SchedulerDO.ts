@@ -104,7 +104,7 @@ export class SchedulerDO extends createDurable() {
 				if (!block) {
 					throw new Error(`cannot get latest block`);
 				}
-				return parseInt(block.timestamp.slice(2), 16);
+				return Number(block.timestamp);
 			},
 		};
 		const contractTimestamp = env.CONTRACT_TIMESTAMP;
@@ -152,7 +152,7 @@ export class SchedulerDO extends createDurable() {
 				? undefined
 				: initDecrypter({
 						client: mainnetClient(),
-				  });
+					});
 		const schedulerConfig = {
 			...baseConfig,
 			executor: this.executor,

@@ -3,7 +3,7 @@ import {EIP1193ProviderWithoutEvents, EIP1193TransactionReceipt} from 'eip-1193'
 export async function getTransactionStatus(
 	provider: EIP1193ProviderWithoutEvents,
 	transaction: {hash: `0x${string}`; nonce: number},
-	finality: number
+	finality: number,
 ): Promise<
 	| {finalised: true; blockTime: number; receipt: EIP1193TransactionReceipt; failed: boolean}
 	| {finalised: false; blockTime?: number; receipt: EIP1193TransactionReceipt | null; failed?: boolean}
@@ -17,12 +17,12 @@ export async function getTransactionStatus(
 	});
 	if (receipt) {
 		const latestBlocknumberAshex = await provider.request({method: 'eth_blockNumber'});
-		const latestBlockNumber = parseInt(latestBlocknumberAshex.slice(2), 16);
-		const receiptBlocknumber = parseInt(receipt.blockNumber.slice(2), 16);
+		const latestBlockNumber = Number(latestBlocknumberAshex);
+		const receiptBlocknumber = Number(receipt.blockNumber);
 
 		if (isNaN(latestBlockNumber) || isNaN(receiptBlocknumber)) {
 			throw new Error(
-				`could not parse blocknumbers, latest: ${latestBlocknumberAshex}, receipt: ${receipt.blockNumber}`
+				`could not parse blocknumbers, latest: ${latestBlocknumberAshex}, receipt: ${receipt.blockNumber}`,
 			);
 		}
 
@@ -31,7 +31,7 @@ export async function getTransactionStatus(
 			params: [receipt.blockHash, false],
 		});
 		if (block) {
-			blockTime = parseInt(block.timestamp.slice(2), 16);
+			blockTime = Number(block.timestamp);
 			finalised = receiptBlocknumber <= Math.max(0, latestBlockNumber - finality);
 		}
 	}

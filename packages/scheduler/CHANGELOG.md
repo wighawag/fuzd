@@ -1,5 +1,11 @@
 # fuzd-scheduler
 
+## 0.2.3
+
+### Patch Changes
+
+- use expiry in executor + save timedout in archive + save lastError
+
 ## 0.2.2
 
 ### Patch Changes

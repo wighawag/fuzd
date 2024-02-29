@@ -25,13 +25,16 @@ export type BroadcasterData = {
 export type PendingExecutionStored = EIP1193TransactionDataUsed & {
 	slot: string;
 	broadcasterAssignerID: string;
-	broadcastTime: number;
+	initialTime: number;
+	broadcastTime?: number;
 	nextCheckTime: number;
 	hash: EIP1193DATA;
 	account: EIP1193Account;
 	broadcastSchedule: BroadcastSchedule;
 	isVoidTransaction: boolean;
 	retries?: number;
+	lastError?: string;
+	expiryTime?: number;
 };
 
 export interface ExecutorStorage {
@@ -42,6 +45,8 @@ export interface ExecutorStorage {
 	}): Promise<PendingExecutionStored | undefined>;
 
 	deletePendingExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void>;
+	archiveTimedoutExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void>;
+	getArchivedExecutions(params: {limit: number}): Promise<PendingExecutionStored[]>;
 	createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored>;
 	getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored[]>;
 	getPendingExecutionsPerBroadcaster(params: {

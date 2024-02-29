@@ -25,6 +25,10 @@ function computeExecutionID(chainId: `0x${string}`, account: `0x${string}`, slot
 	return `tx_${chainId}_${account.toLowerCase()}_${slot}`;
 }
 
+function computeArchiveID(initialTimestamp: number, chainId: `0x${string}`, account: `0x${string}`, slot: string) {
+	return `archive_${initialTimestamp}_${chainId}_${account.toLowerCase()}_${slot}`;
+}
+
 type IndexID = {dbID: string};
 
 export class KVExecutorStorage implements ExecutorStorage {
@@ -40,17 +44,47 @@ export class KVExecutorStorage implements ExecutorStorage {
 
 	async deletePendingExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void> {
 		await this.db.transaction(async (txn) => {
-			const execution = await txn.get<PendingExecutionStored>(
-				computeExecutionID(params.chainId, params.account, params.slot),
-			);
+			const dbID = computeExecutionID(params.chainId, params.account, params.slot);
+			const execution = await txn.get<PendingExecutionStored>(dbID);
 			if (execution) {
 				await txn.delete(computeExecutionID(params.chainId, params.account, params.slot));
 				await txn.delete(computeNextCheckID(execution.nextCheckTime, params.chainId, params.account, params.slot));
-				const nonce = parseInt(execution.nonce.slice(2), 16);
+				const nonce = Number(execution.nonce);
 				await txn.delete(computePerAccountID(execution.from, params.chainId, nonce));
 			}
 		});
 	}
+
+	async archiveTimedoutExecution(params: {
+		chainId: `0x${string}`;
+		account: `0x${string}`;
+		slot: string;
+	}): Promise<void> {
+		await this.db.transaction(async (txn) => {
+			const dbID = computeExecutionID(params.chainId, params.account, params.slot);
+			const execution = await txn.get<PendingExecutionStored>(dbID);
+			if (execution) {
+				await txn.put<PendingExecutionStored>(
+					computeArchiveID(execution.initialTime, params.chainId, params.account, params.slot),
+					execution,
+				);
+				await txn.delete(computeExecutionID(params.chainId, params.account, params.slot));
+				await txn.delete(computeNextCheckID(execution.nextCheckTime, params.chainId, params.account, params.slot));
+				const nonce = Number(execution.nonce);
+				await txn.delete(computePerAccountID(execution.from, params.chainId, nonce));
+			}
+		});
+	}
+
+	async getArchivedExecutions(params: {limit: number}): Promise<PendingExecutionStored[]> {
+		const map = await this.db.list<PendingExecutionStored>({prefix: `archive_`, limit: params.limit});
+		const values: PendingExecutionStored[] = [];
+		for (const value of map.values()) {
+			values.push(value);
+		}
+		return values;
+	}
+
 	async createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored> {
 		const dbID = computeExecutionID(executionToStore.chainId, executionToStore.account, executionToStore.slot);
 		await this.db.transaction(async (txn) => {
@@ -72,7 +106,7 @@ export class KVExecutorStorage implements ExecutorStorage {
 					dbID: dbID,
 				},
 			);
-			const nonce = parseInt(executionToStore.nonce.slice(2), 16);
+			const nonce = Number(executionToStore.nonce);
 			await txn.put<IndexID>(computePerAccountID(executionToStore.from, executionToStore.chainId, nonce), {
 				dbID: dbID,
 			});

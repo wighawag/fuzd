@@ -1,5 +1,14 @@
 # fuzd-gateways
 
+## 0.1.15
+
+### Patch Changes
+
+- use expiry in executor + save timedout in archive + save lastError
+- Updated dependencies
+  - fuzd-scheduler@0.2.3
+  - fuzd-executor@0.1.10
+
 ## 0.1.14
 
 ### Patch Changes

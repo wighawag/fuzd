@@ -220,7 +220,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 	}
 
 	async function processExecution(execution: ExecutionQueued<TransactionDataType>, result: QueueProcessingResult) {
-		const chainIdDecimal = parseInt(execution.chainId.slice(2), 16).toString();
+		const chainIdDecimal = Number(execution.chainId).toString();
 		const {provider, finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
 
 		// Note here that if the service use a contract timestamp or a network who has its own deviating timestamp

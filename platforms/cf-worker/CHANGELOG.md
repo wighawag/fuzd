@@ -1,5 +1,17 @@
 # fuzd-cf-worker
 
+## 0.0.28
+
+### Patch Changes
+
+- use expiry in executor + save timedout in archive + save lastError
+- Updated dependencies
+  - fuzd-scheduler@0.2.3
+  - fuzd-executor@0.1.10
+  - fuzd-gateways@0.1.15
+  - fuzd-common@0.1.7
+  - fuzd-tlock-decrypter@0.2.3
+
 ## 0.0.27
 
 ### Patch Changes

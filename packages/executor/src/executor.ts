@@ -14,13 +14,11 @@ import {
 	ExecutorConfig,
 	FeePerGasPeriod,
 	RawTransactionInfo,
-	TransactionInfo,
 	ChainConfig,
 	TransactionParams,
 	BroadcasterSignerData,
 } from './types/executor';
 import {keccak_256} from '@noble/hashes/sha3';
-import {time2text} from './utils/time';
 
 const logger = logs('fuzd-executor');
 
@@ -72,6 +70,9 @@ export function createExecutor(
 			return existingExecution;
 		}
 
+		const {provider} = _getChainConfig(submission.chainId);
+		const timestamp = await time.getTimestamp(provider);
+
 		const broadcaster = await signers.assignProviderFor(submission.chainId, account);
 		const pendingExecutionToStore: TransactionToStore = {
 			...submission,
@@ -80,6 +81,8 @@ export function createExecutor(
 			from: broadcaster.address,
 			broadcasterAssignerID: broadcaster.assignerID,
 			isVoidTransaction: false,
+			initialTime: timestamp,
+			expiryTime: submission.expiryTime,
 		};
 
 		await _updateFees(pendingExecutionToStore);
@@ -229,7 +232,7 @@ export function createExecutor(
 			method: 'eth_getTransactionCount',
 			params: [broadcasterAddress, 'latest'],
 		});
-		const nonce = parseInt(nonceAsHex.slice(2), 16);
+		const nonce = Number(nonceAsHex);
 		if (isNaN(nonce)) {
 			throw new Error(`could not parse transaction count while checking for expected nonce`);
 		}
@@ -298,6 +301,8 @@ export function createExecutor(
 		const newTransactionData: PendingExecutionStored = {
 			...rawTxInfo.transactionData,
 			broadcastSchedule: transactionData.broadcastSchedule,
+			initialTime: transactionData.initialTime,
+			expiryTime: transactionData.expiryTime,
 			slot: transactionData.slot,
 			account: transactionData.account,
 			hash,
@@ -322,6 +327,9 @@ export function createExecutor(
 					params: [rawTxInfo.rawTx],
 				});
 			} catch (err) {
+				newTransactionData.lastError =
+					err && typeof err === 'object' && 'toString' in err ? err.toString() : String(err);
+				await storage.createOrUpdatePendingExecution(newTransactionData);
 				console.error(
 					`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.`,
 					err,
@@ -335,7 +343,13 @@ export function createExecutor(
 	async function _resubmitIfNeeded(pendingExecution: PendingExecutionStored): Promise<void> {
 		const {provider, finality, worstCaseBlockTime} = _getChainConfig(pendingExecution.chainId);
 		const timestamp = await time.getTimestamp(provider);
-		const diff = timestamp - pendingExecution.broadcastTime;
+		const diffSinceInitiated = timestamp - pendingExecution.initialTime;
+
+		if (pendingExecution.expiryTime && pendingExecution.expiryTime < timestamp) {
+			// expired
+			storage.archiveTimedoutExecution(pendingExecution);
+			return;
+		}
 
 		// TODO validation aty submission time
 		// TODO also we need to limit the size of the array of schedule
@@ -347,14 +361,15 @@ export function createExecutor(
 		let total = 0;
 		for (let i = 0; i < pendingExecution.broadcastSchedule.length; i++) {
 			const currentSlot = pendingExecution.broadcastSchedule[i];
-			if (total <= diff) {
+			if (total <= diffSinceInitiated) {
 				feeSlot = currentSlot;
 			}
-			total += parseInt(currentSlot.duration.slice(2), 16);
+			total += Number(currentSlot.duration);
 		}
 
 		if (!feeSlot) {
 			// we do not have more to resubmit
+			storage.archiveTimedoutExecution(pendingExecution);
 			return;
 		}
 		const maxFeePerGas = BigInt(feeSlot.maxFeePerGas);
@@ -396,7 +411,7 @@ export function createExecutor(
 				`resubmit with maxFeePerGas: ${maxFeePerGas} and maxPriorityFeePerGas: ${maxPriorityFeePerGas} \n(maxFeePerGasUsed: ${maxFeePerGasUsed}, maxPriorityFeePerGasUsed: ${maxPriorityFeePerGasUsed})`,
 			);
 			await _submitTransaction(signer, pendingExecution, {
-				forceNonce: parseInt(pendingExecution.nonce.slice(2), 16),
+				forceNonce: Number(pendingExecution.nonce),
 				maxFeePerGas,
 				maxPriorityFeePerGas,
 			});

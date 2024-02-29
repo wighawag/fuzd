@@ -61,6 +61,7 @@ export const TransactionSubmission = z.object({
 	chainId: EIP1193QuantitySchema,
 	accessList: EIP1193AccessListSchema.optional(),
 	broadcastSchedule: BroadcastSchedule,
+	expiryTime: z.number().optional(),
 });
 export type TransactionSubmission = z.infer<typeof TransactionSubmission>;
 
