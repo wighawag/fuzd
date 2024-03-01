@@ -351,6 +351,12 @@ export function createExecutor(
 			return;
 		}
 
+		if (diffSinceInitiated > maxExpiry) {
+			// expired by maxExpiry
+			storage.archiveTimedoutExecution(pendingExecution);
+			return;
+		}
+
 		// TODO validation aty submission time
 		// TODO also we need to limit the size of the array of schedule
 		// TODO we also need to ensure fee are in increasing order
@@ -373,13 +379,7 @@ export function createExecutor(
 			return;
 		}
 		const maxFeePerGas = BigInt(feeSlot.maxFeePerGas);
-		const maxPriorityFeePerGasAsBigInt = BigInt(feeSlot.maxPriorityFeePerGas);
-
-		// this fix ancient8 testnet
-		// TODO investigate more robust ways to handle this
-		const maxPriorityFeePerGasTMP = maxPriorityFeePerGasAsBigInt == 0n ? 10n : maxPriorityFeePerGasAsBigInt;
-		// then we ensure maxPriorityFeePerGas do not exceeed maxFeePerGas
-		const maxPriorityFeePerGas = maxPriorityFeePerGasTMP > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTMP;
+		const maxPriorityFeePerGas = BigInt(feeSlot.maxPriorityFeePerGas);
 
 		const maxFeePerGasUsed = BigInt(pendingExecution.maxFeePerGas);
 		const maxPriorityFeePerGasUsed = BigInt(pendingExecution.maxFeePerGas);

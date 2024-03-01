@@ -1,5 +1,13 @@
 # fuzd-cf-worker
 
+## 0.0.30
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-executor@0.1.12
+  - fuzd-gateways@0.1.17
+
 ## 0.0.29
 
 ### Patch Changes

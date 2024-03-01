@@ -1,6 +1,6 @@
 {
   "name": "fuzd-executor",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "execute transaction",
   "publishConfig": {
     "access": "public"
