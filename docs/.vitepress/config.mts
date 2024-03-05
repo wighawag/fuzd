@@ -44,13 +44,13 @@ export default defineConfig({
 			'script',
 			{id: 'plausible'},
 			`;(() => {
-			if (location.hostname === 'fuzd.dev') {
-				const plausible_script = document.createElement('script');
-				plausible_script.setAttribute('data-domain','fuzd.dev);
-				plausible_script.setAttribute('data-api','/stats/api/event');
-				plausible_script.setAttribute('src','/stats/js/script.js');
-				document.head.appendChild(plausible_script);
-			}
+				if (location.hostname === 'fuzd.dev') {
+					const plausible_script = document.createElement('script');
+					plausible_script.setAttribute('data-domain','fuzd.dev');
+					plausible_script.setAttribute('data-api','/stats/api/event');
+					plausible_script.setAttribute('src','/stats/js/script.js');
+					document.head.appendChild(plausible_script);
+				}
 			})()`,
 		],
 		['link', {rel: 'icon', href: '/pwa/favicon.svg', type: 'image/svg+xml'}],
