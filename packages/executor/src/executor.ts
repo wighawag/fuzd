@@ -327,8 +327,25 @@ export function createExecutor(
 					params: [rawTxInfo.rawTx],
 				});
 			} catch (err) {
-				newTransactionData.lastError =
-					err && typeof err === 'object' && 'toString' in err ? err.toString() : String(err);
+				let errorString: string;
+				try {
+					if (err && typeof err === 'object') {
+						if ('message' in err) {
+							errorString = err.message as string;
+						} else if ('toString' in err) {
+							errorString = err.toString();
+						} else {
+							errorString = String(err);
+						}
+					} else {
+						errorString = String(err);
+					}
+				} catch {
+					errorString = 'failed to parse error';
+				}
+
+				newTransactionData.lastError = errorString;
+
 				await storage.createOrUpdatePendingExecution(newTransactionData);
 				console.error(
 					`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.`,
