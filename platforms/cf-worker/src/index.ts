@@ -58,7 +58,11 @@ router
 		const data = await response.json();
 		return table({data, border: 1, whenNoData: 'No DATA'});
 	})
-	.get('/transactions', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).getPendingTransactions())
+	.get('/transactions', async ({SCHEDULER}) => {
+		const response = await SCHEDULER.get(SINGELTON).getPendingTransactions();
+		const data = await response.json();
+		return table({data, border: 1, whenNoData: 'No DATA'});
+	})
 
 	.get('/queuedExecution/:chainId/:account/:slot', ({SCHEDULER, params}) =>
 		SCHEDULER.get(SINGELTON).getQueuedExecution(
