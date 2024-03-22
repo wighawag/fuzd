@@ -1,6 +1,6 @@
 {
   "name": "fuzd-executor",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "execute transaction",
   "publishConfig": {
     "access": "public"
@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "abitype": "^1.0.0",
-    "eip-1193": "^0.4.7",
+    "eip-1193": "^0.5.0",
     "eip-1193-signer": "^0.0.1",
     "ldenv": "^0.3.9",
     "prettier": "^3.2.5",

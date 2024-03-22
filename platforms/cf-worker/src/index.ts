@@ -63,6 +63,11 @@ router
 		const data = await response.json();
 		return table({data, border: 1, whenNoData: 'No DATA'});
 	})
+	.get('/archived-transactions', async ({SCHEDULER}) => {
+		const response = await SCHEDULER.get(SINGELTON).getArchivedExecutions();
+		const data = await response.json();
+		return table({data, border: 1, whenNoData: 'No DATA'});
+	})
 
 	.get('/queuedExecution/:chainId/:account/:slot', ({SCHEDULER, params}) =>
 		SCHEDULER.get(SINGELTON).getQueuedExecution(
@@ -71,6 +76,19 @@ router
 			params.slot,
 		),
 	)
+
+	.get('/updateTransactionWithCurrentGasPrice/:token/:chainId/:account/:slot', ({SCHEDULER, params}, env) => {
+		const expectedToken = env['TOKEN_ADMIN'];
+		if (params.token === expectedToken) {
+			return SCHEDULER.get(SINGELTON).updateTransactionWithCurrentGasPrice(
+				params.chainId as `0x${string}`,
+				params.account.toLowerCase() as `0x${string}`,
+				params.slot,
+			);
+		} else {
+			return error(401, 'Not Authorized');
+		}
+	})
 
 	.get('/queuedExecution/:chainId/:account', ({SCHEDULER, params}) =>
 		SCHEDULER.get(SINGELTON).getQueuedExecutionsForAccount(

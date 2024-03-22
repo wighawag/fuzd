@@ -53,8 +53,8 @@ importers:
         version: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
     devDependencies:
       eip-1193:
-        specifier: ^0.4.7
-        version: 0.4.7
+        specifier: ^0.5.0
+        version: 0.5.0
       eip-1193-signer:
         specifier: ^0.0.1
         version: 0.0.1(typescript@5.3.3)(zod@3.22.4)
@@ -130,8 +130,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0(typescript@5.3.3)(zod@3.22.4)
       eip-1193:
-        specifier: ^0.4.7
-        version: 0.4.7
+        specifier: ^0.5.0
+        version: 0.5.0
       eip-1193-signer:
         specifier: ^0.0.1
         version: 0.0.1(typescript@5.3.3)(zod@3.22.4)
@@ -226,8 +226,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0(typescript@5.3.3)(zod@3.22.4)
       eip-1193:
-        specifier: ^0.4.7
-        version: 0.4.7
+        specifier: ^0.5.0
+        version: 0.5.0
       eip-1193-signer:
         specifier: ^0.0.1
         version: 0.0.1(typescript@5.3.3)(zod@3.22.4)
@@ -321,8 +321,8 @@ importers:
         specifier: ^4.20240208.0
         version: 4.20240208.0
       eip-1193:
-        specifier: ^0.4.7
-        version: 0.4.7
+        specifier: ^0.5.0
+        version: 0.5.0
       set-defaults:
         specifier: ^0.0.2
         version: 0.0.2
@@ -361,8 +361,8 @@ importers:
         specifier: ^20.11.17
         version: 20.11.17
       eip-1193:
-        specifier: ^0.4.7
-        version: 0.4.7
+        specifier: ^0.5.0
+        version: 0.5.0
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0
@@ -437,8 +437,8 @@ importers:
         specifier: ^7.1.1
         version: 7.1.1(chai@5.1.0)
       eip-1193:
-        specifier: ^0.4.7
-        version: 0.4.7
+        specifier: ^0.5.0
+        version: 0.5.0
       eip-1193-jsonrpc-provider:
         specifier: ^0.3.0
         version: 0.3.0
@@ -4465,8 +4465,8 @@ packages:
       - utf-8-validate
       - zod
 
-  /eip-1193@0.4.7:
-    resolution: {integrity: sha512-wpAtKtTeQCE1vubTNV6o8yQD3J/4CBZBvmW8nKBSOTnKi2jr6Dr+j7Xk9OHHCP48ugsE1E/03wDs6jYTBebz6w==}
+  /eip-1193@0.5.0:
+    resolution: {integrity: sha512-E800aS6F1CW+L4Ub+DWaAqJFe4C2TOfj2fAQNNk+XT6gN2oITyYgjfj5MFOrxM0kju9cF3j9kV2v8s22kAlYkA==}
     dev: true
 
   /elliptic@6.5.4:

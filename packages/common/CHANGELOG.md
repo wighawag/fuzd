@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.1.9
+
+### Patch Changes
+
+- tweaks and better handling of low fees for executor
+
 ## 0.1.8
 
 ### Patch Changes

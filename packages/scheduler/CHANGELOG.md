@@ -1,5 +1,11 @@
 # fuzd-scheduler
 
+## 0.2.4
+
+### Patch Changes
+
+- tweaks and better handling of low fees for executor
+
 ## 0.2.3
 
 ### Patch Changes

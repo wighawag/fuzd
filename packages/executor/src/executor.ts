@@ -19,6 +19,7 @@ import {
 	BroadcasterSignerData,
 } from './types/executor';
 import {keccak_256} from '@noble/hashes/sha3';
+import {getRoughGasPriceEstimate} from './utils/ethereum';
 
 const logger = logs('fuzd-executor');
 
@@ -48,6 +49,45 @@ export function createExecutor(
 	const {chainConfigs, time, storage, signers} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
+
+	async function updateTransactionWithCurrentGasPrice({
+		chainId,
+		slot,
+		account,
+	}: {
+		chainId: `0x${string}`;
+		slot: string;
+		account: `0x${string}`;
+	}): Promise<'NotFound' | 'BetterFeeAlready' | 'Updated'> {
+		const {provider} = _getChainConfig(chainId);
+		const estimates = await getRoughGasPriceEstimate(provider);
+		const fast = estimates.fast;
+
+		const existingExecution = await storage.getPendingExecution({
+			chainId,
+			slot,
+			account,
+		});
+		if (existingExecution) {
+			const sum = existingExecution.broadcastSchedule.reduce((curr, value) => curr + BigInt(value.duration), 0n);
+			const currentbestFees = existingExecution.broadcastSchedule[existingExecution.broadcastSchedule.length - 1];
+			if (BigInt(currentbestFees.maxFeePerGas) < fast.maxFeePerGas) {
+				existingExecution.broadcastSchedule = [
+					{
+						maxFeePerGas: `0x${fast.maxFeePerGas.toString(16)}` as `0x${string}`,
+						maxPriorityFeePerGas: `0x${fast.maxPriorityFeePerGas.toString(16)}` as `0x${string}`,
+						duration: `0x${sum.toString(16)}` as `0x${string}`,
+					},
+				];
+				await storage.createOrUpdatePendingExecution(existingExecution);
+				return 'Updated';
+			} else {
+				return 'BetterFeeAlready';
+			}
+		} else {
+			return 'NotFound';
+		}
+	}
 
 	async function submitTransaction(
 		slot: string,
@@ -89,14 +129,40 @@ export function createExecutor(
 
 		const currentMaxFee = submission.broadcastSchedule[0];
 
+		const maxFeePerGasChosen = BigInt(currentMaxFee.maxFeePerGas);
+		const maxPriorityFeePerGasChosen = BigInt(currentMaxFee.maxPriorityFeePerGas);
+
+		// TODO remove duplication maxFeePerGas
+		const estimates = await getRoughGasPriceEstimate(provider);
+		const fast = estimates.fast;
+		let maxFeePerGas = fast.maxFeePerGas;
+		let maxPriorityFeePerGas = fast.maxPriorityFeePerGas;
+		if (fast.maxFeePerGas > maxFeePerGasChosen) {
+			console.warn(
+				`fast.maxFeePerGas (${fast.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasChosen}), tx might not be included`,
+			);
+			maxFeePerGas = maxFeePerGasChosen;
+			if (maxPriorityFeePerGas > maxFeePerGas) {
+				maxPriorityFeePerGas = maxFeePerGas;
+			}
+		} else if (fast.maxPriorityFeePerGas > maxPriorityFeePerGasChosen) {
+			console.warn(
+				`fast.maxPriorityFeePerGas (${fast.maxPriorityFeePerGas}) > maxPriorityFeePerGasChosen (${maxPriorityFeePerGasChosen}), we bump it up`,
+			);
+		}
+
 		// TODO we use global broadcastSchedule using fixed time
 		// so if you sent a tx 2 hour ago and the current schedule 2hour later is smaller than
 		// the newly submitted tx schedule (for now) then we will resubmit the tx with that new fee schedule
 
 		const result = await _submitTransaction(broadcaster, pendingExecutionToStore, {
-			maxFeePerGas: BigInt(currentMaxFee.maxFeePerGas),
-			maxPriorityFeePerGas: BigInt(currentMaxFee.maxPriorityFeePerGas),
+			maxFeePerGas,
+			maxPriorityFeePerGas,
+			fastEstimate: fast,
 		});
+		if (!result) {
+			throw new Error(`could not submit transaction, failed`);
+		}
 		return result;
 	}
 
@@ -249,6 +315,7 @@ export function createExecutor(
 
 		const expectedNonce = broadcasterData.nextNonce;
 
+		let revert = false;
 		let gasRequired: `0x${string}`;
 		try {
 			gasRequired = await provider.request({
@@ -263,10 +330,12 @@ export function createExecutor(
 				],
 			});
 		} catch (err: any) {
-			throw ono(err, 'The transaction reverts. Aborting here');
+			console.error('The transaction reverts?', err);
+			revert = true;
+			gasRequired = '0x' + Number.MAX_SAFE_INTEGER.toString(16);
 		}
 
-		return {expectedNonce, nonce, gasRequired: BigInt(gasRequired)};
+		return {expectedNonce, nonce, gasRequired: BigInt(gasRequired), revert};
 	}
 
 	function _getChainConfig(chainId: `0x${string}`): ChainConfig {
@@ -280,14 +349,32 @@ export function createExecutor(
 	async function _submitTransaction(
 		broadcaster: BroadcasterSignerData,
 		transactionData: TransactionToStore,
-		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean},
-	): Promise<PendingExecutionStored> {
+		options: {
+			forceNonce?: number;
+			maxFeePerGas: bigint;
+			maxPriorityFeePerGas: bigint;
+			forceVoid?: boolean;
+			fastEstimate?: {maxFeePerGas: bigint; maxPriorityFeePerGas: bigint};
+		},
+	): Promise<PendingExecutionStored | undefined> {
 		const {provider} = _getChainConfig(transactionData.chainId);
 		const txParams = await _getTxParams(broadcaster.address, transactionData);
-		const {gasRequired} = txParams;
+		const {gasRequired, revert} = txParams;
+
+		if (revert) {
+			const errorMessage = `The transaction reverts`;
+			console.error(errorMessage);
+			transactionData.lastError = errorMessage;
+			storage.archiveTimedoutExecution(transactionData);
+			return undefined;
+		}
 
 		if (gasRequired > BigInt(transactionData.gas)) {
-			throw new Error(`The transaction requires more gas than provided. Aborting here`);
+			const errorMessage = `The transaction requires more gas than provided. Aborting here`;
+			console.error(errorMessage);
+			transactionData.lastError = errorMessage;
+			storage.archiveTimedoutExecution(transactionData);
+			return undefined;
 		}
 
 		const rawTxInfo = await _signTransaction(transactionData, broadcaster, txParams, options);
@@ -297,6 +384,12 @@ export function createExecutor(
 
 		const timestamp = await time.getTimestamp(provider);
 		const nextCheckTime = timestamp + 60; // TODO config
+
+		let lastError: string | undefined;
+
+		if (options.fastEstimate && options.fastEstimate.maxFeePerGas > options.maxFeePerGas) {
+			lastError = 'potentially underpriced';
+		}
 
 		const newTransactionData: PendingExecutionStored = {
 			...rawTxInfo.transactionData,
@@ -311,6 +404,7 @@ export function createExecutor(
 			retries,
 			broadcasterAssignerID: broadcaster.assignerID,
 			isVoidTransaction: rawTxInfo.isVoidTransaction,
+			lastError,
 		};
 		await storage.createOrUpdatePendingExecution(newTransactionData);
 
@@ -378,7 +472,11 @@ export function createExecutor(
 		// TODO also we need to limit the size of the array of schedule
 		// TODO we also need to ensure fee are in increasing order
 		if (pendingExecution.broadcastSchedule.length === 0) {
-			throw new Error(`should not have let this tx go through, do not have gas params`);
+			const errorMessage = `no broadcastSchedule, should not have let this tx go through, do not have gas params`;
+			console.error(errorMessage);
+			pendingExecution.lastError = errorMessage;
+			storage.archiveTimedoutExecution(pendingExecution);
+			return;
 		}
 		let feeSlot: FeePerGasPeriod | undefined;
 		let total = 0;
@@ -392,11 +490,31 @@ export function createExecutor(
 
 		if (!feeSlot) {
 			// we do not have more to resubmit
+			pendingExecution.lastError = 'timed out';
 			storage.archiveTimedoutExecution(pendingExecution);
 			return;
 		}
-		const maxFeePerGas = BigInt(feeSlot.maxFeePerGas);
-		const maxPriorityFeePerGas = BigInt(feeSlot.maxPriorityFeePerGas);
+		const maxFeePerGasChosen = BigInt(feeSlot.maxFeePerGas);
+		const maxPriorityFeePerGasChosen = BigInt(feeSlot.maxPriorityFeePerGas);
+
+		// TODO remove duplication maxFeePerGas
+		const estimates = await getRoughGasPriceEstimate(provider);
+		const fast = estimates.fast;
+		let maxFeePerGas = fast.maxFeePerGas;
+		let maxPriorityFeePerGas = fast.maxPriorityFeePerGas;
+		if (fast.maxFeePerGas > maxFeePerGasChosen) {
+			console.warn(
+				`fast.maxFeePerGas (${fast.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasChosen}), tx might not be included`,
+			);
+			maxFeePerGas = maxFeePerGasChosen;
+			if (maxPriorityFeePerGas > maxFeePerGas) {
+				maxPriorityFeePerGas = maxFeePerGas;
+			}
+		} else if (fast.maxPriorityFeePerGas > maxPriorityFeePerGasChosen) {
+			console.warn(
+				`fast.maxPriorityFeePerGas (${fast.maxPriorityFeePerGas}) > maxPriorityFeePerGasChosen (${maxPriorityFeePerGasChosen}), we bump it up`,
+			);
+		}
 
 		const maxFeePerGasUsed = BigInt(pendingExecution.maxFeePerGas);
 		const maxPriorityFeePerGasUsed = BigInt(pendingExecution.maxFeePerGas);
@@ -431,6 +549,7 @@ export function createExecutor(
 				forceNonce: Number(pendingExecution.nonce),
 				maxFeePerGas,
 				maxPriorityFeePerGas,
+				fastEstimate: fast,
 			});
 		}
 	}
@@ -472,7 +591,11 @@ export function createExecutor(
 		const pendingExecutions = await storage.getPendingExecutions({limit});
 		if (pendingExecutions) {
 			for (const pendingExecution of pendingExecutions) {
-				await __processPendingTransaction(pendingExecution);
+				try {
+					await __processPendingTransaction(pendingExecution);
+				} catch (err) {
+					console.error(`failed to process pending tx`, pendingExecution, err);
+				}
 			}
 		}
 		// TODO make returning the pending transaction part of the api
@@ -482,5 +605,6 @@ export function createExecutor(
 	return {
 		submitTransaction,
 		processPendingTransactions,
+		updateTransactionWithCurrentGasPrice,
 	};
 }

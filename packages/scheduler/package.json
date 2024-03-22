@@ -1,6 +1,6 @@
 {
   "name": "fuzd-scheduler",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "execute transaction in future plus tx can be sealed using drand tlock",
   "publishConfig": {
     "access": "public"
@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "abitype": "^1.0.0",
-    "eip-1193": "^0.4.7",
+    "eip-1193": "^0.5.0",
     "eip-1193-signer": "^0.0.1",
     "fuzd-common": "workspace:*",
     "ldenv": "^0.3.9",

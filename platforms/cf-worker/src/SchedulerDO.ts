@@ -188,6 +188,10 @@ export class SchedulerDO extends createDurable() {
 		return new Response(this.account.publicExtendedKey);
 	}
 
+	updateTransactionWithCurrentGasPrice(chainId: `0x${string}`, account: `0x${string}`, slot: string) {
+		return this.executor.updateTransactionWithCurrentGasPrice({chainId, account, slot});
+	}
+
 	processQueue() {
 		return this.scheduler.processQueue();
 	}
@@ -198,6 +202,10 @@ export class SchedulerDO extends createDurable() {
 
 	getPendingTransactions() {
 		return this.executorStorage.getPendingExecutions({limit: 100});
+	}
+
+	getArchivedExecutions() {
+		return this.executorStorage.getArchivedExecutions({limit: 100});
 	}
 
 	getQueuedExecution(chainId: `0x${string}`, account: `0x${string}`, slot: string) {

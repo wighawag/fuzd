@@ -1,5 +1,17 @@
 # fuzd-cf-worker
 
+## 0.0.31
+
+### Patch Changes
+
+- tweaks and better handling of low fees for executor
+- Updated dependencies
+  - fuzd-scheduler@0.2.4
+  - fuzd-executor@0.1.13
+  - fuzd-common@0.1.9
+  - fuzd-gateways@0.1.18
+  - fuzd-tlock-decrypter@0.2.4
+
 ## 0.0.30
 
 ### Patch Changes

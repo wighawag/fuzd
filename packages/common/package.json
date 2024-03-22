@@ -1,6 +1,6 @@
 {
   "name": "fuzd-common",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "execute transaction",
   "publishConfig": {
     "access": "public"
@@ -17,7 +17,7 @@
     "named-logs": "^0.2.2"
   },
   "devDependencies": {
-    "eip-1193": "^0.4.7",
+    "eip-1193": "^0.5.0",
     "eip-1193-signer": "^0.0.1",
     "ldenv": "^0.3.9",
     "prettier": "^3.2.5",

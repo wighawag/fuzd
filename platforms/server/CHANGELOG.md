@@ -1,5 +1,11 @@
 # fuzd-server
 
+## 0.0.6
+
+### Patch Changes
+
+- tweaks and better handling of low fees for executor
+
 ## 0.0.5
 
 ### Patch Changes

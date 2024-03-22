@@ -1,5 +1,13 @@
 # fuzd-executor
 
+## 0.1.13
+
+### Patch Changes
+
+- tweaks and better handling of low fees for executor
+- Updated dependencies
+  - fuzd-common@0.1.9
+
 ## 0.1.12
 
 ### Patch Changes

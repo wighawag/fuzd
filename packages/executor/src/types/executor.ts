@@ -114,10 +114,16 @@ export type Executor<TransactionDataType, TransactionInfoType> = {
 
 export type ExecutorBackend = {
 	processPendingTransactions(): Promise<void>;
+	updateTransactionWithCurrentGasPrice(execution: {
+		chainId: `0x${string}`;
+		slot: string;
+		account: `0x${string}`;
+	}): Promise<'NotFound' | 'BetterFeeAlready' | 'Updated'>;
 };
 
 export type TransactionParams = {
 	expectedNonce: number;
 	nonce: number;
 	gasRequired: bigint;
+	revert: boolean;
 };
