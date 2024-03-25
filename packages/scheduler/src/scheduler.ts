@@ -69,11 +69,12 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		newCheckinTime: number,
 	): Promise<ExecutionQueued<TransactionDataType>> {
 		execution.retries++;
-		if (execution.retries >= 10) {
+		if (execution.retries >= 100) {
 			logger.info(
 				`deleting execution (chainid: ${execution.chainId}, account: ${execution.slot}, slot: ${execution.slot}) after ${execution.retries} retries ...`,
 			);
 			// TODO hook await this._reduceSpending(reveal);
+			// TODO archive
 			await storage.deleteExecution(execution);
 		} else {
 			execution.checkinTime = newCheckinTime;
@@ -165,11 +166,13 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 					logger.debug(`the tx the execution depends on has not finalised and the timestamp has already passed`);
 					// TODO should we delete ?
 					// or retry later ?
+					// TODO archive in any case
 					await storage.deleteExecution(execution);
 					return {status: 'deleted'};
 				} else {
 					if (txStatus.failed) {
 						logger.debug(`deleting the execution as the tx it depends on failed...`);
+						// TODO archive
 						await storage.deleteExecution(execution);
 						return {status: 'deleted'};
 					}
@@ -195,6 +198,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 				} else {
 					if (txStatus.failed) {
 						logger.debug(`deleting the execution as the tx it depends on failed...`);
+						// TODO archive
 						await storage.deleteExecution(execution);
 						return {status: 'deleted'};
 					}
@@ -278,7 +282,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		) {
 			// delete if execution expired
 			logger.info(`too late, deleting ${displayExecution(execution)}...`);
-
+			// TODO archive
 			await storage.deleteExecution(execution);
 			result.executions.push({
 				chainId: execution.chainId,

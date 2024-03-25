@@ -510,6 +510,9 @@ export function createExecutor(
 			if (maxPriorityFeePerGas > maxFeePerGas) {
 				maxPriorityFeePerGas = maxFeePerGas;
 			}
+			// FOR now
+			// maxFeePerGas = fast.maxFeePerGas;
+			// maxPriorityFeePerGas = fast.maxPriorityFeePerGas;
 		} else if (fast.maxPriorityFeePerGas > maxPriorityFeePerGasChosen) {
 			console.warn(
 				`fast.maxPriorityFeePerGas (${fast.maxPriorityFeePerGas}) > maxPriorityFeePerGasChosen (${maxPriorityFeePerGasChosen}), we bump it up`,
