@@ -1,5 +1,12 @@
 # fuzd-default-client
 
+## 0.1.20
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-executor@0.1.14
+
 ## 0.1.19
 
 ### Patch Changes

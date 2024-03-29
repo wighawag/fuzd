@@ -1,5 +1,14 @@
 # fuzd-cf-worker
 
+## 0.0.32
+
+### Patch Changes
+
+- use average gas price
+- Updated dependencies
+  - fuzd-executor@0.1.14
+  - fuzd-gateways@0.1.19
+
 ## 0.0.31
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.1.14
+
+### Patch Changes
+
+- use average gas price
+
 ## 0.1.13
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # fuzd-tests
 
+## 0.1.20
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-executor@0.1.14
+  - fuzd-gateways@0.1.19
+
 ## 0.1.19
 
 ### Patch Changes

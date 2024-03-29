@@ -61,7 +61,7 @@ export function createExecutor(
 	}): Promise<'NotFound' | 'BetterFeeAlready' | 'Updated'> {
 		const {provider} = _getChainConfig(chainId);
 		const estimates = await getRoughGasPriceEstimate(provider);
-		const fast = estimates.fast;
+		const gasPriceEstimate = estimates.average;
 
 		const existingExecution = await storage.getPendingExecution({
 			chainId,
@@ -71,11 +71,11 @@ export function createExecutor(
 		if (existingExecution) {
 			const sum = existingExecution.broadcastSchedule.reduce((curr, value) => curr + BigInt(value.duration), 0n);
 			const currentbestFees = existingExecution.broadcastSchedule[existingExecution.broadcastSchedule.length - 1];
-			if (BigInt(currentbestFees.maxFeePerGas) < fast.maxFeePerGas) {
+			if (BigInt(currentbestFees.maxFeePerGas) < gasPriceEstimate.maxFeePerGas) {
 				existingExecution.broadcastSchedule = [
 					{
-						maxFeePerGas: `0x${fast.maxFeePerGas.toString(16)}` as `0x${string}`,
-						maxPriorityFeePerGas: `0x${fast.maxPriorityFeePerGas.toString(16)}` as `0x${string}`,
+						maxFeePerGas: `0x${gasPriceEstimate.maxFeePerGas.toString(16)}` as `0x${string}`,
+						maxPriorityFeePerGas: `0x${gasPriceEstimate.maxPriorityFeePerGas.toString(16)}` as `0x${string}`,
 						duration: `0x${sum.toString(16)}` as `0x${string}`,
 					},
 				];
@@ -134,20 +134,20 @@ export function createExecutor(
 
 		// TODO remove duplication maxFeePerGas
 		const estimates = await getRoughGasPriceEstimate(provider);
-		const fast = estimates.fast;
-		let maxFeePerGas = fast.maxFeePerGas;
-		let maxPriorityFeePerGas = fast.maxPriorityFeePerGas;
-		if (fast.maxFeePerGas > maxFeePerGasChosen) {
+		const gasPriceEstimate = estimates.average;
+		let maxFeePerGas = gasPriceEstimate.maxFeePerGas;
+		let maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
+		if (gasPriceEstimate.maxFeePerGas > maxFeePerGasChosen) {
 			console.warn(
-				`fast.maxFeePerGas (${fast.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasChosen}), tx might not be included`,
+				`fast.maxFeePerGas (${gasPriceEstimate.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasChosen}), tx might not be included`,
 			);
 			maxFeePerGas = maxFeePerGasChosen;
 			if (maxPriorityFeePerGas > maxFeePerGas) {
 				maxPriorityFeePerGas = maxFeePerGas;
 			}
-		} else if (fast.maxPriorityFeePerGas > maxPriorityFeePerGasChosen) {
+		} else if (gasPriceEstimate.maxPriorityFeePerGas > maxPriorityFeePerGasChosen) {
 			console.warn(
-				`fast.maxPriorityFeePerGas (${fast.maxPriorityFeePerGas}) > maxPriorityFeePerGasChosen (${maxPriorityFeePerGasChosen}), we bump it up`,
+				`fast.maxPriorityFeePerGas (${gasPriceEstimate.maxPriorityFeePerGas}) > maxPriorityFeePerGasChosen (${maxPriorityFeePerGasChosen}), we bump it up`,
 			);
 		}
 
@@ -158,7 +158,7 @@ export function createExecutor(
 		const result = await _submitTransaction(broadcaster, pendingExecutionToStore, {
 			maxFeePerGas,
 			maxPriorityFeePerGas,
-			fastEstimate: fast,
+			gasPriceEstimate: gasPriceEstimate,
 		});
 		if (!result) {
 			throw new Error(`could not submit transaction, failed`);
@@ -354,7 +354,7 @@ export function createExecutor(
 			maxFeePerGas: bigint;
 			maxPriorityFeePerGas: bigint;
 			forceVoid?: boolean;
-			fastEstimate?: {maxFeePerGas: bigint; maxPriorityFeePerGas: bigint};
+			gasPriceEstimate?: {maxFeePerGas: bigint; maxPriorityFeePerGas: bigint};
 		},
 	): Promise<PendingExecutionStored | undefined> {
 		const {provider} = _getChainConfig(transactionData.chainId);
@@ -387,7 +387,7 @@ export function createExecutor(
 
 		let lastError: string | undefined;
 
-		if (options.fastEstimate && options.fastEstimate.maxFeePerGas > options.maxFeePerGas) {
+		if (options.gasPriceEstimate && options.gasPriceEstimate.maxFeePerGas > options.maxFeePerGas) {
 			lastError = 'potentially underpriced';
 		}
 
@@ -499,23 +499,23 @@ export function createExecutor(
 
 		// TODO remove duplication maxFeePerGas
 		const estimates = await getRoughGasPriceEstimate(provider);
-		const fast = estimates.fast;
-		let maxFeePerGas = fast.maxFeePerGas;
-		let maxPriorityFeePerGas = fast.maxPriorityFeePerGas;
-		if (fast.maxFeePerGas > maxFeePerGasChosen) {
+		const gasPriceEstimate = estimates.average;
+		let maxFeePerGas = gasPriceEstimate.maxFeePerGas;
+		let maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
+		if (gasPriceEstimate.maxFeePerGas > maxFeePerGasChosen) {
 			console.warn(
-				`fast.maxFeePerGas (${fast.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasChosen}), tx might not be included`,
+				`fast.maxFeePerGas (${gasPriceEstimate.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasChosen}), tx might not be included`,
 			);
 			maxFeePerGas = maxFeePerGasChosen;
 			if (maxPriorityFeePerGas > maxFeePerGas) {
 				maxPriorityFeePerGas = maxFeePerGas;
 			}
 			// FOR now
-			// maxFeePerGas = fast.maxFeePerGas;
-			// maxPriorityFeePerGas = fast.maxPriorityFeePerGas;
-		} else if (fast.maxPriorityFeePerGas > maxPriorityFeePerGasChosen) {
+			// maxFeePerGas = gasPriceEstimate.maxFeePerGas;
+			// maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
+		} else if (gasPriceEstimate.maxPriorityFeePerGas > maxPriorityFeePerGasChosen) {
 			console.warn(
-				`fast.maxPriorityFeePerGas (${fast.maxPriorityFeePerGas}) > maxPriorityFeePerGasChosen (${maxPriorityFeePerGasChosen}), we bump it up`,
+				`fast.maxPriorityFeePerGas (${gasPriceEstimate.maxPriorityFeePerGas}) > maxPriorityFeePerGasChosen (${maxPriorityFeePerGasChosen}), we bump it up`,
 			);
 		}
 
@@ -552,7 +552,7 @@ export function createExecutor(
 				forceNonce: Number(pendingExecution.nonce),
 				maxFeePerGas,
 				maxPriorityFeePerGas,
-				fastEstimate: fast,
+				gasPriceEstimate: gasPriceEstimate,
 			});
 		}
 	}
