@@ -174,6 +174,15 @@ export class SchedulerDO extends createDurable() {
 		}
 	}
 
+	getBroadcaster(forAddress: `0x${string}`) {
+		const derivedAccount = this.account.deriveForAddress(forAddress);
+		return {
+			signer: new EIP1193LocalSigner(derivedAccount.privateKey),
+			assignerID: this.account.publicExtendedKey,
+			address: derivedAccount.address,
+		};
+	}
+
 	getContractTimestamp() {
 		return this.env.CONTRACT_TIMESTAMP;
 	}

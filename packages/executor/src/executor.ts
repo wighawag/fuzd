@@ -330,7 +330,13 @@ export function createExecutor(
 				],
 			});
 		} catch (err: any) {
-			console.error('The transaction reverts?', err);
+			// TODO error message // viem
+			console.error('The transaction reverts?', err, {
+				from: broadcasterAddress,
+				to: transactionData.to!, // "!" needed, need to fix eip-1193
+				data: transactionData.data,
+				value: transactionData.value,
+			});
 			revert = true;
 			gasRequired = '0x' + Number.MAX_SAFE_INTEGER.toString(16);
 		}

@@ -2,6 +2,8 @@ name = "fuzd-worker"
 main = "src/index.ts"
 compatibility_date = "2023-05-18"
 
+logpush = true
+
 #[vars]
 # The necessary secrets are:
 # - HD_MNEMONIC

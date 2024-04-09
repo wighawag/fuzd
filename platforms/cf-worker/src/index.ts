@@ -81,6 +81,10 @@ router
 		),
 	)
 
+	.get('broadcaster/:address', ({SCHEDULER, params}) =>
+		SCHEDULER.get(SINGELTON).getBroadcaster(params.address as `0x${string}`),
+	)
+
 	.get('/updateTransactionWithCurrentGasPrice/:token/:chainId/:account/:slot', ({SCHEDULER, params}, env) => {
 		const expectedToken = env['TOKEN_ADMIN'];
 		if (params.token === expectedToken) {
