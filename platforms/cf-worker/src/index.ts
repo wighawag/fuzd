@@ -175,7 +175,7 @@ const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext)
 		logger.info(`CRON: ${event.cron}`);
 		if (event.cron === '* * * * *') {
 			return router.handle(new Request('http://localhost/processQueue'), env, ctx);
-		} else if (event.cron === '/1 * * * *') {
+		} else if (event.cron === '*/1 * * * *') {
 			return router.handle(new Request('http://localhost/processTransactions'), env, ctx);
 		} else {
 			return new Response(`invalid CRON`, {
