@@ -127,7 +127,7 @@ async function wrapWithLogger<RequestType extends ScheduledEvent | Request, Resp
 	callback: (request: RequestType, env: Env, ctx: ExecutionContext) => Promise<ResponseType>,
 ): Promise<ResponseType> {
 	const _trackLogger = track(
-		new Request('scheduler'),
+		new Request('https://scheduler.fuzd.dev'),
 		'FUZD.cloudflare',
 		env.LOGFLARE_API_KEY && env.LOGFLARE_SOURCE
 			? logflareReport({apiKey: env.LOGFLARE_API_KEY, source: env.LOGFLARE_SOURCE})
@@ -172,7 +172,7 @@ const fetch = async (request: Request, env: Env, ctx: ExecutionContext) => {
 
 const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
 	return wrapWithLogger(event, env, ctx, async () => {
-		logger.log(`CRON: ${event.cron}`);
+		logger.info(`CRON: ${event.cron}`);
 		if (event.cron === '* * * * *') {
 			return router.handle(new Request('http://localhost/processQueue'), env, ctx);
 		} else if (event.cron === '/1 * * * *') {
