@@ -1,3 +1,4 @@
+import {logs} from 'named-logs';
 import {createDurable} from 'itty-durable';
 import {
 	Executor,
@@ -21,9 +22,14 @@ import {HDKey} from '@scure/bip32';
 import type {EIP1193Account, EIP1193CallProvider, EIP1193GetBlockByNumberProvider} from 'eip-1193';
 
 import {mainnetClient} from 'tlock-js';
-import {logs} from 'named-logs';
 import {Time, getTimeFromContractTimestamp} from 'fuzd-common';
 import {Env} from './env';
+import {track, enable as enableWorkersLogger} from 'workers-logger';
+import {logflareReport} from './logflare';
+
+enableWorkersLogger('*');
+(globalThis as any)._logFactory.enable('*');
+(globalThis as any)._logFactory.level = 6;
 
 const logger = logs('fuzd-cf-worker');
 
@@ -231,5 +237,24 @@ export class SchedulerDO extends createDurable() {
 
 	clear() {
 		this.storage.deleteAll();
+	}
+
+	async fetch(request: Request) {
+		// TODO DRY (worker and DO)
+		const _trackLogger = track(
+			request,
+			'FUZD.cloudflare',
+			this.env.LOGFLARE_API_KEY && this.env.LOGFLARE_SOURCE
+				? logflareReport({apiKey: this.env.LOGFLARE_API_KEY, source: this.env.LOGFLARE_SOURCE})
+				: undefined,
+		);
+		const response = await (globalThis as any)._runWithLogger(_trackLogger, async () => {
+			return super.fetch(request);
+		});
+		const p = _trackLogger.report(response);
+		if (p) {
+			await p;
+		}
+		return response;
 	}
 }

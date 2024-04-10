@@ -1,16 +1,18 @@
+import {logs} from 'named-logs';
 import {IRequest, Router, createCors, error, json} from 'itty-router';
 import {withDurables} from 'itty-durable';
 import {SchedulerDO} from './SchedulerDO';
 import {withAuthorization} from './authentication';
 import {clear, table} from './pages/clear';
 import {Env} from './env';
+import {track, enable as enableWorkersLogger} from 'workers-logger';
+import {ExecutionContext} from '@cloudflare/workers-types/experimental';
+import {logflareReport} from './logflare';
 
-// TODO named-console detect _logFactory if exist
-const Logger = (globalThis as any)._logFactory;
-if (Logger) {
-	Logger.enable('*');
-	Logger.level = 6;
-}
+enableWorkersLogger('*');
+(globalThis as any)._logFactory.enable('*');
+(globalThis as any)._logFactory.level = 6;
+const logger = logs('worker');
 
 const {preflight, corsify} = createCors();
 
@@ -36,7 +38,10 @@ router
 	.get('/robots.txt', () => new Response(''))
 
 	// get the durable itself... returns json response, so no need to wrap
-	.get('/', ({SCHEDULER}) => new Response('fuzd api'))
+	.get('/', async (request) => {
+		logger.info('hello world');
+		return new Response('fuzd api');
+	})
 
 	// get the durable itself... returns json response, so no need to wrap
 	.get('/publicKey', ({SCHEDULER}) => SCHEDULER.get(SINGELTON).getPublicKey())
@@ -115,16 +120,38 @@ router
 
 	.all('*', () => error(404, 'Are you sure about that?'));
 
-const fetch = (request: Request, ...args: any[]) => {
-	return (
-		router
-			.handle(request, ...args)
+const fetch = async (request: Request, env: Env, ctx: ExecutionContext) => {
+	const _trackLogger = track(
+		request,
+		'FUZD.cloudflare',
+		env.LOGFLARE_API_KEY && env.LOGFLARE_SOURCE
+			? logflareReport({apiKey: env.LOGFLARE_API_KEY, source: env.LOGFLARE_SOURCE})
+			: undefined,
+	);
+	// const trackLogger = new Proxy(_trackLogger, {
+	// 	get(t, p) {
+	// 		return (...args: any[]) => {
+	// 			if (p === 'log' || p === 'error' || p === 'info') {
+	// 				console[p](...args);
+	// 			}
+	// 			(_trackLogger as any)[p](...args);
+	// 		};
+	// 	},
+	// });
+	const response = await (globalThis as any)._runWithLogger(_trackLogger, async () => {
+		return await router
+			.handle(request, env, ctx)
 			// .catch((err: Error) => {
 			// 	return new Response(err.stack ? err.stack.toString() : err.toString());
 			// })
 			.catch(error)
-			.then(corsify)
-	);
+			.then(corsify);
+	});
+	const p = _trackLogger.report(response);
+	if (p) {
+		ctx.waitUntil(p);
+	}
+	return response;
 };
 
 const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {

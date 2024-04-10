@@ -2,7 +2,7 @@ name = "fuzd-worker"
 main = "src/index.ts"
 compatibility_date = "2023-05-18"
 
-logpush = true
+compatibility_flags = [ "nodejs_compat" ]
 
 #[vars]
 # The necessary secrets are:
@@ -11,6 +11,7 @@ logpush = true
 # see in .dev.vars.default
 # Run `echo <VALUE> | wrangler secret put <NAME>` for each of these
 
+# for dev
 #[durable_objects]
 #bindings = [
 #  { name = "SCHEDULER", class_name = "SchedulerDO" }
@@ -49,3 +50,4 @@ durable_objects.bindings = [
 durable_objects.bindings = [
    { name = "SCHEDULER", class_name = "SchedulerDO" }
 ]
+

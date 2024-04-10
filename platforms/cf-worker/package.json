@@ -30,9 +30,10 @@
     "fuzd-tlock-decrypter": "workspace:*",
     "itty-durable": "^2.4.0",
     "itty-router": "^4.0.27",
-    "named-logs": "^0.2.2",
+    "named-logs": "^0.2.4",
     "remote-account": "workspace:*",
-    "tlock-js": "^0.7.0"
+    "tlock-js": "^0.7.0",
+    "workers-logger": "^0.2.0"
   },
   "scripts": {
     "prepare": "set-defaults .",

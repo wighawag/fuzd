@@ -5,9 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  named-logs@0.2.2:
-    hash: zlspkfb7u565uh4gjtpgacd2qa
-    path: patches/named-logs@0.2.2.patch
+  named-logs@0.2.4:
+    hash: cyjcrnxqmvdxplbo6umdn2lcju
+    path: patches/named-logs@0.2.4.patch
 
 importers:
 
@@ -50,7 +50,7 @@ importers:
     dependencies:
       named-logs:
         specifier: ^0.2.2
-        version: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+        version: 0.2.2
     devDependencies:
       eip-1193:
         specifier: ^0.5.0
@@ -81,7 +81,7 @@ importers:
         version: link:../scheduler
       named-logs:
         specifier: ^0.2.2
-        version: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+        version: 0.2.2
       remote-account:
         specifier: workspace:*
         version: link:../remote-account
@@ -118,7 +118,7 @@ importers:
         version: link:../common
       named-logs:
         specifier: ^0.2.2
-        version: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+        version: 0.2.2
       wighawag-ono:
         specifier: ^7.1.3
         version: 7.1.3
@@ -158,7 +158,7 @@ importers:
         version: link:../scheduler
       named-logs:
         specifier: ^0.2.2
-        version: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+        version: 0.2.2
       viem:
         specifier: ^2.7.9
         version: 2.7.9(typescript@5.3.3)
@@ -214,7 +214,7 @@ importers:
     dependencies:
       named-logs:
         specifier: ^0.2.2
-        version: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+        version: 0.2.2
       wighawag-ono:
         specifier: ^7.1.3
         version: 7.1.3
@@ -254,7 +254,7 @@ importers:
         version: link:../scheduler
       named-logs:
         specifier: ^0.2.2
-        version: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+        version: 0.2.2
       tlock-js:
         specifier: ^0.7.0
         version: 0.7.0
@@ -308,14 +308,17 @@ importers:
         specifier: ^4.0.27
         version: 4.0.27
       named-logs:
-        specifier: ^0.2.2
-        version: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+        specifier: ^0.2.4
+        version: 0.2.4(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju)
       remote-account:
         specifier: workspace:*
         version: link:../../packages/remote-account
       tlock-js:
         specifier: ^0.7.0
         version: 0.7.0
+      workers-logger:
+        specifier: ^0.2.0
+        version: 0.2.0
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20240208.0
@@ -352,7 +355,7 @@ importers:
         version: 0.3.9
       named-logs:
         specifier: ^0.2.2
-        version: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+        version: 0.2.2
     devDependencies:
       '@types/fs-extra':
         specifier: ^11.0.4
@@ -401,7 +404,7 @@ importers:
         version: link:../packages/scheduler
       named-logs:
         specifier: ^0.2.2
-        version: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+        version: 0.2.2
       viem:
         specifier: ^2.7.9
         version: 2.7.9(typescript@5.3.3)
@@ -4360,6 +4363,10 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
+  /diary@0.3.1:
+    resolution: {integrity: sha512-efOiQYa4S0fNbXs00dDq6wGPIlTCs2TCKDglL+bPhFnmV/4aPfv2mHJ6K3BXey5Fy+4mXNob7QtJYQVIxBpxQA==}
+    dev: false
+
   /diff-sequences@29.6.3:
     resolution: {integrity: sha512-EjePK1srD3P08o2j4f0ExnylqRs5B9tJjcp9t1krH2qRi8CCdsYfwe9JgSLurFBWwq4uOlipzfk5fHNvwFKr8Q==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
@@ -4452,7 +4459,7 @@ packages:
   /eip-1193-jsonrpc-provider@0.3.0:
     resolution: {integrity: sha512-27+csyR21UTIsh7YadNY60QefJcGBL7NX78jCbPZrNMOV5Yx3XbWpvAIvd3TwaYn4mPoWqonOHVfaoNh5ay6tw==}
     dependencies:
-      named-logs: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+      named-logs: 0.2.4(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju)
       promise-throttle: 1.1.2
 
   /eip-1193-signer@0.0.1(typescript@5.3.3)(zod@3.22.4):
@@ -6634,11 +6641,15 @@ packages:
   /named-logs-console@0.3.0:
     resolution: {integrity: sha512-XToJY2URPOObPs3/xBFvRE5qWnbrVnSz1Dnz9JqxIqOA/gCWinxbQzOnyrYly3qK9y6TdPvQ1nLB295qtwkPEw==}
     dependencies:
-      named-logs: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+      named-logs: 0.2.4(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju)
     dev: true
 
-  /named-logs@0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa):
+  /named-logs@0.2.2:
     resolution: {integrity: sha512-uXvQSEp8W99elz/UFpmptvRkjbr+UwJRfONsTND/W4ncqLlio0hfIBKe2HUhz3pPHhNd1XUoHyf1cn8Pgxt4oA==}
+    dev: false
+
+  /named-logs@0.2.4(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju):
+    resolution: {integrity: sha512-QHlcLpK2Ij+u7ZYDYgaYkTIlC/NcOwEnFdqbY+PF9ewAMUjvBwRVUyqBUtVaJ3V2YKVy2HiloAgLUdOEVRRyBA==}
     patched: true
 
   /nanoid@3.3.7:
@@ -7539,7 +7550,7 @@ packages:
     peerDependencies:
       rocketh: 0.8.0
     dependencies:
-      named-logs: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+      named-logs: 0.2.4(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju)
       rocketh: 0.8.0(typescript@5.3.3)
       rocketh-deploy: 2.0.0(rocketh@0.8.0)(typescript@5.3.3)
       solidity-proxy: 0.2.4
@@ -7556,7 +7567,7 @@ packages:
     peerDependencies:
       rocketh: 0.8.0
     dependencies:
-      named-logs: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+      named-logs: 0.2.4(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju)
       rocketh: 0.8.0(typescript@5.3.3)
       viem: 2.7.9(typescript@5.3.3)
     transitivePeerDependencies:
@@ -7614,7 +7625,7 @@ packages:
       esbuild-register: 3.5.0(esbuild@0.20.0)
       figlet: 1.7.0
       ldenv: 0.3.9
-      named-logs: 0.2.2(patch_hash=zlspkfb7u565uh4gjtpgacd2qa)
+      named-logs: 0.2.4(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju)
       named-logs-console: 0.3.0
       viem: 2.7.9(typescript@5.3.3)
     transitivePeerDependencies:
@@ -9268,6 +9279,12 @@ packages:
   /workerpool@6.2.1:
     resolution: {integrity: sha512-ILEIE97kDZvF9Wb9f6h5aXK4swSlKGUcOEGiIYb2OOu/IrDU9iwj0fD//SsA6E5ibwJxpEvhullJY4Sl4GcpAw==}
     dev: true
+
+  /workers-logger@0.2.0:
+    resolution: {integrity: sha512-1DJbRqiGYBfqmj4U7845jVkwZvGddqyGNxS6shsTzLkLEHhYCBagOXtmAZ8rVpmQMnbRHNxemRKVhGhqcOCKGg==}
+    dependencies:
+      diary: 0.3.1
+    dev: false
 
   /wrangler@3.38.0(@cloudflare/workers-types@4.20240208.0):
     resolution: {integrity: sha512-sm6WNKRKax6cC+E2SBGWx3+Wabh047oxZolBwH0AMok+PINs4vsoS8x6ZJ4dk+iIXZQ2RzZLr3gyWSUA44q4Rg==}
