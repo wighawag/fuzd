@@ -17,11 +17,13 @@ export const logflareReport: ({apiKey, source}: {apiKey: string; source: string}
 			log: events.map((i) => ({
 				level: i.level,
 				message: format(i.message, ...i.extra),
-				error: {
-					name: i.error.name,
-					message: i.error.message,
-					stack: i.error.stack,
-				},
+				error: i.error
+					? {
+							name: i.error.name,
+							message: i.error.message,
+							stack: i.error.stack,
+						}
+					: undefined,
 			})),
 		};
 
