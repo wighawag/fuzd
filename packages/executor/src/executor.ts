@@ -598,6 +598,13 @@ export function createExecutor(
 		const limit = maxNumTransactionsToProcessInOneGo;
 
 		const pendingExecutions = await storage.getPendingExecutions({limit});
+		if (pendingExecutions.length === 0) {
+			logger.info(`found zero transactions`);
+		} else if (pendingExecutions.length === 1) {
+			logger.info(`found 1 transaction`);
+		} else {
+			logger.info(`found ${pendingExecutions.length} transactions`);
+		}
 		if (pendingExecutions) {
 			for (const pendingExecution of pendingExecutions) {
 				try {
