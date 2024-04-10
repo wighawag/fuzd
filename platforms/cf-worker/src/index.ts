@@ -39,7 +39,7 @@ router
 
 	// get the durable itself... returns json response, so no need to wrap
 	.get('/', async (request) => {
-		logger.info('hello world');
+		logger.warn('hello world');
 		return new Response('fuzd api');
 	})
 
