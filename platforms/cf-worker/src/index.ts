@@ -7,11 +7,11 @@ import {clear, table} from './pages/clear';
 import {Env} from './env';
 import {track, enable as enableWorkersLogger} from 'workers-logger';
 import {ExecutionContext} from '@cloudflare/workers-types/experimental';
-import {logflareReport} from './logflare';
+import {LOG_LEVEL, logflareReport} from './logflare';
 
 enableWorkersLogger('*');
 (globalThis as any)._logFactory.enable('*');
-(globalThis as any)._logFactory.level = 6;
+(globalThis as any)._logFactory.level = LOG_LEVEL;
 const logger = logs('worker');
 
 const {preflight, corsify} = createCors();

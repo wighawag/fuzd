@@ -25,11 +25,11 @@ import {mainnetClient} from 'tlock-js';
 import {Time, getTimeFromContractTimestamp} from 'fuzd-common';
 import {Env} from './env';
 import {track, enable as enableWorkersLogger} from 'workers-logger';
-import {logflareReport} from './logflare';
+import {LOG_LEVEL, logflareReport} from './logflare';
 
 enableWorkersLogger('*');
 (globalThis as any)._logFactory.enable('*');
-(globalThis as any)._logFactory.level = 6;
+(globalThis as any)._logFactory.level = LOG_LEVEL;
 
 const logger = logs('fuzd-cf-worker');
 

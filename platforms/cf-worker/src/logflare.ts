@@ -1,6 +1,8 @@
 import type {LogEvent, Reporter} from 'workers-logger';
 import {format} from 'workers-logger';
 
+export const LOG_LEVEL = 2; // TODO env variable
+
 // TODO lib ?
 export const logflareReport: ({apiKey, source}: {apiKey: string; source: string}) => Reporter = ({apiKey, source}) => {
 	return (events: LogEvent[], {req, res}: {req: Request; res: Response}) => {
