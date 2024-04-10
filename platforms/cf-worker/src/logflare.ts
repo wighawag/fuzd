@@ -6,6 +6,24 @@ export const logflareReport: ({apiKey, source}: {apiKey: string; source: string}
 	return (events: LogEvent[], {req, res}: {req: Request; res: Response}) => {
 		const url = new URL(req.url);
 
+		const logs = events.map((i) => ({
+			level: i.level,
+			message: format(i.message, ...i.extra),
+			error: i.error
+				? {
+						name: i.error.name,
+						message: i.error.message,
+						stack: i.error.stack,
+					}
+				: undefined,
+		}));
+		let firstError;
+		for (const l of logs) {
+			if (l.error) {
+				firstError = l.error;
+				break;
+			}
+		}
 		const metadata = {
 			method: req.method,
 			pathname: url.pathname,
@@ -14,17 +32,8 @@ export const logflareReport: ({apiKey, source}: {apiKey: string; source: string}
 				status: res.status,
 				headers: Object.fromEntries(res.headers),
 			},
-			log: events.map((i) => ({
-				level: i.level,
-				message: format(i.message, ...i.extra),
-				error: i.error
-					? {
-							name: i.error.name,
-							message: i.error.message,
-							stack: i.error.stack,
-						}
-					: undefined,
-			})),
+			log: logs,
+			firstError,
 		};
 
 		const message = `${req.headers.get('cf-connecting-ip')} (${req.headers.get('cf-ray')}) ${req.method} ${req.url} ${res.status}`;
