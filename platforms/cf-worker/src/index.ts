@@ -120,14 +120,14 @@ router
 
 	.all('*', () => error(404, 'Are you sure about that?'));
 
-async function wrapWithLogger<RequestType extends ScheduledEvent | Request, ResponseType extends Response | void>(
-	request: RequestType,
+async function wrapWithLogger(
+	request: Request,
 	env: Env,
 	ctx: ExecutionContext,
-	callback: (request: RequestType, env: Env, ctx: ExecutionContext) => Promise<ResponseType>,
-): Promise<ResponseType> {
+	callback: (request: Request, env: Env, ctx: ExecutionContext) => Promise<Response>,
+): Promise<Response> {
 	const _trackLogger = track(
-		new Request('https://scheduler.fuzd.dev'),
+		request,
 		'FUZD.cloudflare',
 		env.LOGFLARE_API_KEY && env.LOGFLARE_SOURCE
 			? logflareReport({apiKey: env.LOGFLARE_API_KEY, source: env.LOGFLARE_SOURCE})
@@ -171,7 +171,7 @@ const fetch = async (request: Request, env: Env, ctx: ExecutionContext) => {
 };
 
 const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
-	return wrapWithLogger(event, env, ctx, async () => {
+	return wrapWithLogger(new Request(`https://scheduler.fuzd.dev/${event.cron}`), env, ctx, async () => {
 		logger.info(`CRON: ${event.cron}`);
 		if (event.cron === '* * * * *') {
 			return router.handle(new Request('http://localhost/processQueue'), env, ctx);
