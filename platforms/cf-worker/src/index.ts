@@ -120,9 +120,14 @@ router
 
 	.all('*', () => error(404, 'Are you sure about that?'));
 
-const fetch = async (request: Request, env: Env, ctx: ExecutionContext) => {
+async function wrapWithLogger<RequestType extends ScheduledEvent | Request, ResponseType extends Response | void>(
+	request: RequestType,
+	env: Env,
+	ctx: ExecutionContext,
+	callback: (request: RequestType, env: Env, ctx: ExecutionContext) => Promise<ResponseType>,
+): Promise<ResponseType> {
 	const _trackLogger = track(
-		request,
+		new Request('scheduler'),
 		'FUZD.cloudflare',
 		env.LOGFLARE_API_KEY && env.LOGFLARE_SOURCE
 			? logflareReport({apiKey: env.LOGFLARE_API_KEY, source: env.LOGFLARE_SOURCE})
@@ -138,25 +143,46 @@ const fetch = async (request: Request, env: Env, ctx: ExecutionContext) => {
 	// 		};
 	// 	},
 	// });
-	const response = await (globalThis as any)._runWithLogger(_trackLogger, async () => {
-		return await router
+	const response = await (globalThis as any)._runWithLogger(_trackLogger, () => {
+		return callback(request, env, ctx).catch((err) => {
+			return new Response(err, {
+				status: 500,
+				statusText: err.message,
+			});
+		});
+	});
+	const p = _trackLogger.report(response || new Response('Scheduled Action Done'));
+	if (p) {
+		ctx.waitUntil(p);
+	}
+	return response;
+}
+
+const fetch = async (request: Request, env: Env, ctx: ExecutionContext) => {
+	return wrapWithLogger(request, env, ctx, () =>
+		router
 			.handle(request, env, ctx)
 			// .catch((err: Error) => {
 			// 	return new Response(err.stack ? err.stack.toString() : err.toString());
 			// })
 			.catch(error)
-			.then(corsify);
-	});
-	const p = _trackLogger.report(response);
-	if (p) {
-		ctx.waitUntil(p);
-	}
-	return response;
+			.then(corsify),
+	);
 };
 
 const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
-	await router.handle(new Request('http://localhost/processQueue'), env, ctx);
-	await router.handle(new Request('http://localhost/processTransactions'), env, ctx);
+	return wrapWithLogger(event, env, ctx, async () => {
+		logger.log(`CRON: ${event.cron}`);
+		if (event.cron === '* * * * *') {
+			return router.handle(new Request('http://localhost/processQueue'), env, ctx);
+		} else if (event.cron === '/1 * * * *') {
+			return router.handle(new Request('http://localhost/processTransactions'), env, ctx);
+		} else {
+			return new Response(`invalid CRON`, {
+				status: 500,
+			});
+		}
+	});
 };
 
 // with itty, and using ES6 module syntax (required for DO), this is all you need
