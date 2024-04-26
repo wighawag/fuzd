@@ -31,7 +31,8 @@ describe('Worker', () => {
 		const wallet = privateKeyToAccount('0x1111111111111111111111111111111111111111111111111111111111111111');
 
 		// we get the remote address associated with the private key signing the execution message sent to the api
-		const publicKey = await worker.fetch(`${schedulerEndPoint}/publicKey`).then((v) => v.text());
+		const publicKey = await worker.fetch(`${schedulerEndPoint}/api/publicKey`).then((v) => v.text());
+		console.log({publicKey});
 		// this will need to hold some ETH, so it can carry the execution.
 		const remoteAddress = deriveRemoteAddress(publicKey, wallet.address);
 		// this mechanism allows to isolate each account nonces and allow then for the user to update the gas pricing

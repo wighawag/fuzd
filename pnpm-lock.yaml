@@ -53,7 +53,7 @@ importers:
         version: 0.5.0
       eip-1193-signer:
         specifier: ^0.0.1
-        version: 0.0.1(typescript@5.3.3)(zod@3.22.4)
+        version: 0.0.1(typescript@5.3.3)
       named-logs:
         specifier: ^0.2.2
         version: 0.2.2
@@ -255,15 +255,51 @@ importers:
       '@hono/zod-validator':
         specifier: ^0.2.1
         version: 0.2.1(hono@4.2.7)(zod@3.23.4)
+      '@scure/bip32':
+        specifier: ^1.3.3
+        version: 1.3.3
+      '@scure/bip39':
+        specifier: ^1.2.2
+        version: 1.2.2
+      eip-1193:
+        specifier: ^0.5.0
+        version: 0.5.0
+      eip-1193-jsonrpc-provider:
+        specifier: ^0.3.0
+        version: 0.3.0
+      eip-1193-signer:
+        specifier: ^0.0.1
+        version: 0.0.1(typescript@5.3.3)(zod@3.23.4)
+      fuzd-common:
+        specifier: workspace:*
+        version: link:../common
+      fuzd-executor:
+        specifier: workspace:*
+        version: link:../executor
+      fuzd-gateways:
+        specifier: workspace:*
+        version: link:../gateways
+      fuzd-scheduler:
+        specifier: workspace:*
+        version: link:../scheduler
+      fuzd-tlock-decrypter:
+        specifier: workspace:*
+        version: link:../tlock-decrypter
       hono:
         specifier: ^4.1.5
         version: 4.2.7
       named-logs:
         specifier: 0.2.4
         version: 0.2.4(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju)
+      remote-account:
+        specifier: workspace:*
+        version: link:../remote-account
       remote-sql:
         specifier: ^0.0.3
         version: 0.0.3
+      tlock-js:
+        specifier: ^0.7.0
+        version: 0.7.0
       zod:
         specifier: ^3.23.4
         version: 3.23.4
@@ -359,7 +395,7 @@ importers:
         version: 0.3.0
       eip-1193-signer:
         specifier: ^0.0.1
-        version: 0.0.1(typescript@5.3.3)(zod@3.22.4)
+        version: 0.0.1(typescript@5.3.3)
       fuzd-common:
         specifier: workspace:*
         version: link:../../packages/common
@@ -517,7 +553,7 @@ importers:
         version: 0.3.0
       eip-1193-signer:
         specifier: ^0.0.1
-        version: 0.0.1(typescript@5.3.3)(zod@3.22.4)
+        version: 0.0.1(typescript@5.3.3)
       fuzd-default-client:
         specifier: workspace:*
         version: link:../packages/default-client
@@ -3767,6 +3803,19 @@ packages:
       typescript: 5.3.3
       zod: 3.22.4
 
+  /abitype@0.8.7(typescript@5.3.3)(zod@3.23.4):
+    resolution: {integrity: sha512-wQ7hV8Yg/yKmGyFpqrNZufCxbszDe5es4AZGYPBitocfSqXtjrTG9JMWFcc4N30ukl2ve48aBTwt7NJxVQdU3w==}
+    peerDependencies:
+      typescript: '>=5.0.4'
+      zod: ^3 >=3.19.1
+    peerDependenciesMeta:
+      zod:
+        optional: true
+    dependencies:
+      typescript: 5.3.3
+      zod: 3.23.4
+    dev: false
+
   /abitype@1.0.0(typescript@5.3.3)(zod@3.22.4):
     resolution: {integrity: sha512-NMeMah//6bJ56H5XRj8QCV4AwuW6hB6zqz2LnhhLdcWVQOsXki6/Pn3APeqxCma62nXIcmZWdu1DlHWS74umVQ==}
     peerDependencies:
@@ -4996,6 +5045,16 @@ packages:
       named-logs: 0.2.4(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju)
       promise-throttle: 1.1.2
 
+  /eip-1193-signer@0.0.1(typescript@5.3.3):
+    resolution: {integrity: sha512-efst6hlgbSVzLgOWL4TyN3GSF0I6Kq2BSR7T88SiUAyzlymUgIVBa/CPx1BSj0sR7ASaTxA88tjolMjoHt6Trw==}
+    dependencies:
+      viem: 0.3.50(typescript@5.3.3)
+    transitivePeerDependencies:
+      - bufferutil
+      - typescript
+      - utf-8-validate
+      - zod
+
   /eip-1193-signer@0.0.1(typescript@5.3.3)(zod@3.22.4):
     resolution: {integrity: sha512-efst6hlgbSVzLgOWL4TyN3GSF0I6Kq2BSR7T88SiUAyzlymUgIVBa/CPx1BSj0sR7ASaTxA88tjolMjoHt6Trw==}
     dependencies:
@@ -5005,6 +5064,18 @@ packages:
       - typescript
       - utf-8-validate
       - zod
+    dev: false
+
+  /eip-1193-signer@0.0.1(typescript@5.3.3)(zod@3.23.4):
+    resolution: {integrity: sha512-efst6hlgbSVzLgOWL4TyN3GSF0I6Kq2BSR7T88SiUAyzlymUgIVBa/CPx1BSj0sR7ASaTxA88tjolMjoHt6Trw==}
+    dependencies:
+      viem: 0.3.50(typescript@5.3.3)(zod@3.23.4)
+    transitivePeerDependencies:
+      - bufferutil
+      - typescript
+      - utf-8-validate
+      - zod
+    dev: false
 
   /eip-1193@0.5.0:
     resolution: {integrity: sha512-E800aS6F1CW+L4Ub+DWaAqJFe4C2TOfj2fAQNNk+XT6gN2oITyYgjfj5MFOrxM0kju9cF3j9kV2v8s22kAlYkA==}
@@ -9571,6 +9642,24 @@ packages:
       viem: 2.7.9(typescript@5.3.3)
     dev: true
 
+  /viem@0.3.50(typescript@5.3.3):
+    resolution: {integrity: sha512-s+LxCYZTR9F/qPk1/n1YDVAX9vSeVz7GraqBZWGrDuenCJxo9ArCoIceJ6ksI0WwSeNzcZ0VVbD/kWRzTxkipw==}
+    dependencies:
+      '@adraffy/ens-normalize': 1.9.0
+      '@noble/curves': 1.0.0
+      '@noble/hashes': 1.3.0
+      '@scure/bip32': 1.3.0
+      '@scure/bip39': 1.2.0
+      '@wagmi/chains': 1.0.0(typescript@5.3.3)
+      abitype: 0.8.7(typescript@5.3.3)(zod@3.22.4)
+      isomorphic-ws: 5.0.0(ws@8.12.0)
+      ws: 8.12.0
+    transitivePeerDependencies:
+      - bufferutil
+      - typescript
+      - utf-8-validate
+      - zod
+
   /viem@0.3.50(typescript@5.3.3)(zod@3.22.4):
     resolution: {integrity: sha512-s+LxCYZTR9F/qPk1/n1YDVAX9vSeVz7GraqBZWGrDuenCJxo9ArCoIceJ6ksI0WwSeNzcZ0VVbD/kWRzTxkipw==}
     dependencies:
@@ -9588,6 +9677,26 @@ packages:
       - typescript
       - utf-8-validate
       - zod
+    dev: false
+
+  /viem@0.3.50(typescript@5.3.3)(zod@3.23.4):
+    resolution: {integrity: sha512-s+LxCYZTR9F/qPk1/n1YDVAX9vSeVz7GraqBZWGrDuenCJxo9ArCoIceJ6ksI0WwSeNzcZ0VVbD/kWRzTxkipw==}
+    dependencies:
+      '@adraffy/ens-normalize': 1.9.0
+      '@noble/curves': 1.0.0
+      '@noble/hashes': 1.3.0
+      '@scure/bip32': 1.3.0
+      '@scure/bip39': 1.2.0
+      '@wagmi/chains': 1.0.0(typescript@5.3.3)
+      abitype: 0.8.7(typescript@5.3.3)(zod@3.23.4)
+      isomorphic-ws: 5.0.0(ws@8.12.0)
+      ws: 8.12.0
+    transitivePeerDependencies:
+      - bufferutil
+      - typescript
+      - utf-8-validate
+      - zod
+    dev: false
 
   /viem@2.7.9(typescript@5.3.3):
     resolution: {integrity: sha512-iDfc8TwaZFp1K95zlsxYh6Cs0OWCt35Tqs8uYgXKSxtz7w075mZ0H5SJ8zSyJGoEaticVDhtdmRRX6TtcW9EeQ==}

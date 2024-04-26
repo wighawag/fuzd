@@ -51,6 +51,7 @@ async function wrapWithLogger(
 
 export const app = createServer<Env>({
 	getDB: (c) => new RemoteD1(c.env.DB),
+	getEnv: (c) => c.env,
 });
 
 const fetch = async (request: Request, env: Env, ctx: ExecutionContext) => {

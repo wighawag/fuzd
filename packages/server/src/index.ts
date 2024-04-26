@@ -7,11 +7,12 @@ import {getAdminAPI} from './api/admin';
 import {getInternalAPI} from './api/internal';
 import {getSchedulingAPI} from './api/scheduling';
 import {getExecutionAPI} from './api/execution';
+import {setup} from './setup';
 
 export function createServer<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const app = new Hono<{Bindings: Env & {}}>()
 		.use(
-			'/*',
+			'*',
 			cors({
 				origin: '*',
 				allowHeaders: ['X-Custom-Header', 'Upgrade-Insecure-Requests', 'Content-Type', 'SIGNATURE'],
@@ -32,6 +33,7 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 	const adminAPI = getAdminAPI<Env>(options);
 
 	return app
+		.use('*', setup({serverOptions: options}))
 		.route('/api', publicAPI)
 		.route('/api/internal', internalAPI)
 		.route('/api/scheduling', schedulingAPI)
