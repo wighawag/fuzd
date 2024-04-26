@@ -34,11 +34,11 @@ layout {
 			}
 		}
 		pane split_direction="vertical" {
+			pane name="server" command="bash" {
+				args "-c" "pnpm run --filter ./packages/server dev; cd packages/server; ${SHELL-bash}"
+			}
 			pane name="cf-worker" command="bash" {
 				args "-c" "pnpm run --filter ./platforms/cf-worker dev; cd platforms/cf-worker; ${SHELL-bash}"
-			}
-			pane name="server" command="bash" {
-				args "-c" "pnpm run --filter ./platforms/server dev; cd platforms/server; ${SHELL-bash}"
 			}
 		}
 	}

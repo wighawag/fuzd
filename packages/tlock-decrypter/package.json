@@ -2,33 +2,45 @@
   "name": "fuzd-tlock-decrypter",
   "version": "0.2.4",
   "description": "decrypt scheduled execution using drand's tlock-js",
+  "license": "MIT",
   "publishConfig": {
     "access": "public"
   },
   "type": "module",
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
-  "volta": {
-    "node": "18.7.0"
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.cjs"
+      },
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      }
+    }
   },
+  "files": [
+    "dist",
+    "src"
+  ],
   "dependencies": {
     "fuzd-scheduler": "workspace:*",
     "named-logs": "^0.2.2",
     "tlock-js": "^0.7.0"
   },
   "devDependencies": {
+    "@types/node": "^20.11.17",
     "ldenv": "^0.3.9",
+    "pkgroll": "^2.0.2",
     "prettier": "^3.2.5",
-    "tsup": "^8.0.2",
     "typescript": "^5.3.3"
   },
   "scripts": {
-    "build": "tsup src/index.ts --dts --sourcemap --format esm,cjs",
-    "dev": "tsup src/index.ts --dts --sourcemap --format esm,cjs --watch",
+    "build": "pkgroll",
+    "dev": "pkgroll --watch",
     "format:check": "prettier --check .",
     "format": "prettier --write ."
   }
