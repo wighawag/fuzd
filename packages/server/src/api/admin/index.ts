@@ -8,7 +8,9 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 
 	const tmp = new Hono<{Bindings: Env & {}}>()
 		// TODO authentication
-		.get('/queue', async (c) => {})
+		.get('/queue', async (c) => {
+			return c.text('queue');
+		})
 		.get('/transactions', async (c) => {})
 		.get('/archived-transactions', async (c) => {});
 
@@ -22,7 +24,7 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 		)
 		.post('/clear', async (c) => {});
 
-	const app = new Hono<{Bindings: Env & {}}>().route('/', authenticated).route('/', tmp);
+	const app = new Hono<{Bindings: Env & {}}>().route('/', tmp).route('/', authenticated);
 
 	return app;
 }
