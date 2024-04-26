@@ -2,7 +2,7 @@ name = "fuzd-worker"
 main = "src/index.ts"
 compatibility_date = "2023-05-18"
 
-compatibility_flags = [ "nodejs_compat" ]
+compatibility_flags = [ "nodejs_compat" ] # for node:async_hooks
 
 #[vars]
 # The necessary secrets are:

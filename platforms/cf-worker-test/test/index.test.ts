@@ -12,7 +12,7 @@ describe('Worker', () => {
 	let worker: UnstableDevWorker;
 
 	beforeAll(async () => {
-		worker = await unstable_dev('src/index.ts', {
+		worker = await unstable_dev('node_modules/fuzd-cf-worker/src/worker.ts', {
 			experimental: {disableExperimentalWarning: true},
 		});
 	});

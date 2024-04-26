@@ -22,7 +22,7 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 			}),
 		)
 		.get('/', (c) => {
-			return c.text('Hello world!');
+			return c.text('fuzd api');
 		});
 
 	const schedulingAPI = getSchedulingAPI<Env>(options);

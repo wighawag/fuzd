@@ -1,0 +1,6 @@
+.wrangler
+node_modules
+dist
+.dev.vars*
+!*.default
+contracts.json
