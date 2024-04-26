@@ -10,7 +10,8 @@
       "tsconfig.json"
     ],
     "dependencies": {
-      "remote-sql-d1": "^0.0.3"
+      "remote-sql-d1": "^0.0.3",
+      "workers-logger": "^0.2.0"
     },
     "devDependencies": {
       "@cloudflare/workers-types": "^4.20230814.0",
