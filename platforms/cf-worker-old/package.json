@@ -1,5 +1,5 @@
 {
-  "name": "fuzd-cf-worker",
+  "name": "fuzd-cf-worker-old",
   "version": "0.0.32",
   "publishConfig": {
     "access": "public"
