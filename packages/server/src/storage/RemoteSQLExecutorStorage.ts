@@ -136,7 +136,7 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 	}
 
 	async getArchivedExecutions(params: {limit: number; offset?: number}): Promise<PendingExecutionStored[]> {
-		const statement = this.db.prepare(`SELECT * FROM ArchivedExecutions ORDER BY initialTime ASC LIMIT ?1 OFFSET ?2`);
+		const statement = this.db.prepare(`SELECT * FROM ArchivedExecutions ORDER BY initialTime ASC LIMIT ?1 OFFSET ?2;`);
 		const {results} = await statement.bind(params.limit, params.offset || 0).all<ExecutionInDB>();
 		return results.map(fromExecutionInDB);
 	}
@@ -145,7 +145,7 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		const inDB = toExecutionInDB(executionToStore);
 		const {values, columns, bindings, overwrites} = toValues(inDB);
 		const statement = this.db.prepare(
-			`INSERT INTO ArchivedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites}`,
+			`INSERT INTO ArchivedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites};`,
 		);
 		await statement.bind(...values).all();
 		return executionToStore;
