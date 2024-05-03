@@ -107,8 +107,10 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		executionToStore: ExecutionQueued<TransactionDataType>,
 	): Promise<ExecutionQueued<TransactionDataType>> {
 		const inDB = toScheduledExecutionInDB(executionToStore);
-		const {values, columns, bindings} = toValues(inDB);
-		const statement = this.db.prepare(`INSERT INTO ArchivedExecutions (${columns}) VALUES(${bindings})`); //TODO  UPSERT
+		const {values, columns, bindings, overwrites} = toValues(inDB);
+		const statement = this.db.prepare(
+			`INSERT INTO ArchivedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites}`,
+		);
 		await statement.bind(...values).all();
 		return executionToStore;
 	}

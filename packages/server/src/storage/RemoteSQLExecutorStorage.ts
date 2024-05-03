@@ -143,8 +143,10 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 
 	async createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored> {
 		const inDB = toExecutionInDB(executionToStore);
-		const {values, columns, bindings} = toValues(inDB);
-		const statement = this.db.prepare(`INSERT INTO ArchivedExecutions (${columns}) VALUES(${bindings})`); //TODO  UPSERT
+		const {values, columns, bindings, overwrites} = toValues(inDB);
+		const statement = this.db.prepare(
+			`INSERT INTO ArchivedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites}`,
+		);
 		await statement.bind(...values).all();
 		return executionToStore;
 	}
