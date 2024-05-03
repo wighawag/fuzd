@@ -22,17 +22,20 @@
       }
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "dependencies": {
     "eip-1193": "^0.5.0",
-    "eip-1193-signer": "^0.0.1",
-    "named-logs": "^0.2.2"
+    "eip-1193-signer": "^0.0.2",
+    "named-logs": "^0.2.4"
   },
   "devDependencies": {
-    "ldenv": "^0.3.9",
+    "ldenv": "^0.3.10",
     "pkgroll": "^2.0.2",
     "prettier": "^3.2.5",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.5"
   },
   "scripts": {
     "build": "pkgroll",
