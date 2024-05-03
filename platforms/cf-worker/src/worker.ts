@@ -36,7 +36,6 @@ async function wrapWithLogger(
 	// });
 	const response = await (globalThis as any)._runWithLogger(_trackLogger, () => {
 		return callback(request, env, ctx).catch((err) => {
-			console.error('ERROR', err);
 			return new Response(err, {
 				status: 500,
 				statusText: err.message,
