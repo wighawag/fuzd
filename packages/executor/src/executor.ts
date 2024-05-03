@@ -361,6 +361,7 @@ export function createExecutor(
 			maxPriorityFeePerGas: bigint;
 			forceVoid?: boolean;
 			gasPriceEstimate?: {maxFeePerGas: bigint; maxPriorityFeePerGas: bigint};
+			previouslyStored?: PendingExecutionStored;
 		},
 	): Promise<PendingExecutionStored | undefined> {
 		const {provider} = _getChainConfig(transactionData.chainId);
@@ -371,7 +372,12 @@ export function createExecutor(
 			const errorMessage = `The transaction reverts`;
 			console.error(errorMessage);
 			transactionData.lastError = errorMessage;
-			storage.archiveTimedoutExecution(transactionData);
+			if (options.previouslyStored) {
+				storage.archiveTimedoutExecution(options.previouslyStored);
+			} else {
+				// TODO partial like before
+			}
+
 			return undefined;
 		}
 
@@ -379,7 +385,11 @@ export function createExecutor(
 			const errorMessage = `The transaction requires more gas than provided. Aborting here`;
 			console.error(errorMessage);
 			transactionData.lastError = errorMessage;
-			storage.archiveTimedoutExecution(transactionData);
+			if (options.previouslyStored) {
+				storage.archiveTimedoutExecution(options.previouslyStored);
+			} else {
+				// TODO partial like before
+			}
 			return undefined;
 		}
 
@@ -559,6 +569,7 @@ export function createExecutor(
 				maxFeePerGas,
 				maxPriorityFeePerGas,
 				gasPriceEstimate: gasPriceEstimate,
+				previouslyStored: pendingExecution,
 			});
 		}
 	}

@@ -55,23 +55,31 @@ export class KVExecutorStorage implements ExecutorStorage {
 		});
 	}
 
-	async archiveTimedoutExecution(params: {
-		chainId: `0x${string}`;
-		account: `0x${string}`;
-		slot: string;
-	}): Promise<void> {
+	async archiveTimedoutExecution(executionToStore: PendingExecutionStored): Promise<void> {
 		await this.db.transaction(async (txn) => {
-			const dbID = computeExecutionID(params.chainId, params.account, params.slot);
+			const dbID = computeExecutionID(executionToStore.chainId, executionToStore.account, executionToStore.slot);
 			const execution = await txn.get<PendingExecutionStored>(dbID);
 			if (execution) {
 				await txn.put<PendingExecutionStored>(
-					computeArchiveID(execution.initialTime, params.chainId, params.account, params.slot),
+					computeArchiveID(
+						execution.initialTime,
+						executionToStore.chainId,
+						executionToStore.account,
+						executionToStore.slot,
+					),
 					execution,
 				);
-				await txn.delete(computeExecutionID(params.chainId, params.account, params.slot));
-				await txn.delete(computeNextCheckID(execution.nextCheckTime, params.chainId, params.account, params.slot));
+				await txn.delete(computeExecutionID(executionToStore.chainId, executionToStore.account, executionToStore.slot));
+				await txn.delete(
+					computeNextCheckID(
+						execution.nextCheckTime,
+						executionToStore.chainId,
+						executionToStore.account,
+						executionToStore.slot,
+					),
+				);
 				const nonce = Number(execution.nonce);
-				await txn.delete(computePerAccountID(execution.from, params.chainId, nonce));
+				await txn.delete(computePerAccountID(execution.from, executionToStore.chainId, nonce));
 			}
 		});
 	}
@@ -135,14 +143,18 @@ export class KVExecutorStorage implements ExecutorStorage {
 	}
 
 	// TODO use this to update teh tx
-	async getPendingExecutionsPerBroadcaster(params: {
-		chainId: `0x${string}`;
-		broadcaster: `0x${string}`;
-		limit: number;
-	}): Promise<PendingExecutionStored[]> {
+	async getPendingExecutionsPerBroadcaster(
+		broadcasterData: {
+			chainId: `0x${string}`;
+			broadcaster: `0x${string}`;
+		},
+		params: {
+			limit: number;
+		},
+	): Promise<PendingExecutionStored[]> {
 		// we get the keys from the index
 		const mapOfIndex = await this.db.list<IndexID>({
-			prefix: `broadcaster_tx_${params.broadcaster.toLowerCase()}_${params.chainId}_`,
+			prefix: `broadcaster_tx_${broadcasterData.broadcaster.toLowerCase()}_${broadcasterData.chainId}_`,
 			limit: params.limit,
 		});
 		const keys: string[] = [];
