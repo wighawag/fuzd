@@ -2,6 +2,29 @@ import {defineConfig} from 'vitepress';
 import typedocSidebar from '../api/typedoc-sidebar.json';
 // import {fileURLToPath, URL} from 'node:url';
 
+type ListItem = {items?: ListItem[]; link?: string};
+type List = ListItem[];
+
+function removeSlashDocs(list: List) {
+	for (const item of list) {
+		recurseRemoveSlashDocs(item);
+	}
+	return list;
+}
+
+function recurseRemoveSlashDocs(item: ListItem) {
+	if (item.link) {
+		if (item.link?.startsWith('/docs/')) {
+			item.link = item.link.replace('/docs/', '');
+		}
+	}
+	if (item.items) {
+		for (const it of item.items) {
+			recurseRemoveSlashDocs(it);
+		}
+	}
+}
+
 function order(arr: any, startWith?: string) {
 	return arr.sort((a, b) => {
 		if (startWith) {
@@ -109,7 +132,7 @@ export default defineConfig({
 			// {
 			// 	text: 'API',
 			// 	link: '/api/',
-			// 	items: order(removeDuplicates(typedocSidebar), 'createExecutor'),
+			// 	items: order(removeDuplicates(removeSlashDocs(typedocSidebar)), 'createExecutor'),
 			// },
 		],
 
