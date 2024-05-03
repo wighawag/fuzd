@@ -18,13 +18,13 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     lastError              text,
     expiryTime             integer,
 
-    broadcaster     text       NOT NULL, -- tx from
-    nonce           integer    NOT NULL, -- tx nonce
+    broadcaster            text       NOT NULL, -- tx from
+    nonce                  integer    NOT NULL, -- tx nonce
 
-    transaction     text       NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
+    transactionData        text       NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
     
     PRIMARY KEY (account, chainId, slot)
-)
+);
 	
 CREATE INDEX IF NOT EXISTS idx_BroadcastedExecutions_nextCheckTime ON BroadcastedExecutions (nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_BroadcastedExecutions_tx ON BroadcastedExecutions (broadcaster, chainId, nonce);
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS Broadcasters (
     nextNonce       integer    NOT NULL,
 
     PRIMARY KEY (address, chainId)
-)
+);
 
 -- COULD HAVE USED SAME TABLE ?
 CREATE TABLE IF NOT EXISTS ArchivedExecutions (
@@ -63,13 +63,13 @@ CREATE TABLE IF NOT EXISTS ArchivedExecutions (
     lastError              text,
     expiryTime             integer,
 
-    broadcaster     text       NOT NULL, -- tx from
-    nonce           integer    NOT NULL, -- tx nonce
+    broadcaster            text       NOT NULL, -- tx from
+    nonce                  integer    NOT NULL, -- tx nonce
 
-    transaction     text       NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
+    transactionData        text       NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
 
     PRIMARY KEY (account, chainId, slot)
-)
+);
 
-CREATE INDEX IF NOT EXISTS idx_ArchivedExecutions_initialTimestamp ON ArchivedExecutions (initialTimestamp);
+CREATE INDEX IF NOT EXISTS idx_ArchivedExecutions_initialTime ON ArchivedExecutions (initialTime);
 

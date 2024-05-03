@@ -40,7 +40,7 @@ type ExecutionInDB = {
 	expiryTime: number | null;
 	broadcaster: `0x${string}`;
 	nonce: number;
-	transaction: string;
+	transactionData: string;
 };
 
 function fromExecutionInDB(inDB: ExecutionInDB): PendingExecutionStored {
@@ -57,7 +57,7 @@ function fromExecutionInDB(inDB: ExecutionInDB): PendingExecutionStored {
 		retries: inDB.retries || undefined,
 		lastError: inDB.lastError || undefined,
 		expiryTime: inDB.expiryTime || undefined,
-		...JSON.parse(inDB.transaction),
+		...JSON.parse(inDB.transactionData),
 	};
 }
 
@@ -79,7 +79,7 @@ function toExecutionInDB(obj: PendingExecutionStored): ExecutionInDB {
 		nonce: Number(obj.nonce),
 		chainId: obj.chainId,
 		// TODO make transaction separate in PendingExecutionStored
-		transaction: JSON.stringify({
+		transactionData: JSON.stringify({
 			from: obj.from,
 			type: obj.type,
 			to: obj.to,

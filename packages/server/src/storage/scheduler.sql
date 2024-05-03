@@ -17,6 +17,6 @@ CREATE TABLE IF NOT EXISTS ScheduledExecutions (
     retries         integer, 
     
     PRIMARY KEY (account, chainId, slot)
-)
+);
 
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_nextCheckTime ON ScheduledExecutions (nextCheckTime);

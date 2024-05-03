@@ -20,6 +20,8 @@ import {HDKey} from '@scure/bip32';
 import {EIP1193Account, EIP1193CallProvider, EIP1193GetBlockByNumberProvider} from 'eip-1193';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {initDecrypter, mainnetClient} from 'fuzd-tlock-decrypter';
+import {RemoteSQLExecutorStorage} from './storage/RemoteSQLExecutorStorage';
+import {RemoteSQLSchedulerStorage} from './storage/RemoteSQLSchedulerStorage';
 
 const defaultPath = "m/44'/60'/0'/0/0";
 
@@ -36,6 +38,7 @@ export type Config = {
 	account: ReturnType<typeof initAccountFromHD>;
 	time: Time;
 	chainConfigs: ChainConfigs;
+	contractTimestampAddress: `0x${string}`;
 };
 
 declare module 'hono' {
@@ -96,9 +99,9 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 		const accountHDKey = masterKey.derive(defaultPath);
 		const account = initAccountFromHD(accountHDKey);
 
-		const db: any = null; // TODO
-		const executorStorage = new KVExecutorStorage(db);
-		const schedulerStorage = new KVSchedulerStorage(db);
+		const db = getDB(c);
+		const executorStorage = new RemoteSQLExecutorStorage(db);
+		const schedulerStorage = new RemoteSQLSchedulerStorage(db);
 
 		let time = {
 			async getTimestamp(provider: EIP1193GetBlockByNumberProvider & EIP1193CallProvider) {
@@ -142,6 +145,7 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
 			chainConfigs,
+			contractTimestampAddress: contractTimestamp,
 		};
 		const executorConfig = {
 			...baseConfig,
@@ -176,6 +180,6 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			chainConfigs,
 		});
 
-		next();
+		return next();
 	};
 }

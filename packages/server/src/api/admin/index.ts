@@ -9,10 +9,20 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 	const tmp = new Hono<{Bindings: Env & {}}>()
 		// TODO authentication
 		.get('/queue', async (c) => {
-			return c.text('queue');
+			const config = c.get('config');
+			const queue = await config.schedulerStorage.getQueueTopMostExecutions({limit: 100});
+			return c.json(queue);
 		})
-		.get('/transactions', async (c) => {})
-		.get('/archived-transactions', async (c) => {});
+		.get('/transactions', async (c) => {
+			const config = c.get('config');
+			const txs = await config.executorStorage.getPendingExecutions({limit: 100});
+			return c.json(txs);
+		})
+		.get('/archived-transactions', async (c) => {
+			const config = c.get('config');
+			const txs = await config.executorStorage.getArchivedExecutions({limit: 100});
+			return c.json(txs);
+		});
 
 	const authenticated = new Hono<{Bindings: Env & {}}>()
 		.use(
