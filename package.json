@@ -28,7 +28,7 @@
   },
   "pnpm": {
     "patchedDependencies": {
-      "named-logs@0.2.4": "patches/named-logs@0.2.4.patch"
+      "named-logs@0.2.4-patchable": "patches/named-logs@0.2.4-patchable.patch"
     }
   }
 }

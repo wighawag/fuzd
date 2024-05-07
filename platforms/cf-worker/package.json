@@ -1,6 +1,6 @@
 {
   "name": "fuzd-cf-worker",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publishConfig": {
     "access": "public"
   },
@@ -10,7 +10,7 @@
     "tsconfig.json"
   ],
   "dependencies": {
-    "named-logs": "^0.2.4",
+    "named-logs": "0.2.4-patchable",
     "remote-sql-d1": "^0.0.3",
     "workers-logger": "^0.2.0"
   },

@@ -1,4 +1,4 @@
-name = "missiv-cf-worker"
+name = "fuzd-cf-worker"
 main = "src/worker.ts"
 compatibility_date = "2023-08-14"
 
