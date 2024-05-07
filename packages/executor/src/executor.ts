@@ -138,7 +138,7 @@ export function createExecutor(
 		let maxFeePerGas = gasPriceEstimate.maxFeePerGas;
 		let maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGasChosen) {
-			console.warn(
+			logger.warn(
 				`fast.maxFeePerGas (${gasPriceEstimate.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasChosen}), tx might not be included`,
 			);
 			maxFeePerGas = maxFeePerGasChosen;
@@ -146,7 +146,7 @@ export function createExecutor(
 				maxPriorityFeePerGas = maxFeePerGas;
 			}
 		} else if (gasPriceEstimate.maxPriorityFeePerGas > maxPriorityFeePerGasChosen) {
-			console.warn(
+			logger.warn(
 				`fast.maxPriorityFeePerGas (${gasPriceEstimate.maxPriorityFeePerGas}) > maxPriorityFeePerGasChosen (${maxPriorityFeePerGasChosen}), we bump it up`,
 			);
 		}
@@ -168,7 +168,7 @@ export function createExecutor(
 
 	async function _updateFees(latestTransaction: TransactionToStore) {
 		// TODO
-		// console.log(`TODO update fees of existing pending transactions to ensure new execution get a chance...`);
+		// logger.log(`TODO update fees of existing pending transactions to ensure new execution get a chance...`);
 		// await storage.updateFees(account);
 	}
 
@@ -192,11 +192,11 @@ export function createExecutor(
 			if (nonce !== expectedNonce) {
 				if (nonce > expectedNonce) {
 					const message = `nonce not matching, expected ${expectedNonce}, got ${nonce}. this means some tx went through in between`;
-					console.error(message);
+					logger.error(message);
 					nonceIncreased = true;
 				} else {
 					const message = `nonce not matching, expected ${expectedNonce}, got ${nonce}, this means some tx has not been included yet and we should still keep using the exepected value. We prefer to throw and make the user retry`;
-					console.error(message);
+					logger.error(message);
 					throw new Error(message);
 				}
 			}
@@ -331,7 +331,7 @@ export function createExecutor(
 			});
 		} catch (err: any) {
 			// TODO error message // viem
-			console.error('The transaction reverts?', err, {
+			logger.error('The transaction reverts?', err, {
 				from: broadcasterAddress,
 				to: transactionData.to!, // "!" needed, need to fix eip-1193
 				data: transactionData.data,
@@ -370,7 +370,7 @@ export function createExecutor(
 
 		if (revert) {
 			const errorMessage = `The transaction reverts`;
-			console.error(errorMessage);
+			logger.error(errorMessage);
 			transactionData.lastError = errorMessage;
 			if (options.previouslyStored) {
 				storage.archiveTimedoutExecution(options.previouslyStored);
@@ -383,7 +383,7 @@ export function createExecutor(
 
 		if (gasRequired > BigInt(transactionData.gas)) {
 			const errorMessage = `The transaction requires more gas than provided. Aborting here`;
-			console.error(errorMessage);
+			logger.error(errorMessage);
 			transactionData.lastError = errorMessage;
 			if (options.previouslyStored) {
 				storage.archiveTimedoutExecution(options.previouslyStored);
@@ -430,7 +430,7 @@ export function createExecutor(
 				params: [rawTxInfo.rawTx],
 			});
 		} catch (err) {
-			console.error(`The broadcast failed, we attempts one more time`, err);
+			logger.error(`The broadcast failed, we attempts one more time`, err);
 			try {
 				await provider.request({
 					method: 'eth_sendRawTransaction',
@@ -457,7 +457,7 @@ export function createExecutor(
 				newTransactionData.lastError = errorString;
 
 				await storage.createOrUpdatePendingExecution(newTransactionData);
-				console.error(
+				logger.error(
 					`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.`,
 					err,
 				);
@@ -489,7 +489,7 @@ export function createExecutor(
 		// TODO we also need to ensure fee are in increasing order
 		if (pendingExecution.broadcastSchedule.length === 0) {
 			const errorMessage = `no broadcastSchedule, should not have let this tx go through, do not have gas params`;
-			console.error(errorMessage);
+			logger.error(errorMessage);
 			pendingExecution.lastError = errorMessage;
 			storage.archiveTimedoutExecution(pendingExecution);
 			return;
@@ -519,7 +519,7 @@ export function createExecutor(
 		let maxFeePerGas = gasPriceEstimate.maxFeePerGas;
 		let maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGasChosen) {
-			console.warn(
+			logger.warn(
 				`fast.maxFeePerGas (${gasPriceEstimate.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasChosen}), tx might not be included`,
 			);
 			maxFeePerGas = maxFeePerGasChosen;
@@ -530,7 +530,7 @@ export function createExecutor(
 			// maxFeePerGas = gasPriceEstimate.maxFeePerGas;
 			// maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
 		} else if (gasPriceEstimate.maxPriorityFeePerGas > maxPriorityFeePerGasChosen) {
-			console.warn(
+			logger.warn(
 				`fast.maxPriorityFeePerGas (${gasPriceEstimate.maxPriorityFeePerGas}) > maxPriorityFeePerGasChosen (${maxPriorityFeePerGasChosen}), we bump it up`,
 			);
 		}
@@ -545,7 +545,7 @@ export function createExecutor(
 				params: [pendingExecution.hash],
 			});
 		} catch (err) {
-			console.error(`failed to get pending transaction`, err);
+			logger.error(`failed to get pending transaction`, err);
 			pendingTansaction = null;
 		}
 
@@ -561,7 +561,7 @@ export function createExecutor(
 			if (!signer) {
 				// TODO
 			}
-			console.log(
+			logger.log(
 				`resubmit with maxFeePerGas: ${maxFeePerGas} and maxPriorityFeePerGas: ${maxPriorityFeePerGas} \n(maxFeePerGasUsed: ${maxFeePerGasUsed}, maxPriorityFeePerGasUsed: ${maxPriorityFeePerGasUsed})`,
 			);
 			await _submitTransaction(signer, pendingExecution, {
@@ -584,7 +584,7 @@ export function createExecutor(
 				params: [pendingExecution.hash],
 			});
 		} catch (err) {
-			console.error('ERROR fetching receipt', err);
+			logger.error('ERROR fetching receipt', err);
 			receipt = null;
 		}
 
@@ -621,7 +621,7 @@ export function createExecutor(
 				try {
 					await __processPendingTransaction(pendingExecution);
 				} catch (err) {
-					console.error(`failed to process pending tx`, pendingExecution, err);
+					logger.error(`failed to process pending tx`, pendingExecution, err);
 				}
 			}
 		}

@@ -1,5 +1,14 @@
 # fuzd-server
 
+## 0.3.2
+
+### Patch Changes
+
+- test api for logging
+- Updated dependencies
+  - fuzd-executor@0.2.1
+  - fuzd-gateways@0.2.1
+
 ## 0.3.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.2.1
+
+### Patch Changes
+
+- test api for logging
+
 ## 0.2.0
 
 ### Minor Changes

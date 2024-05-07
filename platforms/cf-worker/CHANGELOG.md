@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.1.3
+
+### Patch Changes
+
+- test api for logging
+
 ## 0.1.2
 
 ### Patch Changes

@@ -52,7 +52,6 @@ async function wrapWithLogger(
 			});
 		});
 	});
-	console.log(`done`);
 	const p = _trackLogger.report(response || new Response('Scheduled Action Done'));
 	if (p) {
 		ctx.waitUntil(p);
