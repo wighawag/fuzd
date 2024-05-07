@@ -1,6 +1,9 @@
 import type {RemoteSQL} from 'remote-sql';
 import type {ExecutorStorage, PendingExecutionStored, BroadcasterData} from 'fuzd-executor';
 import {toValues} from './utils';
+import {logs} from 'named-logs';
+
+const logger = logs('fuzd-server-executor-storage-sql');
 
 type BroadcasterInDB = {
 	address: `0x${string}`;
@@ -144,9 +147,9 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 	async createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored> {
 		const inDB = toExecutionInDB(executionToStore);
 		const {values, columns, bindings, overwrites} = toValues(inDB);
-		const statement = this.db.prepare(
-			`INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites};`,
-		);
+		const sqlStatement = `INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites};`;
+		logger.debug(sqlStatement);
+		const statement = this.db.prepare(sqlStatement);
 		await statement.bind(...values).all();
 		return executionToStore;
 	}
