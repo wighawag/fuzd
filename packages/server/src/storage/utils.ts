@@ -22,9 +22,9 @@ export function toValues(inDB: Record<string, any>): {
 			bindingsStr += ', ?';
 			if (values.length === keys.length - 1) {
 				// last element only
-				overwritesStr += `${column}=excluded.${column}, `;
-			} else {
 				overwritesStr += `${column}=excluded.${column}`;
+			} else {
+				overwritesStr += `${column}=excluded.${column}, `;
 			}
 		}
 		values.push(value);

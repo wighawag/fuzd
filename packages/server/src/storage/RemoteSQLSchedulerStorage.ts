@@ -72,9 +72,8 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		account: `0x${string}`;
 		slot: string;
 	}): Promise<ExecutionQueued<TransactionDataType> | undefined> {
-		const statement = this.db.prepare(
-			'SELECT * FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;',
-		);
+		const sqlStatement = 'SELECT * FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;';
+		const statement = this.db.prepare(sqlStatement);
 		const {account, chainId, slot} = params;
 		const {results} = await statement.bind(account, chainId, slot).all<ScheduledExecutionInDB>();
 		if (results.length === 0) {
@@ -88,7 +87,8 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		account: `0x${string}`;
 		limit: number;
 	}): Promise<ExecutionQueued<TransactionDataType>[]> {
-		const statement = this.db.prepare('SELECT * FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2;');
+		const sqlStatement = 'SELECT * FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2;';
+		const statement = this.db.prepare(sqlStatement);
 		const {account, chainId} = params;
 		const {results} = await statement.bind(account, chainId).all<ScheduledExecutionInDB>();
 
@@ -96,9 +96,9 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 	}
 
 	async deleteExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void> {
-		const statement = this.db.prepare(
-			'DELETE FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;',
-		);
+		const sqlStatement = 'DELETE FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;';
+
+		const statement = this.db.prepare(sqlStatement);
 		const {account, chainId, slot} = params;
 		await statement.bind(account, chainId, slot).all();
 	}
@@ -108,15 +108,15 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 	): Promise<ExecutionQueued<TransactionDataType>> {
 		const inDB = toScheduledExecutionInDB(executionToStore);
 		const {values, columns, bindings, overwrites} = toValues(inDB);
-		const statement = this.db.prepare(
-			`INSERT INTO ArchivedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites};`,
-		);
+		const sqlStatement = `INSERT INTO ScheduledExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites};`;
+		const statement = this.db.prepare(sqlStatement);
 		await statement.bind(...values).all();
 		return executionToStore;
 	}
 
 	async getQueueTopMostExecutions(params: {limit: number}): Promise<ExecutionQueued<TransactionDataType>[]> {
-		const statement = this.db.prepare(`SELECT * FROM BroadcastedExecutions ORDER BY nextCheckTime ASC LIMIT ?1;`);
+		const sqlStatement = `SELECT * FROM ScheduledExecutions ORDER BY nextCheckTime ASC LIMIT ?1;`;
+		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}

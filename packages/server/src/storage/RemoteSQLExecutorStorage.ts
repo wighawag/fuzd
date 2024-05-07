@@ -145,7 +145,7 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		const inDB = toExecutionInDB(executionToStore);
 		const {values, columns, bindings, overwrites} = toValues(inDB);
 		const statement = this.db.prepare(
-			`INSERT INTO ArchivedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites};`,
+			`INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites};`,
 		);
 		await statement.bind(...values).all();
 		return executionToStore;

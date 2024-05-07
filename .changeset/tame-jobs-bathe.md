@@ -1,0 +1,5 @@
+---
+"fuzd-server": patch
+---
+
+fixes
