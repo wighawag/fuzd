@@ -1,5 +1,12 @@
 # fuzd-server
 
+## 0.3.1
+
+### Patch Changes
+
+- 5f69962: use override instead of patch
+- 5670584: fixes
+
 ## 0.3.0
 
 ### Minor Changes

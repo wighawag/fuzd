@@ -1,5 +1,12 @@
 # fuzd-cf-worker
 
+## 0.1.2
+
+### Patch Changes
+
+- 7ddf988: use named_logs env var
+- 5f69962: use override instead of patch
+
 ## 0.1.1
 
 ### Patch Changes
