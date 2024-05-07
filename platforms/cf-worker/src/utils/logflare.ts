@@ -1,8 +1,5 @@
 import type {LogEvent, Reporter} from 'workers-logger';
-import {format, track} from 'workers-logger';
-import {Env} from '../env';
-
-export const LOG_LEVEL = 2; // TODO env variable
+import {format} from 'workers-logger';
 
 // TODO lib ?
 export const logflareReport: ({apiKey, source}: {apiKey: string; source: string}) => Reporter = ({apiKey, source}) => {

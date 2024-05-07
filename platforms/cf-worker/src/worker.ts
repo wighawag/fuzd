@@ -5,11 +5,8 @@ import {Env} from './env';
 import {logs} from 'named-logs';
 import {track, enable as enableWorkersLogger} from 'workers-logger';
 import {ExecutionContext} from '@cloudflare/workers-types/experimental';
-import {LOG_LEVEL, logflareReport} from './utils/logflare';
+import {logflareReport} from './utils/logflare';
 
-enableWorkersLogger('*');
-(globalThis as any)._logFactory.enable('*');
-(globalThis as any)._logFactory.level = LOG_LEVEL;
 const logger = logs('worker');
 
 async function wrapWithLogger(
@@ -18,6 +15,15 @@ async function wrapWithLogger(
 	ctx: ExecutionContext,
 	callback: (request: Request, env: Env, ctx: ExecutionContext) => Promise<Response>,
 ): Promise<Response> {
+	if (env.NAMED_LOGS) {
+		enableWorkersLogger('*');
+		(globalThis as any)._logFactory.enable(env.NAMED_LOGS);
+		(globalThis as any)._logFactory.level = 2;
+	}
+	if (env.NAMED_LOGS_LEVEL) {
+		enableWorkersLogger('*');
+		(globalThis as any)._logFactory.level = parseInt(env.NAMED_LOGS_LEVEL);
+	}
 	const _trackLogger = track(
 		request,
 		'FUZD.cloudflare',
