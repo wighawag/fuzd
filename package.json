@@ -17,7 +17,7 @@
   },
   "pnpm": {
     "overrides": {
-      "fuzd-cf-worker>named-logs": "npm:named-logs-for-servers@0.0.1"
+      "named-logs": "npm:named-logs-for-servers@0.0.1"
     }
   },
   "scripts": {
