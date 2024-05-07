@@ -4,10 +4,8 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  named-logs@0.2.4-patchable:
-    hash: cyjcrnxqmvdxplbo6umdn2lcju
-    path: patches/named-logs@0.2.4-patchable.patch
+overrides:
+  fuzd-cf-worker>named-logs: npm:named-logs-for-servers@0.0.1
 
 importers:
 
@@ -351,8 +349,8 @@ importers:
   platforms/cf-worker:
     dependencies:
       named-logs:
-        specifier: 0.2.4-patchable
-        version: 0.2.4-patchable(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju)
+        specifier: npm:named-logs-for-servers@0.0.1
+        version: /named-logs-for-servers@0.0.1
       remote-sql-d1:
         specifier: ^0.0.3
         version: 0.0.3(@cloudflare/workers-types@4.20240502.0)
@@ -7833,13 +7831,12 @@ packages:
       named-logs: 0.2.4
     dev: true
 
+  /named-logs-for-servers@0.0.1:
+    resolution: {integrity: sha512-fuYEOBPjBOjbSjTIpOYOxmhhHgPXApyvR7h/o9f7YuNrFd10hOkS9iSxlXyq6u9+AevrvqVtnGbrTPn3HPuMRg==}
+    dev: false
+
   /named-logs@0.2.4:
     resolution: {integrity: sha512-QHlcLpK2Ij+u7ZYDYgaYkTIlC/NcOwEnFdqbY+PF9ewAMUjvBwRVUyqBUtVaJ3V2YKVy2HiloAgLUdOEVRRyBA==}
-
-  /named-logs@0.2.4-patchable(patch_hash=cyjcrnxqmvdxplbo6umdn2lcju):
-    resolution: {integrity: sha512-Yjsclc4d0uzb5/qfm02XjUZP4ZcdW9ZA/GpPTZydH9KHRDQrpVD+e1MfI+xI1gTBc7/RyLeY2d+ZBk8k9fh6Pg==}
-    dev: false
-    patched: true
 
   /nanoid@3.3.7:
     resolution: {integrity: sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==}
