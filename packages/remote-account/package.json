@@ -1,6 +1,6 @@
 {
   "name": "remote-account",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "description": "remote account based on hd keys",
   "license": "MIT",
   "publishConfig": {

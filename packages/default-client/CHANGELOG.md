@@ -1,5 +1,18 @@
 # fuzd-default-client
 
+## 0.2.0
+
+### Minor Changes
+
+- use hono server + sqlite
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-executor@0.2.0
+  - remote-account@0.1.0
+  - fuzd-scheduler@0.3.0
+
 ## 0.1.20
 
 ### Patch Changes

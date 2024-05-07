@@ -1,5 +1,16 @@
 # fuzd-scheduler
 
+## 0.3.0
+
+### Minor Changes
+
+- use hono server + sqlite
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-common@0.2.0
+
 ## 0.2.4
 
 ### Patch Changes

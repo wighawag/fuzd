@@ -1,5 +1,16 @@
 # fuzd-tlock-decrypter
 
+## 0.3.0
+
+### Minor Changes
+
+- use hono server + sqlite
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-scheduler@0.3.0
+
 ## 0.2.4
 
 ### Patch Changes

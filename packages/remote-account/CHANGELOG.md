@@ -1,5 +1,11 @@
 # remote-account
 
+## 0.1.0
+
+### Minor Changes
+
+- use hono server + sqlite
+
 ## 0.0.6
 
 ### Patch Changes

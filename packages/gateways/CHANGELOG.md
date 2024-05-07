@@ -1,5 +1,18 @@
 # fuzd-gateways
 
+## 0.2.0
+
+### Minor Changes
+
+- use hono server + sqlite
+
+### Patch Changes
+
+- Updated dependencies
+  - atomikv@0.1.0
+  - fuzd-executor@0.2.0
+  - fuzd-scheduler@0.3.0
+
 ## 0.1.19
 
 ### Patch Changes

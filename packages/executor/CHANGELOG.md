@@ -1,5 +1,16 @@
 # fuzd-executor
 
+## 0.2.0
+
+### Minor Changes
+
+- use hono server + sqlite
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-common@0.2.0
+
 ## 0.1.14
 
 ### Patch Changes
