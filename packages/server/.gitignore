@@ -6,3 +6,5 @@ node_modules
 
 # data generated
 /dist
+
+*.sql.ts

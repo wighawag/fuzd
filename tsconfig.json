@@ -6,7 +6,8 @@
 		"declaration": true,
 		"declarationMap": true,
 		"inlineSourceMap": true,
-		"strict": true
+		"strict": true,
+		"esModuleInterop": true
 	},
 	"include": ["packages/executor/src/index.ts"]
 }

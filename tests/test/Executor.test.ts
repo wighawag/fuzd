@@ -9,6 +9,7 @@ import artifacts from '../generated/artifacts';
 import {encodeFunctionData} from 'viem';
 import {deriveRemoteAddress} from 'remote-account';
 import {hashRawTx, overrideProvider} from './utils/mock-provider';
+import {deployAll} from './utils';
 
 const time = initTime();
 
@@ -25,23 +26,15 @@ const {executor, publicExtendedKey} = createTestExecutor({
 	time,
 });
 
-async function deploymentFixture() {
-	const {deployments, namedAccounts} = await loadAndExecuteDeployments({
-		provider,
-	});
-	const registry = contract(deployments['GreetingsRegistry'] as Deployment<typeof artifacts.GreetingsRegistry.abi>);
-	return {registry, namedAccounts};
-}
-
 async function prepareExecution() {
-	const {registry, namedAccounts} = await loadFixture(deploymentFixture);
-	const gasPrice = await publicClient.getGasPrice();
+	const {env, GreetingsRegistry} = await await loadFixture(deployAll);
+	// const gasPrice = await publicClient.getGasPrice();
 
-	const user = namedAccounts.deployer;
+	const user = env.namedAccounts.deployer;
 	const remoteAccount = deriveRemoteAddress(publicExtendedKey, user);
 
 	const data = encodeFunctionData({
-		...registry,
+		...GreetingsRegistry,
 		functionName: 'setMessageFor',
 		args: [user, 'hello', 1],
 	});
@@ -49,22 +42,28 @@ async function prepareExecution() {
 	const txData = {
 		type: 'eip1559',
 		chainId: '0x7a69',
-		to: registry.address,
+		to: GreetingsRegistry.address,
 		data,
 	} as const;
 
-	const delegated = await registry.read.isDelegate([user, remoteAccount]);
+	const delegated = await env.read(GreetingsRegistry, {functionName: 'isDelegate', args: [user, remoteAccount]});
 	if (!delegated) {
-		await registry.write.delegate([remoteAccount, true], {account: user, value: 0n});
+		await env.execute(GreetingsRegistry, {
+			functionName: 'delegate',
+			args: [remoteAccount, true],
+			account: user,
+			value: 0n,
+		});
 	}
 
-	const gas = await publicClient.estimateGas({...txData, account: remoteAccount});
-	const balance = await publicClient.getBalance({address: remoteAccount});
-	if (balance < gasPrice * gas) {
-		await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
-	}
+	// const gas = await publicClient.estimateGas({...txData, account: remoteAccount});
+	// const balance = await publicClient.getBalance({address: remoteAccount});
+	// if (balance < gasPrice * gas) {
+	// 	await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
+	// }
 
-	return {gas, gasPrice, txData, user, registry};
+	// return {gas, gasPrice, txData, user, registry};
+	return {txData, user, GreetingsRegistry, env};
 }
 
 let counter = 0;

@@ -30,4 +30,5 @@ export interface SchedulerStorage<TransactionDataType> {
 	): Promise<ExecutionQueued<TransactionDataType>>;
 	getQueueTopMostExecutions(params: {limit: number}): Promise<ExecutionQueued<TransactionDataType>[]>;
 	clear(): Promise<void>;
+	setup(): Promise<void>;
 }

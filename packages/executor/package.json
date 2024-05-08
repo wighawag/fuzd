@@ -32,8 +32,8 @@
     "eip-1193": "^0.5.0",
     "eip-1193-signer": "^0.0.2",
     "fuzd-common": "workspace:*",
-    "named-logs": "^0.2.4",
-    "zod": "^3.23.6"
+    "named-logs": "npm:named-logs-for-servers@0.0.1",
+    "zod": "^3.23.7"
   },
   "devDependencies": {
     "ldenv": "^0.3.10",

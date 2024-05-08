@@ -61,4 +61,5 @@ export interface ExecutorStorage {
 	getBroadcaster(params: {chainId: `0x${string}`; address: string}): Promise<BroadcasterData | undefined>;
 	createBroadcaster(broadcaster: BroadcasterData): Promise<void>;
 	clear(): Promise<void>;
+	setup(): Promise<void>;
 }

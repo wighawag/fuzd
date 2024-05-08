@@ -81,7 +81,7 @@ export function createMockDecrypter(): Decrypter<TransactionSubmission> & {
 	async function decrypt(
 		execution: ExecutionQueued<TransactionSubmission>,
 	): Promise<DecryptionResult<TransactionSubmission>> {
-		const transaction = map[execution.id];
+		const transaction = map[execution.slot];
 		if (transaction) {
 			return {
 				success: true,

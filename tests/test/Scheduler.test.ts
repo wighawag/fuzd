@@ -3,7 +3,7 @@ import {network} from 'hardhat';
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {initTime} from './utils/time';
-import {createTestExecutor, createTestScheduler} from './utils/executor';
+import {TestSchedulerConfig, createTestExecutor, createTestScheduler} from './utils/executor';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import artifacts from '../generated/artifacts';
 import {encodeFunctionData} from 'viem';
@@ -11,6 +11,7 @@ import {deriveRemoteAddress} from 'remote-account';
 import {createMockDecrypter, overrideProvider} from './utils/mock-provider';
 import {TransactionSubmission} from 'fuzd-executor';
 import {deployAll} from './utils';
+import {createViemContext} from './utils/viem';
 
 const time = initTime();
 
@@ -26,19 +27,18 @@ const executorConfig = {
 	},
 	time,
 };
-const {executor, publicExtendedKey} = createTestExecutor(executorConfig);
 
 const decrypter = createMockDecrypter();
 
-const {scheduler} = createTestScheduler({
-	...executorConfig,
-	decrypter,
-	executor,
-});
-
 async function prepareExecution() {
 	const {env, GreetingsRegistry} = await await loadFixture(deployAll);
-	// const gasPrice = await publicClient.getGasPrice();
+
+	const {executor, publicExtendedKey} = await createTestExecutor(executorConfig);
+	const {scheduler, schedulerStorage} = await createTestScheduler({
+		...executorConfig,
+		decrypter,
+		executor,
+	});
 
 	const user = env.namedAccounts.deployer;
 	const remoteAccount = deriveRemoteAddress(publicExtendedKey, user);
@@ -66,22 +66,39 @@ async function prepareExecution() {
 		});
 	}
 
-	// const gas = await publicClient.estimateGas({...txData, account: remoteAccount});
-	// const balance = await publicClient.getBalance({address: remoteAccount});
-	// if (balance < gasPrice * gas) {
-	// 	await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
-	// }
+	const viemContext = createViemContext(provider);
+	const {publicClient, walletClient} = viemContext;
 
-	// return {gas, gasPrice, txData, user, GreetingsRegistry, mockDecrypter: decrypter};
-	return {txData, user, GreetingsRegistry, mockDecrypter: decrypter, env};
+	const gasPrice = await publicClient.getGasPrice();
+
+	const gas = await publicClient.estimateGas({...txData, account: remoteAccount});
+	const balance = await publicClient.getBalance({address: remoteAccount});
+	if (balance < gasPrice * gas) {
+		await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
+	}
+
+	return {
+		gas,
+		gasPrice,
+		txData,
+		user,
+		GreetingsRegistry,
+		mockDecrypter: decrypter,
+		env,
+		executor,
+		scheduler,
+		schedulerStorage,
+		publicExtendedKey,
+	};
 }
 
 let counter = 0;
 describe('Executing on the registry', function () {
 	it('Should execute without issues', async function () {
-		const {txData, user, GreetingsRegistry, env} = await prepareExecution();
+		const {gas, gasPrice, txData, user, GreetingsRegistry, env, scheduler, schedulerStorage} = await prepareExecution();
 		const timestamp = await time.getTimestamp();
 		const checkinTime = timestamp + 100;
+		console.log({user});
 		const result = await scheduler.submitExecution(user, {
 			slot: (++counter).toString(),
 			chainId: '0x7a69',
@@ -95,7 +112,10 @@ describe('Executing on the registry', function () {
 			},
 			transactions: [
 				{
-					...txData,
+					type: '0x2',
+					chainId: txData.chainId,
+					to: txData.to,
+					data: txData.data,
 					gas: `0x${gas.toString(16)}` as `0x${string}`,
 					broadcastSchedule: [
 						{
@@ -109,13 +129,16 @@ describe('Executing on the registry', function () {
 		});
 		expect(result.checkinTime).to.equal(checkinTime);
 
-		time.increaseTime(101);
-		await scheduler.processQueue();
+		const queue = await schedulerStorage.getQueueTopMostExecutions({limit: 10});
+		console.log(queue);
+		time.increaseTime(1010);
+		const queueExecution = await scheduler.processQueue();
+		console.log({queueExecution});
 		expect((await env.read(GreetingsRegistry, {functionName: 'messages', args: [user]})).content).to.equal('hello');
 	});
 
 	it('Should execute encrypted data without issues', async function () {
-		const {env, txData, user, GreetingsRegistry, mockDecrypter} = await prepareExecution();
+		const {gas, gasPrice, env, txData, user, GreetingsRegistry, mockDecrypter, scheduler} = await prepareExecution();
 		const timestamp = await time.getTimestamp();
 		const checkinTime = timestamp + 100;
 		const transaction: TransactionSubmission = {

@@ -17,28 +17,34 @@ describe('GreetingsRegistry', function () {
 		const greetingToSet = 'hello world';
 		const greeter = otherAccounts[0];
 		await expect(
-			await env.read(GreetingsRegistry, {
-				functionName: 'messages',
-				args: [greeter],
-			}),
+			(
+				await env.read(GreetingsRegistry, {
+					functionName: 'messages',
+					args: [greeter],
+				})
+			).content,
 		).to.equal('');
 
 		await env.execute(GreetingsRegistry, {functionName: 'setMessage', args: [greetingToSet, 1], account: greeter});
 
-		await expect(
-			await env.read(GreetingsRegistry, {
-				functionName: 'messages',
-				args: [greeter],
-			}),
+		expect(
+			(
+				await env.read(GreetingsRegistry, {
+					functionName: 'messages',
+					args: [greeter],
+				})
+			).content,
 		).to.equal(greetingToSet);
 	});
 
 	it('Should not be able to set message for other account', async function () {
 		const {env, GreetingsRegistry, otherAccounts} = await loadFixture(deployAll);
-		await env.execute(GreetingsRegistry, {
-			functionName: 'setMessageFor',
-			args: [otherAccounts[1], 'hello', 1],
-			account: otherAccounts[0],
-		});
+		expect(
+			env.execute(GreetingsRegistry, {
+				functionName: 'setMessageFor',
+				args: [otherAccounts[1], 'hello', 1],
+				account: otherAccounts[0],
+			}),
+		).rejects.toThrowError();
 	});
 });

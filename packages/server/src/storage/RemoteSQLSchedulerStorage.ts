@@ -1,6 +1,7 @@
 import type {RemoteSQL} from 'remote-sql';
 import type {ExecutionQueued, SchedulerStorage} from 'fuzd-scheduler';
-import {toValues} from './utils';
+import {sqlToStatements, toValues} from './utils';
+import setupTables from '../sql/scheduler.sql';
 
 type ScheduledExecutionInDB = {
 	account: `0x${string}`;
@@ -124,5 +125,10 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 	async clear(): Promise<void> {
 		const deleteScheduledExecutions = this.db.prepare(`DELETE FROM ScheduledExecutions;`);
 		await deleteScheduledExecutions.all();
+	}
+
+	async setup(): Promise<void> {
+		const statements = sqlToStatements(setupTables);
+		await this.db.batch(statements.map((v) => this.db.prepare(v)));
 	}
 }

@@ -37,13 +37,13 @@
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "fuzd-tlock-decrypter": "workspace:*",
-    "hono": "^4.3.0",
-    "named-logs": "0.2.4",
+    "hono": "^4.3.3",
+    "named-logs": "npm:named-logs-for-servers@0.0.1",
     "remote-account": "workspace:*",
-    "remote-sql": "^0.0.3",
+    "remote-sql": "^0.0.5",
     "tlock-js": "^0.9.0",
-    "viem": "^2.9.31",
-    "zod": "^3.23.6"
+    "viem": "^2.10.2",
+    "zod": "^3.23.7"
   },
   "devDependencies": {
     "ldenv": "^0.3.10",
@@ -52,8 +52,9 @@
     "typescript": "^5.4.5"
   },
   "scripts": {
-    "build": "pkgroll",
-    "dev": "pkgroll --watch",
+    "build": "pnpm sql2ts && pkgroll",
+    "sql2ts": "node sql2ts.cjs ./executor.sql ./scheduler.sql",
+    "dev": "pnpm sql2ts && pkgroll --watch",
     "format:check": "prettier --check .",
     "format": "prettier --write ."
   }

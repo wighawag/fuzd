@@ -10,15 +10,15 @@
     "tsconfig.json"
   ],
   "dependencies": {
-    "named-logs": "0.2.4",
-    "remote-sql-d1": "^0.0.3",
+    "named-logs": "npm:named-logs-for-servers@0.0.1",
+    "remote-sql-d1": "^0.0.5",
     "workers-logger": "^0.2.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240502.0",
-    "@types/node": "^20.12.8",
+    "@types/node": "^20.12.11",
     "fuzd-server": "workspace:*",
-    "hono": "^4.3.0",
+    "hono": "^4.3.3",
     "set-defaults": "^0.0.2",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0",

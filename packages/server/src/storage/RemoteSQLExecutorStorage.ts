@@ -1,7 +1,8 @@
 import type {RemoteSQL} from 'remote-sql';
 import type {ExecutorStorage, PendingExecutionStored, BroadcasterData} from 'fuzd-executor';
-import {toValues} from './utils';
+import {sqlToStatements, toValues} from './utils';
 import {logs} from 'named-logs';
+import setupTables from '../sql/executor.sql';
 
 const logger = logs('fuzd-server-executor-storage-sql');
 
@@ -198,5 +199,10 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		const deleteArchivedExecutions = this.db.prepare(`DELETE FROM ArchivedExecutions;`);
 		const delteBroadcastedExecutions = this.db.prepare(`DELETE FROM BroadcastedExecutions`);
 		await this.db.batch([deleteBroadcasters, deleteArchivedExecutions, delteBroadcastedExecutions]);
+	}
+
+	async setup(): Promise<void> {
+		const statements = sqlToStatements(setupTables);
+		await this.db.batch(statements.map((v) => this.db.prepare(v)));
 	}
 }

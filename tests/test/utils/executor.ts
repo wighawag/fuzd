@@ -6,9 +6,9 @@ import {EIP1193Account} from 'eip-1193';
 import {initAccountFromHD} from 'remote-account';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
-import Database from 'libsql/promise';
 import {RemoteSQLExecutorStorage, RemoteSQLSchedulerStorage} from 'fuzd-server';
 import {RemoteLibSQL} from 'remote-sql-libsql';
+import {createClient} from '@libsql/client';
 
 const provider = new JSONRPCHTTPProvider('http://localhost:8545');
 
@@ -45,8 +45,13 @@ export type TestExecutorConfig = Omit<
 	'signers' | 'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
 >;
 
-export function createTestExecutor(config: TestExecutorConfig) {
-	const db = new RemoteLibSQL(new Database(':memory:'));
+export async function createTestExecutor(config: TestExecutorConfig) {
+	const client = createClient({
+		url: ':memory:',
+	});
+	const db = new RemoteLibSQL(client);
+	const storage = new RemoteSQLExecutorStorage(db);
+	await storage.setup();
 	return {
 		executor: createExecutor({
 			...config,
@@ -69,7 +74,7 @@ export function createTestExecutor(config: TestExecutorConfig) {
 					};
 				},
 			},
-			storage: new RemoteSQLExecutorStorage(db),
+			storage,
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
 		}),
@@ -82,16 +87,23 @@ export type TestSchedulerConfig<TransactionDataType, TransationInfoType> = Omit<
 	'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
 >;
 
-export function createTestScheduler<TransactionDataType, TransationInfoType>(
+export async function createTestScheduler<TransactionDataType, TransationInfoType>(
 	config: TestSchedulerConfig<TransactionDataType, TransationInfoType>,
 ) {
-	const db = new RemoteLibSQL(new Database(':memory:'));
+	const client = createClient({
+		url: ':memory:',
+	});
+
+	const db = new RemoteLibSQL(client);
+	const storage = new RemoteSQLSchedulerStorage(db);
+	await storage.setup();
 	return {
 		scheduler: createScheduler({
 			...config,
-			storage: new RemoteSQLSchedulerStorage(db),
+			storage,
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
 		}),
+		schedulerStorage: storage,
 	};
 }

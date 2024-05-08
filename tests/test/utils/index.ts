@@ -16,5 +16,5 @@ export async function deployAll() {
 	const GreetingsRegistry = env.get<typeof env.artifacts.GreetingsRegistry.abi>('GreetingsRegistry');
 	const deployer = env.namedAccounts.deployer;
 
-	return {env, GreetingsRegistry, deployer, otherAccounts: env};
+	return {env, GreetingsRegistry, deployer, otherAccounts: env.unnamedAccounts};
 }
