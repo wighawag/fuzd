@@ -2,14 +2,21 @@ import {Hono} from 'hono';
 import {Bindings} from 'hono/types';
 import {ServerOptions} from '../../types';
 
+import {zValidator} from '@hono/zod-validator';
+import zod from 'zod';
+import {auth} from '../../auth';
+
+const ScheduledExecutionSchema = zod.any();
+
 export function getSchedulingAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const app = new Hono<{Bindings: Env & {}}>()
 
-		.post('/scheduleExecution', async (c) => {
+		.post('/scheduleExecution', auth({debug: false}), zValidator('json', ScheduledExecutionSchema), async (c) => {
 			const config = c.get('config');
-			const jsonAsString = await c.req.text();
-			const signature = c.req.header()['signature'] as `0x${string}`;
-			const result = await config.gateway.submitExecutionAsJsonString(jsonAsString, signature);
+			const account = c.get('account');
+			const data = c.req.valid('json');
+
+			const result = await config.scheduler.submitExecution(account, data);
 			return c.json(result);
 		})
 

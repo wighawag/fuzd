@@ -9,6 +9,9 @@ import {getSchedulingAPI} from './api/scheduling';
 import {getExecutionAPI} from './api/execution';
 import {setup} from './setup';
 
+export * from './storage/RemoteSQLExecutorStorage';
+export * from './storage/RemoteSQLSchedulerStorage';
+
 export function createServer<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const app = new Hono<{Bindings: Env & {}}>()
 		.use(

@@ -1,6 +1,5 @@
 import {network} from 'hardhat';
 import {Deployment, loadAndExecuteDeployments} from 'rocketh';
-import {expect} from './utils/viem-chai';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {initTime} from './utils/time';
 import {createTestExecutor, createTestScheduler} from '../src/executor';
@@ -37,18 +36,18 @@ const {scheduler} = createTestScheduler({
 });
 
 async function deploymentFixture() {
-	const {deployments, accounts} = await loadAndExecuteDeployments({
+	const {deployments, namedAccounts} = await loadAndExecuteDeployments({
 		provider,
 	});
 	const registry = contract(deployments['Registry'] as Deployment<typeof artifacts.GreetingsRegistry.abi>);
-	return {registry, accounts};
+	return {registry, namedAccounts};
 }
 
 async function prepareExecution() {
-	const {registry, accounts} = await loadFixture(deploymentFixture);
+	const {registry, namedAccounts} = await loadFixture(deploymentFixture);
 	const gasPrice = await publicClient.getGasPrice();
 
-	const user = accounts.deployer;
+	const user = namedAccounts.deployer;
 	const remoteAccount = deriveRemoteAddress(publicExtendedKey, user);
 
 	const data = encodeFunctionData({
@@ -58,7 +57,7 @@ async function prepareExecution() {
 	});
 
 	const txData = {
-		type: '0x2',
+		type: 'eip1559',
 		chainId: '0x7a69',
 		to: registry.address,
 		data,
@@ -121,7 +120,10 @@ describe('Executing on the registry', function () {
 		const timestamp = await time.getTimestamp();
 		const checkinTime = timestamp + 100;
 		const transaction: TransactionSubmission = {
-			...txData,
+			type: '0x2',
+			chainId: txData.chainId,
+			to: txData.to,
+			data: txData.data,
 			gas: `0x${gas.toString(16)}` as `0x${string}`,
 			broadcastSchedule: [
 				{

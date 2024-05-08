@@ -26,9 +26,6 @@ layout {
 			pane name="scheduler" command="bash" {
 				args "-c" "pnpm run --filter ./packages/scheduler dev; cd packages/scheduler; ${SHELL-bash}"
 			}
-			pane name="gateways" command="bash" {
-				args "-c" "pnpm run --filter ./packages/gateways dev; cd packages/gateways; ${SHELL-bash}"
-			}
 			pane name="remote-account" command="bash" {
 				args "-c" "pnpm run --filter ./packages/remote-account dev; cd packages/remote-account; ${SHELL-bash}"
 			}

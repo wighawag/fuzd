@@ -60,4 +60,5 @@ export interface ExecutorStorage {
 	// TODO remove: createBroadcaster is not used, and if used we should use updateBroadcaster too
 	getBroadcaster(params: {chainId: `0x${string}`; address: string}): Promise<BroadcasterData | undefined>;
 	createBroadcaster(broadcaster: BroadcasterData): Promise<void>;
+	clear(): Promise<void>;
 }

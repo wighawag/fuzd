@@ -192,4 +192,11 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		const statement = this.db.prepare(`INSERT INTO Broadcasters (${columns}) VALUES(${bindings})`);
 		await statement.bind(...values).all();
 	}
+
+	async clear(): Promise<void> {
+		const deleteBroadcasters = this.db.prepare(`DELETE FROM Broadcasters;`);
+		const deleteArchivedExecutions = this.db.prepare(`DELETE FROM ArchivedExecutions;`);
+		const delteBroadcastedExecutions = this.db.prepare(`DELETE FROM BroadcastedExecutions`);
+		await this.db.batch([deleteBroadcasters, deleteArchivedExecutions, delteBroadcastedExecutions]);
+	}
 }

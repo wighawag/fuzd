@@ -17,9 +17,11 @@
     "@scure/bip39": "^1.3.0",
     "atomikv": "workspace:*",
     "fuzd-executor": "workspace:*",
-    "fuzd-gateways": "workspace:*",
     "fuzd-scheduler": "workspace:*",
+    "fuzd-server": "workspace:*",
+    "libsql": "^0.3.18",
     "named-logs": "^0.2.4",
+    "remote-sql-libsql": "^0.0.3",
     "viem": "^2.9.31"
   },
   "devDependencies": {

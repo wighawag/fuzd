@@ -7,8 +7,6 @@ import {logs} from 'named-logs';
 const logger = logs('fuzd-cf-worker-admin-api');
 
 export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
-	const {getDB} = options;
-
 	const tmp = new Hono<{Bindings: Env & {}}>()
 		// TODO authentication
 		.get('/queue', async (c) => {
@@ -40,7 +38,12 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 				},
 			}),
 		)
-		.post('/clear', async (c) => {});
+		.get('/clear', async (c) => {
+			const config = c.get('config');
+			await config.executorStorage.clear();
+			await config.schedulerStorage.clear();
+			return c.json({ok: true});
+		});
 
 	const app = new Hono<{Bindings: Env & {}}>().route('/', tmp).route('/', authenticated);
 

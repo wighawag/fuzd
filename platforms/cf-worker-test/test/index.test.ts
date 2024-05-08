@@ -89,7 +89,7 @@ describe('Worker', () => {
 				},
 			},
 			// finaly we provided the tx in clear
-			transaction: tx,
+			transactions: [tx],
 		};
 
 		// we convert the json as a string
@@ -100,7 +100,7 @@ describe('Worker', () => {
 		// finally we perform the network request
 		// the json (as string) is the body
 		// and the signature, computed above is provided via headers
-		const resp = await worker.fetch(`${schedulerEndPoint}/scheduleExecution`, {
+		const resp = await worker.fetch(`${schedulerEndPoint}/api/scheduling/scheduleExecution`, {
 			body: jsonAsString,
 			headers: {
 				'content-type': 'application/json',

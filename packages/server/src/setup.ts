@@ -11,7 +11,6 @@ import {
 	createExecutor,
 } from 'fuzd-executor';
 import {Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
-import {KVExecutorStorage, KVSchedulerStorage, initSchedulerGateway} from 'fuzd-gateways';
 import {initAccountFromHD} from 'remote-account';
 import {Time, getTimeFromContractTimestamp} from 'fuzd-common';
 import {JSONRPCHTTPProvider} from 'eip-1193-jsonrpc-provider';
@@ -32,7 +31,6 @@ export type SetupOptions<Env extends Bindings = Bindings> = {
 export type Config = {
 	executor: Executor<TransactionSubmission, PendingExecutionStored> & ExecutorBackend;
 	scheduler: Scheduler<TransactionSubmission> & SchedulerBackend;
-	gateway: ReturnType<typeof initSchedulerGateway>;
 	executorStorage: ExecutorStorage;
 	schedulerStorage: SchedulerStorage<TransactionSubmission>;
 	account: ReturnType<typeof initAccountFromHD>;
@@ -167,12 +165,9 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 		};
 		const scheduler = createScheduler(schedulerConfig);
 
-		const gateway = initSchedulerGateway(scheduler);
-
 		c.set('config', {
 			executor,
 			scheduler,
-			gateway,
 			executorStorage,
 			schedulerStorage,
 			account,

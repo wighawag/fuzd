@@ -21,7 +21,9 @@ export function getAccounts() {
 export function contract<TAbi extends Abi>(contractInfo: {address: `0x${string}`; abi: TAbi}) {
 	return getContract({
 		...contractInfo,
-		walletClient,
-		publicClient,
+		client: {
+			wallet: walletClient,
+			public: publicClient,
+		},
 	});
 }

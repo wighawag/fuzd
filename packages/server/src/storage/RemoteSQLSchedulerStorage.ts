@@ -120,4 +120,9 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
+
+	async clear(): Promise<void> {
+		const deleteScheduledExecutions = this.db.prepare(`DELETE FROM ScheduledExecutions;`);
+		await deleteScheduledExecutions.all();
+	}
 }
