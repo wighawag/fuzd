@@ -1,20 +1,20 @@
 import {execute} from 'rocketh';
-import 'rocketh-deploy-proxy';
+import '@rocketh/deploy-proxy';
 import {context} from './_context';
 
 export default execute(
 	context,
-	async ({deployViaProxy, accounts, artifacts}) => {
+	async ({deployViaProxy, namedAccounts, artifacts}) => {
 		await deployViaProxy(
 			'ExecutionOnChain',
 			{
-				account: accounts.deployer,
+				account: namedAccounts.deployer,
 				artifact: artifacts.ExecutionOnChain,
 			},
 			{
-				owner: accounts.deployer,
-			}
+				owner: namedAccounts.deployer,
+			},
 		);
 	},
-	{tags: ['ExecutionOnChain', 'ExecutionOnChain_deploy']}
+	{tags: ['ExecutionOnChain', 'ExecutionOnChain_deploy']},
 );

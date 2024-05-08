@@ -1,4 +1,4 @@
-# ###########################################
+############################################
 # .gitignore
 #############################################
 node_modules
@@ -11,16 +11,16 @@ generated
 deployments/localhost
 
 # hardhat
-coverage
-coverage.json
+/coverage
+/coverage.json
+/coverage-data.json
 cache
 artifacts
 
-# 
-dist
+docs
+*.hbs
+
 #############################################
-
-# Ignore npm files
-pnpm-lock.yaml
+deployments
 package.json
-
+pnpm-lock.yaml

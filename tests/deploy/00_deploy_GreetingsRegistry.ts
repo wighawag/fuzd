@@ -1,21 +1,21 @@
 import {execute} from 'rocketh';
-import 'rocketh-deploy-proxy';
+import '@rocketh/deploy-proxy';
 import {context} from './_context';
 
 export default execute(
 	context,
-	async ({deployViaProxy, accounts, artifacts}) => {
+	async ({deployViaProxy, namedAccounts, artifacts}) => {
 		const contract = await deployViaProxy(
-			'Registry',
+			'GreetingsRegistry',
 			{
-				account: accounts.deployer,
+				account: namedAccounts.deployer,
 				artifact: artifacts.GreetingsRegistry,
 				args: [''],
 			},
 			{
-				owner: accounts.deployer,
-			}
+				owner: namedAccounts.deployer,
+			},
 		);
 	},
-	{tags: ['Registry', 'Registry_deploy']}
+	{tags: ['GreetingsRegistry', 'GreetingsRegistry_deploy']},
 );

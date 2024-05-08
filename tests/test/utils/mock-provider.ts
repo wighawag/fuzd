@@ -33,7 +33,7 @@ export type ProviderExtender = {
 
 export function overrideProvider(
 	provider: EIP1193ProviderWithoutEvents,
-	handler?: ProviderOverrideHandler
+	handler?: ProviderOverrideHandler,
 ): EIP1193ProviderWithoutEvents & ProviderExtender {
 	const actualHandler = handler || {};
 	let tmpHandler = {};
@@ -79,13 +79,13 @@ export function createMockDecrypter(): Decrypter<TransactionSubmission> & {
 	}
 
 	async function decrypt(
-		execution: ExecutionQueued<TransactionSubmission>
+		execution: ExecutionQueued<TransactionSubmission>,
 	): Promise<DecryptionResult<TransactionSubmission>> {
 		const transaction = map[execution.id];
 		if (transaction) {
 			return {
 				success: true,
-				transaction,
+				transactions: [transaction],
 			};
 		} else {
 			return {
