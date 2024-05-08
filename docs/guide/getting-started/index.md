@@ -42,10 +42,6 @@ There is also auxiliary packages you ll find in this repo:
 
 This package provide a mechanism by which a remote-account can be controlled by a local account. Used by the fuzd-executor to perform paid tx.
 
-### atomikv
-
-a basic facade to let fuzd be independent of
-
 ## FUZD platforms
 
 FUZD can run on any platform that support javascript. FUZD aims to provide basic setup for some

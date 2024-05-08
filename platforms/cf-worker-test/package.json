@@ -9,7 +9,7 @@
     "fuzd-cf-worker": "workspace:*",
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
-    "remote-account": "workspace:*",
+    "remote-account": "^0.1.0",
     "typescript": "^5.4.5",
     "viem": "^2.10.2",
     "vitest": "^1.6.0",

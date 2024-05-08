@@ -2,20 +2,23 @@ import {EIP1193Account, EIP1193DATA, EIP1193ProviderWithoutEvents} from 'eip-119
 // import {AbiEvent} from 'abitype';
 import {ExecutionQueued, SchedulerStorage} from './scheduler-storage';
 import {Executor} from './common';
-import type {Time} from 'fuzd-common';
+import {Time, SchemaString0x} from 'fuzd-common';
+import z from 'zod';
 
-export type StartTransaction = {
-	// the execution should only happen if that tx is included in a block
-	// which can serve as a startTime
-	hash: `0x${string}`;
-	nonce: number;
-	broadcastTime: number;
+// the execution should only happen if that tx is included in a block
+// which can serve as a startTime
+export const SchemaStartTransaction = z.object({
+	hash: SchemaString0x,
+	nonce: z.number(),
+	broadcastTime: z.number(),
 	// TODO
 	// expectEvent?: {
 	// 	eventABI: AbiEvent;
 	// 	startTimeParam?: string;
 	// };
-};
+});
+
+export type StartTransaction = z.infer<typeof SchemaStartTransaction>;
 
 export type DeltaScheduledExecution<
 	TimeValueType extends FixedTiming = FixedTiming,

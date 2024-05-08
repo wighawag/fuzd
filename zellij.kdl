@@ -7,11 +7,11 @@ layout {
 		}
 		pane split_direction="vertical" {
 			pane name="tests" command="bash" {
-				args "-c" "pnpm run --filter ./tests dev; cd tests; ${SHELL-bash}"
+				args "-c" "pnpm run --filter ./tests test; cd tests; ${SHELL-bash}"
 			}
 		}
 		pane split_direction="vertical" {
-			pane name="default-client" command="bash" {
+			pane name="common" command="bash" {
 				args "-c" "pnpm run --filter ./packages/common dev; cd packages/common; ${SHELL-bash}"
 			}
 			pane name="executor" command="bash" {
@@ -25,9 +25,6 @@ layout {
 			}
 			pane name="scheduler" command="bash" {
 				args "-c" "pnpm run --filter ./packages/scheduler dev; cd packages/scheduler; ${SHELL-bash}"
-			}
-			pane name="remote-account" command="bash" {
-				args "-c" "pnpm run --filter ./packages/remote-account dev; cd packages/remote-account; ${SHELL-bash}"
 			}
 		}
 		pane split_direction="vertical" {
