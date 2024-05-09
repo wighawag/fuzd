@@ -48,7 +48,7 @@ export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Dec
 			return {
 				success: false,
 				newPayload: json.payload,
-				newTimimg: json.timing,
+				newTiming: json.timing,
 				retry,
 			};
 		} else {
