@@ -5,20 +5,26 @@ import {ServerOptions} from '../../types';
 import {zValidator} from '@hono/zod-validator';
 import zod from 'zod';
 import {auth} from '../../auth';
+import {GenericSchemaScheduledExecution} from 'fuzd-scheduler';
 
-const ScheduledExecutionSchema = zod.any();
+const SchemaAny = zod.any();
 
 export function getSchedulingAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const app = new Hono<{Bindings: Env & {}}>()
 
-		.post('/scheduleExecution', auth({debug: false}), zValidator('json', ScheduledExecutionSchema), async (c) => {
-			const config = c.get('config');
-			const account = c.get('account');
-			const data = c.req.valid('json');
+		.post(
+			'/scheduleExecution',
+			auth({debug: false}),
+			zValidator('json', GenericSchemaScheduledExecution(SchemaAny)),
+			async (c) => {
+				const config = c.get('config');
+				const account = c.get('account');
+				const data = c.req.valid('json');
 
-			const result = await config.scheduler.submitExecution(account, data);
-			return c.json(result);
-		})
+				const result = await config.scheduler.submitExecution(account, data);
+				return c.json(result);
+			},
+		)
 
 		.get('/queuedExecution/:chainId/:account/:slot', async (c) => {
 			const config = c.get('config');

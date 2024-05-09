@@ -109,6 +109,7 @@ describe('Worker', () => {
 			method: 'POST',
 		});
 		const json: any = await resp.json();
+		console.log(json);
 		expect(json.chainId).to.equal(chainIdAsHex);
 	});
 });
