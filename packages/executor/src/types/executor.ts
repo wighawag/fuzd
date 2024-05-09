@@ -1,51 +1,22 @@
 import {EIP1193Account, EIP1193DATA, EIP1193ProviderWithoutEvents, EIP1193SignerProvider} from 'eip-1193';
 import {EIP1193TransactionDataUsed, ExecutorStorage} from './executor-storage';
-import type {Time} from 'fuzd-common';
+import {
+	SchemaEIP1193AccessList,
+	SchemaEIP1193Account,
+	SchemaEIP1193Quantity,
+	SchemaString0x,
+	type Time,
+} from 'fuzd-common';
 import {z} from 'zod';
 
-// ------------------------------------------------------------------------------------------------
-// UTILITY TYPES
-// ------------------------------------------------------------------------------------------------
-const validateHex = (val: unknown) => {
-	if (typeof val != 'string') {
-		return false;
-	}
-	return val.startsWith('0x');
-};
-const hex = z.custom<`0x${string}`>(validateHex);
-const EIP1193AccountSchema = z.custom<`0x${string}`>((val) => {
-	if (typeof val != 'string') {
-		return false;
-	}
-	return validateHex(val) && val.length == 42;
-});
-const EIP1193Bytes32Schema = z.custom<`0x${string}`>((val) => {
-	if (typeof val != 'string') {
-		return false;
-	}
-	return validateHex(val) && val.length == 66;
-});
-const EIP1193QuantitySchema = z.custom<`0x${string}`>((val) => {
-	if (typeof val != 'string') {
-		return false;
-	}
-	return validateHex(val) && val.length > 2 && val.length <= 66;
-});
-const EIP1193AccessListEntrySchema = z.object({
-	address: EIP1193AccountSchema,
-	storageKeys: z.array(EIP1193Bytes32Schema).nonempty(),
-});
-const EIP1193AccessListSchema = z.array(EIP1193AccessListEntrySchema);
-// ------------------------------------------------------------------------------------------------
-
 const FeePerGas = z.object({
-	maxFeePerGas: EIP1193QuantitySchema,
-	maxPriorityFeePerGas: EIP1193QuantitySchema,
+	maxFeePerGas: SchemaEIP1193Quantity,
+	maxPriorityFeePerGas: SchemaEIP1193Quantity,
 });
 export type FeePerGas = z.infer<typeof FeePerGas>;
 
 const FeePerGasPeriod = FeePerGas.extend({
-	duration: EIP1193QuantitySchema,
+	duration: SchemaEIP1193Quantity,
 });
 export type FeePerGasPeriod = z.infer<typeof FeePerGasPeriod>;
 
@@ -53,48 +24,79 @@ const BroadcastSchedule = z.array(FeePerGasPeriod).nonempty();
 export type BroadcastSchedule = z.infer<typeof BroadcastSchedule>;
 // export type BroadcastSchedule = FeePerGasPeriod[];
 
-export const TransactionSubmission = z.object({
-	to: EIP1193AccountSchema.optional(),
-	gas: EIP1193QuantitySchema,
-	data: hex.optional(),
+// ------------------------------------------------------------------------------------------------
+// TransactionSubmission
+// ------------------------------------------------------------------------------------------------
+export const SchemaTransactionSubmission = z.object({
+	to: SchemaEIP1193Account.optional(),
+	gas: SchemaEIP1193Quantity,
+	data: SchemaString0x.optional(),
 	type: z.literal('0x2'),
-	chainId: EIP1193QuantitySchema,
-	accessList: EIP1193AccessListSchema.optional(),
+	chainId: SchemaEIP1193Quantity,
+	accessList: SchemaEIP1193AccessList.optional(),
 	broadcastSchedule: BroadcastSchedule,
 	expiryTime: z.number().optional(),
 });
-export type TransactionSubmission = z.infer<typeof TransactionSubmission>;
+export type TransactionSubmission = z.infer<typeof SchemaTransactionSubmission>;
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+// TransactionInfo
+// ------------------------------------------------------------------------------------------------
 export type TransactionInfo = {
 	hash: EIP1193DATA;
 	broadcastTime: number;
 	transactionData: EIP1193TransactionDataUsed;
 	isVoidTransaction: boolean;
 };
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+// RawTransactionInfo
+// ------------------------------------------------------------------------------------------------
 export type RawTransactionInfo = {
 	rawTx: EIP1193DATA;
 	transactionData: EIP1193TransactionDataUsed;
 	isVoidTransaction: boolean;
 };
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+// ChainConfig
+// ------------------------------------------------------------------------------------------------
 export type ChainConfig = {
 	provider: EIP1193ProviderWithoutEvents;
 	finality: number;
 	worstCaseBlockTime: number;
 };
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+// ChainConfigs
+// ------------------------------------------------------------------------------------------------
 export type ChainConfigs = {
 	[chainId: `0x${string}`]: ChainConfig;
 };
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+// BroadcasterSignerData
+// ------------------------------------------------------------------------------------------------
 export type BroadcasterSignerData = {assignerID: string; signer: EIP1193SignerProvider; address: EIP1193Account};
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+// Signers
+// ------------------------------------------------------------------------------------------------
 export type Signers = {
 	assignProviderFor: (chainId: `0x${string}`, account: EIP1193Account) => Promise<BroadcasterSignerData>;
 	getProviderByAssignerID: (assignerID: string, address: EIP1193Account) => Promise<BroadcasterSignerData>;
 };
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+// ExecutorConfig
+// ------------------------------------------------------------------------------------------------
 export type ExecutorConfig = {
 	chainConfigs: ChainConfigs;
 	time: Time;
@@ -103,7 +105,11 @@ export type ExecutorConfig = {
 	maxExpiry?: number;
 	maxNumTransactionsToProcessInOneGo?: number;
 };
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+// Executor
+// ------------------------------------------------------------------------------------------------
 export type Executor<TransactionDataType, TransactionInfoType> = {
 	submitTransaction(
 		slot: string,
@@ -111,7 +117,11 @@ export type Executor<TransactionDataType, TransactionInfoType> = {
 		submission: TransactionDataType,
 	): Promise<TransactionInfoType>;
 };
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+// ExecutorBackend
+// ------------------------------------------------------------------------------------------------
 export type ExecutorBackend = {
 	processPendingTransactions(): Promise<void>;
 	updateTransactionWithCurrentGasPrice(execution: {
@@ -120,10 +130,15 @@ export type ExecutorBackend = {
 		account: `0x${string}`;
 	}): Promise<'NotFound' | 'BetterFeeAlready' | 'Updated'>;
 };
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+// TransactionParams
+// ------------------------------------------------------------------------------------------------
 export type TransactionParams = {
 	expectedNonce: number;
 	nonce: number;
 	gasRequired: bigint;
 	revert: boolean;
 };
+// ------------------------------------------------------------------------------------------------

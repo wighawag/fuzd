@@ -16,6 +16,7 @@ import {
 	ChainConfig,
 	TransactionParams,
 	BroadcasterSignerData,
+	SchemaTransactionSubmission,
 } from './types/executor';
 import {keccak_256} from '@noble/hashes/sha3';
 import {getRoughGasPriceEstimate} from './utils/ethereum';
@@ -93,7 +94,7 @@ export function createExecutor(
 		account: EIP1193Account,
 		submission: TransactionSubmission,
 	): Promise<PendingExecutionStored> {
-		submission = TransactionSubmission.parse(submission);
+		submission = SchemaTransactionSubmission.parse(submission);
 
 		const chainConfig = chainConfigs[submission.chainId];
 		if (!chainConfig) {
