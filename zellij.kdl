@@ -26,6 +26,9 @@ layout {
 			pane name="scheduler" command="bash" {
 				args "-c" "pnpm run --filter ./packages/scheduler dev; cd packages/scheduler; ${SHELL-bash}"
 			}
+			pane name="tlock-decrypter" command="bash" {
+				args "-c" "pnpm run --filter ./packages/tlock-decrypter dev; cd packages/tlock-decrypter; ${SHELL-bash}"
+			}
 		}
 		pane split_direction="vertical" {
 			pane name="server" command="bash" {

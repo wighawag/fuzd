@@ -197,7 +197,7 @@ export function GenericSchemaDecryptedPayload<TSchemaTransactionDataType extends
 ) {
 	return z.discriminatedUnion('type', [
 		z.object({
-			type: z.literal('timed-locked'),
+			type: z.literal('time-locked'),
 			payload: z.string(),
 			timing: SchemaRoundBasedTiming,
 		}),
