@@ -1,5 +1,5 @@
-import {RoundBasedTiming, ExecutionQueued, Decrypter, DecryptionResult, DecryptedPayload} from 'fuzd-scheduler';
-import {timelockDecrypt, HttpChainClient, roundTime, Buffer} from 'tlock-js';
+import {ExecutionQueued, Decrypter, DecryptionResult, DecryptedPayload} from 'fuzd-scheduler';
+import {timelockDecrypt, HttpChainClient, roundTime, roundAt, Buffer} from 'tlock-js';
 
 export {testnetClient, mainnetClient} from 'tlock-js';
 
@@ -38,17 +38,26 @@ export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Dec
 
 		if (json.type === 'time-locked') {
 			// onion decryption
-			if (execution.timing.type === 'fixed') {
+			if (!(execution.timing.type === 'fixed-time' || execution.timing.type === 'fixed-round')) {
 			} else {
 				throw new Error(`execution timing of type "${execution.timing.type}" is not supported with tlock decrypter`);
 			}
-			const round = json.timing.round;
+			const newTiming = json.timing;
 			const drandChainInfo = await config.client.chain().info();
+			let round: number;
+			switch (newTiming.type) {
+				case 'fixed-time':
+					round = roundAt(newTiming.scheduledTime, drandChainInfo);
+					break;
+				case 'fixed-round':
+					round = newTiming.scheduledRound;
+					break;
+			}
 			const retry = roundTime(drandChainInfo, round);
 			return {
 				success: false,
 				newPayload: json.payload,
-				newTiming: json.timing,
+				newTiming,
 				retry,
 			};
 		} else {
