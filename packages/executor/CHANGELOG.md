@@ -1,5 +1,16 @@
 # fuzd-executor
 
+## 0.3.0
+
+### Minor Changes
+
+- wip: simplified scheduler api
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-common@0.3.0
+
 ## 0.2.1
 
 ### Patch Changes

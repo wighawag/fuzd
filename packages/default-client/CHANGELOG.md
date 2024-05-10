@@ -1,5 +1,17 @@
 # fuzd-default-client
 
+## 0.3.0
+
+### Minor Changes
+
+- wip: simplified scheduler api
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-executor@0.3.0
+  - fuzd-scheduler@0.4.0
+
 ## 0.2.1
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # fuzd-tlock-decrypter
 
+## 0.4.0
+
+### Minor Changes
+
+- wip: simplified scheduler api
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-scheduler@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes
