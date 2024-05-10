@@ -8,7 +8,6 @@ import {
 import {EIP1193Account, EIP1193Transaction, EIP1193TransactionReceipt} from 'eip-1193';
 import {
 	TransactionSubmission,
-	Executor,
 	ExecutorBackend,
 	ExecutorConfig,
 	FeePerGasPeriod,
@@ -19,7 +18,7 @@ import {
 	SchemaTransactionSubmission,
 } from './types/executor';
 import {keccak_256} from '@noble/hashes/sha3';
-import {getRoughGasPriceEstimate} from './utils/ethereum';
+import {Executor, getRoughGasPriceEstimate} from 'fuzd-common';
 
 const logger = logs('fuzd-executor');
 

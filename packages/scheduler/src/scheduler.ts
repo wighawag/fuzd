@@ -1,7 +1,4 @@
 import {logs} from 'named-logs';
-import {dequals} from './utils/js';
-import {getTransactionStatus} from './utils/ethereum';
-import {time2text} from './utils/time';
 import {EIP1193Account} from 'eip-1193';
 import {computePotentialExecutionTime, computeFirstExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
@@ -16,6 +13,7 @@ import {
 	SchedulerConfig,
 } from './types/scheduler';
 import {ExecutionQueued} from './types/scheduler-storage';
+import {getTransactionStatus, time2text} from 'fuzd-common';
 
 const logger = logs('fuzd-scheduler');
 

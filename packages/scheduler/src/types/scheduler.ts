@@ -1,8 +1,7 @@
 import {EIP1193Account, EIP1193DATA, EIP1193ProviderWithoutEvents} from 'eip-1193';
 // import {AbiEvent} from 'abitype';
 import {ExecutionQueued, SchedulerStorage} from './scheduler-storage';
-import {Executor} from './common';
-import {Time, SchemaString0x} from 'fuzd-common';
+import {Time, SchemaString0x, Executor} from 'fuzd-common';
 import z, {ZodType} from 'zod';
 
 // ------------------------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 import {EIP1193Account, EIP1193DATA, EIP1193TransactionDataOfType2} from 'eip-1193';
-import {RequiredKeys} from './utils';
 import {BroadcastSchedule} from './executor';
+import {RequiredKeys} from 'fuzd-common';
 
 // export type EIP1193TransactionDataUsed =
 // 	| RequiredKeys<EIP1193LegacyTransactionData, 'nonce' | 'gasPrice'>

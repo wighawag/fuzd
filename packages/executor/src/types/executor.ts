@@ -1,43 +1,34 @@
 import {EIP1193Account, EIP1193DATA, EIP1193ProviderWithoutEvents, EIP1193SignerProvider} from 'eip-1193';
 import {EIP1193TransactionDataUsed, ExecutorStorage} from './executor-storage';
-import {
-	SchemaEIP1193AccessList,
-	SchemaEIP1193Account,
-	SchemaEIP1193Quantity,
-	SchemaString0x,
-	type Time,
-} from 'fuzd-common';
-import {z} from 'zod';
+import {SchemaEIP1193AccessList, SchemaEIP1193Account, SchemaEIP1193Quantity, SchemaString0x} from 'fuzd-common';
+import type {Time} from 'fuzd-common';
+import z from 'zod';
 
-const FeePerGas = z.object({
+// ------------------------------------------------------------------------------------------------
+// FeePerGas
+// ------------------------------------------------------------------------------------------------
+const SchemaFeePerGas = z.object({
 	maxFeePerGas: SchemaEIP1193Quantity,
 	maxPriorityFeePerGas: SchemaEIP1193Quantity,
 });
-export type FeePerGas = z.infer<typeof FeePerGas>;
+export type FeePerGas = z.infer<typeof SchemaFeePerGas>;
+// ------------------------------------------------------------------------------------------------
 
-const FeePerGasPeriod = FeePerGas.extend({
+// ------------------------------------------------------------------------------------------------
+// FeePerGasPeriod
+// ------------------------------------------------------------------------------------------------
+const SchemaFeePerGasPeriod = SchemaFeePerGas.extend({
 	duration: SchemaEIP1193Quantity,
 });
-export type FeePerGasPeriod = z.infer<typeof FeePerGasPeriod>;
+export type FeePerGasPeriod = z.infer<typeof SchemaFeePerGasPeriod>;
+// ------------------------------------------------------------------------------------------------
 
-const BroadcastSchedule = z.array(FeePerGasPeriod).nonempty();
-export type BroadcastSchedule = z.infer<typeof BroadcastSchedule>;
+// ------------------------------------------------------------------------------------------------
+// BroadcastSchedule
+// ------------------------------------------------------------------------------------------------
+const SchemaBroadcastSchedule = z.array(SchemaFeePerGasPeriod).nonempty();
+export type BroadcastSchedule = z.infer<typeof SchemaBroadcastSchedule>;
 // export type BroadcastSchedule = FeePerGasPeriod[];
-
-// ------------------------------------------------------------------------------------------------
-// TransactionSubmission
-// ------------------------------------------------------------------------------------------------
-export const SchemaTransactionSubmission = z.object({
-	to: SchemaEIP1193Account.optional(),
-	gas: SchemaEIP1193Quantity,
-	data: SchemaString0x.optional(),
-	type: z.literal('0x2'),
-	chainId: SchemaEIP1193Quantity,
-	accessList: SchemaEIP1193AccessList.optional(),
-	broadcastSchedule: BroadcastSchedule,
-	expiryTime: z.number().optional(),
-});
-export type TransactionSubmission = z.infer<typeof SchemaTransactionSubmission>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -62,6 +53,19 @@ export type RawTransactionInfo = {
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
+// ExecutorConfig
+// ------------------------------------------------------------------------------------------------
+export type ExecutorConfig = {
+	chainConfigs: ChainConfigs;
+	time: Time;
+	storage: ExecutorStorage;
+	signers: Signers;
+	maxExpiry?: number;
+	maxNumTransactionsToProcessInOneGo?: number;
+};
+// ------------------------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------------------
 // ChainConfig
 // ------------------------------------------------------------------------------------------------
 export type ChainConfig = {
@@ -80,12 +84,6 @@ export type ChainConfigs = {
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
-// BroadcasterSignerData
-// ------------------------------------------------------------------------------------------------
-export type BroadcasterSignerData = {assignerID: string; signer: EIP1193SignerProvider; address: EIP1193Account};
-// ------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------
 // Signers
 // ------------------------------------------------------------------------------------------------
 export type Signers = {
@@ -95,28 +93,25 @@ export type Signers = {
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
-// ExecutorConfig
+// BroadcasterSignerData
 // ------------------------------------------------------------------------------------------------
-export type ExecutorConfig = {
-	chainConfigs: ChainConfigs;
-	time: Time;
-	storage: ExecutorStorage;
-	signers: Signers;
-	maxExpiry?: number;
-	maxNumTransactionsToProcessInOneGo?: number;
-};
+export type BroadcasterSignerData = {assignerID: string; signer: EIP1193SignerProvider; address: EIP1193Account};
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
-// Executor
+// TransactionSubmission
 // ------------------------------------------------------------------------------------------------
-export type Executor<TransactionDataType, TransactionInfoType> = {
-	submitTransaction(
-		slot: string,
-		account: EIP1193Account,
-		submission: TransactionDataType,
-	): Promise<TransactionInfoType>;
-};
+export const SchemaTransactionSubmission = z.object({
+	to: SchemaEIP1193Account.optional(),
+	gas: SchemaEIP1193Quantity,
+	data: SchemaString0x.optional(),
+	type: z.literal('0x2'),
+	chainId: SchemaEIP1193Quantity,
+	accessList: SchemaEIP1193AccessList.optional(),
+	broadcastSchedule: SchemaBroadcastSchedule,
+	expiryTime: z.number().optional(),
+});
+export type TransactionSubmission = z.infer<typeof SchemaTransactionSubmission>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -124,6 +119,7 @@ export type Executor<TransactionDataType, TransactionInfoType> = {
 // ------------------------------------------------------------------------------------------------
 export type ExecutorBackend = {
 	processPendingTransactions(): Promise<void>;
+	// TODO remove:
 	updateTransactionWithCurrentGasPrice(execution: {
 		chainId: `0x${string}`;
 		slot: string;
