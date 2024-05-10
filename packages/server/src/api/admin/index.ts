@@ -56,6 +56,12 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 			await config.executorStorage.clear();
 			await config.schedulerStorage.clear();
 			return c.json({ok: true});
+		})
+		.get('/setup', async (c) => {
+			const config = c.get('config');
+			await config.executorStorage.setup();
+			await config.schedulerStorage.setup();
+			return c.json({ok: true});
 		});
 
 	const app = new Hono<{Bindings: Env & {}}>().route('/', tmp).route('/', authenticated);

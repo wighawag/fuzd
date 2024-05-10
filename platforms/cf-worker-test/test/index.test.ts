@@ -1,10 +1,11 @@
 import {TransactionSubmission} from 'fuzd-executor';
 import {ScheduledExecution} from 'fuzd-scheduler';
 import {deriveRemoteAddress} from 'remote-account';
-import {describe, beforeAll, it, expect, afterAll} from 'vitest';
+import {describe, beforeAll, it, expect, afterAll, afterEach, beforeEach} from 'vitest';
 import {unstable_dev} from 'wrangler';
 import type {UnstableDevWorker} from 'wrangler';
 import {privateKeyToAccount} from 'viem/accounts';
+import base64 from 'base-64';
 
 const schedulerEndPoint = `http://localhost`;
 
@@ -15,6 +16,24 @@ describe('Worker', () => {
 		worker = await unstable_dev('node_modules/fuzd-cf-worker/src/worker.ts', {
 			experimental: {disableExperimentalWarning: true},
 		});
+	});
+
+	beforeEach(async () => {
+		const response = await worker.fetch(`${schedulerEndPoint}/api/admin/setup`, {
+			headers: {
+				Authorization: 'Basic ' + base64.encode('admin' + ':' + 'random-token'),
+			},
+		});
+	});
+
+	afterEach(async () => {
+		await worker
+			.fetch(`${schedulerEndPoint}/api/admin/clear`, {
+				headers: {
+					Authorization: 'Basic ' + base64.encode('admin' + ':' + 'random-token'),
+				},
+			})
+			.then((v) => v.text());
 	});
 
 	afterAll(async () => {
@@ -78,18 +97,12 @@ describe('Worker', () => {
 			// there is then different type of delay you can specify
 			// here we go with a fixed time at which the execution should be broadcasted, instead of a delta
 			timing: {
-				type: 'fixed',
-				value: {
-					// fixed can also be configured with more parameter types
-					// here we use a timestamp
-					// for time-lock encryption systems work on round, similar to block number
-					// and we could use that instead
-					type: 'time',
-					time: 100000000000,
-				},
+				type: 'fixed-time',
+				scheduledTime: 100000000000,
 			},
 			// finaly we provided the tx in clear
 			transactions: [tx],
+			maxFeePerGas: '0',
 		};
 
 		// we convert the json as a string
@@ -108,6 +121,8 @@ describe('Worker', () => {
 			},
 			method: 'POST',
 		});
+		const text = await resp.clone().text();
+		console.log(text);
 		const json: any = await resp.json();
 		console.log(json);
 		expect(json.chainId).to.equal(chainIdAsHex);
