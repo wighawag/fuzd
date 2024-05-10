@@ -1,4 +1,4 @@
-import {ScheduleInfo, ScheduledExecution, TimeBasedTiming, RoundBasedTiming, DecryptedPayload} from 'fuzd-scheduler';
+import {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
 import {timelockEncrypt, HttpChainClient, roundAt} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';
 import {BroadcastSchedule, TransactionSubmission} from 'fuzd-executor';
@@ -33,11 +33,7 @@ export function createClient(config: ClientConfig) {
 		to: `0x${string}`;
 		time: number;
 	}): Promise<ScheduleInfo> {
-		let executionToSend: ScheduledExecution<
-			TransactionSubmission,
-			RoundBasedTiming | TimeBasedTiming,
-			RoundBasedTiming | TimeBasedTiming
-		>;
+		let executionToSend: ScheduledExecution<TransactionSubmission>;
 
 		const chainId = (
 			execution.chainId.startsWith('0x') ? execution.chainId : `0x` + parseInt(execution.chainId).toString(16)
@@ -71,12 +67,9 @@ export function createClient(config: ClientConfig) {
 			chainId,
 			slot: `1`,
 			timing: {
-				type: 'fixed',
-				value: {
-					type: 'round',
-					expectedTime: execution.time,
-					round,
-				},
+				type: 'fixed-round',
+				expectedTime: execution.time,
+				scheduledRound: round,
 			},
 			type: 'time-locked',
 			payload,
