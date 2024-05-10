@@ -1,7 +1,7 @@
 import {EIP1193Account} from 'eip-1193';
 import {ExecutionQueued} from './scheduler-storage';
 import {SchemaString0x} from 'fuzd-common';
-import z, {ZodType} from 'zod';
+import z from 'zod';
 
 // ------------------------------------------------------------------------------------------------
 // RoundedBasedTiming
@@ -104,7 +104,7 @@ export type SchemaDeltaScheduledExecution<
 export type DeltaScheduledExecution<
 	TTimeValueType extends FixedTiming = FixedTiming,
 	TSchemaTransaction extends StartTransaction = StartTransaction,
-> = z.infer<SchemaDeltaScheduledExecution<ZodType<TTimeValueType>, ZodType<TSchemaTransaction>>>;
+> = z.infer<SchemaDeltaScheduledExecution<z.ZodType<TTimeValueType>, z.ZodType<TSchemaTransaction>>>;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -149,7 +149,7 @@ export type SchemaFixedTimeScheduledExecution<
 export type FixedTimeScheduledExecution<
 	TTimeValueType extends TimingTypes = FixedTiming,
 	TSchemaTransaction extends AssumedTransaction = AssumedTransaction,
-> = z.infer<SchemaFixedTimeScheduledExecution<ZodType<TTimeValueType>, ZodType<TSchemaTransaction>>>;
+> = z.infer<SchemaFixedTimeScheduledExecution<z.ZodType<TTimeValueType>, z.ZodType<TSchemaTransaction>>>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
