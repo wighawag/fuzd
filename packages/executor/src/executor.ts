@@ -9,16 +9,14 @@ import {EIP1193Account, EIP1193Transaction, EIP1193TransactionReceipt} from 'eip
 import {
 	TransactionSubmission,
 	ExecutorBackend,
-	ExecutorConfig,
 	FeePerGasPeriod,
 	RawTransactionInfo,
-	ChainConfig,
 	TransactionParams,
-	BroadcasterSignerData,
 	SchemaTransactionSubmission,
-} from './types/executor';
+} from './types/external';
 import {keccak_256} from '@noble/hashes/sha3';
 import {Executor, getRoughGasPriceEstimate} from 'fuzd-common';
+import {BroadcasterSignerData, ChainConfig, ExecutorConfig} from './types/internal';
 
 const logger = logs('fuzd-executor');
 

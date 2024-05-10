@@ -1,5 +1,5 @@
 import {EIP1193Account, EIP1193DATA, EIP1193TransactionDataOfType2} from 'eip-1193';
-import {BroadcastSchedule} from './executor';
+import {BroadcastSchedule} from './external';
 import {RequiredKeys} from 'fuzd-common';
 
 // export type EIP1193TransactionDataUsed =

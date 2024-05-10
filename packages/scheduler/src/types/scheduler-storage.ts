@@ -1,5 +1,5 @@
 import {EIP1193Account} from 'eip-1193';
-import {AssumedTransaction, FixedTiming, ScheduledExecution, StartTransaction, TimingTypes} from './scheduler';
+import {AssumedTransaction, FixedTiming, ScheduledExecution, StartTransaction, TimingTypes} from './external';
 
 export type ExecutionQueued<TransactionDataType> = ScheduledExecution<
 	TransactionDataType,

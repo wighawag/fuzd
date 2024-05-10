@@ -1,8 +1,8 @@
-import {ScheduledExecution} from '../types/scheduler';
+import {ScheduledExecution} from '../types/external';
 import {ExecutionQueued} from '../types/scheduler-storage';
 
 export function computeFirstExecutionTimeFromSubmission<TransactionDataType>(
-	execution: ScheduledExecution<TransactionDataType>
+	execution: ScheduledExecution<TransactionDataType>,
 ): number {
 	if (execution.timing.type === 'fixed') {
 		const value = execution.timing.value;
@@ -35,7 +35,7 @@ export function computeFirstExecutionTimeFromSubmission<TransactionDataType>(
 
 export function computePotentialExecutionTime<TransactionDataType>(
 	execution: ExecutionQueued<TransactionDataType>,
-	state?: {startTimeToCountFrom?: number; lastCheckin?: number}
+	state?: {startTimeToCountFrom?: number; lastCheckin?: number},
 ): number {
 	if (execution.timing.type === 'fixed') {
 		const value = execution.timing.value;
@@ -67,8 +67,8 @@ export function computePotentialExecutionTime<TransactionDataType>(
 						? execution.timing.startTransaction.confirmed?.startTime
 						: execution.timing.startTransaction.confirmed?.blockTime
 					: state?.startTimeToCountFrom
-					? state.startTimeToCountFrom
-					: execution.timing.startTransaction.broadcastTime)
+						? state.startTimeToCountFrom
+						: execution.timing.startTransaction.broadcastTime)
 			);
 		} else {
 			return (
@@ -78,8 +78,8 @@ export function computePotentialExecutionTime<TransactionDataType>(
 						? execution.timing.startTransaction.confirmed?.startTime
 						: execution.timing.startTransaction.confirmed?.blockTime
 					: state?.startTimeToCountFrom
-					? state.startTimeToCountFrom
-					: execution.timing.startTransaction.broadcastTime)
+						? state.startTimeToCountFrom
+						: execution.timing.startTransaction.broadcastTime)
 			);
 		}
 	} else {

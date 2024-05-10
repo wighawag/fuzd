@@ -3,17 +3,16 @@ import {EIP1193Account} from 'eip-1193';
 import {computePotentialExecutionTime, computeFirstExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
 import {
-	ChainConfig,
 	ExecutionStatus,
 	QueueProcessingResult,
 	ScheduledExecution,
 	ScheduleInfo,
 	Scheduler,
 	SchedulerBackend,
-	SchedulerConfig,
-} from './types/scheduler';
+} from './types/external';
 import {ExecutionQueued} from './types/scheduler-storage';
 import {getTransactionStatus, time2text} from 'fuzd-common';
+import {ChainConfig, SchedulerConfig} from './types/internal';
 
 const logger = logs('fuzd-scheduler');
 
