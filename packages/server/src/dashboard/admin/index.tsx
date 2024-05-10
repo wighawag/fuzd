@@ -38,7 +38,7 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 				broadcasted: v.broadcasted.toString(),
 				checkinTime: new Date(v.checkinTime * 1000 - diff * 1000).toLocaleString(),
 				timingType: v.timing.type,
-				maxFeePerGas: v.maxFeePerGas,
+				expectedMaxFeePerGas: v.expectedMaxFeePerGas,
 				paymentReserve: v.paymentReserve || 'undefined',
 				retries: v.retries || 0,
 			}));

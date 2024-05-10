@@ -102,7 +102,6 @@ describe('Worker', () => {
 			},
 			// finaly we provided the tx in clear
 			transactions: [tx],
-			maxFeePerGas: '0',
 		};
 
 		// we convert the json as a string

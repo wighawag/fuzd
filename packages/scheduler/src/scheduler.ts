@@ -56,6 +56,7 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 			broadcasted: false,
 			checkinTime,
 			retries: 0,
+			expectedMaxFeePerGas: '0', // TODO based on executor
 		};
 
 		await storage.createOrUpdateQueuedExecution(queuedExecution);

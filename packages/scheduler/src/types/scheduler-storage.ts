@@ -11,6 +11,7 @@ export type ExecutionQueued<TransactionDataType> = ScheduledExecution<Transactio
 		blockTime: number;
 		startTime?: number;
 	};
+	expectedMaxFeePerGas: string;
 };
 
 export interface SchedulerStorage<TransactionDataType> {
