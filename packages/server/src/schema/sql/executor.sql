@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS Broadcasters (
 );
 
 -- COULD HAVE USED SAME TABLE ?
-CREATE TABLE IF NOT EXISTS ArchivedExecutions (
+CREATE TABLE IF NOT EXISTS ArchivedBroadcastedExecutions (
     -------------------------------------------------------------------------------------------------------------------
     -- PRIMARY KEY
     -------------------------------------------------------------------------------------------------------------------
@@ -71,5 +71,5 @@ CREATE TABLE IF NOT EXISTS ArchivedExecutions (
     PRIMARY KEY (account, chainId, slot)
 );
 
-CREATE INDEX IF NOT EXISTS idx_ArchivedExecutions_initialTime ON ArchivedExecutions (initialTime);
+CREATE INDEX IF NOT EXISTS idx_ArchivedBroadcastedExecutions_initialTime ON ArchivedBroadcastedExecutions (initialTime);
 

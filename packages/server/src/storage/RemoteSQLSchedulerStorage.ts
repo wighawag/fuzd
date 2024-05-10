@@ -1,20 +1,24 @@
 import type {RemoteSQL} from 'remote-sql';
 import type {ExecutionQueued, SchedulerStorage} from 'fuzd-scheduler';
 import {sqlToStatements, toValues} from './utils';
-import setupTables from '../sql/scheduler.sql';
+import setupTables from '../schema/ts/scheduler.sql';
 
 type ScheduledExecutionInDB = {
 	account: `0x${string}`;
 	chainId: `0x${string}`;
 	slot: string;
 
+	broadcasted: 0 | 1;
 	nextCheckTime: number;
 
 	type: 'time-locked' | 'clear';
 	payload: string; // include the tx in clear or the tx to submit to the executor (string)
 	timing: string;
-	priorTransactionConfirmation: string | null;
 	// TODO initialTimeTarget: number;
+	maxFeePerGas: string;
+	paymentReserve: string | null;
+
+	priorTransactionConfirmation: string | null;
 	retries: number | null;
 	expiry: number | null;
 };
@@ -29,10 +33,14 @@ function fromScheduledExecutionInDB<TransactionDataType>(
 			chainId: inDB.chainId,
 			slot: inDB.slot,
 			type: 'time-locked',
+			broadcasted: inDB.broadcasted == 0 ? true : false,
 			checkinTime: inDB.nextCheckTime,
-			retries: inDB.retries || 0,
 			payload: inDB.payload,
 			timing: JSON.parse(inDB.timing),
+			maxFeePerGas: inDB.maxFeePerGas,
+			paymentReserve: inDB.paymentReserve || undefined,
+
+			retries: inDB.retries || 0,
 			priorTransactionConfirmation: inDB.priorTransactionConfirmation
 				? JSON.parse(inDB.priorTransactionConfirmation)
 				: undefined,
@@ -43,9 +51,13 @@ function fromScheduledExecutionInDB<TransactionDataType>(
 			chainId: inDB.chainId,
 			slot: inDB.slot,
 			type: 'clear',
+			broadcasted: inDB.broadcasted == 0 ? true : false,
 			checkinTime: inDB.nextCheckTime,
-			retries: inDB.retries || 0,
 			timing: JSON.parse(inDB.timing),
+			maxFeePerGas: inDB.maxFeePerGas,
+			paymentReserve: inDB.paymentReserve || undefined,
+
+			retries: inDB.retries || 0,
 			priorTransactionConfirmation: inDB.priorTransactionConfirmation
 				? JSON.parse(inDB.priorTransactionConfirmation)
 				: undefined,
@@ -62,11 +74,15 @@ function toScheduledExecutionInDB<TransactionDataType>(
 		chainId: obj.chainId,
 		slot: obj.slot,
 
+		broadcasted: obj.broadcasted ? 1 : 0,
 		nextCheckTime: obj.checkinTime,
 
 		type: obj.type,
 		payload: obj.type === 'clear' ? JSON.stringify(obj.transactions) : obj.payload,
 		timing: JSON.stringify(obj.timing),
+		maxFeePerGas: obj.maxFeePerGas,
+		paymentReserve: obj.paymentReserve || null,
+
 		priorTransactionConfirmation: obj.priorTransactionConfirmation
 			? JSON.stringify(obj.priorTransactionConfirmation)
 			: null,
@@ -115,6 +131,21 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		await statement.bind(account, chainId, slot).all();
 	}
 
+	// TODO add reason for archive
+	async archiveExecution(executionToStore: ExecutionQueued<TransactionDataType>): Promise<void> {
+		const {account, chainId, slot} = executionToStore;
+		const inDB = toScheduledExecutionInDB(executionToStore);
+		const {values, columns, bindings} = toValues(inDB);
+
+		const deleteFromExecutions = this.db.prepare(
+			'DELETE FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;',
+		);
+		const insertIntoArchive = this.db.prepare(
+			`INSERT INTO ArchivedScheduledExecutions (${columns}) VALUES(${bindings})`,
+		);
+		await this.db.batch([deleteFromExecutions.bind(account, chainId, slot), insertIntoArchive.bind(...values)]);
+	}
+
 	async createOrUpdateQueuedExecution(
 		executionToStore: ExecutionQueued<TransactionDataType>,
 	): Promise<ExecutionQueued<TransactionDataType>> {
@@ -127,7 +158,7 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 	}
 
 	async getQueueTopMostExecutions(params: {limit: number}): Promise<ExecutionQueued<TransactionDataType>[]> {
-		const sqlStatement = `SELECT * FROM ScheduledExecutions ORDER BY nextCheckTime ASC LIMIT ?1;`;
+		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcasted = FALSE ORDER BY nextCheckTime ASC LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
@@ -135,7 +166,8 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 
 	async clear(): Promise<void> {
 		const deleteScheduledExecutions = this.db.prepare(`DELETE FROM ScheduledExecutions;`);
-		await deleteScheduledExecutions.all();
+		const deleteArchivedScheduledExecutions = this.db.prepare(`DELETE FROM ArchivedScheduledExecutions;`);
+		await this.db.batch([deleteScheduledExecutions, deleteArchivedScheduledExecutions]);
 	}
 
 	async setup(): Promise<void> {

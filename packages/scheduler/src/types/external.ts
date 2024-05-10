@@ -146,6 +146,8 @@ export const SchemaScheduledTimeLockedExecution = z.object({
 	slot: z.string(),
 	payload: z.string(),
 	timing: SchemaTimingTypesCompatibleWithTimeLock,
+	maxFeePerGas: z.string(),
+	paymentReserve: z.string().optional(),
 });
 export type ScheduledTimeLockedExecution = z.infer<typeof SchemaScheduledTimeLockedExecution>;
 // ------------------------------------------------------------------------------------------------
@@ -162,6 +164,8 @@ export function GenericSchemaScheduledExecutionInClear<TSchemaTransactionDataTyp
 		slot: z.string(),
 		transactions: z.array(SchemaTransactionDataType),
 		timing: SchemaTimingTypes,
+		maxFeePerGas: z.string(),
+		paymentReserve: z.string().optional(),
 	});
 }
 

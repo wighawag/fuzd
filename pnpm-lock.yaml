@@ -238,6 +238,9 @@ importers:
         specifier: ^3.23.7
         version: 3.23.7
     devDependencies:
+      as-soon:
+        specifier: ^0.0.9
+        version: 0.0.9
       ldenv:
         specifier: ^0.3.10
         version: 0.3.10

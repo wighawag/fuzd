@@ -53,6 +53,7 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 		const queuedExecution: ExecutionQueued<TransactionDataType> = {
 			...execution,
 			account,
+			broadcasted: false,
 			checkinTime,
 			retries: 0,
 		};
@@ -72,7 +73,7 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 			);
 			// TODO hook await this._reduceSpending(reveal);
 			// TODO archive
-			await storage.deleteExecution(execution);
+			await storage.archiveExecution(execution);
 		} else {
 			execution.checkinTime = newCheckinTime;
 			await storage.createOrUpdateQueuedExecution(execution);
@@ -100,7 +101,7 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 				} else {
 					// failed to decrypt and no retry, this means the decryption is failing
 					// TODO
-					// await storage.deleteExecution(execution);
+					// await storage.archiveExecution(execution);
 					logger.info(decryptionResult);
 					return {type: 'deleted', reason: 'failed to decrypt'};
 				}
@@ -127,7 +128,8 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 		// the schedule has done its job
 		// if for some reason `executor.submitTransactions(...)` fails to return but has actually broadcasted the tx
 		// the scheduler will attempt again. the id tell the executor to not reexecute
-		await storage.deleteExecution(execution);
+		execution.broadcasted = true;
+		await storage.createOrUpdateQueuedExecution(execution);
 
 		return {
 			type: 'broadcasted',
@@ -167,13 +169,13 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 						// TODO should we delete ?
 						// or retry later ?
 						// TODO archive in any case
-						await storage.deleteExecution(execution);
+						await storage.archiveExecution(execution);
 						return {status: 'deleted'};
 					} else {
 						if (txStatus.failed) {
 							logger.debug(`deleting the execution as the tx it depends on failed...`);
 							// TODO archive
-							await storage.deleteExecution(execution);
+							await storage.archiveExecution(execution);
 							return {status: 'deleted'};
 						}
 						// we do not really need to store that, we can skip it and simply execute
@@ -199,7 +201,7 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 						if (txStatus.failed) {
 							logger.debug(`deleting the execution as the tx it depends on failed...`);
 							// TODO archive
-							await storage.deleteExecution(execution);
+							await storage.archiveExecution(execution);
 							return {status: 'deleted'};
 						}
 						// TODO implement event expectation with params extraction
@@ -282,8 +284,7 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 		) {
 			// delete if execution expired
 			logger.info(`too late, deleting ${displayExecution(execution)}...`);
-			// TODO archive
-			await storage.deleteExecution(execution);
+			await storage.archiveExecution(execution);
 			result.executions.push({
 				chainId: execution.chainId,
 				account: execution.account,

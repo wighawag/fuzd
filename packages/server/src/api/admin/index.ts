@@ -21,7 +21,7 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 		})
 		.get('/archived-transactions', async (c) => {
 			const config = c.get('config');
-			const txs = await config.executorStorage.getArchivedExecutions({limit: 100});
+			const txs = await config.executorStorage.getArchivedBroadcastedExecutions({limit: 100});
 			return c.json(txs);
 		})
 		.get('/test/:message', async (c) => {

@@ -71,6 +71,7 @@ export function createClient(config: ClientConfig) {
 				expectedTime: execution.time,
 				scheduledRound: round,
 			},
+			maxFeePerGas: '0',
 			type: 'time-locked',
 			payload,
 		};

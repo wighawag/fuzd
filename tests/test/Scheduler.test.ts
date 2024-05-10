@@ -107,6 +107,7 @@ describe('Executing on the registry', function () {
 				type: 'fixed-time',
 				scheduledTime: checkinTime,
 			},
+			maxFeePerGas: '0',
 			transactions: [
 				{
 					type: '0x2',
@@ -163,6 +164,7 @@ describe('Executing on the registry', function () {
 				scheduledTime: checkinTime,
 			},
 			payload: '0xblabla',
+			maxFeePerGas: '0',
 		});
 		expect(result.checkinTime).to.equal(checkinTime);
 

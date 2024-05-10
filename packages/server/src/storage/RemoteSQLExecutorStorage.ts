@@ -2,7 +2,7 @@ import type {RemoteSQL} from 'remote-sql';
 import type {ExecutorStorage, PendingExecutionStored, BroadcasterData} from 'fuzd-executor';
 import {sqlToStatements, toValues} from './utils';
 import {logs} from 'named-logs';
-import setupTables from '../sql/executor.sql';
+import setupTables from '../schema/ts/executor.sql';
 
 const logger = logs('fuzd-server-executor-storage-sql');
 
@@ -135,12 +135,16 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		const deleteFromExecutions = this.db.prepare(
 			'DELETE FROM BroadcastedExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;',
 		);
-		const insertIntoArchive = this.db.prepare(`INSERT INTO ArchivedExecutions (${columns}) VALUES(${bindings})`);
+		const insertIntoArchive = this.db.prepare(
+			`INSERT INTO ArchivedBroadcastedExecutions (${columns}) VALUES(${bindings})`,
+		);
 		await this.db.batch([deleteFromExecutions.bind(account, chainId, slot), insertIntoArchive.bind(...values)]);
 	}
 
-	async getArchivedExecutions(params: {limit: number; offset?: number}): Promise<PendingExecutionStored[]> {
-		const statement = this.db.prepare(`SELECT * FROM ArchivedExecutions ORDER BY initialTime ASC LIMIT ?1 OFFSET ?2;`);
+	async getArchivedBroadcastedExecutions(params: {limit: number; offset?: number}): Promise<PendingExecutionStored[]> {
+		const statement = this.db.prepare(
+			`SELECT * FROM ArchivedBroadcastedExecutions ORDER BY initialTime ASC LIMIT ?1 OFFSET ?2;`,
+		);
 		const {results} = await statement.bind(params.limit, params.offset || 0).all<ExecutionInDB>();
 		return results.map(fromExecutionInDB);
 	}
@@ -196,9 +200,9 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 
 	async clear(): Promise<void> {
 		const deleteBroadcasters = this.db.prepare(`DELETE FROM Broadcasters;`);
-		const deleteArchivedExecutions = this.db.prepare(`DELETE FROM ArchivedExecutions;`);
+		const deleteArchivedBroadcastedExecutions = this.db.prepare(`DELETE FROM ArchivedBroadcastedExecutions;`);
 		const delteBroadcastedExecutions = this.db.prepare(`DELETE FROM BroadcastedExecutions`);
-		await this.db.batch([deleteBroadcasters, deleteArchivedExecutions, delteBroadcastedExecutions]);
+		await this.db.batch([deleteBroadcasters, deleteArchivedBroadcastedExecutions, delteBroadcastedExecutions]);
 	}
 
 	async setup(): Promise<void> {

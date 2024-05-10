@@ -26,11 +26,11 @@ layout {
 			pane name="scheduler" command="bash" {
 				args "-c" "pnpm run --filter ./packages/scheduler dev; cd packages/scheduler; ${SHELL-bash}"
 			}
-			pane name="tlock-decrypter" command="bash" {
-				args "-c" "pnpm run --filter ./packages/tlock-decrypter dev; cd packages/tlock-decrypter; ${SHELL-bash}"
-			}
 		}
 		pane split_direction="vertical" {
+			pane name="server sql watch" command="bash" {
+				args "-c" "pnpm run --filter ./packages/server sql2ts:watch; cd packages/server; ${SHELL-bash}"
+			}
 			pane name="server" command="bash" {
 				args "-c" "pnpm run --filter ./packages/server dev; cd packages/server; ${SHELL-bash}"
 			}

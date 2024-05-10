@@ -46,7 +46,7 @@ export interface ExecutorStorage {
 
 	deletePendingExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void>;
 	archiveTimedoutExecution(params: PendingExecutionStored): Promise<void>;
-	getArchivedExecutions(params: {limit: number}): Promise<PendingExecutionStored[]>;
+	getArchivedBroadcastedExecutions(params: {limit: number}): Promise<PendingExecutionStored[]>;
 	createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored>;
 	getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored[]>;
 	getPendingExecutionsPerBroadcaster(

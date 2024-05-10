@@ -4,6 +4,7 @@ import {ScheduledExecution} from './external';
 export type ExecutionQueued<TransactionDataType> = ScheduledExecution<TransactionDataType> & {
 	slot: string;
 	account: EIP1193Account;
+	broadcasted: boolean;
 	checkinTime: number;
 	retries: number;
 	priorTransactionConfirmation?: {
@@ -23,6 +24,7 @@ export interface SchedulerStorage<TransactionDataType> {
 		account: `0x${string}`;
 	}): Promise<ExecutionQueued<TransactionDataType>[]>;
 	deleteExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void>;
+	archiveExecution(executionToStore: ExecutionQueued<TransactionDataType>): Promise<void>;
 	createOrUpdateQueuedExecution(
 		executionToStore: ExecutionQueued<TransactionDataType>,
 	): Promise<ExecutionQueued<TransactionDataType>>;
