@@ -104,11 +104,8 @@ describe('Executing on the registry', function () {
 			chainId: '0x7a69',
 			type: 'clear',
 			timing: {
-				type: 'fixed',
-				value: {
-					type: 'time',
-					time: checkinTime,
-				},
+				type: 'fixed-time',
+				scheduledTime: checkinTime,
 			},
 			transactions: [
 				{
@@ -162,11 +159,8 @@ describe('Executing on the registry', function () {
 			chainId: '0x7a69',
 			type: 'time-locked',
 			timing: {
-				type: 'fixed',
-				value: {
-					type: 'time',
-					time: checkinTime,
-				},
+				type: 'fixed-time',
+				scheduledTime: checkinTime,
 			},
 			payload: '0xblabla',
 		});

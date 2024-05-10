@@ -4,65 +4,9 @@ import {SchemaString0x} from 'fuzd-common';
 import z from 'zod';
 
 // ------------------------------------------------------------------------------------------------
-// RoundedBasedTiming
+// PriorTransactionInfo
 // ------------------------------------------------------------------------------------------------
-export const SchemaRoundBasedTiming = z.object({
-	type: z.literal('round'),
-	round: z.number(),
-	expectedTime: z.number(),
-});
-export type RoundBasedTiming = z.infer<typeof SchemaRoundBasedTiming>;
-// ------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------
-// TimeBasedTiming // TODO rename
-// ------------------------------------------------------------------------------------------------
-export const SchemaTimeBasedTiming = z.object({
-	type: z.literal('time'),
-	time: z.number(),
-});
-export type TimeBasedTiming = z.infer<typeof SchemaTimeBasedTiming>;
-// ------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------
-// FixedTiming
-// ------------------------------------------------------------------------------------------------
-export const SchemaFixedTiming = z.discriminatedUnion('type', [SchemaTimeBasedTiming, SchemaRoundBasedTiming]);
-export type FixedTiming = z.infer<typeof SchemaFixedTiming>;
-// ------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------
-// PartiallyHiddenTimeValue
-// ------------------------------------------------------------------------------------------------
-export const SchemaPartiallyHiddenTimeValue = z.discriminatedUnion('type', [
-	z.object({
-		type: z.literal('time-period'),
-		startTime: z.number(),
-		periodInSeconds: z.number(),
-	}),
-	z.object({
-		type: z.literal('round-period'),
-		startTime: z.number(),
-		periodInRounds: z.number(),
-		averageSecondsPerRound: z.number(),
-	}),
-]);
-export type PartiallyHiddenTimeValue = z.infer<typeof SchemaPartiallyHiddenTimeValue>;
-// ------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------
-// TimingTypes
-// ------------------------------------------------------------------------------------------------
-export const SchemaTimingTypes = z.union([SchemaFixedTiming, SchemaPartiallyHiddenTimeValue]);
-export type TimingTypes = z.infer<typeof SchemaTimingTypes>;
-// ------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------
-// StartTransaction
-// ------------------------------------------------------------------------------------------------
-// the execution should only happen if that tx is included in a block
-// which can serve as a startTime
-export const SchemaStartTransaction = z.object({
+export const SchemaPriorTransactionInfo = z.object({
 	hash: SchemaString0x,
 	nonce: z.number(),
 	broadcastTime: z.number(),
@@ -72,84 +16,65 @@ export const SchemaStartTransaction = z.object({
 	// 	startTimeParam?: string;
 	// };
 });
-export type StartTransaction = z.infer<typeof SchemaStartTransaction>;
+export type PriorTransactionInfo = z.infer<typeof SchemaPriorTransactionInfo>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
-// SchemaDeltaScheduledExecution<
+// DeltaTime
 // ------------------------------------------------------------------------------------------------
-export function GenericSchemaDeltaScheduledExecution<
-	TSchemaTimeValueType extends z.ZodType<FixedTiming> = typeof SchemaFixedTiming,
-	TSchemaTransactionType extends z.ZodType<StartTransaction> = typeof SchemaStartTransaction,
->(SchemaTimeValueType?: TSchemaTimeValueType, SchemaTransactionType?: TSchemaTransactionType) {
-	// optional argument do not seemt to work even with setting their default value as below
-	if (!SchemaTimeValueType) {
-		SchemaTimeValueType = SchemaFixedTiming as unknown as TSchemaTimeValueType;
-	}
-	if (!SchemaTransactionType) {
-		SchemaTransactionType = SchemaStartTransaction as unknown as TSchemaTransactionType;
-	}
-	return z.object({
-		type: z.literal('delta'),
-		expiry: z.number().optional(),
-		startTransaction: SchemaTransactionType,
-		delta: SchemaTimeValueType,
-	});
-}
-export type SchemaDeltaScheduledExecution<
-	TSchemaTimeValueType extends z.ZodType<FixedTiming>,
-	TSchemaTransactionType extends z.ZodType<StartTransaction>,
-> = ReturnType<typeof GenericSchemaDeltaScheduledExecution<TSchemaTimeValueType, TSchemaTransactionType>>;
-
-export type DeltaScheduledExecution<
-	TTimeValueType extends FixedTiming = FixedTiming,
-	TSchemaTransaction extends StartTransaction = StartTransaction,
-> = z.infer<SchemaDeltaScheduledExecution<z.ZodType<TTimeValueType>, z.ZodType<TSchemaTransaction>>>;
-
-// ------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------
-// AssumedTransaction
-// ------------------------------------------------------------------------------------------------
-export const SchemaAssumedTransaction = z.object({
-	// the execution should only happen if that tx is included in a block
-	hash: SchemaString0x,
-	nonce: z.number(),
-	// TODO
-	// expectEvent?: {
-	// 	eventABI: AbiEvent;
-	// };
+export const SchemaDeltaTime = z.object({
+	type: z.literal('delta-time'),
+	expiry: z.number().optional(),
+	startTransaction: SchemaPriorTransactionInfo,
+	delta: z.number(),
 });
-export type AssumedTransaction = z.infer<typeof SchemaAssumedTransaction>;
+
+export type DeltaTime = z.infer<typeof SchemaDeltaTime>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
-// FixedTimeScheduledExecution
+// FixedTime
 // ------------------------------------------------------------------------------------------------
-export function GenericFixedTimeScheduledExecution<
-	TSchemaTimeValueType extends z.ZodType<TimingTypes> = typeof SchemaTimingTypes,
-	TSchemaTransactionType extends z.ZodType<AssumedTransaction> = typeof SchemaAssumedTransaction,
->(
-	SchemaTimeValueType: TSchemaTimeValueType = SchemaFixedTiming as unknown as TSchemaTimeValueType,
-	SchemaTransactionType: TSchemaTransactionType = SchemaAssumedTransaction as unknown as TSchemaTransactionType,
-) {
-	return z.object({
-		type: z.literal('fixed'),
-		expiry: z.number().optional(),
-		assumedTransaction: SchemaTransactionType.optional(),
-		value: SchemaTimeValueType,
-	});
-}
+export const SchemaFixedTime = z.object({
+	type: z.literal('fixed-time'),
+	expiry: z.number().optional(),
+	assumedTransaction: SchemaPriorTransactionInfo.optional(),
+	scheduledTime: z.number(),
+});
 
-export type SchemaFixedTimeScheduledExecution<
-	TSchemaTimeValueType extends z.ZodType<TimingTypes>,
-	TSchemaTransactionType extends z.ZodType<AssumedTransaction>,
-> = ReturnType<typeof GenericFixedTimeScheduledExecution<TSchemaTimeValueType, TSchemaTransactionType>>;
+export type FixedTime = z.infer<typeof SchemaFixedTime>;
+// ------------------------------------------------------------------------------------------------
 
-export type FixedTimeScheduledExecution<
-	TTimeValueType extends TimingTypes = FixedTiming,
-	TSchemaTransaction extends AssumedTransaction = AssumedTransaction,
-> = z.infer<SchemaFixedTimeScheduledExecution<z.ZodType<TTimeValueType>, z.ZodType<TSchemaTransaction>>>;
+// ------------------------------------------------------------------------------------------------
+// FixedRound
+// ------------------------------------------------------------------------------------------------
+export const SchemaFixedRound = z.object({
+	type: z.literal('fixed-round'),
+	expiry: z.number().optional(),
+	assumedTransaction: SchemaPriorTransactionInfo.optional(),
+	scheduledRound: z.number(),
+	expectedTime: z.number(),
+});
+
+export type FixedRound = z.infer<typeof SchemaFixedRound>;
+
+// ------------------------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------------------
+// TimingTypesCompatibleWithTimeLock
+// ------------------------------------------------------------------------------------------------
+export const SchemaTimingTypesCompatibleWithTimeLock = z.discriminatedUnion('type', [
+	SchemaFixedRound,
+	SchemaFixedTime,
+]);
+export type TimingTypesCompatibleWithTimeLock = z.infer<typeof SchemaTimingTypesCompatibleWithTimeLock>;
+// ------------------------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------------------
+// TimingTypes
+// ------------------------------------------------------------------------------------------------
+export const SchemaTimingTypes = z.discriminatedUnion('type', [SchemaFixedRound, SchemaDeltaTime, SchemaFixedTime]);
+export type TimingTypes = z.infer<typeof SchemaTimingTypes>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -166,7 +91,7 @@ export function GenericSchemaDecryptionResult<TSchemaTransactionDataType extends
 		z.object({
 			success: z.literal(false),
 			newPayload: z.string().optional(),
-			newTiming: SchemaRoundBasedTiming.optional(),
+			newTiming: SchemaTimingTypes.optional(),
 			retry: z.number().optional(),
 		}),
 	]);
@@ -197,11 +122,12 @@ export function GenericSchemaDecryptedPayload<TSchemaTransactionDataType extends
 		z.object({
 			type: z.literal('time-locked'),
 			payload: z.string(),
-			timing: SchemaRoundBasedTiming,
+			timing: SchemaTimingTypesCompatibleWithTimeLock,
 		}),
 		z.object({
 			type: z.literal('clear'),
 			transactions: z.array(SchemaTransactionDataType),
+			// TODO timing: new timing that could be delayed ?
 		}),
 	]);
 }
@@ -214,153 +140,57 @@ export type DecryptedPayload<TransactionDataType> = z.infer<SchemaDecryptedPaylo
 // ------------------------------------------------------------------------------------------------
 // ScheduledTimeLockedExecution
 // ------------------------------------------------------------------------------------------------
-export function GenericScheduledTimeLockedExecution<
-	TSchemaFixedTimingType extends z.ZodType<TimingTypes>,
-	TSchemaAssumedTransactionType extends z.ZodType<AssumedTransaction> = typeof SchemaAssumedTransaction,
->(
-	SchemaFixedTimingType: TSchemaFixedTimingType,
-	SchemaAssumedTransactionType: TSchemaAssumedTransactionType = SchemaAssumedTransaction as unknown as TSchemaAssumedTransactionType,
-) {
-	return z.object({
-		type: z.literal('time-locked'),
-		chainId: SchemaString0x,
-		slot: z.string(),
-		payload: z.string(),
-		timing: GenericFixedTimeScheduledExecution(SchemaFixedTimingType, SchemaAssumedTransactionType),
-	});
-}
-
-export type SchemaScheduledTimeLockedExecution<
-	TSchemaFixedTimingType extends z.ZodType<TimingTypes>,
-	TSchemaAssumedTransactionType extends z.ZodType<AssumedTransaction> = typeof SchemaAssumedTransaction,
-> = ReturnType<typeof GenericScheduledTimeLockedExecution<TSchemaFixedTimingType, TSchemaAssumedTransactionType>>;
-
-export type ScheduledTimeLockedExecution<
-	FixedTimingType extends TimingTypes,
-	AssumedTransactionType extends AssumedTransaction = AssumedTransaction,
-> = z.infer<SchemaScheduledTimeLockedExecution<z.ZodType<FixedTimingType>, z.ZodType<AssumedTransactionType>>>;
+export const SchemaScheduledTimeLockedExecution = z.object({
+	type: z.literal('time-locked'),
+	chainId: SchemaString0x,
+	slot: z.string(),
+	payload: z.string(),
+	timing: SchemaTimingTypesCompatibleWithTimeLock,
+});
+export type ScheduledTimeLockedExecution = z.infer<typeof SchemaScheduledTimeLockedExecution>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
 // ScheduledExecutionInClear
 // ------------------------------------------------------------------------------------------------
-export function GenericSchemaScheduledExecutionInClear<
-	TSchemaTransactionDataType extends z.ZodTypeAny,
-	TSchemaFixedTimingType extends z.ZodType<TimingTypes>,
-	TSchemaDeltaTimingType extends z.ZodType<FixedTiming>,
-	TSchemaStartTransactionType extends z.ZodType<StartTransaction> = typeof SchemaStartTransaction,
-	TSchemaAssumedTransactionType extends z.ZodType<AssumedTransaction> = typeof SchemaAssumedTransaction,
->(
+export function GenericSchemaScheduledExecutionInClear<TSchemaTransactionDataType extends z.ZodTypeAny>(
 	SchemaTransactionDataType: TSchemaTransactionDataType,
-	SchemaFixedTimingType: TSchemaFixedTimingType,
-	SchemaDeltaTimingType: TSchemaDeltaTimingType,
-	SchemaStartTransactionType: TSchemaStartTransactionType = SchemaStartTransaction as unknown as TSchemaStartTransactionType,
-	SchemaAssumedTransactionType: TSchemaAssumedTransactionType = SchemaAssumedTransaction as unknown as TSchemaAssumedTransactionType,
 ) {
 	return z.object({
 		type: z.literal('clear'),
 		chainId: SchemaString0x,
 		slot: z.string(),
 		transactions: z.array(SchemaTransactionDataType),
-		timing: z.discriminatedUnion('type', [
-			GenericFixedTimeScheduledExecution(SchemaFixedTimingType, SchemaAssumedTransactionType),
-			GenericSchemaDeltaScheduledExecution(SchemaDeltaTimingType, SchemaStartTransactionType),
-		]),
+		timing: SchemaTimingTypes,
 	});
 }
 
-export type SchemaScheduledExecutionInClear<
-	TSchemaTransactionDataType extends z.ZodTypeAny,
-	TSchemaFixedTimingType extends z.ZodType<TimingTypes>,
-	TSchemaDeltaTimingType extends z.ZodType<FixedTiming>,
-	TSchemaStartTransactionType extends z.ZodType<StartTransaction> = typeof SchemaStartTransaction,
-	TSchemaAssumedTransactionType extends z.ZodType<AssumedTransaction> = typeof SchemaAssumedTransaction,
-> = ReturnType<
-	typeof GenericSchemaScheduledExecutionInClear<
-		TSchemaTransactionDataType,
-		TSchemaFixedTimingType,
-		TSchemaDeltaTimingType,
-		TSchemaStartTransactionType,
-		TSchemaAssumedTransactionType
-	>
+export type SchemaScheduledExecutionInClear<TSchemaTransactionDataType extends z.ZodTypeAny> = ReturnType<
+	typeof GenericSchemaScheduledExecutionInClear<TSchemaTransactionDataType>
 >;
 
-export type ScheduledExecutionInClear<
-	TransactionDataType,
-	FixedTimingType extends TimingTypes,
-	DeltaTimingType extends FixedTiming,
-	StartTransactionType extends StartTransaction = StartTransaction,
-	AssumedTransactionType extends AssumedTransaction = AssumedTransaction,
-> = z.infer<
-	SchemaScheduledExecutionInClear<
-		z.ZodType<TransactionDataType>,
-		z.ZodType<FixedTimingType>,
-		z.ZodType<DeltaTimingType>,
-		z.ZodType<StartTransactionType>,
-		z.ZodType<AssumedTransactionType>
-	>
+export type ScheduledExecutionInClear<TransactionDataType> = z.infer<
+	SchemaScheduledExecutionInClear<z.ZodType<TransactionDataType>>
 >;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
 // ScheduledExecution
 // ------------------------------------------------------------------------------------------------
-export function GenericSchemaScheduledExecution<
-	TSchemaTransactionDataType extends z.ZodTypeAny,
-	TSchemaFixedTimingType extends z.ZodType<TimingTypes> = typeof SchemaTimingTypes,
-	TSchemaDeltaTimingType extends z.ZodType<FixedTiming> = typeof SchemaFixedTiming,
-	TSchemaStartTransactionType extends z.ZodType<StartTransaction> = typeof SchemaStartTransaction,
-	TSchemaAssumedTransactionType extends z.ZodType<AssumedTransaction> = typeof SchemaAssumedTransaction,
->(
+export function GenericSchemaScheduledExecution<TSchemaTransactionDataType extends z.ZodTypeAny>(
 	SchemaTransactionDataType: TSchemaTransactionDataType,
-	SchemaFixedTimingType: TSchemaFixedTimingType = SchemaTimingTypes as unknown as TSchemaFixedTimingType,
-	SchemaDeltaTimingType: TSchemaDeltaTimingType = SchemaFixedTiming as unknown as TSchemaDeltaTimingType,
-	SchemaStartTransactionType: TSchemaStartTransactionType = SchemaStartTransaction as unknown as TSchemaStartTransactionType,
-	SchemaAssumedTransactionType: TSchemaAssumedTransactionType = SchemaAssumedTransaction as unknown as TSchemaAssumedTransactionType,
 ) {
 	return z.discriminatedUnion('type', [
-		GenericScheduledTimeLockedExecution(SchemaFixedTimingType, SchemaAssumedTransactionType),
-		GenericSchemaScheduledExecutionInClear(
-			SchemaTransactionDataType,
-			SchemaFixedTimingType,
-			SchemaDeltaTimingType,
-			SchemaStartTransactionType,
-			SchemaAssumedTransactionType,
-		),
+		SchemaScheduledTimeLockedExecution,
+		GenericSchemaScheduledExecutionInClear(SchemaTransactionDataType),
 	]);
 }
 
-export type SchemaScheduledExecution<
-	TSchemaTransactionDataType extends z.ZodTypeAny,
-	TSchemaFixedTimingType extends z.ZodType<TimingTypes> = typeof SchemaTimingTypes,
-	TSchemaDeltaTimingType extends z.ZodType<FixedTiming> = typeof SchemaFixedTiming,
-	TSchemaStartTransactionType extends z.ZodType<StartTransaction> = typeof SchemaStartTransaction,
-	TSchemaAssumedTransactionType extends z.ZodType<AssumedTransaction> = typeof SchemaAssumedTransaction,
-> = ReturnType<
-	typeof GenericSchemaScheduledExecution<
-		TSchemaTransactionDataType,
-		TSchemaFixedTimingType,
-		TSchemaDeltaTimingType,
-		TSchemaStartTransactionType,
-		TSchemaAssumedTransactionType
-	>
+export type SchemaScheduledExecution<TSchemaTransactionDataType extends z.ZodTypeAny> = ReturnType<
+	typeof GenericSchemaScheduledExecution<TSchemaTransactionDataType>
 >;
 
-export type ScheduledExecution<
-	TransactionDataType,
-	FixedTimingType extends TimingTypes = TimingTypes,
-	DeltaTimingType extends FixedTiming = FixedTiming,
-	StartTransactionType extends StartTransaction = StartTransaction,
-	AssumedTransactionType extends AssumedTransaction = AssumedTransaction,
-> = z.infer<
-	SchemaScheduledExecution<
-		z.ZodType<TransactionDataType>,
-		z.ZodType<FixedTimingType>,
-		z.ZodType<DeltaTimingType>,
-		z.ZodType<StartTransactionType>,
-		z.ZodType<AssumedTransactionType>
-	>
->;
+export type ScheduledExecution<TransactionDataType> = z.infer<SchemaScheduledExecution<z.ZodType<TransactionDataType>>>;
 
 // ------------------------------------------------------------------------------------------------
 

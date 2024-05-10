@@ -1,6 +1,6 @@
 import {logs} from 'named-logs';
 import {EIP1193Account} from 'eip-1193';
-import {computePotentialExecutionTime, computeFirstExecutionTimeFromSubmission} from './utils/execution';
+import {computePotentialExecutionTime, computeInitialExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
 import {
 	ExecutionStatus,
@@ -22,8 +22,8 @@ const logger = logs('fuzd-scheduler');
  * - submitExecution: add the provided execution to a queue and send it to the executor for broadcast when times come
  * - processQueue: check the current queue and send any scheduled execution for which the time has come, to the executor
  */
-export function createScheduler<TransactionDataType, TransactionInfoType>(
-	config: SchedulerConfig<TransactionDataType, TransactionInfoType>,
+export function createScheduler<TransactionDataType, TransactionSubmissionResponseType>(
+	config: SchedulerConfig<TransactionDataType, TransactionSubmissionResponseType>,
 ): Scheduler<TransactionDataType> & SchedulerBackend {
 	const {chainConfigs, time, storage, executor} = config;
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
@@ -44,7 +44,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 
 		const currentTime = await time.getTimestamp(chainConfig.provider);
 
-		const checkinTime = computeFirstExecutionTimeFromSubmission(execution);
+		const checkinTime = computeInitialExecutionTimeFromSubmission(execution);
 
 		if (checkinTime < currentTime) {
 			throw new Error(`cannot proceed. the expected time to execute is already passed.`);
@@ -114,7 +114,7 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		// for encrypted payload we will attempt to decrypt
 		// if it fails, we will push it accoridng to time schedule
 
-		const results: TransactionInfoType[] = [];
+		const results: TransactionSubmissionResponseType[] = [];
 		for (const transaction of transactions) {
 			const executionResult = await executor.submitTransaction(execution.slot, execution.account, transaction);
 			results.push(executionResult);
@@ -155,68 +155,71 @@ export function createScheduler<TransactionDataType, TransactionInfoType>(
 		const {provider, finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
 		// TODO callback for balance checks ?
 
-		if (execution.timing.type === 'fixed') {
-			if (execution.timing.assumedTransaction && !execution.timing.assumedTransaction.confirmed) {
-				const txStatus = await getTransactionStatus(provider, execution.timing.assumedTransaction, finality);
+		const timing = execution.timing;
+		switch (timing.type) {
+			case 'fixed-time':
+			case 'fixed-round':
+				if (timing.assumedTransaction && !execution.priorTransactionConfirmation) {
+					const txStatus = await getTransactionStatus(provider, timing.assumedTransaction, finality);
 
-				if (!txStatus.finalised) {
-					logger.debug(`the tx the execution depends on has not finalised and the timestamp has already passed`);
-					// TODO should we delete ?
-					// or retry later ?
-					// TODO archive in any case
-					await storage.deleteExecution(execution);
-					return {status: 'deleted'};
-				} else {
-					if (txStatus.failed) {
-						logger.debug(`deleting the execution as the tx it depends on failed...`);
-						// TODO archive
+					if (!txStatus.finalised) {
+						logger.debug(`the tx the execution depends on has not finalised and the timestamp has already passed`);
+						// TODO should we delete ?
+						// or retry later ?
+						// TODO archive in any case
 						await storage.deleteExecution(execution);
 						return {status: 'deleted'};
+					} else {
+						if (txStatus.failed) {
+							logger.debug(`deleting the execution as the tx it depends on failed...`);
+							// TODO archive
+							await storage.deleteExecution(execution);
+							return {status: 'deleted'};
+						}
+						// we do not really need to store that, we can skip it and simply execute
+						execution.priorTransactionConfirmation = {
+							blockTime: txStatus.blockTime,
+						};
+						// TODO we are good to go
+						return {status: 'changed', execution};
 					}
-					// we do not really need to store that, we can skip it and simply execute
-					execution.timing.assumedTransaction.confirmed = {
-						blockTime: txStatus.blockTime,
-					};
-					// TODO we are good to go
-					return {status: 'changed', execution};
-				}
-			} else {
-				return {status: 'unchanged', execution};
-			}
-		} else {
-			if (!execution.timing.startTransaction.confirmed) {
-				const txStatus = await getTransactionStatus(provider, execution.timing.startTransaction, finality);
-				if (!txStatus.finalised) {
-					const newCheckinTime = computePotentialExecutionTime(execution, {
-						startTimeToCountFrom: txStatus.blockTime || currentTimestamp,
-					});
-					const executionToRetry = await retryLater(execution, newCheckinTime);
-					return {status: 'willRetry', execution: executionToRetry};
 				} else {
-					if (txStatus.failed) {
-						logger.debug(`deleting the execution as the tx it depends on failed...`);
-						// TODO archive
-						await storage.deleteExecution(execution);
-						return {status: 'deleted'};
-					}
-					// TODO implement event expectation with params extraction
-					// if (execution.timing.startTransaction.expectEvent) {
-					// 	// for (const log of receipt.logs) {
-					// 	// 	log.
-					// 	// }
-					// 	// if event then continue and extract param
-					// 	// else delete as the tx has not been doing what it was supposed to do
-					// }
-
-					execution.timing.startTransaction.confirmed = {
-						blockTime: txStatus.blockTime,
-					};
-					// TODO we are good to go
-					return {status: 'changed', execution};
+					return {status: 'unchanged', execution};
 				}
-			} else {
-				return {status: 'unchanged', execution};
-			}
+			case 'delta-time':
+				if (!execution.priorTransactionConfirmation) {
+					const txStatus = await getTransactionStatus(provider, timing.startTransaction, finality);
+					if (!txStatus.finalised) {
+						const newCheckinTime = computePotentialExecutionTime(execution, {
+							startTimeToCountFrom: txStatus.blockTime || currentTimestamp,
+						});
+						const executionToRetry = await retryLater(execution, newCheckinTime);
+						return {status: 'willRetry', execution: executionToRetry};
+					} else {
+						if (txStatus.failed) {
+							logger.debug(`deleting the execution as the tx it depends on failed...`);
+							// TODO archive
+							await storage.deleteExecution(execution);
+							return {status: 'deleted'};
+						}
+						// TODO implement event expectation with params extraction
+						// if (execution.timing.startTransaction.expectEvent) {
+						// 	// for (const log of receipt.logs) {
+						// 	// 	log.
+						// 	// }
+						// 	// if event then continue and extract param
+						// 	// else delete as the tx has not been doing what it was supposed to do
+						// }
+
+						execution.priorTransactionConfirmation = {
+							blockTime: txStatus.blockTime,
+						};
+						// TODO we are good to go
+						return {status: 'changed', execution};
+					}
+				} else {
+					return {status: 'unchanged', execution};
+				}
 		}
 	}
 

@@ -1,17 +1,15 @@
 import {EIP1193Account} from 'eip-1193';
-import {AssumedTransaction, FixedTiming, ScheduledExecution, StartTransaction, TimingTypes} from './external';
+import {ScheduledExecution} from './external';
 
-export type ExecutionQueued<TransactionDataType> = ScheduledExecution<
-	TransactionDataType,
-	TimingTypes,
-	FixedTiming,
-	StartTransaction & {confirmed?: {blockTime: number; startTime?: number}},
-	AssumedTransaction & {confirmed?: {blockTime: number}}
-> & {
+export type ExecutionQueued<TransactionDataType> = ScheduledExecution<TransactionDataType> & {
 	slot: string;
 	account: EIP1193Account;
 	checkinTime: number;
 	retries: number;
+	priorTransactionConfirmation?: {
+		blockTime: number;
+		startTime?: number;
+	};
 };
 
 export interface SchedulerStorage<TransactionDataType> {

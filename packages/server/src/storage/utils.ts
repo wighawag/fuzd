@@ -12,7 +12,6 @@ export function toValues(inDB: Record<string, any>): {
 	const keys = Object.keys(inDB);
 	for (const column of keys) {
 		const value = inDB[column];
-		const valueStr = value === null ? 'NULL' : `${value}`;
 		if (values.length == 0) {
 			// first element only
 			columnStr += column;
@@ -28,7 +27,7 @@ export function toValues(inDB: Record<string, any>): {
 				overwritesStr += `${column}=excluded.${column}, `;
 			}
 		}
-		values.push(valueStr);
+		values.push(value);
 	}
 	return {
 		columns: columnStr,

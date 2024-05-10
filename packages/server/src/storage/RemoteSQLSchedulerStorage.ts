@@ -13,6 +13,7 @@ type ScheduledExecutionInDB = {
 	type: 'time-locked' | 'clear';
 	payload: string; // include the tx in clear or the tx to submit to the executor (string)
 	timing: string;
+	priorTransactionConfirmation: string | null;
 	// TODO initialTimeTarget: number;
 	retries: number | null;
 	expiry: number | null;
@@ -21,6 +22,7 @@ type ScheduledExecutionInDB = {
 function fromScheduledExecutionInDB<TransactionDataType>(
 	inDB: ScheduledExecutionInDB,
 ): ExecutionQueued<TransactionDataType> {
+	console.log(inDB);
 	if (inDB.type === 'time-locked') {
 		return {
 			account: inDB.account,
@@ -31,6 +33,9 @@ function fromScheduledExecutionInDB<TransactionDataType>(
 			retries: inDB.retries || 0,
 			payload: inDB.payload,
 			timing: JSON.parse(inDB.timing),
+			priorTransactionConfirmation: inDB.priorTransactionConfirmation
+				? JSON.parse(inDB.priorTransactionConfirmation)
+				: undefined,
 		};
 	} else {
 		return {
@@ -41,6 +46,9 @@ function fromScheduledExecutionInDB<TransactionDataType>(
 			checkinTime: inDB.nextCheckTime,
 			retries: inDB.retries || 0,
 			timing: JSON.parse(inDB.timing),
+			priorTransactionConfirmation: inDB.priorTransactionConfirmation
+				? JSON.parse(inDB.priorTransactionConfirmation)
+				: undefined,
 			transactions: JSON.parse(inDB.payload),
 		};
 	}
@@ -59,6 +67,9 @@ function toScheduledExecutionInDB<TransactionDataType>(
 		type: obj.type,
 		payload: obj.type === 'clear' ? JSON.stringify(obj.transactions) : obj.payload,
 		timing: JSON.stringify(obj.timing),
+		priorTransactionConfirmation: obj.priorTransactionConfirmation
+			? JSON.stringify(obj.priorTransactionConfirmation)
+			: null,
 		// TODO initialTimeTarget: 0, // TODO obj.initialTimeTarget.
 		retries: obj.retries,
 		expiry: 0, // TODO obj.expiry,
