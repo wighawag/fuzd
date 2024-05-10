@@ -103,7 +103,7 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 					// TODO
 					// await storage.archiveExecution(execution);
 					logger.info(decryptionResult);
-					return {type: 'deleted', reason: 'failed to decrypt'};
+					return {type: 'archived', reason: 'failed to decrypt'};
 				}
 			}
 		} else {
@@ -149,7 +149,8 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 		execution: ExecutionQueued<TransactionDataType>,
 		currentTimestamp: number,
 	): Promise<
-		| {status: 'deleted'}
+		| {status: 'deleted'} // TODO remove ? (not used for now)
+		| {status: 'archived'}
 		| {status: 'changed'; execution: ExecutionQueued<TransactionDataType>}
 		| {status: 'unchanged'; execution: ExecutionQueued<TransactionDataType>}
 		| {status: 'willRetry'; execution: ExecutionQueued<TransactionDataType>}
@@ -170,13 +171,13 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 						// or retry later ?
 						// TODO archive in any case
 						await storage.archiveExecution(execution);
-						return {status: 'deleted'};
+						return {status: 'archived'};
 					} else {
 						if (txStatus.failed) {
 							logger.debug(`deleting the execution as the tx it depends on failed...`);
 							// TODO archive
 							await storage.archiveExecution(execution);
-							return {status: 'deleted'};
+							return {status: 'archived'};
 						}
 						// we do not really need to store that, we can skip it and simply execute
 						execution.priorTransactionConfirmation = {
@@ -202,7 +203,7 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 							logger.debug(`deleting the execution as the tx it depends on failed...`);
 							// TODO archive
 							await storage.archiveExecution(execution);
-							return {status: 'deleted'};
+							return {status: 'archived'};
 						}
 						// TODO implement event expectation with params extraction
 						// if (execution.timing.startTransaction.expectEvent) {
@@ -248,12 +249,17 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 		}
 
 		const updates = await checkAndUpdateExecutionIfNeeded(execution, currentTimestamp);
-		if (updates.status === 'deleted' || updates.status === 'willRetry') {
+		if (updates.status === 'archived' || updates.status === 'willRetry' || updates.status === 'deleted') {
 			let status: ExecutionStatus;
 			if (updates.status === 'deleted') {
 				status = {
 					type: 'deleted',
 					reason: 'udpates deleted',
+				};
+			} else if (updates.status === 'archived') {
+				status = {
+					type: 'archived',
+					reason: 'udpates archived',
 				};
 			} else {
 				status = {
@@ -283,14 +289,14 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 				finality * worstCaseBlockTime
 		) {
 			// delete if execution expired
-			logger.info(`too late, deleting ${displayExecution(execution)}...`);
+			logger.info(`too late, archiving ${displayExecution(execution)}...`);
 			await storage.archiveExecution(execution);
 			result.executions.push({
 				chainId: execution.chainId,
 				account: execution.account,
 				slot: execution.slot,
 				checkinTime: execution.checkinTime,
-				status: {type: 'deleted', reason: 'too late'},
+				status: {type: 'archived', reason: 'too late'},
 			});
 			return;
 		}

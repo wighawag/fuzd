@@ -28,6 +28,9 @@ layout {
 			}
 		}
 		pane split_direction="vertical" {
+			pane name="server css watch" command="bash" {
+				args "-c" "pnpm run --filter ./packages/server css2ts:watch; cd packages/server; ${SHELL-bash}"
+			}
 			pane name="server sql watch" command="bash" {
 				args "-c" "pnpm run --filter ./packages/server sql2ts:watch; cd packages/server; ${SHELL-bash}"
 			}

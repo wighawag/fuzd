@@ -1,18 +1,19 @@
 import {z} from 'zod';
 
 export const SchemaString0x = z.string().startsWith('0x').and(z.custom<`0x${string}`>());
-
 export type String0x = z.infer<typeof SchemaString0x>;
 
-export const SchemaEIP1193Account = z
-	.string()
-	.startsWith('0x')
-	.length(42)
-	.transform((v) => v.toLowerCase() as `0x${string}`);
+export function toSchemaString0x(stringSchema?: ReturnType<typeof z.string>) {
+	return (stringSchema || z.string()).startsWith('0x').and(z.custom<`0x${string}`>());
+}
 
-export const SchemaEIP1193Bytes32 = z.string().startsWith('0x').length(66);
+export const SchemaEIP1193Account = toSchemaString0x(z.string().startsWith('0x').length(42)).transform(
+	(v) => v.toLowerCase() as `0x${string}`,
+);
 
-export const SchemaEIP1193Quantity = z.string().startsWith('0x').max(66);
+export const SchemaEIP1193Bytes32 = toSchemaString0x(z.string().startsWith('0x').length(66));
+
+export const SchemaEIP1193Quantity = toSchemaString0x(z.string().startsWith('0x').max(66));
 
 export const SchemaEIP1193AccessListEntry = z.object({
 	address: SchemaEIP1193Account,

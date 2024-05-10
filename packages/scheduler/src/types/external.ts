@@ -221,7 +221,7 @@ export type Scheduler<TransactionDataType> = {
 // ------------------------------------------------------------------------------------------------
 // ExecutionStatus
 // ------------------------------------------------------------------------------------------------
-export type ExecutionStatus = {type: 'broadcasted' | 'deleted' | 'reassigned' | 'skipped'; reason: string};
+export type ExecutionStatus = {type: 'deleted' | 'broadcasted' | 'archived' | 'reassigned' | 'skipped'; reason: string};
 
 // ------------------------------------------------------------------------------------------------
 // QueueProcessingResult

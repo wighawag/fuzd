@@ -8,6 +8,7 @@ import {getInternalAPI} from './api/internal';
 import {getSchedulingAPI} from './api/scheduling';
 import {getExecutionAPI} from './api/execution';
 import {setup} from './setup';
+import {getAdminDashboard} from './dashboard/admin';
 
 export * from './storage/RemoteSQLExecutorStorage';
 export * from './storage/RemoteSQLSchedulerStorage';
@@ -35,13 +36,17 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 	const publicAPI = getPublicAPI<Env>(options);
 	const adminAPI = getAdminAPI<Env>(options);
 
+	const adminDashboard = getAdminDashboard<Env>(options);
+
 	return app
 		.use('*', setup({serverOptions: options}))
 		.route('/api', publicAPI)
 		.route('/api/internal', internalAPI)
 		.route('/api/scheduling', schedulingAPI)
 		.route('/api/execution', executionAPI)
-		.route('/api/admin', adminAPI);
+		.route('/api/admin', adminAPI)
+
+		.route('/dashboard/admin', adminDashboard);
 }
 
 export type App = ReturnType<typeof createServer<{}>>;
