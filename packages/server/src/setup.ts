@@ -3,7 +3,6 @@ import {ServerOptions} from './types';
 import {
 	BroadcasterSignerData,
 	ChainConfigs,
-	Executor,
 	ExecutorBackend,
 	ExecutorStorage,
 	PendingExecutionStored,
@@ -12,7 +11,7 @@ import {
 } from 'fuzd-executor';
 import {Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
 import {initAccountFromHD} from 'remote-account';
-import {Time, getTimeFromContractTimestamp} from 'fuzd-common';
+import {Executor, Time, getTimeFromContractTimestamp} from 'fuzd-common';
 import {JSONRPCHTTPProvider} from 'eip-1193-jsonrpc-provider';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
@@ -37,6 +36,7 @@ export type Config = {
 	time: Time;
 	chainConfigs: ChainConfigs;
 	contractTimestampAddress: `0x${string}`;
+	getTimeDiff(chainId: `0x${string}`): Promise<number>;
 };
 
 declare module 'hono' {
@@ -173,6 +173,15 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			account,
 			time,
 			chainConfigs,
+			async getTimeDiff(chainId: `0x${string}`) {
+				if (!chainId) {
+					return 0;
+				}
+				const {provider} = chainConfigs[chainId];
+				const virtualTimestamp = await time.getTimestamp(provider);
+				const timestamp = Math.floor(Date.now() / 1000);
+				return virtualTimestamp - timestamp;
+			},
 		});
 
 		return next();

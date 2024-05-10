@@ -5,6 +5,10 @@ import {FC, jsx} from 'hono/jsx';
 export type TableData = {[key: string]: any}[];
 
 export const Table: FC<{data: TableData}> = (props: {data: TableData}) => {
+	if (props.data.length === 0) {
+		return <p>Nothing to see</p>;
+	}
+
 	const keys = Object.keys(props.data[0]);
 	return (
 		<table role="table">
