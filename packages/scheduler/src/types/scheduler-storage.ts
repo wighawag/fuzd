@@ -29,6 +29,14 @@ export interface SchedulerStorage<TransactionDataType> {
 		executionToStore: ExecutionQueued<TransactionDataType>,
 	): Promise<ExecutionQueued<TransactionDataType>>;
 	getQueueTopMostExecutions(params: {limit: number}): Promise<ExecutionQueued<TransactionDataType>[]>;
+	getAccountSubmissions(
+		account: `0x${string}`,
+		params: {limit: number},
+	): Promise<ExecutionQueued<TransactionDataType>[]>;
+	getAccountArchivedSubmissions(
+		account: `0x${string}`,
+		params: {limit: number},
+	): Promise<ExecutionQueued<TransactionDataType>[]>;
 	clear(): Promise<void>;
 	setup(): Promise<void>;
 }

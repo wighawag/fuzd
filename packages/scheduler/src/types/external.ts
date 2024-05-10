@@ -1,6 +1,6 @@
 import {EIP1193Account} from 'eip-1193';
 import {ExecutionQueued} from './scheduler-storage';
-import {SchemaString0x} from 'fuzd-common';
+import {SchemaEIP1193Account, SchemaString0x} from 'fuzd-common';
 import z from 'zod';
 
 // ------------------------------------------------------------------------------------------------
@@ -204,7 +204,7 @@ export type ScheduledExecution<TransactionDataType> = z.infer<SchemaScheduledExe
 export const SchemaScheduleInfo = z.object({
 	checkinTime: z.number(),
 	chainId: SchemaString0x,
-	account: SchemaString0x,
+	account: SchemaEIP1193Account,
 	slot: z.string(),
 });
 export type ScheduleInfo = z.infer<typeof SchemaScheduleInfo>;

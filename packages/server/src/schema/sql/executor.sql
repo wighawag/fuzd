@@ -7,10 +7,10 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     slot            text       NOT NULL,
     -------------------------------------------------------------------------------------------------------------------
 
-    nextCheckTime          timestamp   NOT NULL,
+    nextCheckTime          integer     NOT NULL,
     broadcasterAssignerID  text        NOT NULL,
-    initialTime            timestamp   NOT NULL,
-    broadcastTime          timestamp,
+    initialTime            integer     NOT NULL,
+    broadcastTime          integer,
     hash                   text        NOT NULL, -- tx hash
     broadcastSchedule      text        NOT NULL,
     isVoidTransaction      integer     NOT NULL,
@@ -18,10 +18,10 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     lastError              text,
     expiryTime             integer,
 
-    broadcaster            text       NOT NULL, -- tx from
-    nonce                  integer    NOT NULL, -- tx nonce
+    broadcaster            text        NOT NULL, -- tx from
+    nonce                  integer     NOT NULL, -- tx nonce
 
-    transactionData        text       NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
+    transactionData        text        NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
     
     PRIMARY KEY (account, chainId, slot)
 );
@@ -52,10 +52,10 @@ CREATE TABLE IF NOT EXISTS ArchivedBroadcastedExecutions (
     slot            text       NOT NULL,
     -------------------------------------------------------------------------------------------------------------------
 
-    nextCheckTime          timestamp   NOT NULL,
+    nextCheckTime          integer     NOT NULL,
     broadcasterAssignerID  text        NOT NULL,
-    initialTime            timestamp   NOT NULL,
-    broadcastTime          timestamp,
+    initialTime            integer     NOT NULL,
+    broadcastTime          integer,
     hash                   text        NOT NULL, -- tx hash
     broadcastSchedule      text        NOT NULL,
     isVoidTransaction      integer     NOT NULL,
@@ -63,10 +63,10 @@ CREATE TABLE IF NOT EXISTS ArchivedBroadcastedExecutions (
     lastError              text,
     expiryTime             integer,
 
-    broadcaster            text       NOT NULL, -- tx from
-    nonce                  integer    NOT NULL, -- tx nonce
+    broadcaster            text        NOT NULL, -- tx from
+    nonce                  integer     NOT NULL, -- tx nonce
 
-    transactionData        text       NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
+    transactionData        text        NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
 
     PRIMARY KEY (account, chainId, slot)
 );

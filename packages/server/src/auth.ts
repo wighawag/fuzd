@@ -1,3 +1,4 @@
+import {SchemaEIP1193Account} from 'fuzd-common';
 import {MiddlewareHandler} from 'hono';
 import {hashMessage, recoverAddress} from 'viem';
 
@@ -24,7 +25,7 @@ export function auth(options: AuthOptions): MiddlewareHandler {
 			account = signature.split('@')[1] as `0x${string}`;
 		} else {
 			try {
-				account = await recoverAddress({hash, signature});
+				account = SchemaEIP1193Account.parse(await recoverAddress({hash, signature}));
 			} catch (err: any) {
 				throw new Error('failed to recover address from message and signature', {cause: err});
 			}

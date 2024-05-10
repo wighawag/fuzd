@@ -33,7 +33,7 @@ function fromScheduledExecutionInDB<TransactionDataType>(
 			chainId: inDB.chainId,
 			slot: inDB.slot,
 			type: 'time-locked',
-			broadcasted: inDB.broadcasted == 0 ? true : false,
+			broadcasted: inDB.broadcasted == 0 ? false : true,
 			checkinTime: inDB.nextCheckTime,
 			payload: inDB.payload,
 			timing: JSON.parse(inDB.timing),
@@ -51,7 +51,7 @@ function fromScheduledExecutionInDB<TransactionDataType>(
 			chainId: inDB.chainId,
 			slot: inDB.slot,
 			type: 'clear',
-			broadcasted: inDB.broadcasted == 0 ? true : false,
+			broadcasted: inDB.broadcasted == 0 ? false : true,
 			checkinTime: inDB.nextCheckTime,
 			timing: JSON.parse(inDB.timing),
 			maxFeePerGas: inDB.maxFeePerGas,
@@ -161,6 +161,26 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcasted = FALSE ORDER BY nextCheckTime ASC LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
+		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
+	}
+
+	async getAccountSubmissions(
+		account: `0x${string}`,
+		params: {limit: number},
+	): Promise<ExecutionQueued<TransactionDataType>[]> {
+		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE account = ?1 ORDER BY nextCheckTime ASC LIMIT ?2;`;
+		const statement = this.db.prepare(sqlStatement);
+		const {results} = await statement.bind(account, params.limit).all<ScheduledExecutionInDB>();
+		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
+	}
+
+	async getAccountArchivedSubmissions(
+		account: `0x${string}`,
+		params: {limit: number},
+	): Promise<ExecutionQueued<TransactionDataType>[]> {
+		const sqlStatement = `SELECT * FROM ArchivedScheduledExecutions WHERE account = ?1 ORDER BY nextCheckTime ASC LIMIT ?2;`;
+		const statement = this.db.prepare(sqlStatement);
+		const {results} = await statement.bind(account, params.limit).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 
