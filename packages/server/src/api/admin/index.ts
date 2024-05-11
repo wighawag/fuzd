@@ -62,6 +62,38 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 			await config.executorStorage.setup();
 			await config.schedulerStorage.setup();
 			return c.json({ok: true});
+		})
+		.get('/expectedGasPrice/:chainId', async (c) => {
+			const config = c.get('config');
+			let chainId = c.req.param('chainId');
+			if (!chainId.startsWith('0x')) {
+				chainId = `0x${Number(chainId).toString(16)}`;
+			}
+			const expectedGasPrice = await config.executorStorage.getExpectedGasPrice(chainId as `0x${string}`);
+			return c.json({
+				current: expectedGasPrice.current?.toString(),
+				updateTimestamp: expectedGasPrice.updateTimestamp,
+				previous: expectedGasPrice.previous?.toString(),
+			});
+		})
+		.get('/updateExpectedGasPrice/:chainId/:value', async (c) => {
+			const config = c.get('config');
+			let chainId = c.req.param('chainId');
+			if (!chainId.startsWith('0x')) {
+				chainId = `0x${Number(chainId).toString(16)}`;
+			}
+			const value = c.req.param('value');
+			const timestamp = Math.floor(Date.now() / 1000);
+			const expectedGasPrice = await config.executorStorage.updateExpectedGasPrice(
+				chainId as `0x${string}`,
+				timestamp,
+				BigInt(value),
+			);
+			return c.json({
+				current: expectedGasPrice.current?.toString(),
+				updateTimestamp: expectedGasPrice.updateTimestamp,
+				previous: expectedGasPrice.previous?.toString(),
+			});
 		});
 
 	const app = new Hono<{Bindings: Env & {}}>().route('/', tmp).route('/', authenticated);

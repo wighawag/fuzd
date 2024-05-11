@@ -37,6 +37,11 @@ export type PendingExecutionStored = EIP1193TransactionDataUsed & {
 	expiryTime?: number;
 };
 
+export type ExpectedGasPrice =
+	| {current: bigint; updateTimestamp: number; previous: undefined}
+	| {previous: undefined; current: undefined; updateTimestamp: undefined}
+	| {previous: bigint; current: bigint; updateTimestamp: number};
+
 export interface ExecutorStorage {
 	getPendingExecution(params: {
 		chainId: `0x${string}`;
@@ -62,4 +67,6 @@ export interface ExecutorStorage {
 	createBroadcaster(broadcaster: BroadcasterData): Promise<void>;
 	clear(): Promise<void>;
 	setup(): Promise<void>;
+	getExpectedGasPrice(chainId: `0x${string}`): Promise<ExpectedGasPrice>;
+	updateExpectedGasPrice(chainId: `0x${string}`, timestamp: number, newGasPrice: bigint): Promise<ExpectedGasPrice>;
 }

@@ -73,3 +73,20 @@ CREATE TABLE IF NOT EXISTS ArchivedBroadcastedExecutions (
 
 CREATE INDEX IF NOT EXISTS idx_ArchivedBroadcastedExecutions_initialTime ON ArchivedBroadcastedExecutions (initialTime);
 
+
+CREATE TABLE IF NOT EXISTS ChainConfigurations (
+    -------------------------------------------------------------------------------------------------------------------
+    -- PRIMARY KEY
+    -------------------------------------------------------------------------------------------------------------------
+    chainId                   text       NOT NULL,
+    -------------------------------------------------------------------------------------------------------------------
+
+    currentExpectedGasPrice   text,
+    previousExpectedGasPrice  text,
+    expectedGasPriceUpdate    integer,
+
+
+    PRIMARY KEY (chainId)
+);
+
+
