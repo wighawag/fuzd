@@ -27,6 +27,17 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 				</Layout>,
 			);
 		})
+		.get('/all-submissions', async (c) => {
+			const config = c.get('config');
+			const queue = await config.schedulerStorage.getAllExecutions({limit: 100});
+			const diff = await config.getTimeDiff(queue[0]?.chainId);
+			const displayData = queue.map(displayExecutionQueued(diff));
+			return c.html(
+				<Layout>
+					<Table data={displayData} />
+				</Layout>,
+			);
+		})
 		.get('/account-submissions/:account', async (c) => {
 			const config = c.get('config');
 			const account = SchemaEIP1193Account.parse(c.req.param('account'));

@@ -30,6 +30,7 @@ export interface SchedulerStorage<TransactionDataType> {
 		executionToStore: ExecutionQueued<TransactionDataType>,
 	): Promise<ExecutionQueued<TransactionDataType>>;
 	getQueueTopMostExecutions(params: {limit: number}): Promise<ExecutionQueued<TransactionDataType>[]>;
+	getAllExecutions(params: {limit: number}): Promise<ExecutionQueued<TransactionDataType>[]>;
 	getAccountSubmissions(
 		account: `0x${string}`,
 		params: {limit: number},
