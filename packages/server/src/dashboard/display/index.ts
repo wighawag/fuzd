@@ -11,7 +11,7 @@ export function displayExecutionQueued<TransactionData>(timeDiff: number = 0) {
 		broadcasted: v.broadcasted.toString(),
 		checkinTime: new Date((v.checkinTime - timeDiff) * 1000).toUTCString(),
 		timingType: v.timing.type,
-		expectedMaxFeePerGas: v.expectedMaxFeePerGas,
+		expectedWorstCaseGasPrice: v.expectedWorstCaseGasPrice || 'none',
 		paymentReserve: v.paymentReserve || 'undefined',
 		retries: v.retries || 0,
 	});

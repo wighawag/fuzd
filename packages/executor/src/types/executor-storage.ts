@@ -1,6 +1,6 @@
 import {EIP1193Account, EIP1193DATA, EIP1193TransactionDataOfType2} from 'eip-1193';
 import {BroadcastSchedule} from './external';
-import {RequiredKeys} from 'fuzd-common';
+import {ExpectedWorstCaseGasPrice, RequiredKeys} from 'fuzd-common';
 
 // export type EIP1193TransactionDataUsed =
 // 	| RequiredKeys<EIP1193LegacyTransactionData, 'nonce' | 'gasPrice'>
@@ -37,11 +37,6 @@ export type PendingExecutionStored = EIP1193TransactionDataUsed & {
 	expiryTime?: number;
 };
 
-export type ExpectedGasPrice =
-	| {current: bigint; updateTimestamp: number; previous: undefined}
-	| {previous: undefined; current: undefined; updateTimestamp: undefined}
-	| {previous: bigint; current: bigint; updateTimestamp: number};
-
 export interface ExecutorStorage {
 	getPendingExecution(params: {
 		chainId: `0x${string}`;
@@ -67,6 +62,10 @@ export interface ExecutorStorage {
 	createBroadcaster(broadcaster: BroadcasterData): Promise<void>;
 	clear(): Promise<void>;
 	setup(): Promise<void>;
-	getExpectedGasPrice(chainId: `0x${string}`): Promise<ExpectedGasPrice>;
-	updateExpectedGasPrice(chainId: `0x${string}`, timestamp: number, newGasPrice: bigint): Promise<ExpectedGasPrice>;
+	getExpectedWorstCaseGasPrice(chainId: `0x${string}`): Promise<ExpectedWorstCaseGasPrice>;
+	updateExpectedWorstCaseGasPrice(
+		chainId: `0x${string}`,
+		timestamp: number,
+		newGasPrice: bigint,
+	): Promise<ExpectedWorstCaseGasPrice>;
 }

@@ -69,7 +69,7 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 			if (!chainId.startsWith('0x')) {
 				chainId = `0x${Number(chainId).toString(16)}`;
 			}
-			const expectedGasPrice = await config.executorStorage.getExpectedGasPrice(chainId as `0x${string}`);
+			const expectedGasPrice = await config.executorStorage.getExpectedWorstCaseGasPrice(chainId as `0x${string}`);
 			return c.json({
 				current: expectedGasPrice.current?.toString(),
 				updateTimestamp: expectedGasPrice.updateTimestamp,
@@ -84,7 +84,7 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 			}
 			const value = c.req.param('value');
 			const timestamp = Math.floor(Date.now() / 1000);
-			const expectedGasPrice = await config.executorStorage.updateExpectedGasPrice(
+			const expectedGasPrice = await config.executorStorage.updateExpectedWorstCaseGasPrice(
 				chainId as `0x${string}`,
 				timestamp,
 				BigInt(value),

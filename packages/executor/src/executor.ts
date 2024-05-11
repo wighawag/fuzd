@@ -15,7 +15,7 @@ import {
 	SchemaTransactionSubmission,
 } from './types/external';
 import {keccak_256} from '@noble/hashes/sha3';
-import {Executor, getRoughGasPriceEstimate} from 'fuzd-common';
+import {Executor, ExpectedWorstCaseGasPrice, getRoughGasPriceEstimate} from 'fuzd-common';
 import {BroadcasterSignerData, ChainConfig, ExecutorConfig} from './types/internal';
 
 const logger = logs('fuzd-executor');
@@ -84,6 +84,10 @@ export function createExecutor(
 		} else {
 			return 'NotFound';
 		}
+	}
+
+	function getExpectedWorstCaseGasPrice(chainId: `0x${string}`): Promise<ExpectedWorstCaseGasPrice> {
+		return storage.getExpectedWorstCaseGasPrice(chainId);
 	}
 
 	async function submitTransaction(
@@ -628,6 +632,7 @@ export function createExecutor(
 
 	return {
 		submitTransaction,
+		getExpectedWorstCaseGasPrice,
 		processPendingTransactions,
 		updateTransactionWithCurrentGasPrice,
 	};

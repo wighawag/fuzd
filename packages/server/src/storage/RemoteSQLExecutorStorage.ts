@@ -1,8 +1,9 @@
 import type {RemoteSQL} from 'remote-sql';
-import type {ExecutorStorage, PendingExecutionStored, BroadcasterData, ExpectedGasPrice} from 'fuzd-executor';
+import type {ExecutorStorage, PendingExecutionStored, BroadcasterData} from 'fuzd-executor';
 import {sqlToStatements, toValues} from './utils';
 import {logs} from 'named-logs';
 import setupTables from '../schema/ts/executor.sql';
+import {ExpectedWorstCaseGasPrice} from 'fuzd-common';
 
 const logger = logs('fuzd-server-executor-storage-sql');
 
@@ -47,22 +48,22 @@ type ExecutionInDB = {
 	transactionData: string;
 };
 
-type ExpectedGasPriceInDB = {
+type ExpectedWorstCaseGasPriceInDB = {
 	chainId: `0x${string}`;
 	currentExpectedGasPrice: string | null;
 	previousExpectedGasPrice: string | null;
 	expectedGasPriceUpdate: number | null;
 };
 
-function fromExpectedGasPriceInDB(inDb: ExpectedGasPriceInDB): ExpectedGasPrice {
+function fromExpectedGasPriceInDB(inDb: ExpectedWorstCaseGasPriceInDB): ExpectedWorstCaseGasPrice {
 	return {
 		previous: inDb.previousExpectedGasPrice ? BigInt(inDb.previousExpectedGasPrice) : undefined,
 		current: inDb.currentExpectedGasPrice ? BigInt(inDb.currentExpectedGasPrice) : undefined,
 		updateTimestamp: inDb.expectedGasPriceUpdate || undefined,
-	} as ExpectedGasPrice;
+	} as ExpectedWorstCaseGasPrice;
 }
 
-function toExpectedGasPriceInDB(chainId: `0x${string}`, obj: ExpectedGasPrice): ExpectedGasPriceInDB {
+function toExpectedGasPriceInDB(chainId: `0x${string}`, obj: ExpectedWorstCaseGasPrice): ExpectedWorstCaseGasPriceInDB {
 	return {
 		chainId,
 		currentExpectedGasPrice: obj.current?.toString() || null,
@@ -234,9 +235,9 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		await this.db.batch(statements.map((v) => this.db.prepare(v)));
 	}
 
-	async getExpectedGasPrice(chainId: `0x${string}`): Promise<ExpectedGasPrice> {
+	async getExpectedWorstCaseGasPrice(chainId: `0x${string}`): Promise<ExpectedWorstCaseGasPrice> {
 		const statement = this.db.prepare(`SELECT * FROM ChainConfigurations WHERE chainId = ?1;`);
-		const {results} = await statement.bind(chainId).all<ExpectedGasPriceInDB>();
+		const {results} = await statement.bind(chainId).all<ExpectedWorstCaseGasPriceInDB>();
 		if (results.length === 0) {
 			return {previous: undefined, current: undefined, updateTimestamp: undefined};
 		} else {
@@ -244,11 +245,11 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		}
 	}
 
-	async updateExpectedGasPrice(
+	async updateExpectedWorstCaseGasPrice(
 		chainId: `0x${string}`,
 		timestamp: number,
 		newGasPrice: bigint,
-	): Promise<ExpectedGasPrice> {
+	): Promise<ExpectedWorstCaseGasPrice> {
 		const sqlStatement = `INSERT INTO ChainConfigurations (chainId, currentExpectedGasPrice, expectedGasPriceUpdate) 
 		 VALUES(?1, ?2, ?3) ON CONFLICT(chainId) DO UPDATE SET
 		 previousExpectedGasPrice=currentExpectedGasPrice,
@@ -256,6 +257,6 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		 currentExpectedGasPrice=excluded.currentExpectedGasPrice;`;
 		const statement = this.db.prepare(sqlStatement);
 		await statement.bind(chainId, newGasPrice.toString(), timestamp).all();
-		return this.getExpectedGasPrice(chainId);
+		return this.getExpectedWorstCaseGasPrice(chainId);
 	}
 }

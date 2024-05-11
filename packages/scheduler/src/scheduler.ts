@@ -42,6 +42,7 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 			throw new Error(`cannot proceed, this scheduler is not configured to support chain with id ${execution.chainId}`);
 		}
 
+		const realTimestamp = Math.floor(Date.now() / 1000);
 		const currentTime = await time.getTimestamp(chainConfig.provider);
 
 		const checkinTime = computeInitialExecutionTimeFromSubmission(execution);
@@ -50,13 +51,27 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 			throw new Error(`cannot proceed. the expected time to execute is already passed.`);
 		}
 
+		const expectedWorstCaseGasPriceConfig = executor.getExpectedWorstCaseGasPrice
+			? await executor.getExpectedWorstCaseGasPrice(execution.chainId)
+			: undefined;
+
+		let expectedWorstCaseGasPrice: bigint | undefined;
+		const gasPriceTime = expectedWorstCaseGasPriceConfig?.updateTimestamp;
+		if (gasPriceTime && expectedWorstCaseGasPriceConfig.current) {
+			expectedWorstCaseGasPrice = expectedWorstCaseGasPriceConfig.current;
+			const previous = expectedWorstCaseGasPriceConfig?.previous;
+			if (previous && previous < expectedWorstCaseGasPrice && realTimestamp < gasPriceTime + 30 * 60) {
+				expectedWorstCaseGasPrice = previous;
+			}
+		}
+
 		const queuedExecution: ExecutionQueued<TransactionDataType> = {
 			...execution,
 			account,
 			broadcasted: false,
 			checkinTime,
 			retries: 0,
-			expectedMaxFeePerGas: '0', // TODO based on executor
+			expectedWorstCaseGasPrice: expectedWorstCaseGasPrice?.toString(),
 		};
 
 		await storage.createOrUpdateQueuedExecution(queuedExecution);

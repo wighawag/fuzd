@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS ScheduledExecutions (
 	type                          text       NOT_NULL, -- 'time-locked' | 'clear';
 	payload                       text       NOT_NULL,
 	timing                        text       NOT_NULL,
-    expectedMaxFeePerGas          text       NOT_NULL,
+    expectedWorstCaseGasPrice     text       NOT_NULL,
     paymentReserve                text,
 
 	-- initialTimeTarget                    integer     NOT_NULL,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS ArchivedScheduledExecutions (
 	type                          text       NOT_NULL, -- 'time-locked' | 'clear';
 	payload                       text       NOT_NULL,
 	timing                        text       NOT_NULL,
-    expectedMaxFeePerGas          text       NOT_NULL,
+    expectedWorstCaseGasPrice     text,
     paymentReserve                text,
 
 	-- initialTimeTarget                    integer     NOT_NULL,
