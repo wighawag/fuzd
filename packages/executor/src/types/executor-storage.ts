@@ -1,20 +1,5 @@
-import {EIP1193Account, EIP1193DATA, EIP1193TransactionDataOfType2} from 'eip-1193';
-import {BroadcastSchedule} from './external';
-import {ExpectedWorstCaseGasPrice, RequiredKeys} from 'fuzd-common';
-
-// export type EIP1193TransactionDataUsed =
-// 	| RequiredKeys<EIP1193LegacyTransactionData, 'nonce' | 'gasPrice'>
-// 	| RequiredKeys<EIP1193TransactionDataOfType1, 'nonce' | 'gasPrice'>
-// 	| RequiredKeys<EIP1193TransactionDataOfType2, 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas'>;
-export type EIP1193TransactionDataUsed = RequiredKeys<
-	EIP1193TransactionDataOfType2,
-	'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type'
->;
-
-export type EIP1193TransactionToFill = Omit<
-	EIP1193TransactionDataUsed,
-	'nonce' | 'from' | 'maxFeePerGas' | 'maxPriorityFeePerGas'
->;
+import {EIP1193Account, EIP1193DATA, EIP1193QUANTITY} from 'eip-1193';
+import {ExpectedWorstCaseGasPrice, EIP1193TransactionDataUsed} from 'fuzd-common';
 
 export type BroadcasterData = {
 	chainId: `0x${string}`;
@@ -22,19 +7,22 @@ export type BroadcasterData = {
 	address: EIP1193Account;
 };
 
-export type PendingExecutionStored = EIP1193TransactionDataUsed & {
+export type PendingExecutionStored = {
+	chainId: `0x${string}`;
+	account: EIP1193Account;
 	slot: string;
 	broadcasterAssignerID: string;
+	transaction: EIP1193TransactionDataUsed;
 	initialTime: number;
 	broadcastTime?: number;
 	nextCheckTime: number;
 	hash: EIP1193DATA;
-	account: EIP1193Account;
-	broadcastSchedule: BroadcastSchedule;
+	maxFeePerGasAuthorized: EIP1193QUANTITY;
 	isVoidTransaction: boolean;
 	retries?: number;
 	lastError?: string;
 	expiryTime?: number;
+	expectedWorstCaseGasPrice?: string;
 };
 
 export interface ExecutorStorage {

@@ -72,18 +72,14 @@ describe('Executing on the registry', function () {
 	it('Should execute without issues', async function () {
 		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env} = await prepareExecution();
 		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
-			type: '0x2',
 			chainId: txData.chainId,
-			to: txData.to,
-			data: txData.data,
-			gas: `0x${gas.toString(16)}` as `0x${string}`,
-			broadcastSchedule: [
-				{
-					duration: '0x2000',
-					maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-					maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-				},
-			],
+			transaction: {
+				type: '0x2',
+				to: txData.to,
+				data: txData.data,
+				gas: `0x${gas.toString(16)}` as `0x${string}`,
+			},
+			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
 		});
 
 		expect(txInfo.isVoidTransaction).to.be.false;
@@ -100,18 +96,14 @@ describe('Executing on the registry', function () {
 			},
 		});
 		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
-			type: '0x2',
 			chainId: txData.chainId,
-			to: txData.to,
-			data: txData.data,
-			gas: `0x${gas.toString(16)}` as `0x${string}`,
-			broadcastSchedule: [
-				{
-					duration: '0x2000',
-					maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-					maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-				},
-			],
+			transaction: {
+				type: '0x2',
+				to: txData.to,
+				data: txData.data,
+				gas: `0x${gas.toString(16)}` as `0x${string}`,
+			},
+			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
 		});
 
 		expect(txInfo.isVoidTransaction).to.be.false;
@@ -128,18 +120,14 @@ describe('Executing on the registry', function () {
 			},
 		});
 		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
-			type: '0x2',
 			chainId: txData.chainId,
-			to: txData.to,
-			data: txData.data,
-			gas: `0x${gas.toString(16)}` as `0x${string}`,
-			broadcastSchedule: [
-				{
-					duration: '0x2000',
-					maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-					maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-				},
-			],
+			transaction: {
+				type: '0x2',
+				to: txData.to,
+				data: txData.data,
+				gas: `0x${gas.toString(16)}` as `0x${string}`,
+			},
+			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
 		});
 
 		expect(txInfo.isVoidTransaction).to.be.false;
@@ -172,18 +160,14 @@ describe('Executing on the registry', function () {
 			},
 		});
 		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
-			type: '0x2',
 			chainId: txData.chainId,
-			to: txData.to,
-			data: txData.data,
-			gas: `0x${gas.toString(16)}` as `0x${string}`,
-			broadcastSchedule: [
-				{
-					duration: '0x2000',
-					maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-					maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-				},
-			],
+			transaction: {
+				type: '0x2',
+				to: txData.to,
+				data: txData.data,
+				gas: `0x${gas.toString(16)}` as `0x${string}`,
+			},
+			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
 		});
 
 		expect(txInfo.isVoidTransaction).to.be.false;

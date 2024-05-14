@@ -1,44 +1,36 @@
 import {logs} from 'named-logs';
+import {BroadcasterData, PendingExecutionStored} from './types/executor-storage';
 import {
-	BroadcasterData,
-	EIP1193TransactionDataUsed,
-	EIP1193TransactionToFill,
-	PendingExecutionStored,
-} from './types/executor-storage';
-import {EIP1193Account, EIP1193Transaction, EIP1193TransactionReceipt} from 'eip-1193';
+	EIP1193Account,
+	EIP1193ProviderWithoutEvents,
+	EIP1193QUANTITY,
+	EIP1193Transaction,
+	EIP1193TransactionReceipt,
+} from 'eip-1193';
 import {
 	TransactionSubmission,
 	ExecutorBackend,
-	FeePerGasPeriod,
 	RawTransactionInfo,
 	TransactionParams,
 	SchemaTransactionSubmission,
 } from './types/external';
 import {keccak_256} from '@noble/hashes/sha3';
-import {Executor, ExpectedWorstCaseGasPrice, getRoughGasPriceEstimate} from 'fuzd-common';
+import {
+	Executor,
+	ExpectedWorstCaseGasPrice,
+	getRoughGasPriceEstimate,
+	EIP1193TransactionDataUsed,
+	EIP1193TransactionToFill,
+	toHex,
+	fromHex,
+} from 'fuzd-common';
 import {BroadcasterSignerData, ChainConfig, ExecutorConfig} from './types/internal';
 
 const logger = logs('fuzd-executor');
 
-type TransactionToStore = Omit<
-	PendingExecutionStored,
-	'hash' | 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'broadcastTime' | 'nextCheckTime'
->;
-
-function toHex(arr: Uint8Array): `0x${string}` {
-	let str = `0x`;
-	for (const element of arr) {
-		str += element.toString(16).padStart(2, '0');
-	}
-	return str as `0x${string}`;
-}
-function fromHex(str: `0x${string}`): Uint8Array {
-	const matches = str.slice(2).match(/.{1,2}/g);
-	if (matches) {
-		return Uint8Array.from(matches.map((byte) => parseInt(byte, 16)));
-	}
-	return new Uint8Array(0);
-}
+type ExecutionToStore = Omit<PendingExecutionStored, 'hash' | 'broadcastTime' | 'nextCheckTime' | 'transaction'> & {
+	transaction: Omit<EIP1193TransactionDataUsed, 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas'>;
+};
 
 export function createExecutor(
 	config: ExecutorConfig,
@@ -46,45 +38,6 @@ export function createExecutor(
 	const {chainConfigs, time, storage, signers} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
-
-	async function updateTransactionWithCurrentGasPrice({
-		chainId,
-		slot,
-		account,
-	}: {
-		chainId: `0x${string}`;
-		slot: string;
-		account: `0x${string}`;
-	}): Promise<'NotFound' | 'BetterFeeAlready' | 'Updated'> {
-		const {provider} = _getChainConfig(chainId);
-		const estimates = await getRoughGasPriceEstimate(provider);
-		const gasPriceEstimate = estimates.average;
-
-		const existingExecution = await storage.getPendingExecution({
-			chainId,
-			slot,
-			account,
-		});
-		if (existingExecution) {
-			const sum = existingExecution.broadcastSchedule.reduce((curr, value) => curr + BigInt(value.duration), 0n);
-			const currentbestFees = existingExecution.broadcastSchedule[existingExecution.broadcastSchedule.length - 1];
-			if (BigInt(currentbestFees.maxFeePerGas) < gasPriceEstimate.maxFeePerGas) {
-				existingExecution.broadcastSchedule = [
-					{
-						maxFeePerGas: `0x${gasPriceEstimate.maxFeePerGas.toString(16)}` as `0x${string}`,
-						maxPriorityFeePerGas: `0x${gasPriceEstimate.maxPriorityFeePerGas.toString(16)}` as `0x${string}`,
-						duration: `0x${sum.toString(16)}` as `0x${string}`,
-					},
-				];
-				await storage.createOrUpdatePendingExecution(existingExecution);
-				return 'Updated';
-			} else {
-				return 'BetterFeeAlready';
-			}
-		} else {
-			return 'NotFound';
-		}
-	}
 
 	function getExpectedWorstCaseGasPrice(chainId: `0x${string}`): Promise<ExpectedWorstCaseGasPrice> {
 		return storage.getExpectedWorstCaseGasPrice(chainId);
@@ -94,12 +47,30 @@ export function createExecutor(
 		slot: string,
 		account: EIP1193Account,
 		submission: TransactionSubmission,
+		options?: {
+			expectedWorstCaseGasPrice: bigint;
+		},
 	): Promise<PendingExecutionStored> {
 		submission = SchemaTransactionSubmission.parse(submission);
 
 		const chainConfig = chainConfigs[submission.chainId];
 		if (!chainConfig) {
 			throw new Error(`cannot proceed, this executor is not configured to support chain with id ${submission.chainId}`);
+		}
+
+		const realTimestamp = Math.floor(Date.now() / 1000);
+
+		let expectedWorstCaseGasPrice = options?.expectedWorstCaseGasPrice;
+		if (!expectedWorstCaseGasPrice) {
+			const expectedWorstCaseGasPriceConfig = await storage.getExpectedWorstCaseGasPrice(submission.chainId);
+			const gasPriceTime = expectedWorstCaseGasPriceConfig?.updateTimestamp;
+			if (gasPriceTime && expectedWorstCaseGasPriceConfig.current) {
+				expectedWorstCaseGasPrice = expectedWorstCaseGasPriceConfig.current;
+				const previous = expectedWorstCaseGasPriceConfig?.previous;
+				if (previous && previous < expectedWorstCaseGasPrice && realTimestamp < gasPriceTime + 30 * 60) {
+					expectedWorstCaseGasPrice = previous;
+				}
+			}
 		}
 
 		const existingExecution = await storage.getPendingExecution({
@@ -115,46 +86,22 @@ export function createExecutor(
 		const timestamp = await time.getTimestamp(provider);
 
 		const broadcaster = await signers.assignProviderFor(submission.chainId, account);
-		const pendingExecutionToStore: TransactionToStore = {
-			...submission,
+		const pendingExecutionToStore: ExecutionToStore = {
+			chainId: submission.chainId,
 			account,
 			slot,
-			from: broadcaster.address,
+			transaction: {...submission.transaction, from: broadcaster.address, chainId: submission.chainId},
+			maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
 			broadcasterAssignerID: broadcaster.assignerID,
 			isVoidTransaction: false,
 			initialTime: timestamp,
 			expiryTime: submission.expiryTime,
+			expectedWorstCaseGasPrice: expectedWorstCaseGasPrice?.toString(),
 		};
 
 		await _updateFees(pendingExecutionToStore);
 
-		const currentMaxFee = submission.broadcastSchedule[0];
-
-		const maxFeePerGasChosen = BigInt(currentMaxFee.maxFeePerGas);
-		const maxPriorityFeePerGasChosen = BigInt(currentMaxFee.maxPriorityFeePerGas);
-
-		// TODO remove duplication maxFeePerGas
-		const estimates = await getRoughGasPriceEstimate(provider);
-		const gasPriceEstimate = estimates.average;
-		let maxFeePerGas = gasPriceEstimate.maxFeePerGas;
-		let maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
-		if (gasPriceEstimate.maxFeePerGas > maxFeePerGasChosen) {
-			logger.warn(
-				`fast.maxFeePerGas (${gasPriceEstimate.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasChosen}), tx might not be included`,
-			);
-			maxFeePerGas = maxFeePerGasChosen;
-			if (maxPriorityFeePerGas > maxFeePerGas) {
-				maxPriorityFeePerGas = maxFeePerGas;
-			}
-		} else if (gasPriceEstimate.maxPriorityFeePerGas > maxPriorityFeePerGasChosen) {
-			logger.warn(
-				`fast.maxPriorityFeePerGas (${gasPriceEstimate.maxPriorityFeePerGas}) > maxPriorityFeePerGasChosen (${maxPriorityFeePerGasChosen}), we bump it up`,
-			);
-		}
-
-		// TODO we use global broadcastSchedule using fixed time
-		// so if you sent a tx 2 hour ago and the current schedule 2hour later is smaller than
-		// the newly submitted tx schedule (for now) then we will resubmit the tx with that new fee schedule
+		const {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await _getGasFee(provider, submission);
 
 		const result = await _submitTransaction(broadcaster, pendingExecutionToStore, {
 			maxFeePerGas,
@@ -167,14 +114,15 @@ export function createExecutor(
 		return result;
 	}
 
-	async function _updateFees(latestTransaction: TransactionToStore) {
+	async function _updateFees(latestTransaction: ExecutionToStore) {
 		// TODO
 		// logger.log(`TODO update fees of existing pending transactions to ensure new execution get a chance...`);
 		// await storage.updateFees(account);
 	}
 
 	async function _signTransaction(
-		transactionData: EIP1193TransactionToFill & {account: EIP1193Account},
+		transactionData: EIP1193TransactionToFill,
+		account: EIP1193Account,
 		broadcaster: BroadcasterSignerData,
 		txParams: TransactionParams,
 		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean},
@@ -291,7 +239,7 @@ export function createExecutor(
 
 	async function _getTxParams(
 		broadcasterAddress: EIP1193Account,
-		transactionData: EIP1193TransactionToFill & {account: EIP1193Account},
+		transactionData: EIP1193TransactionToFill,
 	): Promise<TransactionParams> {
 		const {provider} = _getChainConfig(transactionData.chainId);
 
@@ -355,7 +303,7 @@ export function createExecutor(
 
 	async function _submitTransaction(
 		broadcaster: BroadcasterSignerData,
-		transactionData: TransactionToStore,
+		transactionData: ExecutionToStore,
 		options: {
 			forceNonce?: number;
 			maxFeePerGas: bigint;
@@ -366,7 +314,7 @@ export function createExecutor(
 		},
 	): Promise<PendingExecutionStored | undefined> {
 		const {provider} = _getChainConfig(transactionData.chainId);
-		const txParams = await _getTxParams(broadcaster.address, transactionData);
+		const txParams = await _getTxParams(broadcaster.address, transactionData.transaction);
 		const {gasRequired, revert} = txParams;
 
 		if (revert) {
@@ -382,7 +330,7 @@ export function createExecutor(
 			return undefined;
 		}
 
-		if (gasRequired > BigInt(transactionData.gas)) {
+		if (gasRequired > BigInt(transactionData.transaction.gas)) {
 			const errorMessage = `The transaction requires more gas than provided. Aborting here`;
 			logger.error(errorMessage);
 			transactionData.lastError = errorMessage;
@@ -394,7 +342,13 @@ export function createExecutor(
 			return undefined;
 		}
 
-		const rawTxInfo = await _signTransaction(transactionData, broadcaster, txParams, options);
+		const rawTxInfo = await _signTransaction(
+			transactionData.transaction,
+			transactionData.account,
+			broadcaster,
+			txParams,
+			options,
+		);
 		const hash = toHex(keccak_256(fromHex(rawTxInfo.rawTx)));
 
 		const retries = typeof transactionData.retries === 'undefined' ? 0 : transactionData.retries + 1;
@@ -409,8 +363,9 @@ export function createExecutor(
 		}
 
 		const newTransactionData: PendingExecutionStored = {
-			...rawTxInfo.transactionData,
-			broadcastSchedule: transactionData.broadcastSchedule,
+			chainId: rawTxInfo.transactionData.chainId,
+			transaction: {...rawTxInfo.transactionData},
+			maxFeePerGasAuthorized: transactionData.maxFeePerGasAuthorized,
 			initialTime: transactionData.initialTime,
 			expiryTime: transactionData.expiryTime,
 			slot: transactionData.slot,
@@ -468,6 +423,33 @@ export function createExecutor(
 		return newTransactionData;
 	}
 
+	async function _getGasFee(
+		provider: EIP1193ProviderWithoutEvents,
+		executionData: {maxFeePerGasAuthorized: EIP1193QUANTITY},
+	) {
+		const maxFeePerGasAuthorized = BigInt(executionData.maxFeePerGasAuthorized);
+
+		// TODO remove duplication maxFeePerGas
+		const estimates = await getRoughGasPriceEstimate(provider);
+		const gasPriceEstimate = estimates.average;
+		let maxFeePerGas = gasPriceEstimate.maxFeePerGas;
+		let maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
+		if (gasPriceEstimate.maxFeePerGas > maxFeePerGasAuthorized) {
+			logger.warn(
+				`fast.maxFeePerGas (${gasPriceEstimate.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasAuthorized}), tx might not be included`,
+			);
+			maxFeePerGas = maxFeePerGasAuthorized;
+			if (maxPriorityFeePerGas > maxFeePerGas) {
+				maxPriorityFeePerGas = maxFeePerGas;
+			}
+			// FOR now
+			// maxFeePerGas = gasPriceEstimate.maxFeePerGas;
+			// maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
+		}
+
+		return {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate};
+	}
+
 	async function _resubmitIfNeeded(pendingExecution: PendingExecutionStored): Promise<void> {
 		const {provider, finality, worstCaseBlockTime} = _getChainConfig(pendingExecution.chainId);
 		const timestamp = await time.getTimestamp(provider);
@@ -485,59 +467,11 @@ export function createExecutor(
 			return;
 		}
 
-		// TODO validation aty submission time
-		// TODO also we need to limit the size of the array of schedule
-		// TODO we also need to ensure fee are in increasing order
-		if (pendingExecution.broadcastSchedule.length === 0) {
-			const errorMessage = `no broadcastSchedule, should not have let this tx go through, do not have gas params`;
-			logger.error(errorMessage);
-			pendingExecution.lastError = errorMessage;
-			storage.archiveTimedoutExecution(pendingExecution);
-			return;
-		}
-		let feeSlot: FeePerGasPeriod | undefined;
-		let total = 0;
-		for (let i = 0; i < pendingExecution.broadcastSchedule.length; i++) {
-			const currentSlot = pendingExecution.broadcastSchedule[i];
-			if (total <= diffSinceInitiated) {
-				feeSlot = currentSlot;
-			}
-			total += Number(currentSlot.duration);
-		}
+		const {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await _getGasFee(provider, pendingExecution);
 
-		if (!feeSlot) {
-			// we do not have more to resubmit
-			pendingExecution.lastError = 'timed out';
-			storage.archiveTimedoutExecution(pendingExecution);
-			return;
-		}
-		const maxFeePerGasChosen = BigInt(feeSlot.maxFeePerGas);
-		const maxPriorityFeePerGasChosen = BigInt(feeSlot.maxPriorityFeePerGas);
-
-		// TODO remove duplication maxFeePerGas
-		const estimates = await getRoughGasPriceEstimate(provider);
-		const gasPriceEstimate = estimates.average;
-		let maxFeePerGas = gasPriceEstimate.maxFeePerGas;
-		let maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
-		if (gasPriceEstimate.maxFeePerGas > maxFeePerGasChosen) {
-			logger.warn(
-				`fast.maxFeePerGas (${gasPriceEstimate.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasChosen}), tx might not be included`,
-			);
-			maxFeePerGas = maxFeePerGasChosen;
-			if (maxPriorityFeePerGas > maxFeePerGas) {
-				maxPriorityFeePerGas = maxFeePerGas;
-			}
-			// FOR now
-			// maxFeePerGas = gasPriceEstimate.maxFeePerGas;
-			// maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
-		} else if (gasPriceEstimate.maxPriorityFeePerGas > maxPriorityFeePerGasChosen) {
-			logger.warn(
-				`fast.maxPriorityFeePerGas (${gasPriceEstimate.maxPriorityFeePerGas}) > maxPriorityFeePerGasChosen (${maxPriorityFeePerGasChosen}), we bump it up`,
-			);
-		}
-
-		const maxFeePerGasUsed = BigInt(pendingExecution.maxFeePerGas);
-		const maxPriorityFeePerGasUsed = BigInt(pendingExecution.maxFeePerGas);
+		const transaction = pendingExecution.transaction;
+		const maxFeePerGasUsed = BigInt(transaction.maxFeePerGas);
+		const maxPriorityFeePerGasUsed = BigInt(transaction.maxFeePerGas);
 
 		let pendingTansaction: EIP1193Transaction | null;
 		try {
@@ -566,7 +500,7 @@ export function createExecutor(
 				`resubmit with maxFeePerGas: ${maxFeePerGas} and maxPriorityFeePerGas: ${maxPriorityFeePerGas} \n(maxFeePerGasUsed: ${maxFeePerGasUsed}, maxPriorityFeePerGasUsed: ${maxPriorityFeePerGasUsed})`,
 			);
 			await _submitTransaction(signer, pendingExecution, {
-				forceNonce: Number(pendingExecution.nonce),
+				forceNonce: Number(transaction.nonce),
 				maxFeePerGas,
 				maxPriorityFeePerGas,
 				gasPriceEstimate: gasPriceEstimate,
@@ -576,7 +510,7 @@ export function createExecutor(
 	}
 
 	async function __processPendingTransaction(pendingExecution: PendingExecutionStored): Promise<void> {
-		const {provider, finality, worstCaseBlockTime} = _getChainConfig(pendingExecution.chainId);
+		const {provider, finality, worstCaseBlockTime} = _getChainConfig(pendingExecution.transaction.chainId);
 
 		let receipt: EIP1193TransactionReceipt | null;
 		try {
@@ -600,7 +534,11 @@ export function createExecutor(
 		}
 
 		if (finalised) {
-			storage.deletePendingExecution(pendingExecution);
+			storage.deletePendingExecution({
+				chainId: pendingExecution.transaction.chainId,
+				account: pendingExecution.account,
+				slot: pendingExecution.slot,
+			});
 		} else if (!receipt) {
 			await _resubmitIfNeeded(pendingExecution);
 		}
@@ -634,6 +572,5 @@ export function createExecutor(
 		submitTransaction,
 		getExpectedWorstCaseGasPrice,
 		processPendingTransactions,
-		updateTransactionWithCurrentGasPrice,
 	};
 }

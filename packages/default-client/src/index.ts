@@ -1,7 +1,7 @@
 import {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
 import {timelockEncrypt, HttpChainClient, roundAt} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';
-import {BroadcastSchedule, TransactionSubmission} from 'fuzd-executor';
+import {TransactionSubmission} from 'fuzd-executor';
 import {deriveRemoteAddress} from 'remote-account';
 export {testnetClient, mainnetClient} from 'tlock-js';
 
@@ -21,16 +21,12 @@ export function createClient(config: ClientConfig) {
 	}
 	async function submitExecution(execution: {
 		chainId: `0x${string}` | string;
-		gas: bigint;
-		broadcastSchedule: [
-			{
-				duration: number;
-				maxFeePerGas: bigint;
-				maxPriorityFeePerGas: bigint;
-			},
-		];
-		data: `0x${string}`;
-		to: `0x${string}`;
+		transaction: {
+			gas: bigint;
+			data: `0x${string}`;
+			to: `0x${string}`;
+		};
+		maxFeePerGasAuthorized: bigint;
 		time: number;
 	}): Promise<ScheduleInfo> {
 		let executionToSend: ScheduledExecution<TransactionSubmission>;
@@ -43,16 +39,14 @@ export function createClient(config: ClientConfig) {
 			type: 'clear',
 			transactions: [
 				{
-					type: '0x2',
 					chainId,
-					gas: ('0x' + execution.gas.toString(16)) as `0x${string}`,
-					broadcastSchedule: execution.broadcastSchedule.map((v) => ({
-						duration: ('0x' + v.duration.toString(16)) as `0x${string}`,
-						maxFeePerGas: ('0x' + v.maxFeePerGas.toString(16)) as `0x${string}`,
-						maxPriorityFeePerGas: ('0x' + v.maxPriorityFeePerGas.toString(16)) as `0x${string}`,
-					})) as BroadcastSchedule,
-					data: execution.data,
-					to: execution.to,
+					maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as `0x${string}`,
+					transaction: {
+						type: '0x2',
+						gas: ('0x' + execution.transaction.gas.toString(16)) as `0x${string}`,
+						data: execution.transaction.data,
+						to: execution.transaction.to,
+					},
 				},
 			],
 		};

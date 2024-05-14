@@ -109,18 +109,14 @@ describe('Executing on the registry', function () {
 			},
 			transactions: [
 				{
-					type: '0x2',
 					chainId: txData.chainId,
-					to: txData.to,
-					data: txData.data,
-					gas: `0x${gas.toString(16)}` as `0x${string}`,
-					broadcastSchedule: [
-						{
-							duration: '0x2000',
-							maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-							maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-						},
-					],
+					transaction: {
+						type: '0x2',
+						to: txData.to,
+						data: txData.data,
+						gas: `0x${gas.toString(16)}` as `0x${string}`,
+					},
+					maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
 				},
 			],
 		});
@@ -139,18 +135,14 @@ describe('Executing on the registry', function () {
 		const timestamp = await time.getTimestamp();
 		const checkinTime = timestamp + 100;
 		const transaction: TransactionSubmission = {
-			type: '0x2',
 			chainId: txData.chainId,
-			to: txData.to,
-			data: txData.data,
-			gas: `0x${gas.toString(16)}` as `0x${string}`,
-			broadcastSchedule: [
-				{
-					duration: '0x2000' as `0x${string}`,
-					maxFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-					maxPriorityFeePerGas: `0x${gasPrice.toString(16)}` as `0x${string}`,
-				},
-			],
+			transaction: {
+				type: '0x2',
+				to: txData.to,
+				data: txData.data,
+				gas: `0x${gas.toString(16)}` as `0x${string}`,
+			},
+			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
 		};
 		const id = (++counter).toString();
 		mockDecrypter.addDecryptedResult(id, transaction);

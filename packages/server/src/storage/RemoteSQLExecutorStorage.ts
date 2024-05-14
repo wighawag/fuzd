@@ -38,7 +38,7 @@ type ExecutionInDB = {
 	initialTime: number;
 	broadcastTime: number | null;
 	hash: `0x${string}`;
-	broadcastSchedule: string;
+	maxFeePerGasAuthorized: `0x${string}`;
 	isVoidTransaction: 0 | 1;
 	retries: number | null;
 	lastError: string | null;
@@ -74,53 +74,41 @@ function toExpectedGasPriceInDB(chainId: `0x${string}`, obj: ExpectedWorstCaseGa
 
 function fromExecutionInDB(inDB: ExecutionInDB): PendingExecutionStored {
 	return {
+		chainId: inDB.chainId,
+		account: inDB.account,
 		slot: inDB.slot,
 		broadcasterAssignerID: inDB.broadcasterAssignerID,
 		initialTime: inDB.initialTime,
 		broadcastTime: inDB.broadcastTime || undefined,
 		nextCheckTime: inDB.nextCheckTime,
 		hash: inDB.hash,
-		account: inDB.account,
-		broadcastSchedule: JSON.parse(inDB.broadcastSchedule),
+		maxFeePerGasAuthorized: inDB.maxFeePerGasAuthorized,
 		isVoidTransaction: inDB.isVoidTransaction == 1 ? true : false,
 		retries: inDB.retries || undefined,
 		lastError: inDB.lastError || undefined,
 		expiryTime: inDB.expiryTime || undefined,
-		...JSON.parse(inDB.transactionData),
+		transaction: JSON.parse(inDB.transactionData),
 	};
 }
 
 function toExecutionInDB(obj: PendingExecutionStored): ExecutionInDB {
 	return {
+		chainId: obj.chainId,
+		account: obj.account,
 		slot: obj.slot,
 		broadcasterAssignerID: obj.broadcasterAssignerID,
 		initialTime: obj.initialTime,
 		broadcastTime: obj.broadcastTime || null,
 		nextCheckTime: obj.nextCheckTime,
 		hash: obj.hash,
-		account: obj.account,
-		broadcastSchedule: JSON.stringify(obj.broadcastSchedule),
+		maxFeePerGasAuthorized: obj.maxFeePerGasAuthorized,
 		isVoidTransaction: obj.isVoidTransaction ? 1 : 0,
 		retries: typeof obj.retries === 'undefined' ? null : obj.retries,
 		lastError: obj.lastError || null,
 		expiryTime: obj.expiryTime || null,
-		broadcaster: obj.from,
-		nonce: Number(obj.nonce),
-		chainId: obj.chainId,
-		// TODO make transaction separate in PendingExecutionStored
-		transactionData: JSON.stringify({
-			from: obj.from,
-			type: obj.type,
-			to: obj.to,
-			gas: obj.gas,
-			value: obj.value,
-			data: obj.data,
-			nonce: obj.nonce,
-			chainId: obj.chainId,
-			accessList: obj.accessList,
-			maxFeePerGas: obj.maxFeePerGas,
-			maxPriorityFeePerGas: obj.maxPriorityFeePerGas,
-		}),
+		broadcaster: obj.transaction.from,
+		nonce: Number(obj.transaction.nonce),
+		transactionData: JSON.stringify(obj.transaction),
 	};
 }
 

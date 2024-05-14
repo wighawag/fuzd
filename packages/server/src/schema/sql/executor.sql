@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     initialTime            integer     NOT NULL,
     broadcastTime          integer,
     hash                   text        NOT NULL, -- tx hash
-    broadcastSchedule      text        NOT NULL,
+    maxFeePerGasAuthorized text        NOT NULL,
     isVoidTransaction      integer     NOT NULL,
     retries                integer, 
     lastError              text,
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS ArchivedBroadcastedExecutions (
     initialTime            integer     NOT NULL,
     broadcastTime          integer,
     hash                   text        NOT NULL, -- tx hash
-    broadcastSchedule      text        NOT NULL,
+    maxFeePerGasAuthorized text        NOT NULL,
     isVoidTransaction      integer     NOT NULL,
     retries                integer, 
     lastError              text,

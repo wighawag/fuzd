@@ -61,23 +61,17 @@ describe('Worker', () => {
 		// we build up first the transaction we want to submit in the future (delayed)
 		// this is mostly a normal tx object, except for the broadcastSchedule
 		const tx: TransactionSubmission = {
-			gas: `0x1000000`,
 			chainId: chainIdAsHex,
-			type: '0x2',
+			transaction: {
+				gas: `0x1000000`,
+				type: '0x2',
+			},
 			// the broadcastSchedule let you define gas behavior depending on time
 			// you can also define how long each behavior should last
 			// this also allow you to give a time expiry
 			// Note though that the api can set its own limit and might not want to keep trying forever
 			// TODO make it simpler for now
-			broadcastSchedule: [
-				{
-					// duration define how long each gasPric elast
-					duration: `0x10`,
-					// then it is teh normal EIP-1159 spec:
-					maxFeePerGas: `0x10`,
-					maxPriorityFeePerGas: `0x10`,
-				},
-			],
+			maxFeePerGasAuthorized: `0x10`,
 		};
 
 		// then we have several option
