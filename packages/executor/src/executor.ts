@@ -8,11 +8,11 @@ import {
 	EIP1193TransactionReceipt,
 } from 'eip-1193';
 import {
-	TransactionSubmission,
+	ExecutionSubmission,
 	ExecutorBackend,
 	RawTransactionInfo,
 	TransactionParams,
-	SchemaTransactionSubmission,
+	SchemaExecutionSubmission,
 } from './types/external';
 import {keccak_256} from '@noble/hashes/sha3';
 import {
@@ -34,7 +34,7 @@ type ExecutionToStore = Omit<PendingExecutionStored, 'hash' | 'broadcastTime' | 
 
 export function createExecutor(
 	config: ExecutorConfig,
-): Executor<TransactionSubmission, PendingExecutionStored> & ExecutorBackend {
+): Executor<ExecutionSubmission, PendingExecutionStored> & ExecutorBackend {
 	const {chainConfigs, time, storage, signers} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
@@ -46,12 +46,12 @@ export function createExecutor(
 	async function submitTransaction(
 		slot: string,
 		account: EIP1193Account,
-		submission: TransactionSubmission,
+		submission: ExecutionSubmission,
 		options?: {
 			expectedWorstCaseGasPrice: bigint;
 		},
 	): Promise<PendingExecutionStored> {
-		submission = SchemaTransactionSubmission.parse(submission);
+		submission = SchemaExecutionSubmission.parse(submission);
 
 		const chainConfig = chainConfigs[submission.chainId];
 		if (!chainConfig) {

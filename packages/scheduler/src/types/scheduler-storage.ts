@@ -1,7 +1,7 @@
 import {EIP1193Account} from 'eip-1193';
 import {ScheduledExecution} from './external';
 
-export type ExecutionQueued<TransactionDataType> = ScheduledExecution<TransactionDataType> & {
+export type ScheduledExecutionQueued<ExecutionDataType> = ScheduledExecution<ExecutionDataType> & {
 	slot: string;
 	account: EIP1193Account;
 	broadcasted: boolean;
@@ -14,31 +14,31 @@ export type ExecutionQueued<TransactionDataType> = ScheduledExecution<Transactio
 	expectedWorstCaseGasPrice?: string;
 };
 
-export interface SchedulerStorage<TransactionDataType> {
+export interface SchedulerStorage<ExecutionDataType> {
 	getQueuedExecution(params: {
 		chainId: `0x${string}`;
 		account: `0x${string}`;
 		slot: string;
-	}): Promise<ExecutionQueued<TransactionDataType> | undefined>;
+	}): Promise<ScheduledExecutionQueued<ExecutionDataType> | undefined>;
 	getQueuedExecutionsForAccount(params: {
 		chainId: `0x${string}`;
 		account: `0x${string}`;
-	}): Promise<ExecutionQueued<TransactionDataType>[]>;
+	}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]>;
 	deleteExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void>;
-	archiveExecution(executionToStore: ExecutionQueued<TransactionDataType>): Promise<void>;
+	archiveExecution(executionToStore: ScheduledExecutionQueued<ExecutionDataType>): Promise<void>;
 	createOrUpdateQueuedExecution(
-		executionToStore: ExecutionQueued<TransactionDataType>,
-	): Promise<ExecutionQueued<TransactionDataType>>;
-	getQueueTopMostExecutions(params: {limit: number}): Promise<ExecutionQueued<TransactionDataType>[]>;
-	getAllExecutions(params: {limit: number}): Promise<ExecutionQueued<TransactionDataType>[]>;
+		executionToStore: ScheduledExecutionQueued<ExecutionDataType>,
+	): Promise<ScheduledExecutionQueued<ExecutionDataType>>;
+	getQueueTopMostExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]>;
+	getAllExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]>;
 	getAccountSubmissions(
 		account: `0x${string}`,
 		params: {limit: number},
-	): Promise<ExecutionQueued<TransactionDataType>[]>;
+	): Promise<ScheduledExecutionQueued<ExecutionDataType>[]>;
 	getAccountArchivedSubmissions(
 		account: `0x${string}`,
 		params: {limit: number},
-	): Promise<ExecutionQueued<TransactionDataType>[]>;
+	): Promise<ScheduledExecutionQueued<ExecutionDataType>[]>;
 	clear(): Promise<void>;
 	setup(): Promise<void>;
 }

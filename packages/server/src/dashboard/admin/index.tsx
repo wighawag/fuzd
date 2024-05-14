@@ -8,7 +8,7 @@ import {basicAuth} from 'hono/basic-auth';
 import {logs} from 'named-logs';
 import {Layout} from '../layout';
 import {Table} from '../components/Table';
-import {displayExecutionBroadcasted, displayExecutionQueued} from '../display';
+import {displayExecutionBroadcasted, displayScheduledExecutionQueued} from '../display';
 import {SchemaEIP1193Account} from 'fuzd-common';
 
 const logger = logs('fuzd-cf-worker-admin-dashboard');
@@ -20,7 +20,7 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 			const config = c.get('config');
 			const queue = await config.schedulerStorage.getQueueTopMostExecutions({limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
-			const displayData = queue.map(displayExecutionQueued(diff));
+			const displayData = queue.map(displayScheduledExecutionQueued(diff));
 			return c.html(
 				<Layout>
 					<Table data={displayData} />
@@ -31,7 +31,7 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 			const config = c.get('config');
 			const queue = await config.schedulerStorage.getAllExecutions({limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
-			const displayData = queue.map(displayExecutionQueued(diff));
+			const displayData = queue.map(displayScheduledExecutionQueued(diff));
 			return c.html(
 				<Layout>
 					<Table data={displayData} />
@@ -43,7 +43,7 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 			const account = SchemaEIP1193Account.parse(c.req.param('account'));
 			const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
-			const displayData = queue.map(displayExecutionQueued(diff));
+			const displayData = queue.map(displayScheduledExecutionQueued(diff));
 			return c.html(
 				<Layout>
 					<Table data={displayData} />
@@ -55,14 +55,14 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 			const account = SchemaEIP1193Account.parse(c.req.param('account'));
 			const queue = await config.schedulerStorage.getAccountArchivedSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
-			const displayData = queue.map(displayExecutionQueued(diff));
+			const displayData = queue.map(displayScheduledExecutionQueued(diff));
 			return c.html(
 				<Layout>
 					<Table data={displayData} />
 				</Layout>,
 			);
 		})
-		.get('/transactions', async (c) => {
+		.get('/executions', async (c) => {
 			const config = c.get('config');
 			const txs = await config.executorStorage.getPendingExecutions({limit: 100});
 			console.log(txs);
@@ -74,7 +74,7 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 				</Layout>,
 			);
 		})
-		.get('/archived-transactions', async (c) => {
+		.get('/archived-executions', async (c) => {
 			const config = c.get('config');
 			const txs = await config.executorStorage.getArchivedBroadcastedExecutions({limit: 100});
 			const displayData = txs.map(displayExecutionBroadcasted());

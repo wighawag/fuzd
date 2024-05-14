@@ -23,15 +23,15 @@ export type ExpectedWorstCaseGasPrice =
 // ------------------------------------------------------------------------------------------------
 // Executor
 // ------------------------------------------------------------------------------------------------
-export type Executor<TransactionSubmissionDataType, TransactionSubmissionResponseType> = {
+export type Executor<ExecutionSubmissionDataType, ExecutionSubmissionResponseType> = {
 	submitTransaction(
 		slot: string,
 		account: EIP1193Account,
-		submission: TransactionSubmissionDataType,
+		execution: ExecutionSubmissionDataType,
 		options?: {
 			expectedWorstCaseGasPrice?: bigint;
 		},
-	): Promise<TransactionSubmissionResponseType>;
+	): Promise<ExecutionSubmissionResponseType>;
 
 	getExpectedWorstCaseGasPrice?(chainId: `0x${string}`): Promise<ExpectedWorstCaseGasPrice>;
 };

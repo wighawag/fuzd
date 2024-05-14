@@ -1,4 +1,4 @@
-import {ExecutionQueued, Decrypter, DecryptionResult, DecryptedPayload} from 'fuzd-scheduler';
+import {ScheduledExecutionQueued, Decrypter, DecryptionResult, DecryptedPayload} from 'fuzd-scheduler';
 import {timelockDecrypt, HttpChainClient, roundTime, roundAt, Buffer} from 'tlock-js';
 
 export {testnetClient, mainnetClient} from 'tlock-js';
@@ -12,10 +12,10 @@ export type DecrypterConfig = {
 	client: HttpChainClient;
 };
 
-export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Decrypter<TransactionDataType> {
+export function initDecrypter<ExecutionDataType>(config: DecrypterConfig): Decrypter<ExecutionDataType> {
 	async function decrypt(
-		execution: ExecutionQueued<TransactionDataType>,
-	): Promise<DecryptionResult<TransactionDataType>> {
+		execution: ScheduledExecutionQueued<ExecutionDataType>,
+	): Promise<DecryptionResult<ExecutionDataType>> {
 		if (execution.type !== 'time-locked') {
 			throw new Error(`expect an execution of type "time-locked"`);
 		}
@@ -34,7 +34,7 @@ export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Dec
 			};
 		}
 
-		const json: DecryptedPayload<TransactionDataType> = JSON.parse(decrypted.toString('utf-8'));
+		const json: DecryptedPayload<ExecutionDataType> = JSON.parse(decrypted.toString('utf-8'));
 
 		if (json.type === 'time-locked') {
 			// onion decryption
@@ -63,7 +63,7 @@ export function initDecrypter<TransactionDataType>(config: DecrypterConfig): Dec
 		} else {
 			return {
 				success: true,
-				transactions: json.transactions,
+				executions: json.executions,
 			};
 		}
 	}

@@ -27,12 +27,12 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 			const queue = await config.schedulerStorage.getAccountArchivedSubmissions(account, {limit: 100});
 			return c.json(queue);
 		})
-		.get('/transactions', async (c) => {
+		.get('/executions', async (c) => {
 			const config = c.get('config');
 			const txs = await config.executorStorage.getPendingExecutions({limit: 100});
 			return c.json(txs);
 		})
-		.get('/archived-transactions', async (c) => {
+		.get('/archived-executions', async (c) => {
 			const config = c.get('config');
 			const txs = await config.executorStorage.getArchivedBroadcastedExecutions({limit: 100});
 			return c.json(txs);

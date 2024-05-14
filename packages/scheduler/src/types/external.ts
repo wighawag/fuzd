@@ -1,5 +1,5 @@
 import {EIP1193Account} from 'eip-1193';
-import {ExecutionQueued} from './scheduler-storage';
+import {ScheduledExecutionQueued} from './scheduler-storage';
 import {SchemaEIP1193Account, SchemaString0x} from 'fuzd-common';
 import z from 'zod';
 
@@ -80,13 +80,13 @@ export type TimingTypes = z.infer<typeof SchemaTimingTypes>;
 // ------------------------------------------------------------------------------------------------
 // DecryptionResult
 // ------------------------------------------------------------------------------------------------
-export function GenericSchemaDecryptionResult<TSchemaTransactionDataType extends z.ZodTypeAny>(
-	SchemaTransactionDataType: TSchemaTransactionDataType,
+export function GenericSchemaDecryptionResult<TSchemaExecutionDataType extends z.ZodTypeAny>(
+	SchemaExecutionDataType: TSchemaExecutionDataType,
 ) {
 	return z.discriminatedUnion('success', [
 		z.object({
 			success: z.literal(true),
-			transactions: z.array(SchemaTransactionDataType),
+			executions: z.array(SchemaExecutionDataType),
 		}),
 		z.object({
 			success: z.literal(false),
@@ -97,26 +97,26 @@ export function GenericSchemaDecryptionResult<TSchemaTransactionDataType extends
 	]);
 }
 
-export type SchemaDecryptionResult<TSchemaTransactionDataType extends z.ZodTypeAny> = ReturnType<
-	typeof GenericSchemaDecryptionResult<TSchemaTransactionDataType>
+export type SchemaDecryptionResult<TSchemaExecutionDataType extends z.ZodTypeAny> = ReturnType<
+	typeof GenericSchemaDecryptionResult<TSchemaExecutionDataType>
 >;
 
-export type DecryptionResult<TransactionDataType> = z.infer<SchemaDecryptionResult<z.ZodType<TransactionDataType>>>;
+export type DecryptionResult<ExecutionDataType> = z.infer<SchemaDecryptionResult<z.ZodType<ExecutionDataType>>>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
-// Decrypter<TransactionDataType>
+// Decrypter<ExecutionDataType>
 // ------------------------------------------------------------------------------------------------
-export type Decrypter<TransactionDataType> = {
-	decrypt(execution: ExecutionQueued<TransactionDataType>): Promise<DecryptionResult<TransactionDataType>>;
+export type Decrypter<ExecutionDataType> = {
+	decrypt(execution: ScheduledExecutionQueued<ExecutionDataType>): Promise<DecryptionResult<ExecutionDataType>>;
 };
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
 // DecryptedPayload<
 // ------------------------------------------------------------------------------------------------
-export function GenericSchemaDecryptedPayload<TSchemaTransactionDataType extends z.ZodTypeAny>(
-	SchemaTransactionDataType: TSchemaTransactionDataType,
+export function GenericSchemaDecryptedPayload<TSchemaExecutionDataType extends z.ZodTypeAny>(
+	SchemaExecutionDataType: TSchemaExecutionDataType,
 ) {
 	return z.discriminatedUnion('type', [
 		z.object({
@@ -126,15 +126,15 @@ export function GenericSchemaDecryptedPayload<TSchemaTransactionDataType extends
 		}),
 		z.object({
 			type: z.literal('clear'),
-			transactions: z.array(SchemaTransactionDataType),
+			executions: z.array(SchemaExecutionDataType),
 			// TODO timing: new timing that could be delayed ?
 		}),
 	]);
 }
-export type SchemaDecryptedPayload<TSchemaTransactionDataType extends z.ZodTypeAny> = ReturnType<
-	typeof GenericSchemaDecryptedPayload<TSchemaTransactionDataType>
+export type SchemaDecryptedPayload<TSchemaExecutionDataType extends z.ZodTypeAny> = ReturnType<
+	typeof GenericSchemaDecryptedPayload<TSchemaExecutionDataType>
 >;
-export type DecryptedPayload<TransactionDataType> = z.infer<SchemaDecryptedPayload<z.ZodType<TransactionDataType>>>;
+export type DecryptedPayload<ExecutionDataType> = z.infer<SchemaDecryptedPayload<z.ZodType<ExecutionDataType>>>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -154,45 +154,45 @@ export type ScheduledTimeLockedExecution = z.infer<typeof SchemaScheduledTimeLoc
 // ------------------------------------------------------------------------------------------------
 // ScheduledExecutionInClear
 // ------------------------------------------------------------------------------------------------
-export function GenericSchemaScheduledExecutionInClear<TSchemaTransactionDataType extends z.ZodTypeAny>(
-	SchemaTransactionDataType: TSchemaTransactionDataType,
+export function GenericSchemaScheduledExecutionInClear<TSchemaExecutionDataType extends z.ZodTypeAny>(
+	SchemaExecutionDataType: TSchemaExecutionDataType,
 ) {
 	return z.object({
 		type: z.literal('clear'),
 		chainId: SchemaString0x,
 		slot: z.string(),
-		transactions: z.array(SchemaTransactionDataType),
+		executions: z.array(SchemaExecutionDataType),
 		timing: SchemaTimingTypes,
 		paymentReserve: z.string().optional(),
 	});
 }
 
-export type SchemaScheduledExecutionInClear<TSchemaTransactionDataType extends z.ZodTypeAny> = ReturnType<
-	typeof GenericSchemaScheduledExecutionInClear<TSchemaTransactionDataType>
+export type SchemaScheduledExecutionInClear<TSchemaExecutionDataType extends z.ZodTypeAny> = ReturnType<
+	typeof GenericSchemaScheduledExecutionInClear<TSchemaExecutionDataType>
 >;
 
-export type ScheduledExecutionInClear<TransactionDataType> = z.infer<
-	SchemaScheduledExecutionInClear<z.ZodType<TransactionDataType>>
+export type ScheduledExecutionInClear<ExecutionDataType> = z.infer<
+	SchemaScheduledExecutionInClear<z.ZodType<ExecutionDataType>>
 >;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
 // ScheduledExecution
 // ------------------------------------------------------------------------------------------------
-export function GenericSchemaScheduledExecution<TSchemaTransactionDataType extends z.ZodTypeAny>(
-	SchemaTransactionDataType: TSchemaTransactionDataType,
+export function GenericSchemaScheduledExecution<TSchemaExecutionDataType extends z.ZodTypeAny>(
+	SchemaExecutionDataType: TSchemaExecutionDataType,
 ) {
 	return z.discriminatedUnion('type', [
 		SchemaScheduledTimeLockedExecution,
-		GenericSchemaScheduledExecutionInClear(SchemaTransactionDataType),
+		GenericSchemaScheduledExecutionInClear(SchemaExecutionDataType),
 	]);
 }
 
-export type SchemaScheduledExecution<TSchemaTransactionDataType extends z.ZodTypeAny> = ReturnType<
-	typeof GenericSchemaScheduledExecution<TSchemaTransactionDataType>
+export type SchemaScheduledExecution<TSchemaExecutionDataType extends z.ZodTypeAny> = ReturnType<
+	typeof GenericSchemaScheduledExecution<TSchemaExecutionDataType>
 >;
 
-export type ScheduledExecution<TransactionDataType> = z.infer<SchemaScheduledExecution<z.ZodType<TransactionDataType>>>;
+export type ScheduledExecution<ExecutionDataType> = z.infer<SchemaScheduledExecution<z.ZodType<ExecutionDataType>>>;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -211,8 +211,8 @@ export type ScheduleInfo = z.infer<typeof SchemaScheduleInfo>;
 // ------------------------------------------------------------------------------------------------
 // Scheduler<
 // ------------------------------------------------------------------------------------------------
-export type Scheduler<TransactionDataType> = {
-	submitExecution(account: EIP1193Account, execution: ScheduledExecution<TransactionDataType>): Promise<ScheduleInfo>;
+export type Scheduler<ExecutionDataType> = {
+	submitExecution(account: EIP1193Account, execution: ScheduledExecution<ExecutionDataType>): Promise<ScheduleInfo>;
 };
 // ------------------------------------------------------------------------------------------------
 

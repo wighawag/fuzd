@@ -1,8 +1,8 @@
 import {ScheduledExecution} from '../types/external';
-import {ExecutionQueued} from '../types/scheduler-storage';
+import {ScheduledExecutionQueued} from '../types/scheduler-storage';
 
-export function computeInitialExecutionTimeFromSubmission<TransactionDataType>(
-	execution: ScheduledExecution<TransactionDataType>,
+export function computeInitialExecutionTimeFromSubmission<ExecutionDataType>(
+	execution: ScheduledExecution<ExecutionDataType>,
 ): number {
 	const timing = execution.timing;
 	switch (timing.type) {
@@ -16,8 +16,8 @@ export function computeInitialExecutionTimeFromSubmission<TransactionDataType>(
 	throw new Error(`execution timing type must be "fixed-time" | "fixed-round" | "delta-time`);
 }
 
-export function computePotentialExecutionTime<TransactionDataType>(
-	execution: ExecutionQueued<TransactionDataType>,
+export function computePotentialExecutionTime<ExecutionDataType>(
+	execution: ScheduledExecutionQueued<ExecutionDataType>,
 	state?: {startTimeToCountFrom?: number; lastCheckin?: number},
 ): number {
 	const timing = execution.timing;

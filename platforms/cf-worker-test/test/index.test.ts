@@ -1,4 +1,4 @@
-import {TransactionSubmission} from 'fuzd-executor';
+import {ExecutionSubmission} from 'fuzd-executor';
 import {ScheduledExecution} from 'fuzd-scheduler';
 import {deriveRemoteAddress} from 'remote-account';
 import {describe, beforeAll, it, expect, afterAll, afterEach, beforeEach} from 'vitest';
@@ -60,7 +60,7 @@ describe('Worker', () => {
 
 		// we build up first the transaction we want to submit in the future (delayed)
 		// this is mostly a normal tx object, except for the broadcastSchedule
-		const tx: TransactionSubmission = {
+		const execution: ExecutionSubmission = {
 			chainId: chainIdAsHex,
 			transaction: {
 				gas: `0x1000000`,
@@ -78,7 +78,7 @@ describe('Worker', () => {
 		// we could encrypt the tx data above and use time-lock encryption
 		// but here we showcase the simpler example where the data is actually sent to the api in clear
 
-		const fuzdExecution: ScheduledExecution<TransactionSubmission> = {
+		const fuzdExecution: ScheduledExecution<ExecutionSubmission> = {
 			type: 'clear',
 			// note that even tough you specified the chainId in the tx data, you still need to specify here
 			// this is because the scheduler need to know which network it should look for
@@ -95,7 +95,7 @@ describe('Worker', () => {
 				scheduledTime: 100000000000,
 			},
 			// finaly we provided the tx in clear
-			transactions: [tx],
+			executions: [execution],
 		};
 
 		// we convert the json as a string

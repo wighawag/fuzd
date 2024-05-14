@@ -1,15 +1,13 @@
 import {describe, it, expect} from 'vitest';
 import {network} from 'hardhat';
-import {Deployment, loadAndExecuteDeployments} from 'rocketh';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {initTime} from './utils/time';
-import {TestSchedulerConfig, createTestExecutor, createTestScheduler} from './utils/executor';
+import {createTestExecutor, createTestScheduler} from './utils/executor';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import artifacts from '../generated/artifacts';
 import {encodeFunctionData} from 'viem';
 import {deriveRemoteAddress} from 'remote-account';
 import {createMockDecrypter, overrideProvider} from './utils/mock-provider';
-import {TransactionSubmission} from 'fuzd-executor';
+import {ExecutionSubmission} from 'fuzd-executor';
 import {deployAll} from './utils';
 import {createViemContext} from './utils/viem';
 
@@ -107,7 +105,7 @@ describe('Executing on the registry', function () {
 				type: 'fixed-time',
 				scheduledTime: checkinTime,
 			},
-			transactions: [
+			executions: [
 				{
 					chainId: txData.chainId,
 					transaction: {
@@ -134,7 +132,7 @@ describe('Executing on the registry', function () {
 		const {gas, gasPrice, env, txData, user, GreetingsRegistry, mockDecrypter, scheduler} = await prepareExecution();
 		const timestamp = await time.getTimestamp();
 		const checkinTime = timestamp + 100;
-		const transaction: TransactionSubmission = {
+		const transaction: ExecutionSubmission = {
 			chainId: txData.chainId,
 			transaction: {
 				type: '0x2',

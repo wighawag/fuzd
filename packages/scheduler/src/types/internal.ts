@@ -28,12 +28,12 @@ export type ChainConfigs = {
 // SchedulerConfig<
 // ------------------------------------------------------------------------------------------------
 // TODO zod ?
-export type SchedulerConfig<TransactionDataType, TransactionInfoType> = {
-	executor: Executor<TransactionDataType, TransactionInfoType>;
+export type SchedulerConfig<ExecutionDataType, TransactionInfoType> = {
+	executor: Executor<ExecutionDataType, TransactionInfoType>;
 	chainConfigs: ChainConfigs;
-	decrypter?: Decrypter<TransactionDataType>;
+	decrypter?: Decrypter<ExecutionDataType>;
 	time: Time;
-	storage: SchedulerStorage<TransactionDataType>;
+	storage: SchedulerStorage<ExecutionDataType>;
 	maxExpiry?: number;
 	maxNumTransactionsToProcessInOneGo?: number;
 };

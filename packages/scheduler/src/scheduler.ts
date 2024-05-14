@@ -10,7 +10,7 @@ import {
 	Scheduler,
 	SchedulerBackend,
 } from './types/external';
-import {ExecutionQueued} from './types/scheduler-storage';
+import {ScheduledExecutionQueued} from './types/scheduler-storage';
 import {getTransactionStatus, time2text} from 'fuzd-common';
 import {ChainConfig, SchedulerConfig} from './types/internal';
 
@@ -22,16 +22,16 @@ const logger = logs('fuzd-scheduler');
  * - submitExecution: add the provided execution to a queue and send it to the executor for broadcast when times come
  * - processQueue: check the current queue and send any scheduled execution for which the time has come, to the executor
  */
-export function createScheduler<TransactionDataType, TransactionSubmissionResponseType>(
-	config: SchedulerConfig<TransactionDataType, TransactionSubmissionResponseType>,
-): Scheduler<TransactionDataType> & SchedulerBackend {
+export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseType>(
+	config: SchedulerConfig<ExecutionDataType, ExecutionSubmissionResponseType>,
+): Scheduler<ExecutionDataType> & SchedulerBackend {
 	const {chainConfigs, time, storage, executor} = config;
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
 	async function submitExecution(
 		account: EIP1193Account,
-		execution: ScheduledExecution<TransactionDataType>,
+		execution: ScheduledExecution<ExecutionDataType>,
 	): Promise<ScheduleInfo> {
 		if (!execution.slot) {
 			throw new Error(`cannot proceed. missing slot`);
@@ -65,7 +65,7 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 			}
 		}
 
-		const queuedExecution: ExecutionQueued<TransactionDataType> = {
+		const queuedExecution: ScheduledExecutionQueued<ExecutionDataType> = {
 			...execution,
 			account,
 			broadcasted: false,
@@ -79,9 +79,9 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 	}
 
 	async function retryLater(
-		execution: ExecutionQueued<TransactionDataType>,
+		execution: ScheduledExecutionQueued<ExecutionDataType>,
 		newCheckinTime: number,
-	): Promise<ExecutionQueued<TransactionDataType>> {
+	): Promise<ScheduledExecutionQueued<ExecutionDataType>> {
 		execution.retries++;
 		if (execution.retries >= 100) {
 			logger.info(
@@ -97,22 +97,24 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 		return execution;
 	}
 
-	async function execute(execution: ExecutionQueued<TransactionDataType>): Promise<ExecutionStatus> {
-		let transactions: TransactionDataType[];
-		if (execution.type === 'time-locked') {
+	async function execute(
+		scheduledExecutionQueued: ScheduledExecutionQueued<ExecutionDataType>,
+	): Promise<ExecutionStatus> {
+		let executions: ExecutionDataType[];
+		if (scheduledExecutionQueued.type === 'time-locked') {
 			if (!config.decrypter) {
 				throw new Error(
 					`the scheduler has not been configured with a decrypter. As such it cannot support "time-locked" execution`,
 				);
 			}
 
-			const decryptionResult = await config.decrypter.decrypt(execution);
+			const decryptionResult = await config.decrypter.decrypt(scheduledExecutionQueued);
 			if (decryptionResult.success) {
-				transactions = decryptionResult.transactions;
+				executions = decryptionResult.executions;
 			} else {
 				if (decryptionResult.retry) {
-					execution.checkinTime = decryptionResult.retry;
-					await storage.createOrUpdateQueuedExecution(execution);
+					scheduledExecutionQueued.checkinTime = decryptionResult.retry;
+					await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
 					return {type: 'reassigned', reason: 'decryption retry'};
 				} else {
 					// failed to decrypt and no retry, this means the decryption is failing
@@ -123,7 +125,7 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 				}
 			}
 		} else {
-			transactions = execution.transactions;
+			executions = scheduledExecutionQueued.executions;
 		}
 
 		// now we are ready to execute, if we reached there, this means the execution is in the right time slot
@@ -131,9 +133,13 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 		// for encrypted payload we will attempt to decrypt
 		// if it fails, we will push it accoridng to time schedule
 
-		const results: TransactionSubmissionResponseType[] = [];
-		for (const transaction of transactions) {
-			const executionResult = await executor.submitTransaction(execution.slot, execution.account, transaction);
+		const results: ExecutionSubmissionResponseType[] = [];
+		for (const execution of executions) {
+			const executionResult = await executor.submitTransaction(
+				scheduledExecutionQueued.slot,
+				scheduledExecutionQueued.account,
+				execution,
+			);
 			results.push(executionResult);
 		}
 
@@ -144,8 +150,8 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 		// the schedule has done its job
 		// if for some reason `executor.submitTransactions(...)` fails to return but has actually broadcasted the tx
 		// the scheduler will attempt again. the id tell the executor to not reexecute
-		execution.broadcasted = true;
-		await storage.createOrUpdateQueuedExecution(execution);
+		scheduledExecutionQueued.broadcasted = true;
+		await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
 
 		return {
 			type: 'broadcasted',
@@ -162,14 +168,14 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 	}
 
 	async function checkAndUpdateExecutionIfNeeded(
-		execution: ExecutionQueued<TransactionDataType>,
+		execution: ScheduledExecutionQueued<ExecutionDataType>,
 		currentTimestamp: number,
 	): Promise<
 		| {status: 'deleted'} // TODO remove ? (not used for now)
 		| {status: 'archived'}
-		| {status: 'changed'; execution: ExecutionQueued<TransactionDataType>}
-		| {status: 'unchanged'; execution: ExecutionQueued<TransactionDataType>}
-		| {status: 'willRetry'; execution: ExecutionQueued<TransactionDataType>}
+		| {status: 'changed'; execution: ScheduledExecutionQueued<ExecutionDataType>}
+		| {status: 'unchanged'; execution: ScheduledExecutionQueued<ExecutionDataType>}
+		| {status: 'willRetry'; execution: ScheduledExecutionQueued<ExecutionDataType>}
 	> {
 		const {provider, finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
 		// TODO callback for balance checks ?
@@ -242,7 +248,10 @@ export function createScheduler<TransactionDataType, TransactionSubmissionRespon
 		}
 	}
 
-	async function processExecution(execution: ExecutionQueued<TransactionDataType>, result: QueueProcessingResult) {
+	async function processExecution(
+		execution: ScheduledExecutionQueued<ExecutionDataType>,
+		result: QueueProcessingResult,
+	) {
 		const chainIdDecimal = Number(execution.chainId).toString();
 		const {provider, finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
 

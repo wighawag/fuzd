@@ -6,7 +6,7 @@ import {
 	ExecutorBackend,
 	ExecutorStorage,
 	PendingExecutionStored,
-	TransactionSubmission,
+	ExecutionSubmission,
 	createExecutor,
 } from 'fuzd-executor';
 import {Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
@@ -28,10 +28,10 @@ export type SetupOptions<Env extends Bindings = Bindings> = {
 };
 
 export type Config = {
-	executor: Executor<TransactionSubmission, PendingExecutionStored> & ExecutorBackend;
-	scheduler: Scheduler<TransactionSubmission> & SchedulerBackend;
+	executor: Executor<ExecutionSubmission, PendingExecutionStored> & ExecutorBackend;
+	scheduler: Scheduler<ExecutionSubmission> & SchedulerBackend;
 	executorStorage: ExecutorStorage;
-	schedulerStorage: SchedulerStorage<TransactionSubmission>;
+	schedulerStorage: SchedulerStorage<ExecutionSubmission>;
 	account: ReturnType<typeof initAccountFromHD>;
 	time: Time;
 	chainConfigs: ChainConfigs;

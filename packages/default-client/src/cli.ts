@@ -12,16 +12,12 @@ async function main() {
 	const chainId = '0x7a69';
 	await client.submitExecution({
 		chainId,
-		gas: 1000000n,
-		broadcastSchedule: [
-			{
-				duration: 10000,
-				maxFeePerGas: 1000000000000000000n,
-				maxPriorityFeePerGas: 10000000000n,
-			},
-		],
-		data: '0x',
-		to: '0x',
+		transaction: {
+			gas: 1000000n,
+			data: '0x',
+			to: '0x',
+		},
+		maxFeePerGasAuthorized: 1000000000000000000n,
 		time: Math.floor(Date.now() / 1000) + 100,
 	});
 }

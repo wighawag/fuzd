@@ -44,15 +44,15 @@ export type TransactionData = z.infer<typeof SchemaTransactionData>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
-// TransactionSubmission
+// ExecutionSubmission
 // ------------------------------------------------------------------------------------------------
-export const SchemaTransactionSubmission = z.object({
+export const SchemaExecutionSubmission = z.object({
 	chainId: SchemaEIP1193Quantity,
 	transaction: SchemaTransactionData,
 	maxFeePerGasAuthorized: SchemaEIP1193Quantity,
 	expiryTime: z.number().optional(),
 });
-export type TransactionSubmission = z.infer<typeof SchemaTransactionSubmission>;
+export type ExecutionSubmission = z.infer<typeof SchemaExecutionSubmission>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------

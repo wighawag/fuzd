@@ -1,7 +1,7 @@
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {keccak_256} from '@noble/hashes/sha3';
-import {TransactionSubmission} from 'fuzd-executor';
-import {Decrypter, DecryptionResult, ExecutionQueued} from 'fuzd-scheduler';
+import {ExecutionSubmission} from 'fuzd-executor';
+import {Decrypter, DecryptionResult, ScheduledExecutionQueued} from 'fuzd-scheduler';
 
 function toHex(arr: Uint8Array): `0x${string}` {
 	let str = `0x`;
@@ -70,22 +70,22 @@ export function overrideProvider(
 	return obj;
 }
 
-export function createMockDecrypter(): Decrypter<TransactionSubmission> & {
-	addDecryptedResult(id: string, transaction: TransactionSubmission): void;
+export function createMockDecrypter(): Decrypter<ExecutionSubmission> & {
+	addDecryptedResult(id: string, transaction: ExecutionSubmission): void;
 } {
-	const map: {[id: string]: TransactionSubmission} = {};
-	function addDecryptedResult(id: string, transaction: TransactionSubmission) {
+	const map: {[id: string]: ExecutionSubmission} = {};
+	function addDecryptedResult(id: string, transaction: ExecutionSubmission) {
 		map[id] = transaction;
 	}
 
 	async function decrypt(
-		execution: ExecutionQueued<TransactionSubmission>,
-	): Promise<DecryptionResult<TransactionSubmission>> {
-		const transaction = map[execution.slot];
-		if (transaction) {
+		scheduledExecution: ScheduledExecutionQueued<ExecutionSubmission>,
+	): Promise<DecryptionResult<ExecutionSubmission>> {
+		const execution = map[scheduledExecution.slot];
+		if (execution) {
 			return {
 				success: true,
-				transactions: [transaction],
+				executions: [execution],
 			};
 		} else {
 			return {

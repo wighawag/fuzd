@@ -82,13 +82,13 @@ export async function createTestExecutor(config: TestExecutorConfig) {
 	};
 }
 
-export type TestSchedulerConfig<TransactionDataType, TransationInfoType> = Omit<
-	SchedulerConfig<TransactionDataType, TransationInfoType>,
+export type TestSchedulerConfig<ExecutionDataType, TransationInfoType> = Omit<
+	SchedulerConfig<ExecutionDataType, TransationInfoType>,
 	'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
 >;
 
-export async function createTestScheduler<TransactionDataType, TransationInfoType>(
-	config: TestSchedulerConfig<TransactionDataType, TransationInfoType>,
+export async function createTestScheduler<ExecutionDataType, TransationInfoType>(
+	config: TestSchedulerConfig<ExecutionDataType, TransationInfoType>,
 ) {
 	const client = createClient({
 		url: ':memory:',
