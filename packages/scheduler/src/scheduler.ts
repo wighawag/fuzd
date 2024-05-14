@@ -19,7 +19,7 @@ const logger = logs('fuzd-scheduler');
 /**
  * Create a scheduler instance for a specific TransactionData format
  * The instance contains 2 method:
- * - submitExecution: add the provided execution to a queue and send it to the executor for broadcast when times come
+ * - scheduleExecution: add the provided execution to a queue and send it to the executor for broadcast when times come
  * - processQueue: check the current queue and send any scheduled execution for which the time has come, to the executor
  */
 export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseType>(
@@ -29,7 +29,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
-	async function submitExecution(
+	async function scheduleExecution(
 		account: EIP1193Account,
 		execution: ScheduledExecution<ExecutionDataType>,
 	): Promise<ScheduleInfo> {
@@ -411,7 +411,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 	}
 
 	return {
-		submitExecution,
+		scheduleExecution,
 		processQueue,
 	};
 }

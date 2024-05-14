@@ -79,7 +79,7 @@ async function main() {
 		schedulerEndPoint: `${schedulerHost}/scheduleExecution`,
 	});
 
-	const scheduleInfo = await client.submitExecution({
+	const scheduleInfo = await client.scheduleExecution({
 		...txData,
 		broadcastSchedule: [
 			{

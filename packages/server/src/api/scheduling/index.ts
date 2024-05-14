@@ -21,7 +21,7 @@ export function getSchedulingAPI<Env extends Bindings = Bindings>(options: Serve
 				const account = c.get('account');
 				const data = c.req.valid('json');
 
-				const result = await config.scheduler.submitExecution(account, data);
+				const result = await config.scheduler.scheduleExecution(account, data);
 				return c.json(result);
 			},
 		)

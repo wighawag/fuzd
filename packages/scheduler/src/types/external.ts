@@ -212,7 +212,7 @@ export type ScheduleInfo = z.infer<typeof SchemaScheduleInfo>;
 // Scheduler<
 // ------------------------------------------------------------------------------------------------
 export type Scheduler<ExecutionDataType> = {
-	submitExecution(account: EIP1193Account, execution: ScheduledExecution<ExecutionDataType>): Promise<ScheduleInfo>;
+	scheduleExecution(account: EIP1193Account, execution: ScheduledExecution<ExecutionDataType>): Promise<ScheduleInfo>;
 };
 // ------------------------------------------------------------------------------------------------
 

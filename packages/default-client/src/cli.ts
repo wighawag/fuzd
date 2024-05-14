@@ -10,7 +10,7 @@ async function main() {
 	});
 
 	const chainId = '0x7a69';
-	await client.submitExecution({
+	await client.scheduleExecution({
 		chainId,
 		transaction: {
 			gas: 1000000n,

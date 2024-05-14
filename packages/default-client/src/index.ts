@@ -19,7 +19,7 @@ export function createClient(config: ClientConfig) {
 		const remoteAddress = deriveRemoteAddress(publicKey, wallet.address);
 		return remoteAddress;
 	}
-	async function submitExecution(execution: {
+	async function scheduleExecution(execution: {
 		chainId: `0x${string}` | string;
 		transaction: {
 			gas: bigint;
@@ -86,7 +86,7 @@ export function createClient(config: ClientConfig) {
 	}
 
 	return {
-		submitExecution,
+		scheduleExecution,
 		getRemoteAccount,
 	};
 }

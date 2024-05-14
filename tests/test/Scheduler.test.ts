@@ -97,7 +97,7 @@ describe('Executing on the registry', function () {
 		const timestamp = await time.getTimestamp();
 		const checkinTime = timestamp + 100;
 		console.log({user});
-		const result = await scheduler.submitExecution(user, {
+		const result = await scheduler.scheduleExecution(user, {
 			slot: (++counter).toString(),
 			chainId: '0x7a69',
 			type: 'clear',
@@ -144,7 +144,7 @@ describe('Executing on the registry', function () {
 		};
 		const id = (++counter).toString();
 		mockDecrypter.addDecryptedResult(id, transaction);
-		const result = await scheduler.submitExecution(user, {
+		const result = await scheduler.scheduleExecution(user, {
 			slot: id,
 			chainId: '0x7a69',
 			type: 'time-locked',
