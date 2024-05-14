@@ -43,7 +43,7 @@ export function createExecutor(
 		return storage.getExpectedWorstCaseGasPrice(chainId);
 	}
 
-	async function submitTransaction(
+	async function broadcastExecution(
 		slot: string,
 		account: EIP1193Account,
 		submission: ExecutionSubmission,
@@ -569,7 +569,7 @@ export function createExecutor(
 	}
 
 	return {
-		submitTransaction,
+		broadcastExecution,
 		getExpectedWorstCaseGasPrice,
 		processPendingTransactions,
 	};

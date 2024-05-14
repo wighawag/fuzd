@@ -71,7 +71,7 @@ let counter = 0;
 describe('Executing on the registry', function () {
 	it('Should execute without issues', async function () {
 		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env} = await prepareExecution();
-		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
+		const txInfo = await executor.broadcastExecution((++counter).toString(), user, {
 			chainId: txData.chainId,
 			transaction: {
 				type: '0x2',
@@ -95,7 +95,7 @@ describe('Executing on the registry', function () {
 				return hash;
 			},
 		});
-		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
+		const txInfo = await executor.broadcastExecution((++counter).toString(), user, {
 			chainId: txData.chainId,
 			transaction: {
 				type: '0x2',
@@ -119,7 +119,7 @@ describe('Executing on the registry', function () {
 				return hash;
 			},
 		});
-		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
+		const txInfo = await executor.broadcastExecution((++counter).toString(), user, {
 			chainId: txData.chainId,
 			transaction: {
 				type: '0x2',
@@ -159,7 +159,7 @@ describe('Executing on the registry', function () {
 				return {...txData, blockNumber: latestBlock?.number, blockhash: latestBlock?.hash};
 			},
 		});
-		const txInfo = await executor.submitTransaction((++counter).toString(), user, {
+		const txInfo = await executor.broadcastExecution((++counter).toString(), user, {
 			chainId: txData.chainId,
 			transaction: {
 				type: '0x2',

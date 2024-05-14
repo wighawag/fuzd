@@ -135,7 +135,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 
 		const results: ExecutionSubmissionResponseType[] = [];
 		for (const execution of executions) {
-			const executionResult = await executor.submitTransaction(
+			const executionResult = await executor.broadcastExecution(
 				scheduledExecutionQueued.slot,
 				scheduledExecutionQueued.account,
 				execution,
@@ -148,7 +148,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 
 		// if we reaches there, the execution is now handled by the executor
 		// the schedule has done its job
-		// if for some reason `executor.submitTransactions(...)` fails to return but has actually broadcasted the tx
+		// if for some reason `executor.broadcastExecution(...)` fails to return but has actually broadcasted the tx
 		// the scheduler will attempt again. the id tell the executor to not reexecute
 		scheduledExecutionQueued.broadcasted = true;
 		await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
