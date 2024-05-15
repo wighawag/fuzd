@@ -97,6 +97,7 @@ export function createExecutor(
 			initialTime: timestamp,
 			expiryTime: submission.expiryTime,
 			expectedWorstCaseGasPrice: expectedWorstCaseGasPrice?.toString(),
+			finalized: false,
 		};
 
 		await _updateFees(pendingExecutionToStore);
@@ -322,24 +323,23 @@ export function createExecutor(
 			logger.error(errorMessage);
 			transactionData.lastError = errorMessage;
 			if (options.previouslyStored) {
-				storage.archiveTimedoutExecution(options.previouslyStored);
+				// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
+				// we do that by making a simple void tx
+				options.forceVoid = true;
 			} else {
-				// TODO partial like before
+				return undefined;
 			}
-
-			return undefined;
-		}
-
-		if (gasRequired > BigInt(transactionData.transaction.gas)) {
+		} else if (gasRequired > BigInt(transactionData.transaction.gas)) {
 			const errorMessage = `The transaction requires more gas than provided. Aborting here`;
 			logger.error(errorMessage);
 			transactionData.lastError = errorMessage;
 			if (options.previouslyStored) {
-				storage.archiveTimedoutExecution(options.previouslyStored);
+				// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
+				// we do that by making a simple void tx
+				options.forceVoid = true;
 			} else {
-				// TODO partial like before
+				return undefined;
 			}
-			return undefined;
 		}
 
 		const rawTxInfo = await _signTransaction(
@@ -377,6 +377,7 @@ export function createExecutor(
 			broadcasterAssignerID: broadcaster.assignerID,
 			isVoidTransaction: rawTxInfo.isVoidTransaction,
 			lastError,
+			finalized: false,
 		};
 		await storage.createOrUpdatePendingExecution(newTransactionData);
 
@@ -442,9 +443,10 @@ export function createExecutor(
 			if (maxPriorityFeePerGas > maxFeePerGas) {
 				maxPriorityFeePerGas = maxFeePerGas;
 			}
-			// FOR now
+
+			// // TODO remove:
 			// maxFeePerGas = gasPriceEstimate.maxFeePerGas;
-			// maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
+			// maxPriorityFeePerGas = maxFeePerGas;
 		}
 
 		return {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate};
@@ -455,19 +457,29 @@ export function createExecutor(
 		const timestamp = await time.getTimestamp(provider);
 		const diffSinceInitiated = timestamp - pendingExecution.initialTime;
 
-		if (pendingExecution.expiryTime && pendingExecution.expiryTime < timestamp) {
-			// expired
-			storage.archiveTimedoutExecution(pendingExecution);
-			return;
-		}
-
-		if (diffSinceInitiated > maxExpiry) {
-			// expired by maxExpiry
-			storage.archiveTimedoutExecution(pendingExecution);
-			return;
+		let forceVoid = false;
+		if ((pendingExecution.expiryTime && pendingExecution.expiryTime < timestamp) || diffSinceInitiated > maxExpiry) {
+			// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
+			// we do that by making a simple void tx
+			forceVoid = true;
 		}
 
 		const {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await _getGasFee(provider, pendingExecution);
+		if (gasPriceEstimate.maxFeePerGas > maxFeePerGas) {
+			if (pendingExecution.expectedWorstCaseGasPrice) {
+				// TODO
+				// check if extraFund tx is already registered
+				// if so check if finalized
+				// if not finalized yet, re check later
+				// if tx is finalized can execute with higher fee (based on tx )
+				//   and we update maxFeePerGasAuthorized and reexecute _getGasFeee
+				//   we also delete the extraFund tx so more can be used later
+				// if again not enough, we recheck later and do the same
+				// if no etraFund tx registered
+				// create one to add necessary fund + register debt and check later
+			}
+			// TODO if forceVoid, we can use more gas as long as total do not exceed gas * maxFeePerGasAuthorized
+		}
 
 		const transaction = pendingExecution.transaction;
 		const maxFeePerGasUsed = BigInt(transaction.maxFeePerGas);
@@ -505,6 +517,7 @@ export function createExecutor(
 				maxPriorityFeePerGas,
 				gasPriceEstimate: gasPriceEstimate,
 				previouslyStored: pendingExecution,
+				forceVoid,
 			});
 		}
 	}
@@ -534,11 +547,8 @@ export function createExecutor(
 		}
 
 		if (finalised) {
-			storage.deletePendingExecution({
-				chainId: pendingExecution.transaction.chainId,
-				account: pendingExecution.account,
-				slot: pendingExecution.slot,
-			});
+			pendingExecution.finalized = true;
+			storage.createOrUpdatePendingExecution(pendingExecution);
 		} else if (!receipt) {
 			await _resubmitIfNeeded(pendingExecution);
 		}

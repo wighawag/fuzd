@@ -46,6 +46,7 @@ const config = {
 				hardhat: {
 					initialBaseFeePerGas: process.env.HARDHAT_FORK ? 1 : 0,
 					allowUnlimitedContractSize: process.env.HARDHAT_FORK ? false : true,
+					initialBaseFeePerGas: '1000000000',
 				},
 			}),
 		),

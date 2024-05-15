@@ -40,6 +40,7 @@ type ExecutionInDB = {
 	hash: `0x${string}`;
 	maxFeePerGasAuthorized: `0x${string}`;
 	isVoidTransaction: 0 | 1;
+	finalized: 0 | 1;
 	retries: number | null;
 	lastError: string | null;
 	expiryTime: number | null;
@@ -88,6 +89,7 @@ function fromExecutionInDB(inDB: ExecutionInDB): PendingExecutionStored {
 		lastError: inDB.lastError || undefined,
 		expiryTime: inDB.expiryTime || undefined,
 		transaction: JSON.parse(inDB.transactionData),
+		finalized: inDB.finalized == 0 ? false : true,
 	};
 }
 
@@ -109,6 +111,7 @@ function toExecutionInDB(obj: PendingExecutionStored): ExecutionInDB {
 		broadcaster: obj.transaction.from,
 		nonce: Number(obj.transaction.nonce),
 		transactionData: JSON.stringify(obj.transaction),
+		finalized: obj.finalized ? 1 : 0,
 	};
 }
 
@@ -140,28 +143,6 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		await statement.bind(account, chainId, slot).all();
 	}
 
-	async archiveTimedoutExecution(executionToStore: PendingExecutionStored): Promise<void> {
-		const {account, chainId, slot} = executionToStore;
-		const inDB = toExecutionInDB(executionToStore);
-		const {values, columns, bindings} = toValues(inDB);
-
-		const deleteFromExecutions = this.db.prepare(
-			'DELETE FROM BroadcastedExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;',
-		);
-		const insertIntoArchive = this.db.prepare(
-			`INSERT INTO ArchivedBroadcastedExecutions (${columns}) VALUES(${bindings})`,
-		);
-		await this.db.batch([deleteFromExecutions.bind(account, chainId, slot), insertIntoArchive.bind(...values)]);
-	}
-
-	async getArchivedBroadcastedExecutions(params: {limit: number; offset?: number}): Promise<PendingExecutionStored[]> {
-		const statement = this.db.prepare(
-			`SELECT * FROM ArchivedBroadcastedExecutions ORDER BY initialTime ASC LIMIT ?1 OFFSET ?2;`,
-		);
-		const {results} = await statement.bind(params.limit, params.offset || 0).all<ExecutionInDB>();
-		return results.map(fromExecutionInDB);
-	}
-
 	async createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored> {
 		const inDB = toExecutionInDB(executionToStore);
 		const {values, columns, bindings, overwrites} = toValues(inDB);
@@ -173,7 +154,16 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 	}
 
 	async getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored[]> {
-		const statement = this.db.prepare(`SELECT * FROM BroadcastedExecutions ORDER BY nextCheckTime ASC LIMIT ?1;`);
+		const statement = this.db.prepare(
+			`SELECT * FROM BroadcastedExecutions  WHERE finalized = FALSE  ORDER BY nextCheckTime ASC LIMIT ?1;`,
+		);
+		const {results} = await statement.bind(params.limit).all<ExecutionInDB>();
+		return results.map(fromExecutionInDB);
+	}
+
+	async getAllExecutions(params: {limit: number}): Promise<PendingExecutionStored[]> {
+		const sqlStatement = `SELECT * FROM BroadcastedExecutions ORDER BY nextCheckTime ASC LIMIT ?1;`;
+		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ExecutionInDB>();
 		return results.map(fromExecutionInDB);
 	}

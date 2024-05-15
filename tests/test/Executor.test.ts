@@ -4,7 +4,7 @@ import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {initTime} from './utils/time';
 import {createTestExecutor} from './utils/executor';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {encodeFunctionData} from 'viem';
+import {encodeFunctionData, formatEther} from 'viem';
 import {deriveRemoteAddress} from 'remote-account';
 import {hashRawTx, overrideProvider} from './utils/mock-provider';
 import {deployAll} from './utils';
@@ -64,7 +64,7 @@ async function prepareExecution() {
 		await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
 	}
 
-	return {gas, gasPrice, txData, user, GreetingsRegistry, env, executor, publicExtendedKey};
+	return {gas, gasPrice: BigInt('1'), txData, user, GreetingsRegistry, env, executor, publicExtendedKey};
 }
 
 let counter = 0;
