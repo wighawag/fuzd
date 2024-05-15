@@ -8,7 +8,7 @@ import {encodeFunctionData} from 'viem';
 import {deriveRemoteAddress} from 'remote-account';
 import {hashRawTx, overrideProvider} from './utils/mock-provider';
 import {deployAll} from './utils';
-import {createViemContext} from './utils/viem';
+import {createViemContext} from '../utils/viem';
 
 const time = initTime();
 

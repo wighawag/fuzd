@@ -16,7 +16,7 @@ async function main() {
 
 	const tx = await env.execute(GreetingsRegistry, {
 		functionName: 'setMessage',
-		args: [greeting],
+		args: [greeting, 0],
 		account: env.namedAccounts.deployer,
 	});
 	console.log(tx);

@@ -25,7 +25,6 @@ export function createClient(config: ClientConfig) {
 			gas: bigint;
 			data?: `0x${string}`;
 			to?: `0x${string}`;
-			value?: bigint;
 		};
 		maxFeePerGasAuthorized: bigint;
 		time: number;

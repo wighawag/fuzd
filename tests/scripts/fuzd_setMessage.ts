@@ -2,7 +2,7 @@ import {Deployment, loadEnvironment} from 'rocketh';
 import {context} from '../deploy/_context';
 import {network} from 'hardhat';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {publicClient, walletClient} from './viem';
+import {createViemContext} from '../utils/viem';
 import {encodeFunctionData, parseEther} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {createClient} from 'fuzd-client';
@@ -10,13 +10,16 @@ import {testnetClient} from 'tlock-js';
 import {deriveRemoteAddress} from 'remote-account';
 
 async function main() {
+	const provider = network.provider as EIP1193ProviderWithoutEvents;
 	const env = await loadEnvironment(
 		{
-			provider: network.provider as EIP1193ProviderWithoutEvents,
-			networkName: network.name,
+			provider,
 		},
 		context,
 	);
+
+	const viemContext = createViemContext(provider);
+	const {publicClient, walletClient} = viemContext;
 
 	const args = process.argv.slice(2);
 	const message = (args[0] || process.env.MESSAGE) as `0x${string}`;
@@ -44,7 +47,7 @@ async function main() {
 			to: remoteAddress,
 			value: parseEther('1'),
 		});
-		const receipt = await publicClient.waitForTransactionReceipt({hash});
+		await publicClient.waitForTransactionReceipt({hash});
 		console.log('done');
 	}
 
@@ -54,10 +57,8 @@ async function main() {
 		rewardPercentiles: [100],
 	});
 
-	const {baseFeePerGas, reward, gasUsedRatio, oldestBlock} = gasPricing;
-
+	const {baseFeePerGas} = gasPricing;
 	const maxFeePerGas = baseFeePerGas[baseFeePerGas.length - 1];
-	const maxPriorityFeePerGas = reward ? reward[0][0] : 0n;
 
 	const chainId = '0x7a69';
 	const txData = {
@@ -67,29 +68,21 @@ async function main() {
 	};
 	const gas = await publicClient.estimateGas({...txData, account: wallet.address});
 
-	// const hash = await walletClient.sendTransaction({
-	// 	...txData,
-	// 	account: address,
-	// 	gas,
-	// });
-
 	const client = createClient({
 		drand: testnetClient(),
 		privateKey: privateKey,
-		schedulerEndPoint: `${schedulerHost}/scheduleExecution`,
+		schedulerEndPoint: `${schedulerHost}/api/scheduling/scheduleExecution`,
 	});
 
 	const scheduleInfo = await client.scheduleExecution({
-		...txData,
-		broadcastSchedule: [
-			{
-				maxFeePerGas,
-				maxPriorityFeePerGas,
-				duration: 3600,
-			},
-		],
+		chainId,
+		transaction: {
+			gas,
+			data: txData.data,
+			to: txData.to,
+		},
+		maxFeePerGasAuthorized: maxFeePerGas,
 		time: timestamp + delay,
-		gas,
 	});
 
 	console.log({remoteAddress, scheduleInfo, gas, account: wallet.address});

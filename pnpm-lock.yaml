@@ -388,6 +388,9 @@ importers:
       remote-sql-libsql:
         specifier: ^0.0.5
         version: 0.0.5(@libsql/core@0.6.0)
+      tlock-js:
+        specifier: ^0.9.0
+        version: 0.9.0
     devDependencies:
       '@nomicfoundation/hardhat-network-helpers':
         specifier: ^1.0.10
@@ -425,6 +428,9 @@ importers:
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0
+      fuzd-client:
+        specifier: workspace:*
+        version: link:../packages/client
       fuzd-executor:
         specifier: workspace:*
         version: link:../packages/executor
