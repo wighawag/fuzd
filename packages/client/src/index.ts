@@ -23,8 +23,9 @@ export function createClient(config: ClientConfig) {
 		chainId: `0x${string}` | string;
 		transaction: {
 			gas: bigint;
-			data: `0x${string}`;
-			to: `0x${string}`;
+			data?: `0x${string}`;
+			to?: `0x${string}`;
+			value?: bigint;
 		};
 		maxFeePerGasAuthorized: bigint;
 		time: number;
@@ -56,10 +57,12 @@ export function createClient(config: ClientConfig) {
 		const drandChainInfo = await config.drand.chain().info();
 		round = roundAt(execution.time * 1000, drandChainInfo);
 
+		const timestamp = Math.floor(Date.now() / 1000);
+
 		const payload = await timelockEncrypt(round, Buffer.from(payloadAsJSONString, 'utf-8'), config.drand);
 		executionToSend = {
 			chainId,
-			slot: `1`,
+			slot: timestamp.toString(),
 			timing: {
 				type: 'fixed-round',
 				expectedTime: execution.time,

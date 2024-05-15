@@ -5,7 +5,7 @@ import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {publicClient, walletClient} from './viem';
 import {encodeFunctionData, parseEther} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
-import {createClient} from 'fuzd-default-client';
+import {createClient} from 'fuzd-client';
 import {testnetClient} from 'tlock-js';
 import {deriveRemoteAddress} from 'remote-account';
 

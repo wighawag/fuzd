@@ -1,5 +1,5 @@
 {
-  "name": "fuzd-default-client",
+  "name": "fuzd-client",
   "version": "0.3.0",
   "description": "default client for fuzd using tlock-js",
   "license": "MIT",
@@ -30,6 +30,7 @@
     "src"
   ],
   "dependencies": {
+    "commander": "^12.0.0",
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "named-logs": "^0.2.4",
