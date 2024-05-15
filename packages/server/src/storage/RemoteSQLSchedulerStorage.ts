@@ -26,7 +26,6 @@ type ScheduledExecutionInDB = {
 function fromScheduledExecutionInDB<ExecutionDataType>(
 	inDB: ScheduledExecutionInDB,
 ): ScheduledExecutionQueued<ExecutionDataType> {
-	console.log(inDB);
 	if (inDB.type === 'time-locked') {
 		return {
 			account: inDB.account,

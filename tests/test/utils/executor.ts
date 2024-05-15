@@ -43,7 +43,9 @@ const account = initAccountFromHD(accountHDKey);
 export type TestExecutorConfig = Omit<
 	ExecutorConfig,
 	'signers' | 'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
->;
+> & {
+	expectedWorstCaseGasPrices?: {chainId: `0x${string}`; value: bigint}[];
+};
 
 export async function createTestExecutor(config: TestExecutorConfig) {
 	const client = createClient({
@@ -52,6 +54,16 @@ export async function createTestExecutor(config: TestExecutorConfig) {
 	const db = new RemoteLibSQL(client);
 	const storage = new RemoteSQLExecutorStorage(db);
 	await storage.setup();
+	if (config.expectedWorstCaseGasPrices != undefined) {
+		for (const expectedWorstCaseGasPrice of config.expectedWorstCaseGasPrices) {
+			await storage.updateExpectedWorstCaseGasPrice(
+				expectedWorstCaseGasPrice.chainId,
+				Math.floor(Date.now() / 1000),
+				expectedWorstCaseGasPrice.value,
+			);
+		}
+	}
+
 	return {
 		executor: createExecutor({
 			...config,

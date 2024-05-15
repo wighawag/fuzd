@@ -33,6 +33,7 @@ export type Config = {
 	executorStorage: ExecutorStorage;
 	schedulerStorage: SchedulerStorage<ExecutionSubmission>;
 	account: ReturnType<typeof initAccountFromHD>;
+	paymentAccount?: `0x${string}`;
 	time: Time;
 	chainConfigs: ChainConfigs;
 	contractTimestampAddress: `0x${string}`;
@@ -145,9 +146,11 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			chainConfigs,
 			contractTimestampAddress: contractTimestamp,
 		};
+		const paymentAccount = env.PAYMENT_ACCOUNT as `0x${string}` | undefined;
 		const executorConfig = {
 			...baseConfig,
 			storage: executorStorage,
+			paymentAccount,
 		};
 		const executor = createExecutor(executorConfig);
 
@@ -173,6 +176,7 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			account,
 			time,
 			chainConfigs,
+			paymentAccount,
 			async getTimeDiff(chainId: `0x${string}`) {
 				if (!chainId) {
 					return 0;

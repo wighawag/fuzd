@@ -121,10 +121,8 @@ describe('Executing on the registry', function () {
 		expect(result.checkinTime).to.equal(checkinTime);
 
 		const queue = await schedulerStorage.getQueueTopMostExecutions({limit: 10});
-		console.log(queue);
 		time.increaseTime(1010);
-		const queueExecution = await scheduler.processQueue();
-		console.log({queueExecution});
+		await scheduler.processQueue();
 		expect((await env.read(GreetingsRegistry, {functionName: 'messages', args: [user]})).content).to.equal('hello');
 	});
 

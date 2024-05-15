@@ -65,18 +65,16 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 		.get('/executions', async (c) => {
 			const config = c.get('config');
 			const txs = await config.executorStorage.getPendingExecutions({limit: 100});
-			console.log(txs);
 			const displayData = txs.map(displayExecutionBroadcasted());
-			console.log(displayData);
 			return c.html(
 				<Layout>
 					<Table data={displayData} />
 				</Layout>,
 			);
 		})
-		.get('/archived-executions', async (c) => {
+		.get('/all-executions', async (c) => {
 			const config = c.get('config');
-			const txs = await config.executorStorage.getArchivedBroadcastedExecutions({limit: 100});
+			const txs = await config.executorStorage.getAllExecutions({limit: 100});
 			const displayData = txs.map(displayExecutionBroadcasted());
 			return c.html(
 				<Layout>

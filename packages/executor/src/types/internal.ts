@@ -13,6 +13,7 @@ export type ExecutorConfig = {
 	signers: Signers;
 	maxExpiry?: number;
 	maxNumTransactionsToProcessInOneGo?: number;
+	paymentAccount?: `0x${string}`;
 };
 // ------------------------------------------------------------------------------------------------
 

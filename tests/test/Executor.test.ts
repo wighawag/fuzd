@@ -4,7 +4,7 @@ import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {initTime} from './utils/time';
 import {createTestExecutor} from './utils/executor';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {encodeFunctionData, formatEther} from 'viem';
+import {encodeFunctionData, formatEther, parseEther} from 'viem';
 import {deriveRemoteAddress} from 'remote-account';
 import {hashRawTx, overrideProvider} from './utils/mock-provider';
 import {deployAll} from './utils';
@@ -17,6 +17,8 @@ const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEven
 async function prepareExecution() {
 	const {env, GreetingsRegistry} = await await loadFixture(deployAll);
 
+	const paymentAccount = '0x0000000000000000000000000000000000000001';
+
 	const {executor, publicExtendedKey} = await createTestExecutor({
 		chainConfigs: {
 			'0x7a69': {
@@ -25,6 +27,13 @@ async function prepareExecution() {
 				provider,
 			},
 		},
+		paymentAccount,
+		expectedWorstCaseGasPrices: [
+			{
+				chainId: '0x7a69',
+				value: 0n,
+			},
+		],
 		time,
 	});
 
@@ -34,6 +43,8 @@ async function prepareExecution() {
 
 	const user = env.namedAccounts.deployer;
 	const remoteAccount = deriveRemoteAddress(publicExtendedKey, user);
+	const paymentAccountBroadcaster = deriveRemoteAddress(publicExtendedKey, paymentAccount);
+	await walletClient.sendTransaction({account: user, to: paymentAccountBroadcaster, value: parseEther('0.1')});
 
 	const data = encodeFunctionData({
 		...GreetingsRegistry,
@@ -64,7 +75,7 @@ async function prepareExecution() {
 		await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
 	}
 
-	return {gas, gasPrice: BigInt('1'), txData, user, GreetingsRegistry, env, executor, publicExtendedKey};
+	return {gas, gasPrice, txData, user, GreetingsRegistry, env, executor, publicExtendedKey};
 }
 
 let counter = 0;
@@ -83,6 +94,24 @@ describe('Executing on the registry', function () {
 		});
 
 		expect(txInfo.isVoidTransaction).to.be.false;
+		expect((await env.read(GreetingsRegistry, {functionName: 'messages', args: [user]})).content).to.equal('hello');
+	});
+
+	it('Should execute after processs is called since we allow for the paymentAccount to pay for diff', async function () {
+		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env} = await prepareExecution();
+		const txInfo = await executor.broadcastExecution((++counter).toString(), user, {
+			chainId: txData.chainId,
+			transaction: {
+				type: '0x2',
+				to: txData.to,
+				data: txData.data,
+				gas: `0x${gas.toString(16)}` as `0x${string}`,
+			},
+			maxFeePerGasAuthorized: `0x1`,
+		});
+
+		expect(txInfo.isVoidTransaction).to.be.false;
+		await executor.processPendingTransactions();
 		expect((await env.read(GreetingsRegistry, {functionName: 'messages', args: [user]})).content).to.equal('hello');
 	});
 

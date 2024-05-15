@@ -7,22 +7,23 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     slot            text       NOT NULL,
     -------------------------------------------------------------------------------------------------------------------
 
-    nextCheckTime          integer     NOT NULL,
-    broadcasterAssignerID  text        NOT NULL,
-    initialTime            integer     NOT NULL,
-    broadcastTime          integer,
-    hash                   text        NOT NULL, -- tx hash
-    maxFeePerGasAuthorized text        NOT NULL,
-    isVoidTransaction      integer     NOT NULL,
-    retries                integer, 
-    lastError              text,
-    expiryTime             integer,
-    finalized              integer     NOT NULL, -- 0: false, 1: true
+    nextCheckTime              integer     NOT NULL,
+    broadcasterAssignerID      text        NOT NULL,
+    initialTime                integer     NOT NULL,
+    broadcastTime              integer,
+    hash                       text        NOT NULL, -- tx hash
+    maxFeePerGasAuthorized     text        NOT NULL,
+    expectedWorstCaseGasPrice  text,
+    isVoidTransaction          integer     NOT NULL,
+    retries                    integer, 
+    lastError                  text,
+    expiryTime                 integer,
+    finalized                  integer     NOT NULL, -- 0: false, 1: true
 
-    broadcaster            text        NOT NULL, -- tx from
-    nonce                  integer     NOT NULL, -- tx nonce
+    broadcaster                text        NOT NULL, -- tx from
+    nonce                      integer     NOT NULL, -- tx nonce
 
-    transactionData        text        NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
+    transactionData            text        NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
     
     PRIMARY KEY (account, chainId, slot)
 );

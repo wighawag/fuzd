@@ -23,7 +23,7 @@ export type PendingExecutionStored = {
 	retries?: number;
 	lastError?: string;
 	expiryTime?: number;
-	expectedWorstCaseGasPrice?: string;
+	expectedWorstCaseGasPrice?: EIP1193QUANTITY;
 };
 
 export interface ExecutorStorage {

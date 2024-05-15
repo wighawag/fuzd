@@ -36,6 +36,7 @@ export const SchemaTransactionData = z.object({
 	to: SchemaEIP1193Account.optional(),
 	gas: SchemaEIP1193Quantity,
 	data: SchemaString0x.optional(),
+	value: SchemaString0x.optional(),
 	type: z.literal('0x2'),
 	accessList: SchemaEIP1193AccessList.optional(),
 });

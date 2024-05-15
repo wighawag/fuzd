@@ -10,6 +10,14 @@ export function getPublicAPI<Env extends Bindings = Bindings>(options: ServerOpt
 			const config = c.get('config');
 			return c.text(config.account.publicExtendedKey);
 		})
+		.get('/paymentAccountBroadcaster', async (c) => {
+			const config = c.get('config');
+			return c.json({
+				paymentAccountBroadcaster: config.paymentAccount
+					? config.account.deriveForAddress(config.paymentAccount)
+					: null,
+			});
+		})
 		.get('/time/:chainId', async (c) => {
 			const config = c.get('config');
 			const chainId = c.req.param('chainId');

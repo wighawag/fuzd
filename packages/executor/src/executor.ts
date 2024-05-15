@@ -61,13 +61,13 @@ export function createExecutor(
 		const realTimestamp = Math.floor(Date.now() / 1000);
 
 		let expectedWorstCaseGasPrice = options?.expectedWorstCaseGasPrice;
-		if (!expectedWorstCaseGasPrice) {
+		if (expectedWorstCaseGasPrice == undefined) {
 			const expectedWorstCaseGasPriceConfig = await storage.getExpectedWorstCaseGasPrice(submission.chainId);
 			const gasPriceTime = expectedWorstCaseGasPriceConfig?.updateTimestamp;
-			if (gasPriceTime && expectedWorstCaseGasPriceConfig.current) {
+			if (gasPriceTime && expectedWorstCaseGasPriceConfig.current != undefined) {
 				expectedWorstCaseGasPrice = expectedWorstCaseGasPriceConfig.current;
 				const previous = expectedWorstCaseGasPriceConfig?.previous;
-				if (previous && previous < expectedWorstCaseGasPrice && realTimestamp < gasPriceTime + 30 * 60) {
+				if (previous != undefined && previous < expectedWorstCaseGasPrice && realTimestamp < gasPriceTime + 30 * 60) {
 					expectedWorstCaseGasPrice = previous;
 				}
 			}
@@ -96,7 +96,8 @@ export function createExecutor(
 			isVoidTransaction: false,
 			initialTime: timestamp,
 			expiryTime: submission.expiryTime,
-			expectedWorstCaseGasPrice: expectedWorstCaseGasPrice?.toString(),
+			expectedWorstCaseGasPrice:
+				expectedWorstCaseGasPrice != undefined ? `0x${expectedWorstCaseGasPrice.toString(16)}` : undefined,
 			finalized: false,
 		};
 
@@ -370,6 +371,8 @@ export function createExecutor(
 			expiryTime: transactionData.expiryTime,
 			slot: transactionData.slot,
 			account: transactionData.account,
+			expectedWorstCaseGasPrice: transactionData.expectedWorstCaseGasPrice,
+			finalized: transactionData.finalized,
 			hash,
 			broadcastTime: timestamp,
 			nextCheckTime,
@@ -377,7 +380,6 @@ export function createExecutor(
 			broadcasterAssignerID: broadcaster.assignerID,
 			isVoidTransaction: rawTxInfo.isVoidTransaction,
 			lastError,
-			finalized: false,
 		};
 		await storage.createOrUpdatePendingExecution(newTransactionData);
 
@@ -443,10 +445,6 @@ export function createExecutor(
 			if (maxPriorityFeePerGas > maxFeePerGas) {
 				maxPriorityFeePerGas = maxFeePerGas;
 			}
-
-			// // TODO remove:
-			// maxFeePerGas = gasPriceEstimate.maxFeePerGas;
-			// maxPriorityFeePerGas = maxFeePerGas;
 		}
 
 		return {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate};
@@ -464,10 +462,55 @@ export function createExecutor(
 			forceVoid = true;
 		}
 
-		const {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await _getGasFee(provider, pendingExecution);
+		let {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await _getGasFee(provider, pendingExecution);
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGas) {
-			if (pendingExecution.expectedWorstCaseGasPrice) {
-				// TODO
+			const expectedWorstCaseGasPrice = pendingExecution.expectedWorstCaseGasPrice
+				? BigInt(pendingExecution.expectedWorstCaseGasPrice)
+				: undefined;
+
+			if (expectedWorstCaseGasPrice != undefined && expectedWorstCaseGasPrice < gasPriceEstimate.maxFeePerGas) {
+				const diffToCover = gasPriceEstimate.maxFeePerGas - expectedWorstCaseGasPrice;
+				// this only cover all if user has send that expectedWorstCaseGasPrice value on
+				if (BigInt(pendingExecution.maxFeePerGasAuthorized) < expectedWorstCaseGasPrice) {
+					// show warning then
+					logger.warn(`user has provided a lower maxFeePerGas than expected, we won't pay more`);
+				}
+				// // TOREMOVE
+				// const diffToCover = gasPriceEstimate.maxFeePerGas - maxFeePerGas;
+				// ////////////////////////////////////////////
+
+				const valueToSend = diffToCover * BigInt(pendingExecution.transaction.gas);
+
+				const paymentAccount = config.paymentAccount;
+				if (paymentAccount) {
+					const broadcaster = await signers.assignProviderFor(pendingExecution.chainId, paymentAccount);
+					const broadcasterBalance = await provider.request({
+						method: 'eth_getBalance',
+						params: [broadcaster.address, 'latest'],
+					});
+					const gas = BigInt(30000);
+					const cost = gas * gasPriceEstimate.maxFeePerGas; // TODO handle extra Fee like Optimism
+					if (cost <= BigInt(broadcasterBalance)) {
+						const executionInfo = await broadcastExecution(
+							`${pendingExecution.account}_${pendingExecution.transaction.nonce}`,
+							paymentAccount,
+							{
+								chainId: pendingExecution.chainId,
+								maxFeePerGasAuthorized: `0x38D7EA4C68000`, // 1000 gwei
+								transaction: {
+									gas: `0x${gas.toString(16)}`,
+									to: pendingExecution.transaction.from,
+									type: '0x2',
+									value: `0x${valueToSend.toString(16)}`,
+								},
+							},
+						);
+						maxFeePerGas = gasPriceEstimate.maxFeePerGas;
+						maxPriorityFeePerGas = maxFeePerGas;
+					}
+				}
+
+				// TODO alternative ?
 				// check if extraFund tx is already registered
 				// if so check if finalized
 				// if not finalized yet, re check later
