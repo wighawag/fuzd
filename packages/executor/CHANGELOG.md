@@ -1,5 +1,16 @@
 # fuzd-executor
 
+## 0.5.0
+
+### Minor Changes
+
+- 0.5.0
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-common@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes

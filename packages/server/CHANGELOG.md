@@ -1,5 +1,15 @@
 # fuzd-server
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-common@0.5.0
+  - fuzd-executor@0.5.0
+  - fuzd-scheduler@0.5.1
+  - fuzd-tlock-decrypter@0.5.1
+
 ## 0.5.0
 
 ### Minor Changes

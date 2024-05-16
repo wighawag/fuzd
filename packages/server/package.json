@@ -1,6 +1,6 @@
 {
   "name": "fuzd-server",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "fuzd server app",
   "license": "MIT",
   "publishConfig": {
