@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.4.0
+
+### Minor Changes
+
+- new fuzd
+
 ## 0.3.0
 
 ### Minor Changes
