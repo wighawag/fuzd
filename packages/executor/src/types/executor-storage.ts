@@ -26,6 +26,10 @@ export type PendingExecutionStored = {
 	expectedWorstCaseGasPrice?: EIP1193QUANTITY;
 };
 
+export type ExecutionResponse = PendingExecutionStored & {
+	slotAlreadyUsed?: boolean;
+};
+
 export interface ExecutorStorage {
 	getPendingExecution(params: {
 		chainId: `0x${string}`;

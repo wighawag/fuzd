@@ -1,5 +1,5 @@
 import {logs} from 'named-logs';
-import {BroadcasterData, PendingExecutionStored} from './types/executor-storage';
+import {BroadcasterData, ExecutionResponse, PendingExecutionStored} from './types/executor-storage';
 import {
 	EIP1193Account,
 	EIP1193ProviderWithoutEvents,
@@ -34,7 +34,7 @@ type ExecutionToStore = Omit<PendingExecutionStored, 'hash' | 'broadcastTime' | 
 
 export function createExecutor(
 	config: ExecutorConfig,
-): Executor<ExecutionSubmission, PendingExecutionStored> & ExecutorBackend {
+): Executor<ExecutionSubmission, ExecutionResponse> & ExecutorBackend {
 	const {chainConfigs, time, storage, signers} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
@@ -50,7 +50,7 @@ export function createExecutor(
 		options?: {
 			expectedWorstCaseGasPrice: bigint;
 		},
-	): Promise<PendingExecutionStored> {
+	): Promise<ExecutionResponse> {
 		submission = SchemaExecutionSubmission.parse(submission);
 
 		const chainConfig = chainConfigs[submission.chainId];
@@ -79,7 +79,7 @@ export function createExecutor(
 			account,
 		});
 		if (existingExecution) {
-			return existingExecution;
+			return {...existingExecution, slotAlreadyUsed: true};
 		}
 
 		const {provider} = _getChainConfig(submission.chainId);
@@ -101,8 +101,6 @@ export function createExecutor(
 			finalized: false,
 		};
 
-		await _updateFees(pendingExecutionToStore);
-
 		const {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await _getGasFee(provider, submission);
 
 		const result = await _submitTransaction(broadcaster, pendingExecutionToStore, {
@@ -116,15 +114,8 @@ export function createExecutor(
 		return result;
 	}
 
-	async function _updateFees(latestTransaction: ExecutionToStore) {
-		// TODO
-		// logger.log(`TODO update fees of existing pending transactions to ensure new execution get a chance...`);
-		// await storage.updateFees(account);
-	}
-
 	async function _signTransaction(
 		transactionData: EIP1193TransactionToFill,
-		account: EIP1193Account,
 		broadcaster: BroadcasterSignerData,
 		txParams: TransactionParams,
 		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean},
@@ -164,7 +155,7 @@ export function createExecutor(
 		const maxFeePerGasAs0xString = `0x${maxFeePerGas.toString(16)}` as `0x${string}`;
 		const maxPriorityFeePerGasAs0xString = `0x${maxPriorityFeePerGas.toString(16)}` as `0x${string}`;
 
-		logger.info('checcking if tx should still be submitted');
+		logger.info('checking if tx should still be submitted');
 		const already_resolved = false;
 		// TODO allow execution of logic
 		// To be fair if the tx fails this should be enough
@@ -348,19 +339,17 @@ export function createExecutor(
 			}
 		}
 
-		const rawTxInfo = await _signTransaction(
-			transactionData.transaction,
-			transactionData.account,
-			broadcaster,
-			txParams,
-			options,
-		);
+		if (options.forceVoid) {
+			// TODO if forceVoid, we can use more gasPrive as long as total do not exceed gas * maxFeePerGasAuthorized
+		}
+
+		const rawTxInfo = await _signTransaction(transactionData.transaction, broadcaster, txParams, options);
 		const hash = toHex(keccak_256(fromHex(rawTxInfo.rawTx)));
 
 		const retries = typeof transactionData.retries === 'undefined' ? 0 : transactionData.retries + 1;
 
 		const timestamp = await time.getTimestamp(provider);
-		const nextCheckTime = timestamp + 60; // TODO config
+		const nextCheckTime = timestamp + 60; // retry in 60 seconds // TODO config
 
 		let lastError: string | undefined;
 
@@ -437,7 +426,6 @@ export function createExecutor(
 	) {
 		const maxFeePerGasAuthorized = BigInt(executionData.maxFeePerGasAuthorized);
 
-		// TODO remove duplication maxFeePerGas
 		const estimates = await getRoughGasPriceEstimate(provider);
 		const gasPriceEstimate = estimates.average;
 		let maxFeePerGas = gasPriceEstimate.maxFeePerGas;
@@ -468,6 +456,7 @@ export function createExecutor(
 		}
 
 		let {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await _getGasFee(provider, pendingExecution);
+
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGas) {
 			const expectedWorstCaseGasPrice = pendingExecution.expectedWorstCaseGasPrice
 				? BigInt(pendingExecution.expectedWorstCaseGasPrice)
@@ -493,8 +482,12 @@ export function createExecutor(
 					const gas = BigInt(30000);
 					const cost = gas * gasPriceEstimate.maxFeePerGas; // TODO handle extra Fee like Optimism
 					if (cost <= BigInt(broadcasterBalance)) {
-						const executionInfo = await broadcastExecution(
-							`${pendingExecution.account}_${pendingExecution.transaction.nonce}`,
+						// TODO handle case where gas price keep increasing...
+						// We need to keep track of previously sent payment tx
+						// for now we use only one slot so only one payment tx can be sent
+						// if gas price rise, tx might not have enough
+						await broadcastExecution(
+							`${pendingExecution.account}_${pendingExecution.transaction.from}_${pendingExecution.transaction.nonce}`,
 							paymentAccount,
 							{
 								chainId: pendingExecution.chainId,
@@ -509,21 +502,11 @@ export function createExecutor(
 						);
 						maxFeePerGas = gasPriceEstimate.maxFeePerGas;
 						maxPriorityFeePerGas = maxFeePerGas;
+					} else {
+						logger.error(`paymentAccount broadcaster balance to low! (${broadcaster.address})`);
 					}
 				}
-
-				// TODO alternative ?
-				// check if extraFund tx is already registered
-				// if so check if finalized
-				// if not finalized yet, re check later
-				// if tx is finalized can execute with higher fee (based on tx )
-				//   and we update maxFeePerGasAuthorized and reexecute _getGasFeee
-				//   we also delete the extraFund tx so more can be used later
-				// if again not enough, we recheck later and do the same
-				// if no etraFund tx registered
-				// create one to add necessary fund + register debt and check later
 			}
-			// TODO if forceVoid, we can use more gas as long as total do not exceed gas * maxFeePerGasAuthorized
 		}
 
 		const transaction = pendingExecution.transaction;
