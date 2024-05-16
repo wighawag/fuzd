@@ -33,17 +33,17 @@
     "commander": "^12.0.0",
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
-    "named-logs": "^0.2.4",
+    "named-logs": "npm:named-logs-for-servers@0.0.1",
     "remote-account": "^0.1.0",
     "tlock-js": "^0.9.0",
-    "viem": "^2.10.2"
+    "viem": "^2.10.8"
   },
   "devDependencies": {
-    "@types/node": "^20.12.11",
+    "@types/node": "^20.12.12",
     "ldenv": "^0.3.10",
     "pkgroll": "^2.0.2",
     "prettier": "^3.2.5",
-    "tsx": "^4.9.3",
+    "tsx": "^4.10.3",
     "typescript": "^5.4.5"
   },
   "scripts": {

@@ -70,7 +70,13 @@ export type ExecutorBackend = {
 export type TransactionParams = {
 	expectedNonce: number;
 	nonce: number;
-	gasRequired: bigint;
-	revert: boolean;
-};
+} & (
+	| {
+			revert: 'unknown';
+	  }
+	| {
+			gasRequired: bigint;
+			revert: boolean;
+	  }
+);
 // ------------------------------------------------------------------------------------------------

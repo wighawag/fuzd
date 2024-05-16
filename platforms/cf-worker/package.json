@@ -10,19 +10,19 @@
     "tsconfig.json"
   ],
   "dependencies": {
-    "named-logs": "^0.2.4",
+    "named-logs": "npm:named-logs-for-servers@0.0.1",
     "remote-sql-d1": "^0.0.5",
     "workers-logger": "^0.2.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240502.0",
-    "@types/node": "^20.12.11",
+    "@cloudflare/workers-types": "^4.20240512.0",
+    "@types/node": "^20.12.12",
     "fuzd-server": "workspace:*",
-    "hono": "^4.3.3",
+    "hono": "^4.3.7",
     "set-defaults": "^0.0.2",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0",
-    "wrangler": "^3.53.1"
+    "wrangler": "^3.56.0"
   },
   "scripts": {
     "prepare": "set-defaults .",

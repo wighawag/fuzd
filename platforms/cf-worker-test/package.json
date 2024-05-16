@@ -4,16 +4,16 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240502.0",
-    "@types/node": "^20.12.11",
+    "@cloudflare/workers-types": "^4.20240512.0",
+    "@types/node": "^20.12.12",
     "fuzd-cf-worker": "workspace:*",
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "remote-account": "^0.1.0",
     "typescript": "^5.4.5",
-    "viem": "^2.10.2",
+    "viem": "^2.10.8",
     "vitest": "^1.6.0",
-    "wrangler": "^3.53.1"
+    "wrangler": "^3.56.0"
   },
   "scripts": {
     "deploy": "wrangler deploy",

@@ -28,11 +28,11 @@
   ],
   "dependencies": {
     "fuzd-scheduler": "workspace:*",
-    "named-logs": "^0.2.4",
+    "named-logs": "npm:named-logs-for-servers@0.0.1",
     "tlock-js": "^0.9.0"
   },
   "devDependencies": {
-    "@types/node": "^20.12.11",
+    "@types/node": "^20.12.12",
     "ldenv": "^0.3.10",
     "pkgroll": "^2.0.2",
     "prettier": "^3.2.5",

@@ -266,7 +266,6 @@ export function createExecutor(
 
 		const expectedNonce = broadcasterData.nextNonce;
 
-		let revert = false;
 		let gasRequired: `0x${string}`;
 		try {
 			gasRequired = await provider.request({
@@ -281,18 +280,24 @@ export function createExecutor(
 				],
 			});
 		} catch (err: any) {
-			// TODO error message // viem
-			logger.error('The transaction reverts?', err, {
-				from: broadcasterAddress,
-				to: transactionData.to!, // "!" needed, need to fix eip-1193
-				data: transactionData.data,
-				value: transactionData.value,
-			});
-			revert = true;
-			gasRequired = '0x' + Number.MAX_SAFE_INTEGER.toString(16);
+			if (err.isInvalidError) {
+				return {expectedNonce, nonce, revert: 'unknown'};
+			} else if (err.message?.indexOf('revert')) {
+				// not 100% sure ?
+				// TODO error message // viem
+				logger.error('The transaction reverts?', err, {
+					from: broadcasterAddress,
+					to: transactionData.to!, // "!" needed, need to fix eip-1193
+					data: transactionData.data,
+					value: transactionData.value,
+				});
+				return {expectedNonce, nonce, gasRequired: BigInt(Number.MAX_SAFE_INTEGER), revert: true};
+			} else {
+				return {expectedNonce, nonce, revert: 'unknown'};
+			}
 		}
 
-		return {expectedNonce, nonce, gasRequired: BigInt(gasRequired), revert};
+		return {expectedNonce, nonce, gasRequired: BigInt(gasRequired), revert: false};
 	}
 
 	function _getChainConfig(chainId: `0x${string}`): ChainConfig {
@@ -317,9 +322,7 @@ export function createExecutor(
 	): Promise<PendingExecutionStored | undefined> {
 		const {provider} = _getChainConfig(transactionData.chainId);
 		const txParams = await _getTxParams(broadcaster.address, transactionData.transaction);
-		const {gasRequired, revert} = txParams;
-
-		if (revert) {
+		if (txParams.revert === true) {
 			const errorMessage = `The transaction reverts`;
 			logger.error(errorMessage);
 			transactionData.lastError = errorMessage;
@@ -330,7 +333,9 @@ export function createExecutor(
 			} else {
 				return undefined;
 			}
-		} else if (gasRequired > BigInt(transactionData.transaction.gas)) {
+		} else if (txParams.revert === 'unknown') {
+			// we keep going anyway
+		} else if (txParams.gasRequired > BigInt(transactionData.transaction.gas)) {
 			const errorMessage = `The transaction requires more gas than provided. Aborting here`;
 			logger.error(errorMessage);
 			transactionData.lastError = errorMessage;
@@ -475,9 +480,6 @@ export function createExecutor(
 					// show warning then
 					logger.warn(`user has provided a lower maxFeePerGas than expected, we won't pay more`);
 				}
-				// // TOREMOVE
-				// const diffToCover = gasPriceEstimate.maxFeePerGas - maxFeePerGas;
-				// ////////////////////////////////////////////
 
 				const valueToSend = diffToCover * BigInt(pendingExecution.transaction.gas);
 
