@@ -85,9 +85,7 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 
 	const authenticated = new Hono<{Bindings: Env & {}}>().use(
 		basicAuth({
-			verifyUser: (username, password, c) => {
-				return username === 'admin' && password === c.env.TOKEN_ADMIN;
-			},
+			verifyUser: (username, password, c) => username === 'admin' && password === c.env.TOKEN_ADMIN,
 		}),
 	);
 

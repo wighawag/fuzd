@@ -191,7 +191,7 @@ importers:
     dependencies:
       '@hono/zod-validator':
         specifier: ^0.2.1
-        version: 0.2.1(hono@4.3.7)(zod@3.23.8)
+        version: 0.2.1(hono@4.3.3)(zod@3.23.8)
       '@scure/bip32':
         specifier: ^1.4.0
         version: 1.4.0
@@ -220,8 +220,8 @@ importers:
         specifier: workspace:*
         version: link:../tlock-decrypter
       hono:
-        specifier: ^4.3.7
-        version: 4.3.7
+        specifier: 4.3.3
+        version: 4.3.3
       named-logs:
         specifier: npm:named-logs-for-servers@0.0.1
         version: /named-logs-for-servers@0.0.1
@@ -381,7 +381,7 @@ importers:
         version: 0.4.0
       eip-1193-signer:
         specifier: ^0.0.2
-        version: 0.0.2(typescript@5.4.5)
+        version: 0.0.2(typescript@5.4.5)(zod@3.23.8)
       libsql:
         specifier: ^0.3.18
         version: 0.3.18
@@ -1672,13 +1672,13 @@ packages:
     engines: {node: '>=14'}
     dev: true
 
-  /@hono/zod-validator@0.2.1(hono@4.3.7)(zod@3.23.8):
+  /@hono/zod-validator@0.2.1(hono@4.3.3)(zod@3.23.8):
     resolution: {integrity: sha512-HFoxln7Q6JsE64qz2WBS28SD33UB2alp3aRKmcWnNLDzEL1BLsWfbdX6e1HIiUprHYTIXf5y7ax8eYidKUwyaA==}
     peerDependencies:
       hono: '>=3.9.0'
       zod: ^3.19.1
     dependencies:
-      hono: 4.3.7
+      hono: 4.3.3
       zod: 3.23.8
     dev: false
 
@@ -4711,17 +4711,6 @@ packages:
       promise-throttle: 1.1.2
     dev: false
 
-  /eip-1193-signer@0.0.2(typescript@5.4.5):
-    resolution: {integrity: sha512-z+Gys1SMWEmIG5xtdiO5RbY84EIkFBjja6ikTkS/kUNP9qrWQgsu6k8WI75mjivAN3OgZHUEz+lXGgbiZ56iLg==}
-    dependencies:
-      viem: 2.10.8(typescript@5.4.5)(zod@3.23.8)
-    transitivePeerDependencies:
-      - bufferutil
-      - typescript
-      - utf-8-validate
-      - zod
-    dev: false
-
   /eip-1193-signer@0.0.2(typescript@5.4.5)(zod@3.23.8):
     resolution: {integrity: sha512-z+Gys1SMWEmIG5xtdiO5RbY84EIkFBjja6ikTkS/kUNP9qrWQgsu6k8WI75mjivAN3OgZHUEz+lXGgbiZ56iLg==}
     dependencies:
@@ -5710,9 +5699,15 @@ packages:
       minimalistic-crypto-utils: 1.0.1
     dev: true
 
+  /hono@4.3.3:
+    resolution: {integrity: sha512-LDa1n/aLYK4CsZQyjQpFiaQgxiXCZp0WfcfliinQOH1Lqt4mIOvyw4qjmHihpKXsuXhkQHfHU2Erysp6oEdnVA==}
+    engines: {node: '>=16.0.0'}
+    dev: false
+
   /hono@4.3.7:
     resolution: {integrity: sha512-GXlsGnCAwGosu+COwYyYC8MwOY2L6Ihg9V1znYdMD8DHCJl+13Nk4o8dsBYJpae4oujjw24jBaITuYWVq2+V8Q==}
     engines: {node: '>=16.0.0'}
+    dev: true
 
   /hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
