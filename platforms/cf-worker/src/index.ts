@@ -56,6 +56,21 @@ router
 		const result = await request.SCHEDULER.get(SINGELTON).submitExecution(jsonAsString, signature);
 		return json(result);
 	})
+	.post('/execute/:slot', async (request) => {
+		const jsonAsString = await request.text();
+		const signature = request.headers.get('signature') as `0x${string}`;
+		const result = await request.SCHEDULER.get(SINGELTON).execute(request.params.slot, jsonAsString, signature);
+		return json(result);
+	})
+	// TODO remove
+	// .get('/deleteExecution/:chainId/:account/:slot', async (request) => {
+	// 	const result = await request.SCHEDULER.get(SINGELTON).deleteExecution(
+	// 		request.params.chainId as `0x${string}`,
+	// 		request.params.account as `0x${string}`,
+	// 		request.params.slot,
+	// 	);
+	// 	return json(result);
+	// })
 
 	// TODO authentication
 	.get('/queue', async ({SCHEDULER}) => {

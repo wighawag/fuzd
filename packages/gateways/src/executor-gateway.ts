@@ -1,17 +1,17 @@
 import ono from 'wighawag-ono';
-import {Executor, TransactionSubmission, TransactionInfo} from 'fuzd-executor';
+import {Executor, TransactionSubmission, TransactionInfo, PendingExecutionStored} from 'fuzd-executor';
 import {hashMessage, recoverAddress} from 'viem';
 import {ExecutorGateway} from './types/executor-gateway';
 
-export function initExecutorGateway(
-	executor: Executor<TransactionSubmission, TransactionInfo>,
+export function initExecutorGateway<TransactionSubmission>(
+	executor: Executor<TransactionSubmission, PendingExecutionStored>,
 	options?: {debug: boolean},
 ): ExecutorGateway {
 	async function submitTransactionAsJsonString(
 		slot: string,
 		submission: string,
 		signature: `0x${string}`,
-	): Promise<TransactionInfo> {
+	): Promise<PendingExecutionStored> {
 		const hash = hashMessage(submission);
 		if (!signature) {
 			throw new Error(`signature not provided`);

@@ -1,5 +1,13 @@
 # fuzd-gateways
 
+## 0.1.20
+
+### Patch Changes
+
+- allow value + tweaks
+- Updated dependencies
+  - fuzd-executor@0.1.15
+
 ## 0.1.19
 
 ### Patch Changes

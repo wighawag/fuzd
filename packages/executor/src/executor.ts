@@ -107,6 +107,8 @@ export function createExecutor(
 			account,
 		});
 		if (existingExecution) {
+			existingExecution.broadcastSchedule = submission.broadcastSchedule;
+			await storage.createOrUpdatePendingExecution(existingExecution);
 			return existingExecution;
 		}
 

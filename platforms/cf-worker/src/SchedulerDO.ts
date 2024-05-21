@@ -10,7 +10,7 @@ import {
 	BroadcasterSignerData,
 	PendingExecutionStored,
 } from 'fuzd-executor';
-import {KVExecutorStorage, KVSchedulerStorage, initSchedulerGateway} from 'fuzd-gateways';
+import {KVExecutorStorage, KVSchedulerStorage, initSchedulerGateway, initExecutorGateway} from 'fuzd-gateways';
 import {ChainConfigs, Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
 import {initDecrypter} from 'fuzd-tlock-decrypter';
 
@@ -39,6 +39,7 @@ export class SchedulerDO extends createDurable() {
 	protected executor: Executor<TransactionSubmission, PendingExecutionStored> & ExecutorBackend;
 	protected scheduler: Scheduler<TransactionSubmission> & SchedulerBackend;
 	protected gateway: ReturnType<typeof initSchedulerGateway>;
+	protected executorGateway: ReturnType<typeof initExecutorGateway>;
 	protected executorStorage: ExecutorStorage;
 	protected schedulerStorage: SchedulerStorage<TransactionSubmission>;
 	protected account: ReturnType<typeof initAccountFromHD>;
@@ -168,12 +169,33 @@ export class SchedulerDO extends createDurable() {
 		this.scheduler = createScheduler(schedulerConfig);
 
 		this.gateway = initSchedulerGateway(this.scheduler);
+		this.executorGateway = initExecutorGateway(this.executor);
 	}
 
 	async submitExecution(executionAsString: string, signature: `0x${string}`) {
 		try {
 			const scheduled = await this.gateway.submitExecutionAsJsonString(executionAsString, signature);
 			return scheduled;
+		} catch (err) {
+			logger.error(err);
+			throw err;
+		}
+	}
+
+	async execute(slot: string, executionAsString: string, signature: `0x${string}`) {
+		try {
+			const scheduled = await this.executorGateway.submitTransactionAsJsonString(slot, executionAsString, signature);
+			return scheduled;
+		} catch (err) {
+			logger.error(err);
+			throw err;
+		}
+	}
+
+	async deleteExecution(chainId: `0x${string}`, account: `0x${string}`, slot: string) {
+		try {
+			const deletion = await this.executorStorage.deletePendingExecution({chainId, account, slot});
+			return deletion;
 		} catch (err) {
 			logger.error(err);
 			throw err;

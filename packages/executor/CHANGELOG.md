@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.1.15
+
+### Patch Changes
+
+- allow value + tweaks
+
 ## 0.1.14
 
 ### Patch Changes
