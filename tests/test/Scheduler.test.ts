@@ -64,7 +64,7 @@ async function prepareExecution() {
 		});
 	}
 
-	const viemContext = createViemContext(provider);
+	const viemContext = await createViemContext(provider);
 	const {publicClient, walletClient} = viemContext;
 
 	const gasPrice = await publicClient.getGasPrice();

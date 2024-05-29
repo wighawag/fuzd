@@ -1,15 +1,17 @@
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
+import {getChain} from 'rocketh';
 import {Abi, createPublicClient, createWalletClient, custom, getContract} from 'viem';
-import {hardhat} from 'viem/chains';
 
-export function createViemContext(provider: EIP1193ProviderWithoutEvents) {
+export async function createViemContext(provider: EIP1193ProviderWithoutEvents) {
+	const chainId = await provider.request({method: 'eth_chainId'});
+	const chain = getChain(Number(chainId).toString());
 	const walletClient = createWalletClient({
-		chain: hardhat,
+		chain,
 		transport: custom(provider),
 	});
 
 	const publicClient = createPublicClient({
-		chain: hardhat,
+		chain,
 		transport: custom(provider),
 	});
 

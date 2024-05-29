@@ -1,0 +1,505 @@
+{
+  "address": "0x7719544e6d30f69fa751302bcd3a745a7b32bd7f",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "initialPrefix",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "delegated",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "yes",
+          "type": "bool"
+        }
+      ],
+      "name": "Delegated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "message",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint24",
+          "name": "dayTimeInSeconds",
+          "type": "uint24"
+        }
+      ],
+      "name": "MessageChanged",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address payable",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "yes",
+          "type": "bool"
+        }
+      ],
+      "name": "delegate",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "delegated",
+          "type": "address"
+        }
+      ],
+      "name": "isDelegate",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "yes",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        }
+      ],
+      "name": "lastGreetingOf",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "greeting",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        }
+      ],
+      "name": "messages",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "content",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint24",
+              "name": "dayTimeInSeconds",
+              "type": "uint24"
+            }
+          ],
+          "internalType": "struct GreetingsRegistry.Message",
+          "name": "userMsg",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "initialPrefix",
+          "type": "string"
+        }
+      ],
+      "name": "postUpgrade",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "prefix",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "value",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "message",
+          "type": "string"
+        },
+        {
+          "internalType": "uint24",
+          "name": "dayTimeInSeconds",
+          "type": "uint24"
+        }
+      ],
+      "name": "setMessage",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "message",
+          "type": "string"
+        },
+        {
+          "internalType": "uint24",
+          "name": "dayTimeInSeconds",
+          "type": "uint24"
+        }
+      ],
+      "name": "setMessageFor",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "contractName": "GreetingsRegistry",
+  "sourceName": "src/GreetingsRegistry.sol",
+  "bytecode": "0x60806040523461021a576110f08038038061001981610233565b928339810190602090818184031261021a5780516001600160401b039182821161021a570191601f9084828501121561021a5783518381116101f957601f199461006882850187168401610233565b9682885283838301011161021a57829060005b83811061021f575050600091870101527fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d610380546001600160a01b03919082168061020f5750555b84519283116101f95760019384548581811c911680156101ef575b838210146101d957838111610193575b5081928411600114610134575050819293600092610129575b5050600019600383901b1c191690821b1790555b604051610e9790816102598239f35b015190503880610106565b6000858152828120918516969193925b87821061017c57505083859610610163575b505050811b01905561011a565b015160001960f88460031b161c19169055388080610156565b808785968294968601518155019501930190610144565b85600052826000208480870160051c8201928588106101d0575b0160051c019086905b8281106101c45750506100ed565b600081550186906101b6565b925081926101ad565b634e487b7160e01b600052602260045260246000fd5b90607f16906100dd565b634e487b7160e01b600052604160045260246000fd5b9150503303156100c2575b600080fd5b81810183015189820184015284920161007b565b6040519190601f01601f191682016001600160401b038111838210176101f95760405256fe60406080815260048036101561001457600080fd5b600090813560e01c806303433b8e1461084e578063334c9bba146107325780634c2dd808146106c85780635fdd59f8146105f55780635fec5d0b1461057557806375dadb3214610447578063982ef0a7146103555763b1441ce61461007857600080fd5b3461035157602090817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034d5780359367ffffffffffffffff9182861161031957366023870112156103195785810135838111610321577fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe09251966101088685601f85011601896109c3565b818852366024838301011161031d578187926024889301838b01378801015273ffffffffffffffffffffffffffffffffffffffff7fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d610381815416801560001461030e5750555b85519283116102e257506001926101848454610a04565b601f811161027e575b508091601f84116001146101e65750508394829394926101db575b50507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff82841b9260031b1c191617905580f35b0151905038806101a8565b8486528316957fb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6929186905b8882106102675750508385969710610230575b505050811b01905580f35b01517fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60f88460031b161c19169055388080610225565b808785968294968601518155019501930190610212565b8486527fb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6601f850160051c8101918386106102d8575b601f0160051c019085905b8281106102cd57505061018d565b8781550185906102bf565b90915081906102b4565b8460416024927f4e487b7100000000000000000000000000000000000000000000000000000000835252fd5b91505033031561016d575b8480fd5b8680fd5b6024866041847f4e487b7100000000000000000000000000000000000000000000000000000000835252fd5b8280fd5b5080fd5b508290817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034d57359073ffffffffffffffffffffffffffffffffffffffff821680920361034d5760243590811515809203610443578380341561043a575b81808092873491f1156104315733845260026020528084208385526020528084207fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0081541660ff8416179055519081527fb1247c60c1f535e393496ecb92a45670b346b057bf9e382c99cb0dca11ee8abc60203392a380f35b513d84823e3d90fd5b506108fc6103b8565b8380fd5b50503461057257807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126105725781519182826001936001549461048c86610a04565b918285526020968760018216918260001461052d5750506001146104d1575b5050506104cd92916104be9103856109c3565b519282849384528301906108ec565b0390f35b9190869350600183527fb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf65b82841061051557505050820101816104be6104cd6104ab565b8054848a0186015288955087949093019281016104fc565b7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00168782015293151560051b860190930193508492506104be91506104cd90506104ab565b80fd5b82843461035157807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc360112610351576105ad6108c4565b6024359073ffffffffffffffffffffffffffffffffffffffff90818316809303610319579360ff92849260209616825260028652828220908252855220541690519015158152f35b828434610351576020807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034d5760028260609473ffffffffffffffffffffffffffffffffffffffff61064a6108c4565b8284805161065781610978565b8a815282898201520152168152808452209183519361067585610978565b61067e84610a57565b85526106b760018501549483870195865262ffffff948591015416928287019384528251978897828952519188015260808701906108ec565b935190850152511660608301520390f35b50823461034d577ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126103515780359067ffffffffffffffff821161034d576107159136910161094a565b6024359062ffffff821682036104435761072f9233610b1b565b80f35b50346103515760607ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126103515761076a6108c4565b60243567ffffffffffffffff811161044357610789903690840161094a565b916044359362ffffff8516850361084a5773ffffffffffffffffffffffffffffffffffffffff821680331490811561082b575b50156107ce575061072f949550610b1b565b60649060208851917f08c379a0000000000000000000000000000000000000000000000000000000008352820152600e60248201527f4e4f545f415554484f52495a45440000000000000000000000000000000000006044820152fd5b90508652600260205286862033875260205260ff8787205416386107bc565b8580fd5b8284346103515760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc360112610351576108b1816104cd9373ffffffffffffffffffffffffffffffffffffffff6108a46108c4565b1681528060205220610a57565b90519182916020835260208301906108ec565b6004359073ffffffffffffffffffffffffffffffffffffffff821682036108e757565b600080fd5b919082519283825260005b8481106109365750507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f8460006020809697860101520116010190565b6020818301810151848301820152016108f7565b9181601f840112156108e75782359167ffffffffffffffff83116108e757602083818601950101116108e757565b6060810190811067ffffffffffffffff82111761099457604052565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b90601f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0910116810190811067ffffffffffffffff82111761099457604052565b90600182811c92168015610a4d575b6020831014610a1e57565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052602260045260246000fd5b91607f1691610a13565b90604051918260008254610a6a81610a04565b90818452602094600191600181169081600014610ada5750600114610a9b575b505050610a99925003836109c3565b565b600090815285812095935091905b818310610ac2575050610a999350820101388080610a8a565b85548884018501529485019487945091830191610aa9565b915050610a999593507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0091501682840152151560051b820101388080610a8a565b6040918251908160209560006001938454610b3581610a04565b90848b8883169283600014610e2757505050600114610dcc575b508290823701600081520395610b8b7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0978881018552846109c3565b8451610b9681610978565b838152868101924284528682019373ffffffffffffffffffffffffffffffffffffffff62ffffff8095169788875216998a60005260008a528860002093519081519167ffffffffffffffff8311610994578b610bf28754610a04565b601f8111610d81575b50508b91601f8411600114610cd2575093610cbe96938360029460609d9b98947f4650083cdd22f274f233c0ae8b1e5a23037ced29923011d703349cdeeface1af9f9d9b98600092610cc7575b50507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff82851b9260031b1c19161783555b5190820155019151167fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000825416179055835195869542875286015260608501906108ec565b918301520390a2565b015190503880610c48565b60008781528d81209392918516905b818110610d6c5750958460609d9b98947f4650083cdd22f274f233c0ae8b1e5a23037ced29923011d703349cdeeface1af9f9d9b9894610cbe9b9894600298859710610d35575b505050811b018355610c79565b01517fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60f88460031b161c19169055388080610d28565b82840151855593870193928e01928e01610ce1565b876000528160002090601f860160051c8201928610610dc2575b601f0160051c019086905b828110610db657508d9150610bfb565b60008155018690610da6565b9091508190610d9b565b89919250856000527fb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6866000915b838310610e0e575050508401019082610b4f565b80548a84018601528997508c9490920191889101610dfa565b7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00168882015283151590930287019092019350610b4f905056fea264697066735822122084a2cb29df0831dd62640625e271ba58b0d065dc689f20822f9a440a5787b08c64736f6c63430008190033",
+  "deployedBytecode": "0x60406080815260048036101561001457600080fd5b600090813560e01c806303433b8e1461084e578063334c9bba146107325780634c2dd808146106c85780635fdd59f8146105f55780635fec5d0b1461057557806375dadb3214610447578063982ef0a7146103555763b1441ce61461007857600080fd5b3461035157602090817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034d5780359367ffffffffffffffff9182861161031957366023870112156103195785810135838111610321577fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe09251966101088685601f85011601896109c3565b818852366024838301011161031d578187926024889301838b01378801015273ffffffffffffffffffffffffffffffffffffffff7fb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d610381815416801560001461030e5750555b85519283116102e257506001926101848454610a04565b601f811161027e575b508091601f84116001146101e65750508394829394926101db575b50507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff82841b9260031b1c191617905580f35b0151905038806101a8565b8486528316957fb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6929186905b8882106102675750508385969710610230575b505050811b01905580f35b01517fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60f88460031b161c19169055388080610225565b808785968294968601518155019501930190610212565b8486527fb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6601f850160051c8101918386106102d8575b601f0160051c019085905b8281106102cd57505061018d565b8781550185906102bf565b90915081906102b4565b8460416024927f4e487b7100000000000000000000000000000000000000000000000000000000835252fd5b91505033031561016d575b8480fd5b8680fd5b6024866041847f4e487b7100000000000000000000000000000000000000000000000000000000835252fd5b8280fd5b5080fd5b508290817ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034d57359073ffffffffffffffffffffffffffffffffffffffff821680920361034d5760243590811515809203610443578380341561043a575b81808092873491f1156104315733845260026020528084208385526020528084207fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0081541660ff8416179055519081527fb1247c60c1f535e393496ecb92a45670b346b057bf9e382c99cb0dca11ee8abc60203392a380f35b513d84823e3d90fd5b506108fc6103b8565b8380fd5b50503461057257807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126105725781519182826001936001549461048c86610a04565b918285526020968760018216918260001461052d5750506001146104d1575b5050506104cd92916104be9103856109c3565b519282849384528301906108ec565b0390f35b9190869350600183527fb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf65b82841061051557505050820101816104be6104cd6104ab565b8054848a0186015288955087949093019281016104fc565b7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00168782015293151560051b860190930193508492506104be91506104cd90506104ab565b80fd5b82843461035157807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc360112610351576105ad6108c4565b6024359073ffffffffffffffffffffffffffffffffffffffff90818316809303610319579360ff92849260209616825260028652828220908252855220541690519015158152f35b828434610351576020807ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc36011261034d5760028260609473ffffffffffffffffffffffffffffffffffffffff61064a6108c4565b8284805161065781610978565b8a815282898201520152168152808452209183519361067585610978565b61067e84610a57565b85526106b760018501549483870195865262ffffff948591015416928287019384528251978897828952519188015260808701906108ec565b935190850152511660608301520390f35b50823461034d577ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126103515780359067ffffffffffffffff821161034d576107159136910161094a565b6024359062ffffff821682036104435761072f9233610b1b565b80f35b50346103515760607ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc3601126103515761076a6108c4565b60243567ffffffffffffffff811161044357610789903690840161094a565b916044359362ffffff8516850361084a5773ffffffffffffffffffffffffffffffffffffffff821680331490811561082b575b50156107ce575061072f949550610b1b565b60649060208851917f08c379a0000000000000000000000000000000000000000000000000000000008352820152600e60248201527f4e4f545f415554484f52495a45440000000000000000000000000000000000006044820152fd5b90508652600260205286862033875260205260ff8787205416386107bc565b8580fd5b8284346103515760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc360112610351576108b1816104cd9373ffffffffffffffffffffffffffffffffffffffff6108a46108c4565b1681528060205220610a57565b90519182916020835260208301906108ec565b6004359073ffffffffffffffffffffffffffffffffffffffff821682036108e757565b600080fd5b919082519283825260005b8481106109365750507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f8460006020809697860101520116010190565b6020818301810151848301820152016108f7565b9181601f840112156108e75782359167ffffffffffffffff83116108e757602083818601950101116108e757565b6060810190811067ffffffffffffffff82111761099457604052565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b90601f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0910116810190811067ffffffffffffffff82111761099457604052565b90600182811c92168015610a4d575b6020831014610a1e57565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052602260045260246000fd5b91607f1691610a13565b90604051918260008254610a6a81610a04565b90818452602094600191600181169081600014610ada5750600114610a9b575b505050610a99925003836109c3565b565b600090815285812095935091905b818310610ac2575050610a999350820101388080610a8a565b85548884018501529485019487945091830191610aa9565b915050610a999593507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0091501682840152151560051b820101388080610a8a565b6040918251908160209560006001938454610b3581610a04565b90848b8883169283600014610e2757505050600114610dcc575b508290823701600081520395610b8b7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0978881018552846109c3565b8451610b9681610978565b838152868101924284528682019373ffffffffffffffffffffffffffffffffffffffff62ffffff8095169788875216998a60005260008a528860002093519081519167ffffffffffffffff8311610994578b610bf28754610a04565b601f8111610d81575b50508b91601f8411600114610cd2575093610cbe96938360029460609d9b98947f4650083cdd22f274f233c0ae8b1e5a23037ced29923011d703349cdeeface1af9f9d9b98600092610cc7575b50507fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff82851b9260031b1c19161783555b5190820155019151167fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000825416179055835195869542875286015260608501906108ec565b918301520390a2565b015190503880610c48565b60008781528d81209392918516905b818110610d6c5750958460609d9b98947f4650083cdd22f274f233c0ae8b1e5a23037ced29923011d703349cdeeface1af9f9d9b9894610cbe9b9894600298859710610d35575b505050811b018355610c79565b01517fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60f88460031b161c19169055388080610d28565b82840151855593870193928e01928e01610ce1565b876000528160002090601f860160051c8201928610610dc2575b601f0160051c019086905b828110610db657508d9150610bfb565b60008155018690610da6565b9091508190610d9b565b89919250856000527fb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6866000915b838310610e0e575050508401019082610b4f565b80548a84018601528997508c9490920191889101610dfa565b7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00168882015283151590930287019092019350610b4f905056fea264697066735822122084a2cb29df0831dd62640625e271ba58b0d065dc689f20822f9a440a5787b08c64736f6c63430008190033",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "devdoc": {
+    "events": {
+      "Delegated(address,address,bool)": {
+        "params": {
+          "delegated": "address that will be able to set message if delegated",
+          "user": "the user that delegate its rights",
+          "yes": "whether to delegate or revoke"
+        }
+      },
+      "MessageChanged(address,uint256,string,uint24)": {
+        "details": "the timestamp is included to speedup indexing see: https://ethereum-magicians.org/t/proposal-for-adding-blocktimestamp-to-logs-object-returned-by-eth-getlogs-and-related-requests/11183",
+        "params": {
+          "dayTimeInSeconds": "the time of the day in seconds where 00:00 => 0 and 23:59 => 82859",
+          "message": "the message content",
+          "timestamp": "the time at which the message was recorded",
+          "user": "the user that send the message"
+        }
+      }
+    },
+    "kind": "dev",
+    "methods": {
+      "constructor": {
+        "details": "constructors",
+        "params": {
+          "initialPrefix": "the prefix that will be prepended to every user message goig forward"
+        }
+      },
+      "delegate(address,bool)": {
+        "params": {
+          "to": "address which will be given the right to delegate",
+          "yes": "whether to give the right or revoke it"
+        }
+      },
+      "isDelegate(address,address)": {
+        "params": {
+          "account": "address being queried",
+          "delegated": "the account which has right to set message"
+        },
+        "returns": {
+          "yes": "whether `delegated` has the right to set message"
+        }
+      },
+      "lastGreetingOf(address)": {
+        "params": {
+          "user": "address of the user."
+        },
+        "returns": {
+          "greeting": "the message's content send by the user."
+        }
+      },
+      "messages(address)": {
+        "params": {
+          "user": "address of the user."
+        },
+        "returns": {
+          "userMsg": "the message send by the user."
+        }
+      },
+      "postUpgrade(string)": {
+        "details": "called by the admin when the contract is deployed as a proxy",
+        "params": {
+          "initialPrefix": "the prefix that will be prepended to every user message goig forward"
+        }
+      },
+      "prefix()": {
+        "returns": {
+          "value": "prefix string."
+        }
+      },
+      "setMessage(string,uint24)": {
+        "params": {
+          "dayTimeInSeconds": "the time of the day in seconds the message was written.",
+          "message": "the value to set as content."
+        }
+      },
+      "setMessageFor(address,string,uint24)": {
+        "params": {
+          "account": "address which will have its greetings set",
+          "dayTimeInSeconds": "the time of the day in seconds the message was written.",
+          "message": "the value to set as content."
+        }
+      }
+    },
+    "version": 1
+  },
+  "evm": {
+    "gasEstimates": {
+      "creation": {
+        "codeDepositCost": "747000",
+        "executionCost": "infinite",
+        "totalCost": "infinite"
+      },
+      "external": {
+        "delegate(address,bool)": "infinite",
+        "isDelegate(address,address)": "2607",
+        "lastGreetingOf(address)": "infinite",
+        "messages(address)": "infinite",
+        "postUpgrade(string)": "infinite",
+        "prefix()": "infinite",
+        "setMessage(string,uint24)": "infinite",
+        "setMessageFor(address,string,uint24)": "infinite"
+      },
+      "internal": {
+        "_setMessageFor(address,string calldata,uint24)": "infinite"
+      }
+    }
+  },
+  "metadata": "{\"compiler\":{\"version\":\"0.8.25+commit.b61c2a91\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"initialPrefix\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"delegated\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"yes\",\"type\":\"bool\"}],\"name\":\"Delegated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"uint24\",\"name\":\"dayTimeInSeconds\",\"type\":\"uint24\"}],\"name\":\"MessageChanged\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address payable\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"yes\",\"type\":\"bool\"}],\"name\":\"delegate\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"delegated\",\"type\":\"address\"}],\"name\":\"isDelegate\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"yes\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"}],\"name\":\"lastGreetingOf\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"greeting\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"}],\"name\":\"messages\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"content\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"},{\"internalType\":\"uint24\",\"name\":\"dayTimeInSeconds\",\"type\":\"uint24\"}],\"internalType\":\"struct GreetingsRegistry.Message\",\"name\":\"userMsg\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"initialPrefix\",\"type\":\"string\"}],\"name\":\"postUpgrade\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"prefix\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"value\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"},{\"internalType\":\"uint24\",\"name\":\"dayTimeInSeconds\",\"type\":\"uint24\"}],\"name\":\"setMessage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"message\",\"type\":\"string\"},{\"internalType\":\"uint24\",\"name\":\"dayTimeInSeconds\",\"type\":\"uint24\"}],\"name\":\"setMessageFor\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"events\":{\"Delegated(address,address,bool)\":{\"params\":{\"delegated\":\"address that will be able to set message if delegated\",\"user\":\"the user that delegate its rights\",\"yes\":\"whether to delegate or revoke\"}},\"MessageChanged(address,uint256,string,uint24)\":{\"details\":\"the timestamp is included to speedup indexing see: https://ethereum-magicians.org/t/proposal-for-adding-blocktimestamp-to-logs-object-returned-by-eth-getlogs-and-related-requests/11183\",\"params\":{\"dayTimeInSeconds\":\"the time of the day in seconds where 00:00 => 0 and 23:59 => 82859\",\"message\":\"the message content\",\"timestamp\":\"the time at which the message was recorded\",\"user\":\"the user that send the message\"}}},\"kind\":\"dev\",\"methods\":{\"constructor\":{\"details\":\"constructors\",\"params\":{\"initialPrefix\":\"the prefix that will be prepended to every user message goig forward\"}},\"delegate(address,bool)\":{\"params\":{\"to\":\"address which will be given the right to delegate\",\"yes\":\"whether to give the right or revoke it\"}},\"isDelegate(address,address)\":{\"params\":{\"account\":\"address being queried\",\"delegated\":\"the account which has right to set message\"},\"returns\":{\"yes\":\"whether `delegated` has the right to set message\"}},\"lastGreetingOf(address)\":{\"params\":{\"user\":\"address of the user.\"},\"returns\":{\"greeting\":\"the message's content send by the user.\"}},\"messages(address)\":{\"params\":{\"user\":\"address of the user.\"},\"returns\":{\"userMsg\":\"the message send by the user.\"}},\"postUpgrade(string)\":{\"details\":\"called by the admin when the contract is deployed as a proxy\",\"params\":{\"initialPrefix\":\"the prefix that will be prepended to every user message goig forward\"}},\"prefix()\":{\"returns\":{\"value\":\"prefix string.\"}},\"setMessage(string,uint24)\":{\"params\":{\"dayTimeInSeconds\":\"the time of the day in seconds the message was written.\",\"message\":\"the value to set as content.\"}},\"setMessageFor(address,string,uint24)\":{\"params\":{\"account\":\"address which will have its greetings set\",\"dayTimeInSeconds\":\"the time of the day in seconds the message was written.\",\"message\":\"the value to set as content.\"}}},\"version\":1},\"userdoc\":{\"events\":{\"Delegated(address,address,bool)\":{\"notice\":\"emitted whenever a user delegate the right to set a message to another account\"},\"MessageChanged(address,uint256,string,uint24)\":{\"notice\":\"emitted whenever a user set a new greeting to the world\"}},\"kind\":\"user\",\"methods\":{\"delegate(address,bool)\":{\"notice\":\"delegate the right to set message to another account\"},\"isDelegate(address,address)\":{\"notice\":\"return whether an account has right to set message on behalf of another\"},\"lastGreetingOf(address)\":{\"notice\":\"return the last greeting message from the given `user`.\"},\"messages(address)\":{\"notice\":\"return the last message from the given `user`.\"},\"prefix()\":{\"notice\":\"return the prefix that is appended to any new message.\"},\"setMessage(string,uint24)\":{\"notice\":\"set a new message for `msg.sender`.\"},\"setMessageFor(address,string,uint24)\":{\"notice\":\"set a new message for `msg.sender`.\"}},\"notice\":\"a registry that let user send greetings to the world  It is used as a demo for jolly-roger,  a fully featured SDK to build entirely decentralised apps and games  It is inteded to be deployed via upgradeable proxy locally  to showcase the HCR (Hot Contract Replacement) capabilities of `hardhat-deploy`  but immutable on live networks.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/GreetingsRegistry.sol\":\"GreetingsRegistry\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":999999},\"remappings\":[],\"viaIR\":true},\"sources\":{\"solidity-proxy/solc_0_8/ERC1967/Proxied.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nabstract contract Proxied {\\n    /// @notice to be used by initialisation / postUpgrade function so that only the proxy's admin can execute them\\n    /// It also allows these functions to be called inside a contructor\\n    /// even if the contract is meant to be used without proxy\\n    modifier proxied() {\\n        address proxyAdminAddress = _proxyAdmin();\\n        // With hardhat-deploy proxies\\n        // the proxyAdminAddress is zero only for the implementation contract\\n        // if the implementation contract want to be used as a standalone/immutable contract\\n        // it simply has to execute the `proxied` function\\n        // This ensure the proxyAdminAddress is never zero post deployment\\n        // And allow you to keep the same code for both proxied contract and immutable contract\\n        if (proxyAdminAddress == address(0)) {\\n            // ensure can not be called twice when used outside of proxy : no admin\\n            // solhint-disable-next-line security/no-inline-assembly\\n            assembly {\\n                sstore(\\n                    0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103,\\n                    0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\\n                )\\n            }\\n        } else {\\n            require(msg.sender == proxyAdminAddress);\\n        }\\n        _;\\n    }\\n\\n    modifier onlyProxyAdmin() {\\n        require(msg.sender == _proxyAdmin(), \\\"NOT_AUTHORIZED\\\");\\n        _;\\n    }\\n\\n    function _proxyAdmin() internal view returns (address ownerAddress) {\\n        // solhint-disable-next-line security/no-inline-assembly\\n        assembly {\\n            ownerAddress := sload(0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103)\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0xaaceeafeeaf0d200ca3942d8bf14c1c4f787a77f79cc87c08bb668e65acdee29\",\"license\":\"MIT\"},\"src/GreetingsRegistry.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.13;\\n\\nimport 'solidity-proxy/solc_0_8/ERC1967/Proxied.sol';\\n\\n/// @notice a registry that let user send greetings to the world\\n///  It is used as a demo for jolly-roger,\\n///  a fully featured SDK to build entirely decentralised apps and games\\n///  It is inteded to be deployed via upgradeable proxy locally\\n///  to showcase the HCR (Hot Contract Replacement) capabilities of `hardhat-deploy`\\n///  but immutable on live networks.\\ncontract GreetingsRegistry is Proxied {\\n\\t// ----------------------------------------------------------------------------------------------\\n\\t// EVENTS\\n\\t// ----------------------------------------------------------------------------------------------\\n\\t/// @notice emitted whenever a user set a new greeting to the world\\n\\t/// @param user the user that send the message\\n\\t/// @param timestamp the time at which the message was recorded\\n\\t/// @param message the message content\\n\\t/// @param dayTimeInSeconds the time of the day in seconds where 00:00 => 0 and 23:59 => 82859\\n\\t/// @dev the timestamp is included to speedup indexing\\n\\t/// see: https://ethereum-magicians.org/t/proposal-for-adding-blocktimestamp-to-logs-object-returned-by-eth-getlogs-and-related-requests/11183\\n\\tevent MessageChanged(address indexed user, uint256 timestamp, string message, uint24 dayTimeInSeconds);\\n\\n\\t/// @notice emitted whenever a user delegate the right to set a message to another account\\n\\t/// @param user the user that delegate its rights\\n\\t/// @param delegated address that will be able to set message if delegated\\n\\t/// @param yes whether to delegate or revoke\\n\\tevent Delegated(address indexed user, address indexed delegated, bool yes);\\n\\n\\t// ----------------------------------------------------------------------------------------------\\n\\t// TYPES\\n\\t// ----------------------------------------------------------------------------------------------\\n\\tstruct Message {\\n\\t\\tstring content;\\n\\t\\tuint256 timestamp;\\n\\t\\tuint24 dayTimeInSeconds;\\n\\t}\\n\\n\\t// ----------------------------------------------------------------------------------------------\\n\\t// STORAGE\\n\\t// ----------------------------------------------------------------------------------------------\\n\\tmapping(address => Message) internal _messages;\\n\\tstring internal _prefix;\\n\\tmapping(address => mapping(address => bool)) internal _delegates;\\n\\n\\t// ----------------------------------------------------------------------------------------------\\n\\t// CONSTRUCTOR / INITIALIZER\\n\\t// ----------------------------------------------------------------------------------------------\\n\\n\\t/// @dev constructors\\n\\t/// @param initialPrefix the prefix that will be prepended to every user message goig forward\\n\\tconstructor(string memory initialPrefix) {\\n\\t\\t// the proxied modifier from `hardhat-deploy` (see `postUpgrade` function)\\n\\t\\t//  ensure postUpgrade effect can only be used once when the contract is deployed without proxy.\\n\\t\\t//  by calling that function in the constructor\\n\\t\\t//  we ensure the contract behave the same whether it is deployed through a proxy or not.\\n\\t\\t//  when the contract is deployed without proxy, the postUpgrade can never be called\\n\\t\\tpostUpgrade(initialPrefix);\\n\\t}\\n\\n\\t//\\n\\t/// @dev called by the admin when the contract is deployed as a proxy\\n\\t/// @param initialPrefix the prefix that will be prepended to every user message goig forward\\n\\tfunction postUpgrade(string memory initialPrefix) public proxied {\\n\\t\\t_prefix = initialPrefix;\\n\\t}\\n\\n\\t// ----------------------------------------------------------------------------------------------\\n\\t// PUBLIC INTERFACE\\n\\t// ----------------------------------------------------------------------------------------------\\n\\n\\t/// @notice return the last message from the given `user`.\\n\\t/// @param user address of the user.\\n\\t/// @return userMsg the message send by the user.\\n\\tfunction messages(address user) external view returns (Message memory userMsg) {\\n\\t\\tuserMsg = _messages[user];\\n\\t}\\n\\n\\t/// @notice return the last greeting message from the given `user`.\\n\\t/// @param user address of the user.\\n\\t/// @return greeting the message's content send by the user.\\n\\tfunction lastGreetingOf(address user) external view returns (string memory greeting) {\\n\\t\\tgreeting = _messages[user].content;\\n\\t}\\n\\n\\t/// @notice return the prefix that is appended to any new message.\\n\\t/// @return value prefix string.\\n\\tfunction prefix() external view returns (string memory value) {\\n\\t\\treturn _prefix;\\n\\t}\\n\\n\\t/// @notice set a new message for `msg.sender`.\\n\\t/// @param message the value to set as content.\\n\\t/// @param dayTimeInSeconds the time of the day in seconds the message was written.\\n\\tfunction setMessage(string calldata message, uint24 dayTimeInSeconds) external {\\n\\t\\t_setMessageFor(msg.sender, message, dayTimeInSeconds);\\n\\t}\\n\\n\\t/// @notice set a new message for `msg.sender`.\\n\\t/// @param account address which will have its greetings set\\n\\t/// @param message the value to set as content.\\n\\t/// @param dayTimeInSeconds the time of the day in seconds the message was written.\\n\\tfunction setMessageFor(address account, string calldata message, uint24 dayTimeInSeconds) external {\\n\\t\\trequire(msg.sender == account || _delegates[account][msg.sender], 'NOT_AUTHORIZED');\\n\\t\\t_setMessageFor(account, message, dayTimeInSeconds);\\n\\t}\\n\\n\\t/// @notice delegate the right to set message to another account\\n\\t/// @param to address which will be given the right to delegate\\n\\t/// @param yes whether to give the right or revoke it\\n\\tfunction delegate(address payable to, bool yes) external payable{\\n\\t\\tto.transfer(msg.value);\\n\\t\\t_delegates[msg.sender][to] = yes;\\n\\t\\temit Delegated(msg.sender, to, yes);\\n\\t}\\n\\n\\t/// @notice return whether an account has right to set message on behalf of another\\n\\t/// @param account address being queried\\n\\t/// @param delegated the account which has right to set message\\n\\t/// @return yes whether `delegated` has the right to set message\\n\\tfunction isDelegate(address account, address delegated) external view returns (bool yes){\\n\\t\\treturn _delegates[account][delegated];\\n\\t}\\n\\n\\t// ----------------------------------------------------------------------------------------------\\n\\t// INTERNAL\\n\\t// ----------------------------------------------------------------------------------------------\\n\\n\\tfunction _setMessageFor(address account, string calldata message, uint24 dayTimeInSeconds) internal {\\n\\t\\tstring memory actualMessage = string(bytes.concat(bytes(_prefix), bytes(message)));\\n\\t\\t_messages[account] = Message({\\n\\t\\t\\tcontent: actualMessage,\\n\\t\\t\\ttimestamp: block.timestamp,\\n\\t\\t\\tdayTimeInSeconds: dayTimeInSeconds\\n\\t\\t});\\n\\t\\temit MessageChanged(account, block.timestamp, actualMessage, dayTimeInSeconds);\\n\\t}\\n}\\n\",\"keccak256\":\"0x34def96b5559acc50dbc6aa4b82d83e33c39d1d53198c09386a0f23ef4d81791\",\"license\":\"MIT\"}},\"version\":1}",
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 142,
+        "contract": "src/GreetingsRegistry.sol:GreetingsRegistry",
+        "label": "_messages",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_mapping(t_address,t_struct(Message)137_storage)"
+      },
+      {
+        "astId": 144,
+        "contract": "src/GreetingsRegistry.sol:GreetingsRegistry",
+        "label": "_prefix",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_string_storage"
+      },
+      {
+        "astId": 150,
+        "contract": "src/GreetingsRegistry.sol:GreetingsRegistry",
+        "label": "_delegates",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_mapping(t_address,t_mapping(t_address,t_bool))"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_mapping(t_address,t_bool)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => bool)",
+        "numberOfBytes": "32",
+        "value": "t_bool"
+      },
+      "t_mapping(t_address,t_mapping(t_address,t_bool))": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => mapping(address => bool))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_address,t_bool)"
+      },
+      "t_mapping(t_address,t_struct(Message)137_storage)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => struct GreetingsRegistry.Message)",
+        "numberOfBytes": "32",
+        "value": "t_struct(Message)137_storage"
+      },
+      "t_string_storage": {
+        "encoding": "bytes",
+        "label": "string",
+        "numberOfBytes": "32"
+      },
+      "t_struct(Message)137_storage": {
+        "encoding": "inplace",
+        "label": "struct GreetingsRegistry.Message",
+        "members": [
+          {
+            "astId": 132,
+            "contract": "src/GreetingsRegistry.sol:GreetingsRegistry",
+            "label": "content",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_string_storage"
+          },
+          {
+            "astId": 134,
+            "contract": "src/GreetingsRegistry.sol:GreetingsRegistry",
+            "label": "timestamp",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint256"
+          },
+          {
+            "astId": 136,
+            "contract": "src/GreetingsRegistry.sol:GreetingsRegistry",
+            "label": "dayTimeInSeconds",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint24"
+          }
+        ],
+        "numberOfBytes": "96"
+      },
+      "t_uint24": {
+        "encoding": "inplace",
+        "label": "uint24",
+        "numberOfBytes": "3"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  },
+  "userdoc": {
+    "events": {
+      "Delegated(address,address,bool)": {
+        "notice": "emitted whenever a user delegate the right to set a message to another account"
+      },
+      "MessageChanged(address,uint256,string,uint24)": {
+        "notice": "emitted whenever a user set a new greeting to the world"
+      }
+    },
+    "kind": "user",
+    "methods": {
+      "delegate(address,bool)": {
+        "notice": "delegate the right to set message to another account"
+      },
+      "isDelegate(address,address)": {
+        "notice": "return whether an account has right to set message on behalf of another"
+      },
+      "lastGreetingOf(address)": {
+        "notice": "return the last greeting message from the given `user`."
+      },
+      "messages(address)": {
+        "notice": "return the last message from the given `user`."
+      },
+      "prefix()": {
+        "notice": "return the prefix that is appended to any new message."
+      },
+      "setMessage(string,uint24)": {
+        "notice": "set a new message for `msg.sender`."
+      },
+      "setMessageFor(address,string,uint24)": {
+        "notice": "set a new message for `msg.sender`."
+      }
+    },
+    "notice": "a registry that let user send greetings to the world  It is used as a demo for jolly-roger,  a fully featured SDK to build entirely decentralised apps and games  It is inteded to be deployed via upgradeable proxy locally  to showcase the HCR (Hot Contract Replacement) capabilities of `hardhat-deploy`  but immutable on live networks.",
+    "version": 1
+  },
+  "argsData": "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
+  "transaction": {
+    "hash": "0x4b440ad5470870c98ba2ef12232f4b199041b6b7191a51d2ad04b18ac36733d1",
+    "nonce": "0x1bc",
+    "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
+  },
+  "receipt": {
+    "confirmations": 0,
+    "blockHash": "0x71272fa1a9fea56e4a04e3b22d88e663b522bebac544954b8fcef6eaf5efa833",
+    "blockNumber": "0x5b95a0",
+    "transactionIndex": "0x52"
+  }
+}

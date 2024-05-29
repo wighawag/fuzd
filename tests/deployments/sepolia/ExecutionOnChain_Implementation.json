@@ -1,0 +1,209 @@
+{
+  "address": "0x67108fc2fb40a627d993b126c5111fbc8dbd545c",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "gas",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes",
+              "name": "data",
+              "type": "bytes"
+            },
+            {
+              "internalType": "uint8",
+              "name": "transactionType",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "chainId",
+              "type": "uint256"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "addr",
+                  "type": "address"
+                },
+                {
+                  "internalType": "bytes32[]",
+                  "name": "storageKeys",
+                  "type": "bytes32[]"
+                }
+              ],
+              "internalType": "struct ExecutionOnChain.AccessListEntry[]",
+              "name": "accessList",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "maxFeePerGas",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "maxPriorityFeePerGas",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "duration",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct ExecutionOnChain.BroadcastSchedule[]",
+              "name": "schedule",
+              "type": "tuple[]"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct ExecutionOnChain.ScheduledExecution",
+          "name": "execution",
+          "type": "tuple"
+        }
+      ],
+      "name": "ExecutionSubmitted",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "to",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "gas",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes",
+              "name": "data",
+              "type": "bytes"
+            },
+            {
+              "internalType": "uint8",
+              "name": "transactionType",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "chainId",
+              "type": "uint256"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "addr",
+                  "type": "address"
+                },
+                {
+                  "internalType": "bytes32[]",
+                  "name": "storageKeys",
+                  "type": "bytes32[]"
+                }
+              ],
+              "internalType": "struct ExecutionOnChain.AccessListEntry[]",
+              "name": "accessList",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "maxFeePerGas",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "maxPriorityFeePerGas",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "duration",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct ExecutionOnChain.BroadcastSchedule[]",
+              "name": "schedule",
+              "type": "tuple[]"
+            }
+          ],
+          "internalType": "struct ExecutionOnChain.ScheduledExecution",
+          "name": "execution",
+          "type": "tuple"
+        }
+      ],
+      "name": "execute",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "contractName": "ExecutionOnChain",
+  "sourceName": "src/ExecutionOnChain.sol",
+  "bytecode": "0x60808060405234601557610406908161001b8239f35b600080fdfe6080604090808252600436101561001557600080fd5b600091823560e01c6366a860ec1461002c57600080fd5b346103435760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc8181360112610353576004359167ffffffffffffffff9384841161034f578360040160e08536039485011261034b578287526101009473ffffffffffffffffffffffffffffffffffffffff94856100aa84610357565b16898601526024820135848a01527fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdd018960448301358281121561034757830197602460048a01359901948a8a11610343578936038613610343578b98838b978860609c8d810160e0905281878201526101209e8f93848301370101527fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f819801168d019a8b019260648701359360ff851680950361033f5761018a8f929d93959460c095608085015260848a013560a085015260a48a019061037d565b9483919e869486030191015252610140808201936005918460051b8401019c8096935b85851061025e57505050505050505060c48201359081121561025a5701946024600487013596019686116102565784860236038713610256578392959493918882030160e089015284815201949387915b84831061022f57887fb7a15cc2c98f6f49335726c1cffb62a1decf47a031819d3b150a16efb5eba3e18989038aa180f35b853587528581013587820152858201358783015295830195948301946001909201916101fe565b8880fd5b8980fd5b909192939495969d8e7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffec0838303018952357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc184360301811215610338578d918d6102db86829401886102cf82610357565b1684528581019061037d565b93849291958401528201527f07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8211610330578f90928f938493891b80928483013701019f0197019594600101939291906101ad565b505050508f80fd5b5050508f80fd5b8580fd5b8280fd5b5080fd5b8780fd5b8680fd5b8480fd5b359073ffffffffffffffffffffffffffffffffffffffff8216820361037857565b600080fd5b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe18236030181121561037857016020813591019167ffffffffffffffff8211610378578160051b360383136103785756fea26469706673582212203207838513bde36b3430cef23fedd0389984d372646185ef258e44cd79a4a94c64736f6c63430008190033",
+  "deployedBytecode": "0x6080604090808252600436101561001557600080fd5b600091823560e01c6366a860ec1461002c57600080fd5b346103435760207ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc8181360112610353576004359167ffffffffffffffff9384841161034f578360040160e08536039485011261034b578287526101009473ffffffffffffffffffffffffffffffffffffffff94856100aa84610357565b16898601526024820135848a01527fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdd018960448301358281121561034757830197602460048a01359901948a8a11610343578936038613610343578b98838b978860609c8d810160e0905281878201526101209e8f93848301370101527fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f819801168d019a8b019260648701359360ff851680950361033f5761018a8f929d93959460c095608085015260848a013560a085015260a48a019061037d565b9483919e869486030191015252610140808201936005918460051b8401019c8096935b85851061025e57505050505050505060c48201359081121561025a5701946024600487013596019686116102565784860236038713610256578392959493918882030160e089015284815201949387915b84831061022f57887fb7a15cc2c98f6f49335726c1cffb62a1decf47a031819d3b150a16efb5eba3e18989038aa180f35b853587528581013587820152858201358783015295830195948301946001909201916101fe565b8880fd5b8980fd5b909192939495969d8e7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffec0838303018952357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc184360301811215610338578d918d6102db86829401886102cf82610357565b1684528581019061037d565b93849291958401528201527f07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8211610330578f90928f938493891b80928483013701019f0197019594600101939291906101ad565b505050508f80fd5b5050508f80fd5b8580fd5b8280fd5b5080fd5b8780fd5b8680fd5b8480fd5b359073ffffffffffffffffffffffffffffffffffffffff8216820361037857565b600080fd5b90357fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe18236030181121561037857016020813591019167ffffffffffffffff8211610378578160051b360383136103785756fea26469706673582212203207838513bde36b3430cef23fedd0389984d372646185ef258e44cd79a4a94c64736f6c63430008190033",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "evm": {
+    "gasEstimates": {
+      "creation": {
+        "codeDepositCost": "206000",
+        "executionCost": "257",
+        "totalCost": "206257"
+      },
+      "external": {
+        "execute((address,uint256,bytes,uint8,uint256,(address,bytes32[])[],(uint256,uint256,uint256)[]))": "infinite"
+      }
+    }
+  },
+  "metadata": "{\"compiler\":{\"version\":\"0.8.25+commit.b61c2a91\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"gas\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"internalType\":\"uint8\",\"name\":\"transactionType\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"internalType\":\"bytes32[]\",\"name\":\"storageKeys\",\"type\":\"bytes32[]\"}],\"internalType\":\"struct ExecutionOnChain.AccessListEntry[]\",\"name\":\"accessList\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"maxFeePerGas\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"maxPriorityFeePerGas\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"duration\",\"type\":\"uint256\"}],\"internalType\":\"struct ExecutionOnChain.BroadcastSchedule[]\",\"name\":\"schedule\",\"type\":\"tuple[]\"}],\"indexed\":false,\"internalType\":\"struct ExecutionOnChain.ScheduledExecution\",\"name\":\"execution\",\"type\":\"tuple\"}],\"name\":\"ExecutionSubmitted\",\"type\":\"event\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"gas\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"internalType\":\"uint8\",\"name\":\"transactionType\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"},{\"internalType\":\"bytes32[]\",\"name\":\"storageKeys\",\"type\":\"bytes32[]\"}],\"internalType\":\"struct ExecutionOnChain.AccessListEntry[]\",\"name\":\"accessList\",\"type\":\"tuple[]\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"maxFeePerGas\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"maxPriorityFeePerGas\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"duration\",\"type\":\"uint256\"}],\"internalType\":\"struct ExecutionOnChain.BroadcastSchedule[]\",\"name\":\"schedule\",\"type\":\"tuple[]\"}],\"internalType\":\"struct ExecutionOnChain.ScheduledExecution\",\"name\":\"execution\",\"type\":\"tuple\"}],\"name\":\"execute\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"notice\":\"a registry that let user send greetings to the world  It is used as a demo for jolly-roger,  a fully featured SDK to build entirely decentralised apps and games  It is inteded to be deployed via upgradeable proxy locally  to showcase the HCR (Hot Contract Replacement) capabilities of `hardhat-deploy`  but immutable on live networks.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/ExecutionOnChain.sol\":\"ExecutionOnChain\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":999999},\"remappings\":[],\"viaIR\":true},\"sources\":{\"solidity-proxy/solc_0_8/ERC1967/Proxied.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nabstract contract Proxied {\\n    /// @notice to be used by initialisation / postUpgrade function so that only the proxy's admin can execute them\\n    /// It also allows these functions to be called inside a contructor\\n    /// even if the contract is meant to be used without proxy\\n    modifier proxied() {\\n        address proxyAdminAddress = _proxyAdmin();\\n        // With hardhat-deploy proxies\\n        // the proxyAdminAddress is zero only for the implementation contract\\n        // if the implementation contract want to be used as a standalone/immutable contract\\n        // it simply has to execute the `proxied` function\\n        // This ensure the proxyAdminAddress is never zero post deployment\\n        // And allow you to keep the same code for both proxied contract and immutable contract\\n        if (proxyAdminAddress == address(0)) {\\n            // ensure can not be called twice when used outside of proxy : no admin\\n            // solhint-disable-next-line security/no-inline-assembly\\n            assembly {\\n                sstore(\\n                    0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103,\\n                    0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\\n                )\\n            }\\n        } else {\\n            require(msg.sender == proxyAdminAddress);\\n        }\\n        _;\\n    }\\n\\n    modifier onlyProxyAdmin() {\\n        require(msg.sender == _proxyAdmin(), \\\"NOT_AUTHORIZED\\\");\\n        _;\\n    }\\n\\n    function _proxyAdmin() internal view returns (address ownerAddress) {\\n        // solhint-disable-next-line security/no-inline-assembly\\n        assembly {\\n            ownerAddress := sload(0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103)\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0xaaceeafeeaf0d200ca3942d8bf14c1c4f787a77f79cc87c08bb668e65acdee29\",\"license\":\"MIT\"},\"src/ExecutionOnChain.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.13;\\n\\nimport 'solidity-proxy/solc_0_8/ERC1967/Proxied.sol';\\n\\n/// @notice a registry that let user send greetings to the world\\n///  It is used as a demo for jolly-roger,\\n///  a fully featured SDK to build entirely decentralised apps and games\\n///  It is inteded to be deployed via upgradeable proxy locally\\n///  to showcase the HCR (Hot Contract Replacement) capabilities of `hardhat-deploy`\\n///  but immutable on live networks.\\ncontract ExecutionOnChain is Proxied {\\n\\n    event ExecutionSubmitted(ScheduledExecution execution);\\n\\n    struct AccessListEntry {\\n        address addr;\\n        bytes32[] storageKeys;\\n    }\\n\\n    struct BroadcastSchedule {\\n        uint256 maxFeePerGas;\\n        uint256 maxPriorityFeePerGas;\\n        uint256 duration;\\n    }\\n\\n    struct ScheduledExecution {\\n        address to;\\n        uint256 gas;\\n        bytes data;\\n        uint8 transactionType;\\n        uint256 chainId;\\n        AccessListEntry[] accessList;\\n        BroadcastSchedule[] schedule;\\n    }\\n    function execute(ScheduledExecution calldata execution) external {\\n        emit ExecutionSubmitted(execution);\\n    }\\n\\n}\",\"keccak256\":\"0xd898325e792fa6f9e31b1e61e004b4aef83075c749d86479f75676dc0c17c767\",\"license\":\"MIT\"}},\"version\":1}",
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "notice": "a registry that let user send greetings to the world  It is used as a demo for jolly-roger,  a fully featured SDK to build entirely decentralised apps and games  It is inteded to be deployed via upgradeable proxy locally  to showcase the HCR (Hot Contract Replacement) capabilities of `hardhat-deploy`  but immutable on live networks.",
+    "version": 1
+  },
+  "argsData": "0x",
+  "transaction": {
+    "hash": "0xf5d29d062aabcf3fd2e66d13daa250be5984d06c507b27a16de833cc9c9f733b",
+    "nonce": "0x1be",
+    "origin": "0x61c461ecc993aadeb7e4b47e96d1b8cc37314b20"
+  },
+  "receipt": {
+    "confirmations": 0,
+    "blockHash": "0x98587f1c6155d7ff5b6dcf070691051f8b7495b6de1c74400493e1864c3da43d",
+    "blockNumber": "0x5b95a3",
+    "transactionIndex": "0x5d"
+  }
+}
