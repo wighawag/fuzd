@@ -16,17 +16,23 @@ async function wrapWithLogger(
 	ctx: ExecutionContext,
 	callback: (request: Request, env: Env, ctx: ExecutionContext) => Promise<Response>,
 ): Promise<Response> {
+	const namespaces = env.NAMED_LOGS || '*';
+	let logLevel = 2;
 	if (env.NAMED_LOGS || env.NAMED_LOGS_LEVEL) {
-		const namespaces = env.NAMED_LOGS || '*';
-
-		(globalThis as any)._logFactory.enable(namespaces);
 		if (env.NAMED_LOGS_LEVEL) {
 			const level = parseInt(env.NAMED_LOGS_LEVEL);
 			if (!isNaN(level)) {
-				(globalThis as any)._logFactory.level = level;
+				logLevel = level;
 			}
 		}
 	}
+	if ((globalThis as any)._logFactory) {
+		(globalThis as any)._logFactory.enable(namespaces);
+		(globalThis as any)._logFactory.level = logLevel;
+	} else {
+		console.error(`no log factory`);
+	}
+
 	const _trackLogger = track(
 		request,
 		'FUZD.cloudflare',
