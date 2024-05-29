@@ -21,8 +21,6 @@ async function main() {
 	const delayString = args[2] || process.env.DELAY;
 	const delay = delayString ? parseInt(delayString) : 30;
 
-	const timestamp = Math.floor(Date.now() / 1000);
-
 	const GreetingsRegistry = env.deployments.GreetingsRegistry as Deployment<
 		typeof context.artifacts.GreetingsRegistry.abi
 	>;
@@ -35,12 +33,10 @@ async function main() {
 
 	const remoteAddressBalance = await publicClient.getBalance({address: remoteAddress});
 	const gasPrice = await publicClient.getGasPrice();
-	const maxFeePerGas = gasPrice;
+	const maxFeePerGasAuthorized = gasPrice * 5n; //we allow 5x increase in gas
 
 	const chainIdAsNumber = await publicClient.getChainId();
 	const chainId = `0x${chainIdAsNumber.toString(16)}`;
-
-	console.log({chainId});
 
 	const txData = {
 		chainId,
@@ -49,7 +45,7 @@ async function main() {
 	};
 	const gas = await publicClient.estimateGas({...txData, account: wallet.address});
 
-	const balanceRequired = gas * maxFeePerGas;
+	const balanceRequired = gas * maxFeePerGasAuthorized;
 	if (remoteAddressBalance < balanceRequired) {
 		const weiNeeded = balanceRequired - remoteAddressBalance;
 		console.log(`sending ${formatEther(weiNeeded)} ETH to the remote account ....`);
@@ -69,6 +65,7 @@ async function main() {
 		schedulerEndPoint: `${schedulerHost}/api/scheduling/scheduleExecution`,
 	});
 
+	const timestamp = Math.floor(Date.now() / 1000);
 	const scheduleInfo = await client.scheduleExecution({
 		chainId,
 		transaction: {
@@ -76,7 +73,7 @@ async function main() {
 			data: txData.data,
 			to: txData.to,
 		},
-		maxFeePerGasAuthorized: maxFeePerGas,
+		maxFeePerGasAuthorized: maxFeePerGasAuthorized,
 		time: timestamp + delay,
 	});
 

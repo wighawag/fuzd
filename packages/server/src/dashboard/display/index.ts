@@ -2,7 +2,7 @@ import {PendingExecutionStored} from 'fuzd-executor';
 import {ScheduledExecutionQueued} from 'fuzd-scheduler';
 import {formatEther, formatUnits, zeroAddress} from 'viem';
 
-export function displayScheduledExecutionQueued<TransactionData>(timeDiff: number = 0) {
+export function displayScheduledExecutionQueued<TransactionData>(timeDiff: number = 0, showPayload = false) {
 	return (v: ScheduledExecutionQueued<TransactionData>) => ({
 		account: v.account,
 		chainId: v.chainId,
@@ -14,6 +14,7 @@ export function displayScheduledExecutionQueued<TransactionData>(timeDiff: numbe
 		expectedWorstCaseGasPrice: v.expectedWorstCaseGasPrice || 'none',
 		paymentReserve: v.paymentReserve || 'undefined',
 		retries: v.retries || 0,
+		payload: showPayload ? (v.type === 'clear' ? JSON.stringify(v.executions) : v.payload) : undefined,
 	});
 }
 

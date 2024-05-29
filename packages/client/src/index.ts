@@ -81,7 +81,12 @@ export function createClient(config: ClientConfig) {
 					'content-type': 'application/json',
 				},
 			});
-			return response.json();
+			if (response.ok) {
+				return response.json();
+			} else {
+				const text = await response.text();
+				throw new Error(`could not schedule execution: ${text}`);
+			}
 		} else {
 			return config.schedulerEndPoint(jsonAsString, signature);
 		}

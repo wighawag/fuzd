@@ -27,6 +27,17 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 				</Layout>,
 			);
 		})
+		.get('/queue-with-payload', async (c) => {
+			const config = c.get('config');
+			const queue = await config.schedulerStorage.getQueueTopMostExecutions({limit: 100});
+			const diff = await config.getTimeDiff(queue[0]?.chainId);
+			const displayData = queue.map(displayScheduledExecutionQueued(diff, true));
+			return c.html(
+				<Layout>
+					<Table data={displayData} />
+				</Layout>,
+			);
+		})
 		.get('/all-submissions', async (c) => {
 			const config = c.get('config');
 			const queue = await config.schedulerStorage.getAllExecutions({limit: 100});
