@@ -206,9 +206,8 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 
 	async clear(): Promise<void> {
 		const deleteBroadcasters = this.db.prepare(`DELETE FROM Broadcasters;`);
-		const deleteArchivedBroadcastedExecutions = this.db.prepare(`DELETE FROM ArchivedBroadcastedExecutions;`);
 		const delteBroadcastedExecutions = this.db.prepare(`DELETE FROM BroadcastedExecutions`);
-		await this.db.batch([deleteBroadcasters, deleteArchivedBroadcastedExecutions, delteBroadcastedExecutions]);
+		await this.db.batch([deleteBroadcasters, delteBroadcastedExecutions]);
 	}
 
 	async setup(): Promise<void> {

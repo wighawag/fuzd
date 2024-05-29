@@ -309,6 +309,9 @@ importers:
       hono:
         specifier: ^4.3.7
         version: 4.3.7
+      ldenv:
+        specifier: ^0.3.10
+        version: 0.3.10
       set-defaults:
         specifier: ^0.0.2
         version: 0.0.2

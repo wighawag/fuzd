@@ -19,6 +19,7 @@
     "@types/node": "^20.12.12",
     "fuzd-server": "workspace:*",
     "hono": "^4.3.7",
+    "ldenv": "^0.3.10",
     "set-defaults": "^0.0.2",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0",
@@ -28,6 +29,7 @@
     "prepare": "set-defaults .",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev -c ./wrangler.toml --port 34002",
+    "init-db": "ldenv -m local wrangler d1 execute fuzd-db --@@MODE --file=node_modules/fuzd-server/src/schema/sql/scheduler.sql ~~ wrangler d1 execute fuzd-db --@@MODE --file=node_modules/fuzd-server/src/schema/sql/executor.sql ~~ @@",
     "test": "vitest"
   }
 }
