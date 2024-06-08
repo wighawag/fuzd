@@ -8,6 +8,8 @@ type ScheduledExecutionInDB = {
 	chainId: `0x${string}`;
 	slot: string;
 
+	onBehalf: `0x${string}` | null;
+
 	broadcasted: 0 | 1;
 	nextCheckTime: number;
 
@@ -31,6 +33,7 @@ function fromScheduledExecutionInDB<ExecutionDataType>(
 			account: inDB.account,
 			chainId: inDB.chainId,
 			slot: inDB.slot,
+			onBehalf: inDB.onBehalf || undefined,
 			type: 'time-locked',
 			broadcasted: inDB.broadcasted == 0 ? false : true,
 			checkinTime: inDB.nextCheckTime,
@@ -49,6 +52,7 @@ function fromScheduledExecutionInDB<ExecutionDataType>(
 			account: inDB.account,
 			chainId: inDB.chainId,
 			slot: inDB.slot,
+			onBehalf: inDB.onBehalf || undefined,
 			type: 'clear',
 			broadcasted: inDB.broadcasted == 0 ? false : true,
 			checkinTime: inDB.nextCheckTime,
@@ -72,6 +76,8 @@ function toScheduledExecutionInDB<ExecutionDataType>(
 		account: obj.account,
 		chainId: obj.chainId,
 		slot: obj.slot,
+
+		onBehalf: obj.onBehalf || null,
 
 		broadcasted: obj.broadcasted ? 1 : 0,
 		nextCheckTime: obj.checkinTime,

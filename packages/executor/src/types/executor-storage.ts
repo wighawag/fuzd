@@ -11,6 +11,8 @@ export type PendingExecutionStored = {
 	chainId: `0x${string}`;
 	account: EIP1193Account;
 	slot: string;
+	batchIndex: number;
+	onBehalf?: EIP1193Account;
 	broadcasterAssignerID: string;
 	transaction: EIP1193TransactionDataUsed;
 	initialTime: number;
@@ -35,9 +37,21 @@ export interface ExecutorStorage {
 		chainId: `0x${string}`;
 		account: `0x${string}`;
 		slot: string;
+		batchIndex: number;
 	}): Promise<PendingExecutionStored | undefined>;
 
-	deletePendingExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void>;
+	getPendingExecutionBatch(params: {
+		chainId: `0x${string}`;
+		account: `0x${string}`;
+		slot: string;
+	}): Promise<PendingExecutionStored[] | undefined>;
+
+	deletePendingExecution(params: {
+		chainId: `0x${string}`;
+		account: `0x${string}`;
+		slot: string;
+		batchIndex: number;
+	}): Promise<void>;
 	createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored>;
 	getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored[]>;
 	getPendingExecutionsPerBroadcaster(

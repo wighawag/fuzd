@@ -45,6 +45,7 @@ export function createExecutor(
 
 	async function broadcastExecution(
 		slot: string,
+		batchIndex: number,
 		account: EIP1193Account,
 		submission: ExecutionSubmission,
 		options?: {
@@ -75,8 +76,9 @@ export function createExecutor(
 
 		const existingExecution = await storage.getPendingExecution({
 			chainId: submission.chainId,
-			slot,
 			account,
+			slot,
+			batchIndex,
 		});
 		if (existingExecution) {
 			return {...existingExecution, slotAlreadyUsed: true};
@@ -90,6 +92,7 @@ export function createExecutor(
 			chainId: submission.chainId,
 			account,
 			slot,
+			batchIndex,
 			transaction: {...submission.transaction, from: broadcaster.address, chainId: submission.chainId},
 			maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
 			broadcasterAssignerID: broadcaster.assignerID,
@@ -364,6 +367,7 @@ export function createExecutor(
 			initialTime: transactionData.initialTime,
 			expiryTime: transactionData.expiryTime,
 			slot: transactionData.slot,
+			batchIndex: transactionData.batchIndex,
 			account: transactionData.account,
 			expectedWorstCaseGasPrice: transactionData.expectedWorstCaseGasPrice,
 			finalized: transactionData.finalized,
@@ -488,6 +492,7 @@ export function createExecutor(
 						// if gas price rise, tx might not have enough
 						await broadcastExecution(
 							`${pendingExecution.account}_${pendingExecution.transaction.from}_${pendingExecution.transaction.nonce}`,
+							0,
 							paymentAccount,
 							{
 								chainId: pendingExecution.chainId,

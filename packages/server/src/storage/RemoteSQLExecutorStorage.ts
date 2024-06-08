@@ -33,6 +33,8 @@ type ExecutionInDB = {
 	account: `0x${string}`;
 	chainId: `0x${string}`;
 	slot: string;
+	batchIndex: number;
+	onBehalf: `0x${string}` | null;
 	nextCheckTime: number;
 	broadcasterAssignerID: string;
 	initialTime: number;
@@ -79,6 +81,8 @@ function fromExecutionInDB(inDB: ExecutionInDB): PendingExecutionStored {
 		chainId: inDB.chainId,
 		account: inDB.account,
 		slot: inDB.slot,
+		batchIndex: inDB.batchIndex,
+		onBehalf: inDB.onBehalf || undefined,
 		broadcasterAssignerID: inDB.broadcasterAssignerID,
 		initialTime: inDB.initialTime,
 		broadcastTime: inDB.broadcastTime || undefined,
@@ -100,6 +104,8 @@ function toExecutionInDB(obj: PendingExecutionStored): ExecutionInDB {
 		chainId: obj.chainId,
 		account: obj.account,
 		slot: obj.slot,
+		batchIndex: obj.batchIndex,
+		onBehalf: obj.onBehalf || null,
 		broadcasterAssignerID: obj.broadcasterAssignerID,
 		initialTime: obj.initialTime,
 		broadcastTime: obj.broadcastTime || null,
@@ -125,12 +131,13 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		chainId: `0x${string}`;
 		account: `0x${string}`;
 		slot: string;
+		batchIndex: number;
 	}): Promise<PendingExecutionStored | undefined> {
 		const statement = this.db.prepare(
-			'SELECT * FROM BroadcastedExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;',
+			'SELECT * FROM BroadcastedExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3 AND batchIndex = ?4;',
 		);
-		const {account, chainId, slot} = params;
-		const {results} = await statement.bind(account, chainId, slot).all<ExecutionInDB>();
+		const {account, chainId, slot, batchIndex} = params;
+		const {results} = await statement.bind(account, chainId, slot, batchIndex).all<ExecutionInDB>();
 		if (results.length === 0) {
 			return undefined;
 		} else {
@@ -138,18 +145,36 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		}
 	}
 
-	async deletePendingExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void> {
+	async getPendingExecutionBatch(params: {
+		chainId: `0x${string}`;
+		account: `0x${string}`;
+		slot: string;
+	}): Promise<PendingExecutionStored[] | undefined> {
 		const statement = this.db.prepare(
-			'DELETE FROM BroadcastedExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;',
+			'SELECT * FROM BroadcastedExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;',
 		);
 		const {account, chainId, slot} = params;
-		await statement.bind(account, chainId, slot).all();
+		const {results} = await statement.bind(account, chainId, slot).all<ExecutionInDB>();
+		return results.map(fromExecutionInDB);
+	}
+
+	async deletePendingExecution(params: {
+		chainId: `0x${string}`;
+		account: `0x${string}`;
+		slot: string;
+		batchIndex: number;
+	}): Promise<void> {
+		const statement = this.db.prepare(
+			'DELETE FROM BroadcastedExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3 AND batchIndex = ?4;',
+		);
+		const {account, chainId, slot, batchIndex} = params;
+		await statement.bind(account, chainId, slot, batchIndex).all();
 	}
 
 	async createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored> {
 		const inDB = toExecutionInDB(executionToStore);
 		const {values, columns, bindings, overwrites} = toValues(inDB);
-		const sqlStatement = `INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites};`;
+		const sqlStatement = `INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot, batchIndex) DO UPDATE SET ${overwrites};`;
 		logger.debug(sqlStatement);
 		const statement = this.db.prepare(sqlStatement);
 		await statement.bind(...values).all();

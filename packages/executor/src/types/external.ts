@@ -52,6 +52,7 @@ export const SchemaExecutionSubmission = z.object({
 	transaction: SchemaTransactionData,
 	maxFeePerGasAuthorized: SchemaEIP1193Quantity,
 	expiryTime: z.number().optional(),
+	onBehalf: SchemaString0x.optional(),
 });
 export type ExecutionSubmission = z.infer<typeof SchemaExecutionSubmission>;
 // ------------------------------------------------------------------------------------------------

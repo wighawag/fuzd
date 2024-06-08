@@ -5,8 +5,9 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     account         text       NOT NULL,
     chainId         text       NOT NULL, -- tx chainId
     slot            text       NOT NULL,
+    batchIndex      number     NOT NULL,
     -------------------------------------------------------------------------------------------------------------------
-
+    onBehalf                   text,
     nextCheckTime              integer     NOT NULL,
     broadcasterAssignerID      text        NOT NULL,
     initialTime                integer     NOT NULL,
@@ -25,11 +26,13 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
 
     transactionData            text        NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
     
-    PRIMARY KEY (account, chainId, slot)
+    PRIMARY KEY (account, chainId, slot, batchIndex)
 );
 	
 CREATE INDEX IF NOT EXISTS idx_BroadcastedExecutions_finalized_nextCheckTime ON BroadcastedExecutions (finalized, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_BroadcastedExecutions_tx ON BroadcastedExecutions (broadcaster, chainId, nonce);
+CREATE INDEX IF NOT EXISTS idx_BroadcastedExecutions_onBehalf_chainId_nonce ON BroadcastedExecutions (onBehalf, chainId, nonce);
+
 
 CREATE TABLE IF NOT EXISTS Broadcasters (
     -------------------------------------------------------------------------------------------------------------------

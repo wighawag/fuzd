@@ -26,6 +26,7 @@ export type ExpectedWorstCaseGasPrice =
 export type Executor<ExecutionSubmissionDataType, ExecutionSubmissionResponseType> = {
 	broadcastExecution(
 		slot: string,
+		batchIndex: number,
 		account: EIP1193Account,
 		execution: ExecutionSubmissionDataType,
 		options?: {

@@ -134,9 +134,11 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 		// if it fails, we will push it accoridng to time schedule
 
 		const results: ExecutionSubmissionResponseType[] = [];
-		for (const execution of executions) {
+		for (let i = 0; i < executions.length; i++) {
+			const execution = executions[i];
 			const executionResult = await executor.broadcastExecution(
 				scheduledExecutionQueued.slot,
+				i, // batchIndex
 				scheduledExecutionQueued.account,
 				execution,
 			);

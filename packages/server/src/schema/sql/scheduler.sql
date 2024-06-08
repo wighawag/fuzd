@@ -4,9 +4,10 @@ CREATE TABLE IF NOT EXISTS ScheduledExecutions (
     -------------------------------------------------------------------------------------------------------------------
     account                       text       NOT NULL,
     chainId                       text       NOT NULL, -- tx chainId
-                  slot            text       NOT NULL,
+    slot                          text       NOT NULL,
     -------------------------------------------------------------------------------------------------------------------
-    broadcasted                   integer    NOT NULL,  -- 0: false 1: true
+    onBehalf                      text,
+    broadcasted                   integer,
     nextCheckTime                 integer    NOT NULL,
 
 	type                          text       NOT_NULL, -- 'time-locked' | 'clear';
@@ -25,6 +26,7 @@ CREATE TABLE IF NOT EXISTS ScheduledExecutions (
 
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_broadcasted_nextCheckTime ON ScheduledExecutions (broadcasted, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_account_nextCheckTime ON ScheduledExecutions (account, nextCheckTime);
+CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_onBehalf_broadcasted ON ScheduledExecutions (onBehalf, broadcasted);
 
 
 CREATE TABLE IF NOT EXISTS ArchivedScheduledExecutions (
@@ -33,9 +35,10 @@ CREATE TABLE IF NOT EXISTS ArchivedScheduledExecutions (
     -------------------------------------------------------------------------------------------------------------------
     account                       text       NOT NULL,
     chainId                       text       NOT NULL, -- tx chainId
-                  slot            text       NOT NULL,
+    slot                          text       NOT NULL,
     -------------------------------------------------------------------------------------------------------------------
-    broadcasted                   integer    NOT NULL,  -- 0: false 1: true
+    onBehalf                      text,
+    broadcasted                   integer,
     nextCheckTime                 integer    NOT NULL,
 
 	type                          text       NOT_NULL, -- 'time-locked' | 'clear';
@@ -54,3 +57,4 @@ CREATE TABLE IF NOT EXISTS ArchivedScheduledExecutions (
 
 CREATE INDEX IF NOT EXISTS idx_ArchivedScheduledExecutions_broadcasted_nextCheckTime ON ArchivedScheduledExecutions (broadcasted, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_ArchivedScheduledExecutions_account_nextCheckTime ON ArchivedScheduledExecutions (account, nextCheckTime);
+CREATE INDEX IF NOT EXISTS idx_ArchivedScheduledExecutions_onBehalf_broadcasted ON ArchivedScheduledExecutions (onBehalf, broadcasted);
