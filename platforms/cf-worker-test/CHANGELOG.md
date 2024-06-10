@@ -1,5 +1,11 @@
 # fuzd-cf-worker-test
 
+## 0.3.0
+
+### Minor Changes
+
+- release
+
 ## 0.2.0
 
 ### Minor Changes

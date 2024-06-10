@@ -1,5 +1,17 @@
 # fuzd-client
 
+## 0.6.0
+
+### Minor Changes
+
+- release
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-executor@0.6.0
+  - fuzd-scheduler@0.6.0
+
 ## 0.5.0
 
 ### Minor Changes

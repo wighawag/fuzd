@@ -1,5 +1,16 @@
 # fuzd-scheduler
 
+## 0.6.0
+
+### Minor Changes
+
+- release
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-common@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes
