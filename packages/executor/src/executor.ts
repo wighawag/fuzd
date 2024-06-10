@@ -505,13 +505,15 @@ export function createExecutor(
 			if (expectedWorstCaseGasPrice != undefined && expectedWorstCaseGasPrice < gasPriceEstimate.maxFeePerGas) {
 				let diffToCover = gasPriceEstimate.maxFeePerGas - expectedWorstCaseGasPrice;
 				// this only cover all if user has send that expectedWorstCaseGasPrice value on
-				if (BigInt(pendingExecution.maxFeePerGasAuthorized) < expectedWorstCaseGasPrice) {
+				if (maxFeePerGas < expectedWorstCaseGasPrice) {
 					// show warning then
 					logger.warn(`user has provided a lower maxFeePerGas than expected, we won't pay more`);
 				}
 
+				const upToGasPrice = maxFeePerGas + diffToCover;
+
 				if (pendingExecution.helpedForUpToGasPrice) {
-					diffToCover -= BigInt(pendingExecution.helpedForUpToGasPrice);
+					diffToCover -= BigInt(pendingExecution.helpedForUpToGasPrice) - maxFeePerGas;
 				}
 
 				if (diffToCover > 0n) {
@@ -551,7 +553,7 @@ export function createExecutor(
 									},
 								},
 							);
-							maxFeePerGas = gasPriceEstimate.maxFeePerGas;
+							maxFeePerGas = upToGasPrice;
 							maxPriorityFeePerGas = maxFeePerGas;
 						} else {
 							logger.error(`paymentAccount broadcaster balance to low! (${broadcaster.address})`);
