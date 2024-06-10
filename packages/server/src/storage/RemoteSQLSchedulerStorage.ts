@@ -10,7 +10,8 @@ type ScheduledExecutionInDB = {
 
 	onBehalf: `0x${string}` | null;
 
-	broadcastStatus: number;
+	broadcasted: 0 | 1;
+	finalized: 0 | 1;
 	nextCheckTime: number;
 
 	type: 'time-locked' | 'clear';
@@ -35,7 +36,8 @@ function fromScheduledExecutionInDB<ExecutionDataType>(
 			slot: inDB.slot,
 			onBehalf: inDB.onBehalf || undefined,
 			type: 'time-locked',
-			broadcastStatus: inDB.broadcastStatus,
+			broadcasted: inDB.broadcasted == 1 ? true : false,
+			finalized: inDB.finalized == 1 ? true : false,
 			checkinTime: inDB.nextCheckTime,
 			payload: inDB.payload,
 			timing: JSON.parse(inDB.timing),
@@ -54,7 +56,8 @@ function fromScheduledExecutionInDB<ExecutionDataType>(
 			slot: inDB.slot,
 			onBehalf: inDB.onBehalf || undefined,
 			type: 'clear',
-			broadcastStatus: inDB.broadcastStatus,
+			broadcasted: inDB.broadcasted == 1 ? true : false,
+			finalized: inDB.finalized == 1 ? true : false,
 			checkinTime: inDB.nextCheckTime,
 			timing: JSON.parse(inDB.timing),
 			expectedWorstCaseGasPrice: inDB.expectedWorstCaseGasPrice || undefined,
@@ -79,7 +82,8 @@ function toScheduledExecutionInDB<ExecutionDataType>(
 
 		onBehalf: obj.onBehalf || null,
 
-		broadcastStatus: obj.broadcastStatus,
+		broadcasted: obj.broadcasted ? 1 : 0,
+		finalized: obj.finalized ? 1 : 0,
 		nextCheckTime: obj.checkinTime,
 
 		type: obj.type,
@@ -163,18 +167,29 @@ export class RemoteSQLSchedulerStorage<ExecutionDataType> implements SchedulerSt
 	}
 
 	async getQueueTopMostExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]> {
-		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcastStatus = 0 ORDER BY nextCheckTime ASC LIMIT ?1;`;
+		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcasted = FALSE ORDER BY nextCheckTime ASC LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<ExecutionDataType>);
 	}
 
-	async getUnFinalizedScheduledExecutions(params: {
+	async getUnFinalizedBroadcastedScheduledExecutions(params: {
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]> {
-		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcastStatus = 1 ORDER BY nextCheckTime ASC LIMIT ?1;`;
+		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcasted = TRUE AND finalized = FALSE ORDER BY nextCheckTime ASC LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
+		return results.map(fromScheduledExecutionInDB<ExecutionDataType>);
+	}
+
+	async getUnFinalizedScheduledExecutionsPerAccount(params: {
+		chainId: `0x${string}`;
+		account: `0x${string}`;
+		limit: number;
+	}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]> {
+		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE chainId = ?1 AND account = ?2 AND finalized = FALSE ORDER BY nextCheckTime ASC LIMIT ?3;`;
+		const statement = this.db.prepare(sqlStatement);
+		const {results} = await statement.bind(params.chainId, params.account, params.limit).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<ExecutionDataType>);
 	}
 

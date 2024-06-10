@@ -68,7 +68,8 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 		const queuedExecution: ScheduledExecutionQueued<ExecutionDataType> = {
 			...execution,
 			account,
-			broadcastStatus: 0,
+			broadcasted: false,
+			finalized: false,
 			checkinTime,
 			retries: 0,
 			expectedWorstCaseGasPrice: expectedWorstCaseGasPrice?.toString(),
@@ -152,7 +153,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 		// the schedule has done its job
 		// if for some reason `executor.broadcastExecution(...)` fails to return but has actually broadcasted the tx
 		// the scheduler will attempt again. the id tell the executor to not reexecute
-		scheduledExecutionQueued.broadcastStatus = 1;
+		scheduledExecutionQueued.broadcasted = true;
 		await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
 
 		return {
@@ -420,7 +421,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 			chainTimetamps: {},
 		};
 
-		const executions = await storage.getUnFinalizedScheduledExecutions({limit});
+		const executions = await storage.getUnFinalizedBroadcastedScheduledExecutions({limit});
 
 		if (executions.length === 0) {
 			logger.info(`found zero executions to process`);
@@ -438,7 +439,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 			const status = await executor.getExecutionStatus(execution);
 			let statusToReport: 'broadcasted' | 'unknown' | 'finalized' = status ? 'broadcasted' : 'unknown';
 			if (status === 'finalized') {
-				execution.broadcastStatus = 2;
+				execution.finalized = true;
 				storage.createOrUpdateQueuedExecution(execution);
 				statusToReport = 'finalized';
 			}

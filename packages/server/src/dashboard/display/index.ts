@@ -8,7 +8,7 @@ export function displayScheduledExecutionQueued<TransactionData>(timeDiff: numbe
 		chainId: v.chainId,
 		slot: v.slot,
 		type: v.type,
-		broadcastStatus: v.broadcastStatus == 0 ? 'not broadcasted' : v.broadcastStatus == 1 ? 'broadcasted' : 'finalized',
+		broadcasted: v.broadcasted ? (v.finalized ? 'finalized' : 'broadcasted') : 'not broadcasted',
 		checkinTime: new Date((v.checkinTime - timeDiff) * 1000).toUTCString(),
 		timingType: v.timing.type,
 		expectedWorstCaseGasPrice: v.expectedWorstCaseGasPrice || 'none',
