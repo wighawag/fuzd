@@ -4,7 +4,7 @@ import {ScheduledExecution} from './external';
 export type ScheduledExecutionQueued<ExecutionDataType> = ScheduledExecution<ExecutionDataType> & {
 	slot: string;
 	account: EIP1193Account;
-	broadcasted: boolean;
+	broadcastStatus: number;
 	checkinTime: number;
 	retries: number;
 	priorTransactionConfirmation?: {
@@ -30,6 +30,7 @@ export interface SchedulerStorage<ExecutionDataType> {
 		executionToStore: ScheduledExecutionQueued<ExecutionDataType>,
 	): Promise<ScheduledExecutionQueued<ExecutionDataType>>;
 	getQueueTopMostExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]>;
+	getUnFinalizedScheduledExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]>;
 	getAllExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]>;
 	getAccountSubmissions(
 		account: `0x${string}`,

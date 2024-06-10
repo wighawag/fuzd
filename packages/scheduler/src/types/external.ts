@@ -221,7 +221,10 @@ export type Scheduler<ExecutionDataType> = {
 // ------------------------------------------------------------------------------------------------
 // ExecutionStatus
 // ------------------------------------------------------------------------------------------------
-export type ExecutionStatus = {type: 'deleted' | 'broadcasted' | 'archived' | 'reassigned' | 'skipped'; reason: string};
+export type ExecutionStatus = {
+	type: 'unknown' | 'deleted' | 'broadcasted' | 'archived' | 'reassigned' | 'skipped' | 'finalized';
+	reason: string;
+};
 
 // ------------------------------------------------------------------------------------------------
 // QueueProcessingResult
@@ -238,5 +241,6 @@ export type QueueProcessingResult = {
 // ------------------------------------------------------------------------------------------------
 export type SchedulerBackend = {
 	processQueue(): Promise<QueueProcessingResult>;
+	checkScheduledExecutionStatus(): Promise<QueueProcessingResult>;
 };
 // ------------------------------------------------------------------------------------------------

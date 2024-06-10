@@ -34,6 +34,12 @@ export type Executor<ExecutionSubmissionDataType, ExecutionSubmissionResponseTyp
 		},
 	): Promise<ExecutionSubmissionResponseType>;
 
+	getExecutionStatus(executionBatch: {
+		chainId: `0x${string}`;
+		slot: string;
+		account: EIP1193Account;
+	}): Promise<'finalized' | 'broadcasted' | undefined>;
+
 	getExpectedWorstCaseGasPrice?(chainId: `0x${string}`): Promise<ExpectedWorstCaseGasPrice>;
 };
 // ------------------------------------------------------------------------------------------------

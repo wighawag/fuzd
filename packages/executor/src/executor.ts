@@ -43,6 +43,23 @@ export function createExecutor(
 		return storage.getExpectedWorstCaseGasPrice(chainId);
 	}
 
+	async function getExecutionStatus(executionBatch: {
+		chainId: `0x${string}`;
+		slot: string;
+		account: EIP1193Account;
+	}): Promise<'finalized' | 'broadcasted' | undefined> {
+		const batch = await storage.getPendingExecutionBatch(executionBatch);
+		if (!batch) {
+			return undefined;
+		}
+		for (const exec of batch) {
+			if (!exec.finalized) {
+				return 'broadcasted';
+			}
+		}
+		return 'finalized';
+	}
+
 	async function broadcastExecution(
 		slot: string,
 		batchIndex: number,
@@ -643,6 +660,7 @@ export function createExecutor(
 
 	return {
 		broadcastExecution,
+		getExecutionStatus,
 		getExpectedWorstCaseGasPrice,
 		processPendingTransactions,
 	};

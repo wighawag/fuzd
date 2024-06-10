@@ -12,6 +12,11 @@ export function getInternalAPI<Env extends Bindings = Bindings>(options: ServerO
 			const response = await config.scheduler.processQueue();
 			return c.json(response);
 		})
+		.get('/checkScheduledExecutionStatus', async (c) => {
+			const config = c.get('config');
+			const response = await config.scheduler.checkScheduledExecutionStatus();
+			return c.json(response);
+		})
 		.get('/processTransactions', async (c) => {
 			const config = c.get('config');
 			await config.executor.processPendingTransactions();

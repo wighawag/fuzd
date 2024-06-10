@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS ScheduledExecutions (
     slot                          text       NOT NULL,
     -------------------------------------------------------------------------------------------------------------------
     onBehalf                      text,
-    broadcasted                   integer,
+    broadcastStatus               integer,             -- 0 : not broadcasted, 1: broadcasted, 2: finalized
     nextCheckTime                 integer    NOT NULL,
 
 	type                          text       NOT_NULL, -- 'time-locked' | 'clear';
@@ -24,9 +24,9 @@ CREATE TABLE IF NOT EXISTS ScheduledExecutions (
     PRIMARY KEY (account, chainId, slot)
 );
 
-CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_broadcasted_nextCheckTime ON ScheduledExecutions (broadcasted, nextCheckTime);
+CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_broadcastStatus_nextCheckTime ON ScheduledExecutions (broadcastStatus, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_account_nextCheckTime ON ScheduledExecutions (account, nextCheckTime);
-CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_onBehalf_broadcasted ON ScheduledExecutions (onBehalf, broadcasted);
+CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_onBehalf_broadcastStatus ON ScheduledExecutions (onBehalf, broadcastStatus);
 
 
 CREATE TABLE IF NOT EXISTS ArchivedScheduledExecutions (
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS ArchivedScheduledExecutions (
     slot                          text       NOT NULL,
     -------------------------------------------------------------------------------------------------------------------
     onBehalf                      text,
-    broadcasted                   integer,
+    broadcastStatus                   integer,
     nextCheckTime                 integer    NOT NULL,
 
 	type                          text       NOT_NULL, -- 'time-locked' | 'clear';
@@ -55,6 +55,6 @@ CREATE TABLE IF NOT EXISTS ArchivedScheduledExecutions (
     PRIMARY KEY (account, chainId, slot)
 );
 
-CREATE INDEX IF NOT EXISTS idx_ArchivedScheduledExecutions_broadcasted_nextCheckTime ON ArchivedScheduledExecutions (broadcasted, nextCheckTime);
+CREATE INDEX IF NOT EXISTS idx_ArchivedScheduledExecutions_broadcastStatus_nextCheckTime ON ArchivedScheduledExecutions (broadcastStatus, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_ArchivedScheduledExecutions_account_nextCheckTime ON ArchivedScheduledExecutions (account, nextCheckTime);
-CREATE INDEX IF NOT EXISTS idx_ArchivedScheduledExecutions_onBehalf_broadcasted ON ArchivedScheduledExecutions (onBehalf, broadcasted);
+CREATE INDEX IF NOT EXISTS idx_ArchivedScheduledExecutions_onBehalf_broadcastStatus ON ArchivedScheduledExecutions (onBehalf, broadcastStatus);

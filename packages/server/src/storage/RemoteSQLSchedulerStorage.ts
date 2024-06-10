@@ -10,7 +10,7 @@ type ScheduledExecutionInDB = {
 
 	onBehalf: `0x${string}` | null;
 
-	broadcasted: 0 | 1;
+	broadcastStatus: number;
 	nextCheckTime: number;
 
 	type: 'time-locked' | 'clear';
@@ -35,7 +35,7 @@ function fromScheduledExecutionInDB<ExecutionDataType>(
 			slot: inDB.slot,
 			onBehalf: inDB.onBehalf || undefined,
 			type: 'time-locked',
-			broadcasted: inDB.broadcasted == 0 ? false : true,
+			broadcastStatus: inDB.broadcastStatus,
 			checkinTime: inDB.nextCheckTime,
 			payload: inDB.payload,
 			timing: JSON.parse(inDB.timing),
@@ -54,7 +54,7 @@ function fromScheduledExecutionInDB<ExecutionDataType>(
 			slot: inDB.slot,
 			onBehalf: inDB.onBehalf || undefined,
 			type: 'clear',
-			broadcasted: inDB.broadcasted == 0 ? false : true,
+			broadcastStatus: inDB.broadcastStatus,
 			checkinTime: inDB.nextCheckTime,
 			timing: JSON.parse(inDB.timing),
 			expectedWorstCaseGasPrice: inDB.expectedWorstCaseGasPrice || undefined,
@@ -79,7 +79,7 @@ function toScheduledExecutionInDB<ExecutionDataType>(
 
 		onBehalf: obj.onBehalf || null,
 
-		broadcasted: obj.broadcasted ? 1 : 0,
+		broadcastStatus: obj.broadcastStatus,
 		nextCheckTime: obj.checkinTime,
 
 		type: obj.type,
@@ -163,7 +163,16 @@ export class RemoteSQLSchedulerStorage<ExecutionDataType> implements SchedulerSt
 	}
 
 	async getQueueTopMostExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]> {
-		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcasted = FALSE ORDER BY nextCheckTime ASC LIMIT ?1;`;
+		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcastStatus = 0 ORDER BY nextCheckTime ASC LIMIT ?1;`;
+		const statement = this.db.prepare(sqlStatement);
+		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
+		return results.map(fromScheduledExecutionInDB<ExecutionDataType>);
+	}
+
+	async getUnFinalizedScheduledExecutions(params: {
+		limit: number;
+	}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]> {
+		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcastStatus = 1 ORDER BY nextCheckTime ASC LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<ExecutionDataType>);

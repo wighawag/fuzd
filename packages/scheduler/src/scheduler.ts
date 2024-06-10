@@ -68,7 +68,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 		const queuedExecution: ScheduledExecutionQueued<ExecutionDataType> = {
 			...execution,
 			account,
-			broadcasted: false,
+			broadcastStatus: 0,
 			checkinTime,
 			retries: 0,
 			expectedWorstCaseGasPrice: expectedWorstCaseGasPrice?.toString(),
@@ -152,7 +152,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 		// the schedule has done its job
 		// if for some reason `executor.broadcastExecution(...)` fails to return but has actually broadcasted the tx
 		// the scheduler will attempt again. the id tell the executor to not reexecute
-		scheduledExecutionQueued.broadcasted = true;
+		scheduledExecutionQueued.broadcastStatus = 1;
 		await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
 
 		return {
@@ -412,8 +412,55 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 		return result;
 	}
 
+	async function checkScheduledExecutionStatus(): Promise<QueueProcessingResult> {
+		const limit = maxNumTransactionsToProcessInOneGo;
+		const result: QueueProcessingResult = {
+			limit,
+			executions: [],
+			chainTimetamps: {},
+		};
+
+		const executions = await storage.getUnFinalizedScheduledExecutions({limit});
+
+		if (executions.length === 0) {
+			logger.info(`found zero executions to process`);
+		} else if (executions.length === 1) {
+			logger.info(`found 1 queued execution for ${executions[0].checkinTime}`);
+		} else {
+			logger.info(
+				`found ${executions.length} queued execution from ${executions[0].checkinTime} to ${
+					executions[executions.length - 1].checkinTime
+				}`,
+			);
+		}
+
+		for (const execution of executions) {
+			const status = await executor.getExecutionStatus(execution);
+			let statusToReport: 'broadcasted' | 'unknown' | 'finalized' = status ? 'broadcasted' : 'unknown';
+			if (status === 'finalized') {
+				execution.broadcastStatus = 2;
+				storage.createOrUpdateQueuedExecution(execution);
+				statusToReport = 'finalized';
+			}
+
+			result.executions.push({
+				chainId: execution.chainId,
+				account: execution.account,
+				slot: execution.slot,
+				checkinTime: execution.checkinTime,
+				status: {
+					type: statusToReport,
+					reason: 'queried',
+				},
+			});
+		}
+
+		return result;
+	}
+
 	return {
 		scheduleExecution,
 		processQueue,
+		checkScheduledExecutionStatus,
 	};
 }
