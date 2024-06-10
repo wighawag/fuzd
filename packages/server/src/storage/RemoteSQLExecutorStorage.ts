@@ -41,6 +41,7 @@ type ExecutionInDB = {
 	broadcastTime: number | null;
 	hash: `0x${string}`;
 	maxFeePerGasAuthorized: `0x${string}`;
+	helpedForUpToGasPrice: `0x${string}` | null;
 	expectedWorstCaseGasPrice: `0x${string}` | null;
 	isVoidTransaction: 0 | 1;
 	finalized: 0 | 1;
@@ -89,6 +90,7 @@ function fromExecutionInDB(inDB: ExecutionInDB): PendingExecutionStored {
 		nextCheckTime: inDB.nextCheckTime,
 		hash: inDB.hash,
 		maxFeePerGasAuthorized: inDB.maxFeePerGasAuthorized,
+		helpedForUpToGasPrice: inDB.helpedForUpToGasPrice || undefined,
 		expectedWorstCaseGasPrice: inDB.expectedWorstCaseGasPrice || undefined,
 		isVoidTransaction: inDB.isVoidTransaction == 1 ? true : false,
 		retries: inDB.retries || undefined,
@@ -112,6 +114,7 @@ function toExecutionInDB(obj: PendingExecutionStored): ExecutionInDB {
 		nextCheckTime: obj.nextCheckTime,
 		hash: obj.hash,
 		maxFeePerGasAuthorized: obj.maxFeePerGasAuthorized,
+		helpedForUpToGasPrice: obj.helpedForUpToGasPrice || null,
 		expectedWorstCaseGasPrice: obj.expectedWorstCaseGasPrice || null,
 		isVoidTransaction: obj.isVoidTransaction ? 1 : 0,
 		retries: typeof obj.retries === 'undefined' ? null : obj.retries,
@@ -171,13 +174,38 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		await statement.bind(account, chainId, slot, batchIndex).all();
 	}
 
-	async createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored> {
+	async createOrUpdatePendingExecution(
+		executionToStore: PendingExecutionStored,
+		asPaymentFor?: {
+			chainId: `0x${string}`;
+			account: `0x${string}`;
+			slot: string;
+			batchIndex: number;
+			upToGasPrice: bigint;
+		},
+	): Promise<PendingExecutionStored> {
 		const inDB = toExecutionInDB(executionToStore);
 		const {values, columns, bindings, overwrites} = toValues(inDB);
 		const sqlStatement = `INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot, batchIndex) DO UPDATE SET ${overwrites};`;
 		logger.debug(sqlStatement);
 		const statement = this.db.prepare(sqlStatement);
-		await statement.bind(...values).all();
+		if (asPaymentFor) {
+			const asPaymentForStatement = this.db.prepare(
+				`UPDATE BroadcastedExecutions SET helpedForUpToGasPrice = ?1 WHERE chainId = ?2 AND account = ?3 AND slot = ?4 AND batchIndex = ?5;`,
+			);
+			await this.db.batch([
+				statement.bind(...values),
+				asPaymentForStatement.bind(
+					asPaymentFor.upToGasPrice,
+					asPaymentFor.chainId,
+					asPaymentFor.account,
+					asPaymentFor.slot,
+					asPaymentFor.batchIndex,
+				),
+			]);
+		} else {
+			await statement.bind(...values).all();
+		}
 		return executionToStore;
 	}
 

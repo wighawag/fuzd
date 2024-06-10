@@ -49,7 +49,14 @@ export function createExecutor(
 		account: EIP1193Account,
 		submission: ExecutionSubmission,
 		options?: {
-			expectedWorstCaseGasPrice: bigint;
+			expectedWorstCaseGasPrice?: bigint;
+			asPaymentFor?: {
+				chainId: `0x${string}`;
+				account: EIP1193Account;
+				slot: string;
+				batchIndex: number;
+				upToGasPrice: bigint;
+			};
 		},
 	): Promise<ExecutionResponse> {
 		submission = SchemaExecutionSubmission.parse(submission);
@@ -106,11 +113,16 @@ export function createExecutor(
 
 		const {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await _getGasFee(provider, submission);
 
-		const result = await _submitTransaction(broadcaster, pendingExecutionToStore, {
-			maxFeePerGas,
-			maxPriorityFeePerGas,
-			gasPriceEstimate: gasPriceEstimate,
-		});
+		const result = await _submitTransaction(
+			broadcaster,
+			pendingExecutionToStore,
+			{
+				maxFeePerGas,
+				maxPriorityFeePerGas,
+				gasPriceEstimate: gasPriceEstimate,
+			},
+			options?.asPaymentFor,
+		);
 		if (!result) {
 			throw new Error(`could not submit transaction, failed`);
 		}
@@ -313,6 +325,13 @@ export function createExecutor(
 			gasPriceEstimate?: {maxFeePerGas: bigint; maxPriorityFeePerGas: bigint};
 			previouslyStored?: PendingExecutionStored;
 		},
+		asPaymentFor?: {
+			chainId: `0x${string}`;
+			account: EIP1193Account;
+			slot: string;
+			batchIndex: number;
+			upToGasPrice: bigint;
+		},
 	): Promise<PendingExecutionStored | undefined> {
 		const {provider} = _getChainConfig(transactionData.chainId);
 		const txParams = await _getTxParams(broadcaster.address, transactionData.transaction);
@@ -379,7 +398,7 @@ export function createExecutor(
 			isVoidTransaction: rawTxInfo.isVoidTransaction,
 			lastError,
 		};
-		await storage.createOrUpdatePendingExecution(newTransactionData);
+		await storage.createOrUpdatePendingExecution(newTransactionData, asPaymentFor);
 
 		try {
 			await provider.request({
@@ -467,48 +486,59 @@ export function createExecutor(
 				: undefined;
 
 			if (expectedWorstCaseGasPrice != undefined && expectedWorstCaseGasPrice < gasPriceEstimate.maxFeePerGas) {
-				const diffToCover = gasPriceEstimate.maxFeePerGas - expectedWorstCaseGasPrice;
+				let diffToCover = gasPriceEstimate.maxFeePerGas - expectedWorstCaseGasPrice;
 				// this only cover all if user has send that expectedWorstCaseGasPrice value on
 				if (BigInt(pendingExecution.maxFeePerGasAuthorized) < expectedWorstCaseGasPrice) {
 					// show warning then
 					logger.warn(`user has provided a lower maxFeePerGas than expected, we won't pay more`);
 				}
 
-				const valueToSend = diffToCover * BigInt(pendingExecution.transaction.gas);
+				if (pendingExecution.helpedForUpToGasPrice) {
+					diffToCover -= BigInt(pendingExecution.helpedForUpToGasPrice);
+				}
 
-				const paymentAccount = config.paymentAccount;
-				if (paymentAccount) {
-					const broadcaster = await signers.assignProviderFor(pendingExecution.chainId, paymentAccount);
-					const broadcasterBalance = await provider.request({
-						method: 'eth_getBalance',
-						params: [broadcaster.address, 'latest'],
-					});
-					const gas = BigInt(30000);
-					const cost = gas * gasPriceEstimate.maxFeePerGas; // TODO handle extra Fee like Optimism
-					if (cost <= BigInt(broadcasterBalance)) {
-						// TODO handle case where gas price keep increasing...
-						// We need to keep track of previously sent payment tx
-						// for now we use only one slot so only one payment tx can be sent
-						// if gas price rise, tx might not have enough
-						await broadcastExecution(
-							`${pendingExecution.account}_${pendingExecution.transaction.from}_${pendingExecution.transaction.nonce}`,
-							0,
-							paymentAccount,
-							{
-								chainId: pendingExecution.chainId,
-								maxFeePerGasAuthorized: `0x38D7EA4C68000`, // 1000 gwei
-								transaction: {
-									gas: `0x${gas.toString(16)}`,
-									to: pendingExecution.transaction.from,
-									type: '0x2',
-									value: `0x${valueToSend.toString(16)}`,
+				if (diffToCover > 0n) {
+					const valueToSend = diffToCover * BigInt(pendingExecution.transaction.gas);
+
+					const paymentAccount = config.paymentAccount;
+					if (paymentAccount) {
+						const broadcaster = await signers.assignProviderFor(pendingExecution.chainId, paymentAccount);
+						const broadcasterBalance = await provider.request({
+							method: 'eth_getBalance',
+							params: [broadcaster.address, 'latest'],
+						});
+						const gas = BigInt(30000);
+						const cost = gas * gasPriceEstimate.maxFeePerGas; // TODO handle extra Fee like Optimism
+						if (cost <= BigInt(broadcasterBalance)) {
+							await broadcastExecution(
+								`${pendingExecution.account}_${pendingExecution.transaction.from}_${pendingExecution.transaction.nonce}_${gasPriceEstimate.maxFeePerGas.toString()}`,
+								0,
+								paymentAccount,
+								{
+									chainId: pendingExecution.chainId,
+									maxFeePerGasAuthorized: `0x38D7EA4C68000`, // 1000 gwei // TODO CONFIGURE per network: max worst worst case
+									transaction: {
+										gas: `0x${gas.toString(16)}`,
+										to: pendingExecution.transaction.from,
+										type: '0x2',
+										value: `0x${valueToSend.toString(16)}`,
+									},
 								},
-							},
-						);
-						maxFeePerGas = gasPriceEstimate.maxFeePerGas;
-						maxPriorityFeePerGas = maxFeePerGas;
-					} else {
-						logger.error(`paymentAccount broadcaster balance to low! (${broadcaster.address})`);
+								{
+									asPaymentFor: {
+										chainId: pendingExecution.chainId,
+										account: pendingExecution.account,
+										slot: pendingExecution.slot,
+										batchIndex: pendingExecution.batchIndex,
+										upToGasPrice: gasPriceEstimate.maxFeePerGas,
+									},
+								},
+							);
+							maxFeePerGas = gasPriceEstimate.maxFeePerGas;
+							maxPriorityFeePerGas = maxFeePerGas;
+						} else {
+							logger.error(`paymentAccount broadcaster balance to low! (${broadcaster.address})`);
+						}
 					}
 				}
 			}

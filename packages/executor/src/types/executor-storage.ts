@@ -20,6 +20,7 @@ export type PendingExecutionStored = {
 	nextCheckTime: number;
 	hash: EIP1193DATA;
 	maxFeePerGasAuthorized: EIP1193QUANTITY;
+	helpedForUpToGasPrice?: EIP1193QUANTITY;
 	isVoidTransaction: boolean;
 	finalized: boolean;
 	retries?: number;
@@ -52,7 +53,16 @@ export interface ExecutorStorage {
 		slot: string;
 		batchIndex: number;
 	}): Promise<void>;
-	createOrUpdatePendingExecution(executionToStore: PendingExecutionStored): Promise<PendingExecutionStored>;
+	createOrUpdatePendingExecution(
+		executionToStore: PendingExecutionStored,
+		asPaymentFor?: {
+			chainId: `0x${string}`;
+			account: EIP1193Account;
+			slot: string;
+			batchIndex: number;
+			upToGasPrice: bigint;
+		},
+	): Promise<PendingExecutionStored>;
 	getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored[]>;
 	getPendingExecutionsPerBroadcaster(
 		broadcasterData: {
