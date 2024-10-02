@@ -2,7 +2,6 @@ import {BroadcasterSignerData, ExecutorConfig, createExecutor} from 'fuzd-execut
 import {SchedulerConfig, createScheduler} from 'fuzd-scheduler';
 import {JSONRPCHTTPProvider} from 'eip-1193-jsonrpc-provider';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
-import {EIP1193Account} from 'eip-1193';
 import {initAccountFromHD} from 'remote-account';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
@@ -30,7 +29,7 @@ const account = initAccountFromHD(accountHDKey);
 // 	worstCaseBlockTime: 15,
 // 	provider,
 // 	time,
-// 	async getSignerProviderFor(address: EIP1193Account) {
+// 	async getSignerProviderFor(address: `0x${string}`) {
 // 		return new EIP1193LocalSigner(account.deriveForAddress(address).privateKey);
 // 	},
 // 	storage: new KVExecutorStorage(db),
@@ -68,7 +67,7 @@ export async function createTestExecutor(config: TestExecutorConfig) {
 		executor: createExecutor({
 			...config,
 			signers: {
-				async getProviderByAssignerID(assignerID: string, forAddress: EIP1193Account): Promise<BroadcasterSignerData> {
+				async getProviderByAssignerID(assignerID: string, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
 					const derivedAccount = account.deriveForAddress(forAddress);
 					// TODO get it from id
 					return {
@@ -77,7 +76,7 @@ export async function createTestExecutor(config: TestExecutorConfig) {
 						address: derivedAccount.address,
 					};
 				},
-				async assignProviderFor(chainId: `0x${string}`, forAddress: EIP1193Account): Promise<BroadcasterSignerData> {
+				async assignProviderFor(chainId: `0x${string}`, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
 					const derivedAccount = account.deriveForAddress(forAddress);
 					return {
 						signer: new EIP1193LocalSigner(derivedAccount.privateKey),

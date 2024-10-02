@@ -1,5 +1,4 @@
 import {logs} from 'named-logs';
-import {EIP1193Account} from 'eip-1193';
 import {computePotentialExecutionTime, computeInitialExecutionTimeFromSubmission} from './utils/execution';
 import {displayExecution} from './utils/debug';
 import {
@@ -11,8 +10,9 @@ import {
 	SchedulerBackend,
 } from './types/external';
 import {ScheduledExecutionQueued} from './types/scheduler-storage';
-import {getTransactionStatus, time2text} from 'fuzd-common';
-import {ChainConfig, SchedulerConfig} from './types/internal';
+import {time2text} from 'fuzd-common';
+import {SchedulerConfig} from './types/internal';
+import {ChainProtocol} from 'fuzd-chain-protocol';
 
 const logger = logs('fuzd-scheduler');
 
@@ -25,25 +25,25 @@ const logger = logs('fuzd-scheduler');
 export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseType>(
 	config: SchedulerConfig<ExecutionDataType, ExecutionSubmissionResponseType>,
 ): Scheduler<ExecutionDataType> & SchedulerBackend {
-	const {chainConfigs, time, storage, executor} = config;
+	const {chainProtocols, storage, executor} = config;
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
 	async function scheduleExecution(
-		account: EIP1193Account,
+		account: `0x${string}`,
 		execution: ScheduledExecution<ExecutionDataType>,
 	): Promise<ScheduleInfo> {
 		if (!execution.slot) {
 			throw new Error(`cannot proceed. missing slot`);
 		}
 
-		const chainConfig = chainConfigs[execution.chainId];
-		if (!chainConfig) {
+		const chainProtocol = chainProtocols[execution.chainId];
+		if (!chainProtocol) {
 			throw new Error(`cannot proceed, this scheduler is not configured to support chain with id ${execution.chainId}`);
 		}
 
 		const realTimestamp = Math.floor(Date.now() / 1000);
-		const currentTime = await time.getTimestamp(chainConfig.provider);
+		const currentTime = await chainProtocol.getTimestamp();
 
 		const checkinTime = computeInitialExecutionTimeFromSubmission(execution);
 
@@ -162,12 +162,12 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 		};
 	}
 
-	function _getChainConfig(chainId: `0x${string}`): ChainConfig {
-		const chainConfig = chainConfigs[chainId];
-		if (!chainConfig) {
-			throw new Error(`cannot get config for chain with id ${chainId}`);
+	function _getChainProtocol(chainId: `0x${string}`): ChainProtocol {
+		const chainProtocol = chainProtocols[chainId];
+		if (!chainProtocol) {
+			throw new Error(`cannot get protocol for chain with id ${chainId}`);
 		}
-		return chainConfig;
+		return chainProtocol;
 	}
 
 	async function checkAndUpdateExecutionIfNeeded(
@@ -180,7 +180,8 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 		| {status: 'unchanged'; execution: ScheduledExecutionQueued<ExecutionDataType>}
 		| {status: 'willRetry'; execution: ScheduledExecutionQueued<ExecutionDataType>}
 	> {
-		const {provider, finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
+		const chainProtocol = _getChainProtocol(execution.chainId);
+		const {expectedFinality, worstCaseBlockTime} = chainProtocol.config;
 		// TODO callback for balance checks ?
 
 		const timing = execution.timing;
@@ -188,7 +189,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 			case 'fixed-time':
 			case 'fixed-round':
 				if (timing.assumedTransaction && !execution.priorTransactionConfirmation) {
-					const txStatus = await getTransactionStatus(provider, timing.assumedTransaction, finality);
+					const txStatus = await chainProtocol.getTransactionStatus(timing.assumedTransaction, expectedFinality);
 
 					if (!txStatus.finalised) {
 						logger.debug(`the tx the execution depends on has not finalised and the timestamp has already passed`);
@@ -216,7 +217,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 				}
 			case 'delta-time':
 				if (!execution.priorTransactionConfirmation) {
-					const txStatus = await getTransactionStatus(provider, timing.startTransaction, finality);
+					const txStatus = await chainProtocol.getTransactionStatus(timing.startTransaction, expectedFinality);
 					if (!txStatus.finalised) {
 						const newCheckinTime = computePotentialExecutionTime(execution, {
 							startTimeToCountFrom: txStatus.blockTime || currentTimestamp,
@@ -256,7 +257,8 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 		result: QueueProcessingResult,
 	) {
 		const chainIdDecimal = Number(execution.chainId).toString();
-		const {provider, finality, worstCaseBlockTime} = _getChainConfig(execution.chainId);
+		const chainProtocol = _getChainProtocol(execution.chainId);
+		const {expectedFinality, worstCaseBlockTime} = chainProtocol.config;
 
 		// Note here that if the service use a contract timestamp or a network who has its own deviating timestamp
 		// then the system mostyl assume that only one of such network/contract is being used
@@ -268,7 +270,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 
 		let currentTimestamp = result.chainTimetamps[chainIdDecimal];
 		if (!currentTimestamp) {
-			currentTimestamp = await time.getTimestamp(provider);
+			currentTimestamp = await chainProtocol.getTimestamp();
 			result.chainTimetamps[chainIdDecimal] = currentTimestamp;
 		}
 
@@ -314,7 +316,7 @@ export function createScheduler<ExecutionDataType, ExecutionSubmissionResponseTy
 			currentTimestamp >
 			newCheckinTime +
 				Math.min(executionUpdated.timing.expiry || Number.MAX_SAFE_INTEGER, maxExpiry) +
-				finality * worstCaseBlockTime
+				expectedFinality * worstCaseBlockTime
 		) {
 			// delete if execution expired
 			logger.info(`too late, archiving ${displayExecution(execution)}...`);

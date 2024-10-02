@@ -1,32 +1,31 @@
-import {EIP1193Account, EIP1193DATA, EIP1193QUANTITY} from 'eip-1193';
 import {ExpectedWorstCaseGasPrice, EIP1193TransactionDataUsed} from 'fuzd-common';
 
 export type BroadcasterData = {
 	chainId: `0x${string}`;
 	nextNonce: number;
-	address: EIP1193Account;
+	address: `0x${string}`;
 };
 
 export type PendingExecutionStored = {
 	chainId: `0x${string}`;
-	account: EIP1193Account;
+	account: `0x${string}`;
 	slot: string;
 	batchIndex: number;
-	onBehalf?: EIP1193Account;
+	onBehalf?: `0x${string}`;
 	broadcasterAssignerID: string;
 	transaction: EIP1193TransactionDataUsed;
 	initialTime: number;
 	broadcastTime?: number;
 	nextCheckTime: number;
-	hash: EIP1193DATA;
-	maxFeePerGasAuthorized: EIP1193QUANTITY;
-	helpedForUpToGasPrice?: EIP1193QUANTITY;
+	hash: `0x${string}`;
+	maxFeePerGasAuthorized: `0x${string}`;
+	helpedForUpToGasPrice?: `0x${string}`;
 	isVoidTransaction: boolean;
 	finalized: boolean;
 	retries?: number;
 	lastError?: string;
 	expiryTime?: number;
-	expectedWorstCaseGasPrice?: EIP1193QUANTITY;
+	expectedWorstCaseGasPrice?: `0x${string}`;
 };
 
 export type ExecutionResponse = PendingExecutionStored & {
@@ -57,7 +56,7 @@ export interface ExecutorStorage {
 		executionToStore: PendingExecutionStored,
 		asPaymentFor?: {
 			chainId: `0x${string}`;
-			account: EIP1193Account;
+			account: `0x${string}`;
 			slot: string;
 			batchIndex: number;
 			upToGasPrice: bigint;

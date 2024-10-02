@@ -1,9 +1,8 @@
-import {EIP1193Account} from 'eip-1193';
 import {ScheduledExecution} from './external';
 
 export type ScheduledExecutionQueued<ExecutionDataType> = ScheduledExecution<ExecutionDataType> & {
 	slot: string;
-	account: EIP1193Account;
+	account: `0x${string}`;
 	broadcasted: boolean;
 	finalized: boolean;
 	checkinTime: number;
@@ -12,7 +11,7 @@ export type ScheduledExecutionQueued<ExecutionDataType> = ScheduledExecution<Exe
 		blockTime: number;
 		startTime?: number;
 	};
-	expectedWorstCaseGasPrice?: string;
+	expectedWorstCaseGasPrice?: string; // TODO Resources object
 };
 
 export interface SchedulerStorage<ExecutionDataType> {

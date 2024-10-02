@@ -17,6 +17,7 @@ async function main() {
 		.requiredOption('-c, --chain <chainId>', `chain to execute tx on`)
 		.requiredOption('-d, --delta <value>', 'how far in future (in seconds)')
 		.requiredOption('-e, --endpoint <url>', 'endpoint to connect to')
+		// TODO gas parameter should be one value, and would depend
 		.requiredOption('-g, --gas <amount>', 'gas amount for tx')
 		.requiredOption('-m, --max-fee-per-gas <amount>', 'maxFeePerGas in wei can also add unit like eth,gwei')
 		// .option('--value <amount>', 'amount of wei to send, can also add unit like eth,gwei,...')

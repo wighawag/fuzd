@@ -14,6 +14,9 @@ layout {
 			pane name="common" command="bash" {
 				args "-c" "pnpm run --filter ./packages/common dev; cd packages/common; ${SHELL-bash}"
 			}
+			pane name="chain-protocol" command="bash" {
+				args "-c" "pnpm run --filter ./packages/chain-protocol dev; cd packages/chain-protocol; ${SHELL-bash}"
+			}
 			pane name="executor" command="bash" {
 				args "-c" "pnpm run --filter ./packages/executor dev; cd packages/executor; ${SHELL-bash}"
 			}

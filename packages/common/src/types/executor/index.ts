@@ -1,4 +1,4 @@
-import {EIP1193Account, EIP1193TransactionDataOfType2} from 'eip-1193';
+import {EIP1193TransactionDataOfType2} from 'eip-1193';
 import {RequiredKeys} from '../utils';
 
 // export type EIP1193TransactionDataUsed =
@@ -27,7 +27,7 @@ export type Executor<ExecutionSubmissionDataType, ExecutionSubmissionResponseTyp
 	broadcastExecution(
 		slot: string,
 		batchIndex: number,
-		account: EIP1193Account,
+		account: `0x${string}`,
 		execution: ExecutionSubmissionDataType,
 		options?: {
 			expectedWorstCaseGasPrice?: bigint;
@@ -37,7 +37,7 @@ export type Executor<ExecutionSubmissionDataType, ExecutionSubmissionResponseTyp
 	getExecutionStatus(executionBatch: {
 		chainId: `0x${string}`;
 		slot: string;
-		account: EIP1193Account;
+		account: `0x${string}`;
 	}): Promise<'finalized' | 'broadcasted' | undefined>;
 
 	getExpectedWorstCaseGasPrice?(chainId: `0x${string}`): Promise<ExpectedWorstCaseGasPrice>;

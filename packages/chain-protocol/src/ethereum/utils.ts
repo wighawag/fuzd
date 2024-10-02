@@ -1,4 +1,4 @@
-import type {EIP1193BlockTag, EIP1193ProviderWithoutEvents, EIP1193TransactionReceipt} from 'eip-1193';
+import type {EIP1193BlockTag, EIP1193ProviderWithoutEvents, EIP1193QUANTITY, EIP1193TransactionReceipt} from 'eip-1193';
 
 export async function getTransactionStatus(
 	provider: EIP1193ProviderWithoutEvents,
@@ -68,8 +68,7 @@ function avg(arr: bigint[]) {
 	const sum = arr.reduce((a: bigint, v: bigint) => a + v);
 	return sum / BigInt(arr.length);
 }
-
-type EIP1193FeeHistory = {
+export type EIP1193FeeHistory = {
 	oldestBlock: string;
 	reward: `0x${string}`[][];
 	baseFeePerGas: string[];
@@ -106,10 +105,18 @@ export async function getGasPriceEstimate(
 
 	const historicalBlocks = optionsResolved.blockCount;
 
-	const rawFeeHistory = await provider.request<EIP1193FeeHistory>({
+	// const rawFeeHistory: EIP1193FeeHistory = (await provider.request({
+	// 	method: 'eth_feeHistory',
+	// 	params: [`0x${historicalBlocks.toString(16)}`, optionsResolved.newestBlock, optionsResolved.rewardPercentiles],
+	// } as any)) as any; // TODO request Type
+
+	const rawFeeHistory = await provider.request<{
+		params: [EIP1193QUANTITY, EIP1193BlockTag, number[]];
+		result: EIP1193FeeHistory;
+	}>({
 		method: 'eth_feeHistory',
 		params: [`0x${historicalBlocks.toString(16)}`, optionsResolved.newestBlock, optionsResolved.rewardPercentiles],
-	});
+	}); // TODO request Type
 
 	let blockNum = Number(rawFeeHistory.oldestBlock);
 	const lastBlock = blockNum + rawFeeHistory.reward.length;

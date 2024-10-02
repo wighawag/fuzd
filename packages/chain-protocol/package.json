@@ -1,24 +1,25 @@
 {
-  "name": "fuzd-executor",
+  "name": "fuzd-chain-protocol",
   "version": "0.6.0",
-  "description": "execute transaction",
+  "description": "protocol used by fuzd to interact with a chain",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
   },
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts"
+    },
+    "./ethereum": {
       "require": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.cjs"
+        "types": "./dist/ethereum/index.d.ts",
+        "default": "./dist/ethereum/index.cjs"
       },
       "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.mjs"
+        "types": "./dist/ethereum/index.d.ts",
+        "default": "./dist/ethereum/index.mjs"
       }
     }
   },
@@ -27,16 +28,10 @@
     "src"
   ],
   "dependencies": {
-    "@noble/hashes": "^1.4.0",
-    "abitype": "^1.0.2",
-    "eip-1193": "^0.5.0",
-    "eip-1193-signer": "^0.0.2",
-    "fuzd-chain-protocol": "workspace:*",
-    "fuzd-common": "workspace:*",
-    "named-logs": "npm:named-logs-for-servers@0.0.1",
-    "zod": "^3.23.8"
+    "remote-procedure-call": "^0.0.12"
   },
   "devDependencies": {
+    "eip-1193": "^0.6.1",
     "ldenv": "^0.3.10",
     "pkgroll": "^2.0.2",
     "prettier": "^3.2.5",

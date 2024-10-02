@@ -1,26 +1,14 @@
-// ------------------------------------------------------------------------------------------------
-// ChainConfig
-// ------------------------------------------------------------------------------------------------
-
-import {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {Executor, Time} from 'fuzd-common';
+import {Executor} from 'fuzd-common';
 import {Decrypter} from './external';
 import {SchedulerStorage} from './scheduler-storage';
-
-// TODO zod ?
-export type ChainConfig = {
-	provider: EIP1193ProviderWithoutEvents;
-	finality: number;
-	worstCaseBlockTime: number;
-};
-// ------------------------------------------------------------------------------------------------
+import type {ChainProtocol} from 'fuzd-chain-protocol';
 
 // ------------------------------------------------------------------------------------------------
-// ChainConfigs
+// ChainProtocols
 // ------------------------------------------------------------------------------------------------
 // TODO zod ?
-export type ChainConfigs = {
-	[chainId: `0x${string}`]: ChainConfig;
+export type ChainProtocols = {
+	[chainId: `0x${string}`]: ChainProtocol;
 };
 // ------------------------------------------------------------------------------------------------
 
@@ -30,9 +18,8 @@ export type ChainConfigs = {
 // TODO zod ?
 export type SchedulerConfig<ExecutionDataType, TransactionInfoType> = {
 	executor: Executor<ExecutionDataType, TransactionInfoType>;
-	chainConfigs: ChainConfigs;
+	chainProtocols: ChainProtocols;
 	decrypter?: Decrypter<ExecutionDataType>;
-	time: Time;
 	storage: SchedulerStorage<ExecutionDataType>;
 	maxExpiry?: number;
 	maxNumTransactionsToProcessInOneGo?: number;

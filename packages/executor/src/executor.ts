@@ -1,12 +1,6 @@
 import {logs} from 'named-logs';
 import {BroadcasterData, ExecutionResponse, PendingExecutionStored} from './types/executor-storage';
-import {
-	EIP1193Account,
-	EIP1193ProviderWithoutEvents,
-	EIP1193QUANTITY,
-	EIP1193Transaction,
-	EIP1193TransactionReceipt,
-} from 'eip-1193';
+import {EIP1193CallParam} from 'eip-1193';
 import {
 	ExecutionSubmission,
 	ExecutorBackend,
@@ -18,13 +12,13 @@ import {keccak_256} from '@noble/hashes/sha3';
 import {
 	Executor,
 	ExpectedWorstCaseGasPrice,
-	getRoughGasPriceEstimate,
 	EIP1193TransactionDataUsed,
 	EIP1193TransactionToFill,
 	toHex,
 	fromHex,
 } from 'fuzd-common';
-import {BroadcasterSignerData, ChainConfig, ExecutorConfig} from './types/internal';
+import {BroadcasterSignerData, ChainProtocols, ExecutorConfig} from './types/internal';
+import {ChainProtocol} from 'fuzd-chain-protocol';
 
 const logger = logs('fuzd-executor');
 
@@ -35,7 +29,7 @@ type ExecutionToStore = Omit<PendingExecutionStored, 'hash' | 'broadcastTime' | 
 export function createExecutor(
 	config: ExecutorConfig,
 ): Executor<ExecutionSubmission, ExecutionResponse> & ExecutorBackend {
-	const {chainConfigs, time, storage, signers} = config;
+	const {chainProtocols, storage, signers} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
@@ -46,7 +40,7 @@ export function createExecutor(
 	async function getExecutionStatus(executionBatch: {
 		chainId: `0x${string}`;
 		slot: string;
-		account: EIP1193Account;
+		account: `0x${string}`;
 	}): Promise<'finalized' | 'broadcasted' | undefined> {
 		const batch = await storage.getPendingExecutionBatch(executionBatch);
 		if (!batch) {
@@ -63,13 +57,13 @@ export function createExecutor(
 	async function broadcastExecution(
 		slot: string,
 		batchIndex: number,
-		account: EIP1193Account,
+		account: `0x${string}`,
 		submission: ExecutionSubmission,
 		options?: {
 			expectedWorstCaseGasPrice?: bigint;
 			asPaymentFor?: {
 				chainId: `0x${string}`;
-				account: EIP1193Account;
+				account: `0x${string}`;
 				slot: string;
 				batchIndex: number;
 				upToGasPrice: bigint;
@@ -77,11 +71,6 @@ export function createExecutor(
 		},
 	): Promise<ExecutionResponse> {
 		submission = SchemaExecutionSubmission.parse(submission);
-
-		const chainConfig = chainConfigs[submission.chainId];
-		if (!chainConfig) {
-			throw new Error(`cannot proceed, this executor is not configured to support chain with id ${submission.chainId}`);
-		}
 
 		const realTimestamp = Math.floor(Date.now() / 1000);
 
@@ -108,8 +97,8 @@ export function createExecutor(
 			return {...existingExecution, slotAlreadyUsed: true};
 		}
 
-		const {provider} = _getChainConfig(submission.chainId);
-		const timestamp = await time.getTimestamp(provider);
+		const chainProtocol = _getChainProtocol(submission.chainId);
+		const timestamp = await chainProtocol.getTimestamp();
 
 		const broadcaster = await signers.assignProviderFor(submission.chainId, account);
 		const pendingExecutionToStore: ExecutionToStore = {
@@ -128,7 +117,7 @@ export function createExecutor(
 			finalized: false,
 		};
 
-		const {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await _getGasFee(provider, submission);
+		const {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await chainProtocol.getGasFee(submission);
 
 		const result = await _submitTransaction(
 			broadcaster,
@@ -263,15 +252,12 @@ export function createExecutor(
 	}
 
 	async function _getTxParams(
-		broadcasterAddress: EIP1193Account,
+		broadcasterAddress: `0x${string}`,
 		transactionData: EIP1193TransactionToFill,
 	): Promise<TransactionParams> {
-		const {provider} = _getChainConfig(transactionData.chainId);
+		const chainProtocol = _getChainProtocol(transactionData.chainId);
 
-		const nonceAsHex = await provider.request({
-			method: 'eth_getTransactionCount',
-			params: [broadcasterAddress, 'latest'],
-		});
+		const nonceAsHex = await chainProtocol.getNonce(broadcasterAddress);
 		const nonce = Number(nonceAsHex);
 		if (isNaN(nonce)) {
 			throw new Error(`could not parse transaction count while checking for expected nonce`);
@@ -289,19 +275,14 @@ export function createExecutor(
 
 		const expectedNonce = broadcasterData.nextNonce;
 
-		let gasRequired: `0x${string}`;
+		let gasRequired: bigint;
 		try {
-			gasRequired = await provider.request({
-				method: 'eth_estimateGas',
-				params: [
-					{
-						from: broadcasterAddress,
-						to: transactionData.to!, // "!" needed, need to fix eip-1193
-						data: transactionData.data,
-						value: transactionData.value,
-					},
-				],
-			});
+			gasRequired = await chainProtocol.estimateGasNeeded({
+				from: broadcasterAddress,
+				to: transactionData.to,
+				data: transactionData.data,
+				value: transactionData.value,
+			} as EIP1193CallParam);
 		} catch (err: any) {
 			if (err.isInvalidError) {
 				return {expectedNonce, nonce, revert: 'unknown'};
@@ -320,15 +301,15 @@ export function createExecutor(
 			}
 		}
 
-		return {expectedNonce, nonce, gasRequired: BigInt(gasRequired), revert: false};
+		return {expectedNonce, nonce, gasRequired, revert: false};
 	}
 
-	function _getChainConfig(chainId: `0x${string}`): ChainConfig {
-		const chainConfig = chainConfigs[chainId];
-		if (!chainConfig) {
-			throw new Error(`cannot get config for chain with id ${chainId}`);
+	function _getChainProtocol(chainId: `0x${string}`): ChainProtocol {
+		const chainProtocol = chainProtocols[chainId];
+		if (!chainProtocol) {
+			throw new Error(`cannot get protocol for chain with id ${chainId}`);
 		}
-		return chainConfig;
+		return chainProtocol;
 	}
 
 	async function _submitTransaction(
@@ -344,13 +325,13 @@ export function createExecutor(
 		},
 		asPaymentFor?: {
 			chainId: `0x${string}`;
-			account: EIP1193Account;
+			account: `0x${string}`;
 			slot: string;
 			batchIndex: number;
 			upToGasPrice: bigint;
 		},
 	): Promise<PendingExecutionStored | undefined> {
-		const {provider} = _getChainConfig(transactionData.chainId);
+		const chainProtocol = _getChainProtocol(transactionData.chainId);
 		const txParams = await _getTxParams(broadcaster.address, transactionData.transaction);
 		if (txParams.revert === true) {
 			const errorMessage = `The transaction reverts`;
@@ -387,7 +368,7 @@ export function createExecutor(
 
 		const retries = typeof transactionData.retries === 'undefined' ? 0 : transactionData.retries + 1;
 
-		const timestamp = await time.getTimestamp(provider);
+		const timestamp = await chainProtocol.getTimestamp();
 		const nextCheckTime = timestamp + 60; // retry in 60 seconds // TODO config
 
 		let lastError: string | undefined;
@@ -418,17 +399,11 @@ export function createExecutor(
 		await storage.createOrUpdatePendingExecution(newTransactionData, asPaymentFor);
 
 		try {
-			await provider.request({
-				method: 'eth_sendRawTransaction',
-				params: [rawTxInfo.rawTx],
-			});
+			await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
 		} catch (err) {
 			logger.error(`The broadcast failed, we attempts one more time`, err);
 			try {
-				await provider.request({
-					method: 'eth_sendRawTransaction',
-					params: [rawTxInfo.rawTx],
-				});
+				await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
 			} catch (err) {
 				let errorString: string;
 				try {
@@ -460,32 +435,9 @@ export function createExecutor(
 		return newTransactionData;
 	}
 
-	async function _getGasFee(
-		provider: EIP1193ProviderWithoutEvents,
-		executionData: {maxFeePerGasAuthorized: EIP1193QUANTITY},
-	) {
-		const maxFeePerGasAuthorized = BigInt(executionData.maxFeePerGasAuthorized);
-
-		const estimates = await getRoughGasPriceEstimate(provider);
-		const gasPriceEstimate = estimates.average;
-		let maxFeePerGas = gasPriceEstimate.maxFeePerGas;
-		let maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
-		if (gasPriceEstimate.maxFeePerGas > maxFeePerGasAuthorized) {
-			logger.warn(
-				`fast.maxFeePerGas (${gasPriceEstimate.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasAuthorized}), tx might not be included`,
-			);
-			maxFeePerGas = maxFeePerGasAuthorized;
-			if (maxPriorityFeePerGas > maxFeePerGas) {
-				maxPriorityFeePerGas = maxFeePerGas;
-			}
-		}
-
-		return {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate};
-	}
-
 	async function _resubmitIfNeeded(pendingExecution: PendingExecutionStored): Promise<void> {
-		const {provider, finality, worstCaseBlockTime} = _getChainConfig(pendingExecution.chainId);
-		const timestamp = await time.getTimestamp(provider);
+		const chainProtocol = _getChainProtocol(pendingExecution.chainId);
+		const timestamp = await chainProtocol.getTimestamp();
 		const diffSinceInitiated = timestamp - pendingExecution.initialTime;
 
 		let forceVoid = false;
@@ -495,7 +447,7 @@ export function createExecutor(
 			forceVoid = true;
 		}
 
-		let {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await _getGasFee(provider, pendingExecution);
+		let {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await chainProtocol.getGasFee(pendingExecution);
 
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGas) {
 			const expectedWorstCaseGasPrice = pendingExecution.expectedWorstCaseGasPrice
@@ -522,13 +474,10 @@ export function createExecutor(
 					const paymentAccount = config.paymentAccount;
 					if (paymentAccount) {
 						const broadcaster = await signers.assignProviderFor(pendingExecution.chainId, paymentAccount);
-						const broadcasterBalance = await provider.request({
-							method: 'eth_getBalance',
-							params: [broadcaster.address, 'latest'],
-						});
+						const broadcasterBalance = await chainProtocol.getBalance(broadcaster.address);
 						const gas = BigInt(30000);
 						const cost = gas * gasPriceEstimate.maxFeePerGas; // TODO handle extra Fee like Optimism
-						if (cost <= BigInt(broadcasterBalance)) {
+						if (cost <= broadcasterBalance) {
 							await broadcastExecution(
 								`${pendingExecution.account}_${pendingExecution.transaction.from}_${pendingExecution.transaction.nonce}_${gasPriceEstimate.maxFeePerGas.toString()}`,
 								0,
@@ -567,19 +516,10 @@ export function createExecutor(
 		const maxFeePerGasUsed = BigInt(transaction.maxFeePerGas);
 		const maxPriorityFeePerGasUsed = BigInt(transaction.maxFeePerGas);
 
-		let pendingTansaction: EIP1193Transaction | null;
-		try {
-			pendingTansaction = await provider.request({
-				method: 'eth_getTransactionByHash',
-				params: [pendingExecution.hash],
-			});
-		} catch (err) {
-			logger.error(`failed to get pending transaction`, err);
-			pendingTansaction = null;
-		}
+		let transactionIsPending = await chainProtocol.isTransactionPending(pendingExecution.hash);
 
 		if (
-			!pendingTansaction ||
+			!transactionIsPending ||
 			maxFeePerGasUsed < maxFeePerGas ||
 			(maxFeePerGasUsed === maxFeePerGas && maxPriorityFeePerGasUsed < maxPriorityFeePerGas)
 		) {
@@ -605,33 +545,13 @@ export function createExecutor(
 	}
 
 	async function __processPendingTransaction(pendingExecution: PendingExecutionStored): Promise<void> {
-		const {provider, finality, worstCaseBlockTime} = _getChainConfig(pendingExecution.transaction.chainId);
+		const chainProtocol = _getChainProtocol(pendingExecution.transaction.chainId);
 
-		let receipt: EIP1193TransactionReceipt | null;
-		try {
-			receipt = await provider.request({
-				method: 'eth_getTransactionReceipt',
-				params: [pendingExecution.hash],
-			});
-		} catch (err) {
-			logger.error('ERROR fetching receipt', err);
-			receipt = null;
-		}
-
-		let finalised = false;
-		if (receipt) {
-			const latestBlocknumberAshex = await provider.request({
-				method: 'eth_blockNumber',
-			});
-			const latestBlockNumber = Number(latestBlocknumberAshex);
-			const transactionBlockNumber = Number(receipt.blockNumber);
-			finalised = latestBlockNumber - finality >= transactionBlockNumber;
-		}
-
-		if (finalised) {
+		const txStatus = await chainProtocol.isTransactionFinalised(pendingExecution.hash);
+		if (txStatus.finalised) {
 			pendingExecution.finalized = true;
 			storage.createOrUpdatePendingExecution(pendingExecution);
-		} else if (!receipt) {
+		} else if (!txStatus.pending) {
 			await _resubmitIfNeeded(pendingExecution);
 		}
 	}

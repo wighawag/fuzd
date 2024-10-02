@@ -1,4 +1,3 @@
-import {EIP1193Account} from 'eip-1193';
 import {ScheduledExecutionQueued} from './scheduler-storage';
 import {SchemaEIP1193Account, SchemaString0x} from 'fuzd-common';
 import z from 'zod';
@@ -8,7 +7,7 @@ import z from 'zod';
 // ------------------------------------------------------------------------------------------------
 export const SchemaPriorTransactionInfo = z.object({
 	hash: SchemaString0x,
-	nonce: z.number(),
+	nonce: SchemaString0x,
 	broadcastTime: z.number(),
 	// TODO
 	// expectEvent?: {
@@ -214,7 +213,7 @@ export type ScheduleInfo = z.infer<typeof SchemaScheduleInfo>;
 // Scheduler<
 // ------------------------------------------------------------------------------------------------
 export type Scheduler<ExecutionDataType> = {
-	scheduleExecution(account: EIP1193Account, execution: ScheduledExecution<ExecutionDataType>): Promise<ScheduleInfo>;
+	scheduleExecution(account: `0x${string}`, execution: ScheduledExecution<ExecutionDataType>): Promise<ScheduleInfo>;
 };
 // ------------------------------------------------------------------------------------------------
 

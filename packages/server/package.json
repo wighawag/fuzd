@@ -33,6 +33,7 @@
     "eip-1193": "^0.5.0",
     "eip-1193-jsonrpc-provider": "^0.4.0",
     "eip-1193-signer": "^0.0.2",
+    "fuzd-chain-protocol": "workspace:*",
     "fuzd-common": "workspace:*",
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
