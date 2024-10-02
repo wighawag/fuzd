@@ -1,7 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {network} from 'hardhat';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
-import {initTime} from './utils/time';
 import {createTestExecutor, createTestScheduler} from './utils/executor';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {encodeFunctionData} from 'viem';
@@ -10,20 +9,18 @@ import {createMockDecrypter, overrideProvider} from './utils/mock-provider';
 import {ExecutionSubmission} from 'fuzd-executor';
 import {deployAll} from './utils';
 import {createViemContext} from '../utils/viem';
-
-const time = initTime();
+import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
 
 const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
 
+const chainProtocol = new EthereumChainProtocol(provider, {
+	expectedFinality: 1,
+	worstCaseBlockTime: 3,
+});
 const executorConfig = {
-	chainConfigs: {
-		'0x7a69': {
-			finality: 1,
-			worstCaseBlockTime: 3,
-			provider,
-		},
+	chainProtocols: {
+		'0x7a69': chainProtocol,
 	},
-	time,
 };
 
 const decrypter = createMockDecrypter();
@@ -94,7 +91,7 @@ let counter = 0;
 describe('Executing on the registry', function () {
 	it('Should execute without issues', async function () {
 		const {gas, gasPrice, txData, user, GreetingsRegistry, env, scheduler, schedulerStorage} = await prepareExecution();
-		const timestamp = await time.getTimestamp();
+		const timestamp = await chainProtocol.getTimestamp();
 		const checkinTime = timestamp + 100;
 		console.log({user});
 		const result = await scheduler.scheduleExecution(user, {
@@ -121,14 +118,14 @@ describe('Executing on the registry', function () {
 		expect(result.checkinTime).to.equal(checkinTime);
 
 		const queue = await schedulerStorage.getQueueTopMostExecutions({limit: 10});
-		time.increaseTime(1010);
+		chainProtocol.increaseTime(1010);
 		await scheduler.processQueue();
 		expect((await env.read(GreetingsRegistry, {functionName: 'messages', args: [user]})).content).to.equal('hello');
 	});
 
 	it('Should execute encrypted data without issues', async function () {
 		const {gas, gasPrice, env, txData, user, GreetingsRegistry, mockDecrypter, scheduler} = await prepareExecution();
-		const timestamp = await time.getTimestamp();
+		const timestamp = await chainProtocol.getTimestamp();
 		const checkinTime = timestamp + 100;
 		const transaction: ExecutionSubmission = {
 			chainId: txData.chainId,
@@ -154,7 +151,7 @@ describe('Executing on the registry', function () {
 		});
 		expect(result.checkinTime).to.equal(checkinTime);
 
-		time.increaseTime(101);
+		chainProtocol.increaseTime(101);
 		await scheduler.processQueue();
 		expect((await env.read(GreetingsRegistry, {functionName: 'messages', args: [user]})).content).to.equal('hello');
 	});

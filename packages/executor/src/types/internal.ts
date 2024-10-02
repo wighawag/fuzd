@@ -1,5 +1,5 @@
 import {ExecutorStorage} from './executor-storage';
-import {EIP1193SignerProvider} from 'eip-1193'; // TODO move to ChainProtocol
+import {EIP1193SignerProvider} from 'eip-1193'; // TODO ChainProtocol
 import {ChainProtocol} from 'fuzd-chain-protocol';
 
 // ------------------------------------------------------------------------------------------------

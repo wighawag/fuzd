@@ -456,6 +456,9 @@ importers:
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0
+      fuzd-chain-protocol:
+        specifier: workspace:*
+        version: link:../packages/chain-protocol
       fuzd-client:
         specifier: workspace:*
         version: link:../packages/client
@@ -3802,7 +3805,6 @@ packages:
 
   libsql@0.3.18:
     resolution: {integrity: sha512-lvhKr7WV3NLWRbXkjn/MeKqXOAqWKU0PX9QYrvDh7fneukapj+iUQ4qgJASrQyxcCrEsClXCQiiK5W6OoYPAlA==}
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lines-and-columns@1.2.4:

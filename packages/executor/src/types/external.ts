@@ -1,4 +1,3 @@
-import {EIP1193DATA} from 'eip-1193';
 import {
 	EIP1193TransactionDataUsed,
 	SchemaEIP1193AccessList,
@@ -12,7 +11,7 @@ import z from 'zod';
 // TransactionInfo
 // ------------------------------------------------------------------------------------------------
 export type TransactionInfo = {
-	hash: EIP1193DATA;
+	hash: `0x${string}`;
 	broadcastTime: number;
 	transactionData: EIP1193TransactionDataUsed;
 	isVoidTransaction: boolean;
@@ -23,7 +22,7 @@ export type TransactionInfo = {
 // RawTransactionInfo
 // ------------------------------------------------------------------------------------------------
 export type RawTransactionInfo = {
-	rawTx: EIP1193DATA;
+	rawTx: `0x${string}`;
 	transactionData: EIP1193TransactionDataUsed;
 	isVoidTransaction: boolean;
 };

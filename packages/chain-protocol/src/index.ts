@@ -24,6 +24,8 @@ export interface SchedulerChainProtocol {
 	getTransactionStatus(transaction: Transaction, finality: number): Promise<TransactionStatus>;
 
 	getTimestamp(): Promise<number>;
+
+	increaseTime(amount: number): Promise<void>;
 }
 
 export type GasPrice = {

@@ -1,7 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {network} from 'hardhat';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
-import {initTime} from './utils/time';
 import {createTestExecutor} from './utils/executor';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {encodeFunctionData, formatEther, parseEther} from 'viem';
@@ -9,8 +8,7 @@ import {deriveRemoteAddress} from 'remote-account';
 import {hashRawTx, overrideProvider} from './utils/mock-provider';
 import {deployAll} from './utils';
 import {createViemContext} from '../utils/viem';
-
-const time = initTime();
+import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
 
 const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
 
@@ -20,12 +18,12 @@ async function prepareExecution() {
 	const paymentAccount = '0x0000000000000000000000000000000000000001';
 
 	const {executor, publicExtendedKey} = await createTestExecutor({
-		chainConfigs: {
-			'0x7a69': {
-				finality: 1,
+		chainProtocols: {
+			// TODO any
+			'0x7a69': new EthereumChainProtocol(provider as any, {
+				expectedFinality: 1,
 				worstCaseBlockTime: 3,
-				provider,
-			},
+			}),
 		},
 		paymentAccount,
 		expectedWorstCaseGasPrices: [
@@ -34,7 +32,6 @@ async function prepareExecution() {
 				value: 0n,
 			},
 		],
-		time,
 	});
 
 	const viemContext = await createViemContext(provider);

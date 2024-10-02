@@ -13,7 +13,7 @@ import {initAccountFromHD} from 'remote-account';
 import {Executor} from 'fuzd-common';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
-import {EIP1193LocalSigner} from 'eip-1193-signer';
+import {EIP1193LocalSigner} from 'eip-1193-signer'; // TODO ChainProtocol
 import {initDecrypter, mainnetClient} from 'fuzd-tlock-decrypter';
 import {RemoteSQLExecutorStorage} from './storage/RemoteSQLExecutorStorage';
 import {RemoteSQLSchedulerStorage} from './storage/RemoteSQLSchedulerStorage';

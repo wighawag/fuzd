@@ -1,13 +1,13 @@
 import {ChainProtocol, GasEstimate, Transaction, TransactionStatus} from '..';
 import type {EIP1193Transaction, EIP1193TransactionReceipt, Methods} from 'eip-1193';
-import type {CurriedRPC} from 'remote-procedure-call';
+import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC} from 'remote-procedure-call';
 import {getRoughGasPriceEstimate} from './utils';
 
 export class EthereumChainProtocol implements ChainProtocol {
 	private rpc: CurriedRPC<Methods>;
 	constructor(
-		public readonly url: string,
+		public readonly url: string | RequestRPC<Methods>,
 		public readonly config: {expectedFinality: number; worstCaseBlockTime: number; contractTimestamp?: `0x${string}`},
 	) {
 		this.rpc = createCurriedJSONRPC<Methods>(url);
@@ -67,28 +67,6 @@ export class EthereumChainProtocol implements ChainProtocol {
 				pending: receipt ? true : false,
 			};
 		}
-	}
-
-	async getTimestamp(): Promise<number> {
-		if (this.config.contractTimestamp) {
-			const result = await this.rpc.request({
-				method: 'eth_call',
-				params: [
-					{
-						to: this.config.contractTimestamp,
-						data: '0xb80777ea', // timestamp()
-					},
-				],
-			});
-			const value = Number(result);
-			return value;
-		}
-
-		const block = await this.rpc.request({method: 'eth_getBlockByNumber', params: ['latest', false]});
-		if (!block) {
-			throw new Error(`cannot get latest block`);
-		}
-		return Number(block.timestamp);
 	}
 
 	async isTransactionFinalised(
@@ -186,5 +164,31 @@ export class EthereumChainProtocol implements ChainProtocol {
 		}
 
 		return {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate};
+	}
+
+	offset = 0;
+	async getTimestamp(): Promise<number> {
+		if (this.config.contractTimestamp) {
+			const result = await this.rpc.request({
+				method: 'eth_call',
+				params: [
+					{
+						to: this.config.contractTimestamp,
+						data: '0xb80777ea', // timestamp()
+					},
+				],
+			});
+			const value = Number(result);
+			return value;
+		}
+
+		const block = await this.rpc.request({method: 'eth_getBlockByNumber', params: ['latest', false]});
+		if (!block) {
+			throw new Error(`cannot get latest block`);
+		}
+		return Number(block.timestamp) + this.offset;
+	}
+	async increaseTime(amount: number): Promise<void> {
+		this.offset += amount;
 	}
 }

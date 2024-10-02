@@ -1,4 +1,4 @@
-import {EIP1193TransactionDataOfType2} from 'eip-1193';
+import {EIP1193TransactionDataOfType2} from 'eip-1193'; // TODO ChainProtocol
 import {RequiredKeys} from '../utils';
 
 // export type EIP1193TransactionDataUsed =

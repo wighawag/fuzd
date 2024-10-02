@@ -1,6 +1,6 @@
 import {logs} from 'named-logs';
 import {BroadcasterData, ExecutionResponse, PendingExecutionStored} from './types/executor-storage';
-import {EIP1193CallParam} from 'eip-1193';
+import {EIP1193CallParam} from 'eip-1193'; // TODO ChainProtocol
 import {
 	ExecutionSubmission,
 	ExecutorBackend,
@@ -277,6 +277,7 @@ export function createExecutor(
 
 		let gasRequired: bigint;
 		try {
+			// TODO ChainProtocol
 			gasRequired = await chainProtocol.estimateGasNeeded({
 				from: broadcasterAddress,
 				to: transactionData.to,
@@ -291,7 +292,7 @@ export function createExecutor(
 				// TODO error message // viem
 				logger.error('The transaction reverts?', err, {
 					from: broadcasterAddress,
-					to: transactionData.to!, // "!" needed, need to fix eip-1193
+					to: transactionData.to,
 					data: transactionData.data,
 					value: transactionData.value,
 				});

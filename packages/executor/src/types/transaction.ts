@@ -1,4 +1,4 @@
-import {EIP1193Transaction, EIP1193TransactionData, EIP1193TransactionReceipt} from 'eip-1193';
+import {EIP1193Transaction, EIP1193TransactionData, EIP1193TransactionReceipt} from 'eip-1193'; // TODO ChainProtocol
 
 export interface TransactionBroadcaster {
 	submitTransaction(txData: EIP1193TransactionData): Promise<`0x${string}`>;
