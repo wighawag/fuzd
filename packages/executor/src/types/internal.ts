@@ -4,10 +4,9 @@ import {ChainProtocol} from 'fuzd-chain-protocol';
 
 // ------------------------------------------------------------------------------------------------
 // ExecutorConfig
-export type ExecutorConfig = {
+export type ExecutorConfig<TransactionDataType> = {
 	chainProtocols: ChainProtocols;
-	storage: ExecutorStorage;
-	signers: Signers;
+	storage: ExecutorStorage<TransactionDataType>;
 	maxExpiry?: number;
 	maxNumTransactionsToProcessInOneGo?: number;
 	paymentAccount?: `0x${string}`;
@@ -18,15 +17,6 @@ export type ExecutorConfig = {
 // ------------------------------------------------------------------------------------------------
 export type ChainProtocols = {
 	[chainId: `0x${string}`]: ChainProtocol;
-};
-// ------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------
-// Signers
-// ------------------------------------------------------------------------------------------------
-export type Signers = {
-	assignProviderFor: (chainId: `0x${string}`, account: `0x${string}`) => Promise<BroadcasterSignerData>;
-	getProviderByAssignerID: (assignerID: string, address: `0x${string}`) => Promise<BroadcasterSignerData>;
 };
 // ------------------------------------------------------------------------------------------------
 

@@ -47,9 +47,21 @@ importers:
 
   packages/chain-protocol:
     dependencies:
+      eip-1193-signer:
+        specifier: ^0.0.2
+        version: 0.0.2(typescript@5.4.5)(zod@3.23.8)
+      fuzd-common:
+        specifier: workspace:*
+        version: link:../common
+      remote-account:
+        specifier: ^0.1.0
+        version: 0.1.0
       remote-procedure-call:
         specifier: ^0.0.12
         version: 0.0.12(@types/node@20.12.12)
+      zod:
+        specifier: ^3.23.8
+        version: 3.23.8
     devDependencies:
       eip-1193:
         specifier: ^0.6.1
@@ -462,6 +474,9 @@ importers:
       fuzd-client:
         specifier: workspace:*
         version: link:../packages/client
+      fuzd-common:
+        specifier: workspace:*
+        version: link:../packages/common
       fuzd-executor:
         specifier: workspace:*
         version: link:../packages/executor
@@ -3805,6 +3820,7 @@ packages:
 
   libsql@0.3.18:
     resolution: {integrity: sha512-lvhKr7WV3NLWRbXkjn/MeKqXOAqWKU0PX9QYrvDh7fneukapj+iUQ4qgJASrQyxcCrEsClXCQiiK5W6OoYPAlA==}
+    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lines-and-columns@1.2.4:

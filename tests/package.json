@@ -29,6 +29,7 @@
     "fs-extra": "^11.2.0",
     "fuzd-chain-protocol": "workspace:*",
     "fuzd-client": "workspace:*",
+    "fuzd-common": "workspace:*",
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "fuzd-server": "workspace:*",

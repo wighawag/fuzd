@@ -1,5 +1,5 @@
 import {ScheduledExecutionQueued} from './scheduler-storage';
-import {SchemaEIP1193Account, SchemaString0x} from 'fuzd-common';
+import {ExecutionSubmission, SchemaEIP1193Account, SchemaString0x} from 'fuzd-common';
 import z from 'zod';
 
 // ------------------------------------------------------------------------------------------------
@@ -180,8 +180,8 @@ export type ScheduledExecutionInClear<ExecutionDataType> = z.infer<
 // ------------------------------------------------------------------------------------------------
 // ScheduledExecution
 // ------------------------------------------------------------------------------------------------
-export function GenericSchemaScheduledExecution<TSchemaExecutionDataType extends z.ZodTypeAny>(
-	SchemaExecutionDataType: TSchemaExecutionDataType,
+export function GenericSchemaScheduledExecution<TSchemaTransactionData extends z.ZodTypeAny>(
+	SchemaExecutionDataType: TSchemaTransactionData,
 ) {
 	return z.discriminatedUnion('type', [
 		SchemaScheduledTimeLockedExecution,
@@ -193,7 +193,7 @@ export type SchemaScheduledExecution<TSchemaExecutionDataType extends z.ZodTypeA
 	typeof GenericSchemaScheduledExecution<TSchemaExecutionDataType>
 >;
 
-export type ScheduledExecution<ExecutionDataType> = z.infer<SchemaScheduledExecution<z.ZodType<ExecutionDataType>>>;
+export type ScheduledExecution<TransactionDataType> = z.infer<SchemaScheduledExecution<z.ZodType<TransactionDataType>>>;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -212,8 +212,11 @@ export type ScheduleInfo = z.infer<typeof SchemaScheduleInfo>;
 // ------------------------------------------------------------------------------------------------
 // Scheduler<
 // ------------------------------------------------------------------------------------------------
-export type Scheduler<ExecutionDataType> = {
-	scheduleExecution(account: `0x${string}`, execution: ScheduledExecution<ExecutionDataType>): Promise<ScheduleInfo>;
+export type Scheduler<TransactionDataType> = {
+	scheduleExecution(
+		account: `0x${string}`,
+		execution: ScheduledExecution<ExecutionSubmission<TransactionDataType>>,
+	): Promise<ScheduleInfo>;
 };
 // ------------------------------------------------------------------------------------------------
 

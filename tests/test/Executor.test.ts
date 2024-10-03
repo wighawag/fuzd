@@ -4,11 +4,13 @@ import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {createTestExecutor} from './utils/executor';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {encodeFunctionData, formatEther, parseEther} from 'viem';
-import {deriveRemoteAddress} from 'remote-account';
+import {deriveRemoteAddress, initAccountFromHD} from 'remote-account';
 import {hashRawTx, overrideProvider} from './utils/mock-provider';
 import {deployAll} from './utils';
 import {createViemContext} from '../utils/viem';
 import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
+import * as bip39 from '@scure/bip39';
+import {HDKey} from '@scure/bip32';
 
 const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
 
@@ -17,13 +19,24 @@ async function prepareExecution() {
 
 	const paymentAccount = '0x0000000000000000000000000000000000000001';
 
+	const defaultPath = "m/44'/60'/0'/0/0";
+	const mnemonic: string = 'test test test test test test test test test test test junk';
+	const seed = bip39.mnemonicToSeedSync(mnemonic);
+	const masterKey = HDKey.fromMasterSeed(seed);
+	const accountHDKey = masterKey.derive(defaultPath);
+	const account = initAccountFromHD(accountHDKey);
+
 	const {executor, publicExtendedKey} = await createTestExecutor({
 		chainProtocols: {
 			// TODO any
-			'0x7a69': new EthereumChainProtocol(provider as any, {
-				expectedFinality: 1,
-				worstCaseBlockTime: 3,
-			}),
+			'0x7a69': new EthereumChainProtocol(
+				provider as any,
+				{
+					expectedFinality: 1,
+					worstCaseBlockTime: 3,
+				},
+				account,
+			),
 		},
 		paymentAccount,
 		expectedWorstCaseGasPrices: [

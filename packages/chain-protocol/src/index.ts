@@ -1,3 +1,5 @@
+import {ExecutionSubmission, TransactionParametersUsed, TransactionParams} from 'fuzd-common';
+
 export type TransactionStatus =
 	| {
 			finalised: true;
@@ -35,6 +37,12 @@ export type GasPrice = {
 
 export type GasEstimate = GasPrice & {gasPriceEstimate: GasPrice};
 
+export type BroadcasterSignerData = {
+	assignerID: string;
+	signer: any;
+	address: `0x${string}`;
+};
+
 export interface ExecutorChainProtocol {
 	isTransactionFinalised(txHash: `0x${string}`): Promise<{finalised: true} | {finalised: false; pending: boolean}>;
 	isTransactionPending(txHash: `0x${string}`): Promise<boolean>;
@@ -43,6 +51,37 @@ export interface ExecutorChainProtocol {
 	getNonce(account: `0x${string}`): Promise<`0x${string}`>;
 	estimateGasNeeded(tx: any): Promise<bigint>;
 	getGasFee(executionData: {maxFeePerGasAuthorized: `0x${string}`}): Promise<GasEstimate>;
+	parseExecutionSubmission<TransactionDataType>(
+		execution: ExecutionSubmission<TransactionDataType>,
+	): ExecutionSubmission<TransactionDataType>;
+
+	assignProviderFor(chainId: `0x${string}`, forAddress: `0x${string}`): Promise<BroadcasterSignerData>;
+	getProviderByAssignerID(assignerID: string, forAddress: `0x${string}`): Promise<BroadcasterSignerData>;
+
+	checkValidity<TransactionDataType>(
+		broadcasterAddress: `0x${string}`,
+		transactionData: Partial<TransactionDataType>,
+	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}>;
+	signTransaction<TransactionDataType>(
+		chainId: `0x${string}`,
+		data: Partial<TransactionDataType>,
+		broadcaster: BroadcasterSignerData,
+		transactionParameters: TransactionParametersUsed,
+		options: {
+			forceVoid?: boolean;
+		},
+	): Promise<{
+		rawTx: any;
+		transactionData: TransactionDataType;
+		isVoidTransaction: boolean;
+	}>;
+
+	generatePaymentTransaction<TransactionDataType>(
+		transaction: TransactionDataType,
+		maxFeePerGas: bigint,
+		from: `0x${string}`,
+		diffToCover: bigint,
+	): {transaction: TransactionDataType; cost: bigint};
 }
 
 export type ChainProtocol = SchedulerChainProtocol & ExecutorChainProtocol;

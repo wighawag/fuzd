@@ -28,7 +28,11 @@
     "src"
   ],
   "dependencies": {
-    "remote-procedure-call": "^0.0.12"
+    "eip-1193-signer": "^0.0.2",
+    "fuzd-common": "workspace:*",
+    "remote-account": "^0.1.0",
+    "remote-procedure-call": "^0.0.12",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "eip-1193": "^0.6.1",

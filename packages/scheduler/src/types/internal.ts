@@ -1,4 +1,4 @@
-import {Executor} from 'fuzd-common';
+import {ExecutionSubmission, Executor} from 'fuzd-common';
 import {Decrypter} from './external';
 import {SchedulerStorage} from './scheduler-storage';
 import type {ChainProtocol} from 'fuzd-chain-protocol';
@@ -16,11 +16,14 @@ export type ChainProtocols = {
 // SchedulerConfig<
 // ------------------------------------------------------------------------------------------------
 // TODO zod ?
-export type SchedulerConfig<ExecutionDataType, TransactionInfoType> = {
-	executor: Executor<ExecutionDataType, TransactionInfoType>;
+export type SchedulerConfig<
+	TransactionDataType,
+	ExecutionSubmissionType extends ExecutionSubmission<TransactionDataType> = ExecutionSubmission<TransactionDataType>,
+> = {
+	executor: Executor<TransactionDataType>;
 	chainProtocols: ChainProtocols;
-	decrypter?: Decrypter<ExecutionDataType>;
-	storage: SchedulerStorage<ExecutionDataType>;
+	decrypter?: Decrypter<ExecutionSubmissionType>;
+	storage: SchedulerStorage<TransactionDataType>;
 	maxExpiry?: number;
 	maxNumTransactionsToProcessInOneGo?: number;
 };

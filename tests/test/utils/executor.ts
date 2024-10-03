@@ -8,6 +8,7 @@ import {HDKey} from '@scure/bip32';
 import {RemoteSQLExecutorStorage, RemoteSQLSchedulerStorage} from 'fuzd-server';
 import {RemoteLibSQL} from 'remote-sql-libsql';
 import {createClient} from '@libsql/client';
+import {ExecutionSubmission} from 'fuzd-common';
 
 const provider = new JSONRPCHTTPProvider('http://localhost:8545');
 
@@ -39,14 +40,14 @@ const account = initAccountFromHD(accountHDKey);
 
 // export const executorProvider = initExecutorProvider();
 
-export type TestExecutorConfig = Omit<
-	ExecutorConfig,
-	'signers' | 'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
+export type TestExecutorConfig<TransactionDataType> = Omit<
+	ExecutorConfig<TransactionDataType>,
+	'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
 > & {
 	expectedWorstCaseGasPrices?: {chainId: `0x${string}`; value: bigint}[];
 };
 
-export async function createTestExecutor(config: TestExecutorConfig) {
+export async function createTestExecutor<TransactionDataType>(config: TestExecutorConfig<TransactionDataType>) {
 	const client = createClient({
 		url: ':memory:',
 	});
@@ -66,25 +67,6 @@ export async function createTestExecutor(config: TestExecutorConfig) {
 	return {
 		executor: createExecutor({
 			...config,
-			signers: {
-				async getProviderByAssignerID(assignerID: string, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
-					const derivedAccount = account.deriveForAddress(forAddress);
-					// TODO get it from id
-					return {
-						signer: new EIP1193LocalSigner(derivedAccount.privateKey),
-						assignerID,
-						address: derivedAccount.address,
-					};
-				},
-				async assignProviderFor(chainId: `0x${string}`, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
-					const derivedAccount = account.deriveForAddress(forAddress);
-					return {
-						signer: new EIP1193LocalSigner(derivedAccount.privateKey),
-						assignerID: account.publicExtendedKey,
-						address: derivedAccount.address,
-					};
-				},
-			},
 			storage,
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
@@ -93,23 +75,21 @@ export async function createTestExecutor(config: TestExecutorConfig) {
 	};
 }
 
-export type TestSchedulerConfig<ExecutionDataType, TransationInfoType> = Omit<
-	SchedulerConfig<ExecutionDataType, TransationInfoType>,
+export type TestSchedulerConfig<TransactionDataType> = Omit<
+	SchedulerConfig<TransactionDataType>,
 	'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
 >;
 
-export async function createTestScheduler<ExecutionDataType, TransationInfoType>(
-	config: TestSchedulerConfig<ExecutionDataType, TransationInfoType>,
-) {
+export async function createTestScheduler<TransactionDataType>(config: TestSchedulerConfig<TransactionDataType>) {
 	const client = createClient({
 		url: ':memory:',
 	});
 
 	const db = new RemoteLibSQL(client);
-	const storage = new RemoteSQLSchedulerStorage(db);
+	const storage = new RemoteSQLSchedulerStorage<TransactionDataType>(db);
 	await storage.setup();
 	return {
-		scheduler: createScheduler({
+		scheduler: createScheduler<TransactionDataType>({
 			...config,
 			storage,
 			maxExpiry: 24 * 3600,

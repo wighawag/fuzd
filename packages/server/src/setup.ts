@@ -1,23 +1,23 @@
 import {Bindings, MiddlewareHandler} from 'hono/types';
 import {ServerOptions} from './types';
+import {ExecutorBackend, ExecutorStorage, createExecutor} from 'fuzd-executor';
 import {
-	BroadcasterSignerData,
-	ExecutorBackend,
-	ExecutorStorage,
-	PendingExecutionStored,
-	ExecutionSubmission,
-	createExecutor,
-} from 'fuzd-executor';
-import {ChainProtocols, Scheduler, SchedulerBackend, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
+	ChainProtocols,
+	Scheduler,
+	SchedulerBackend,
+	SchedulerConfig,
+	SchedulerStorage,
+	createScheduler,
+} from 'fuzd-scheduler';
 import {initAccountFromHD} from 'remote-account';
-import {Executor} from 'fuzd-common';
+import {ExecutionSubmission, Executor} from 'fuzd-common';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
-import {EIP1193LocalSigner} from 'eip-1193-signer'; // TODO ChainProtocol
 import {initDecrypter, mainnetClient} from 'fuzd-tlock-decrypter';
 import {RemoteSQLExecutorStorage} from './storage/RemoteSQLExecutorStorage';
 import {RemoteSQLSchedulerStorage} from './storage/RemoteSQLSchedulerStorage';
 import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
+import type {TransactionData} from 'fuzd-chain-protocol/ethereum';
 
 const defaultPath = "m/44'/60'/0'/0/0";
 
@@ -25,11 +25,13 @@ export type SetupOptions<Env extends Bindings = Bindings> = {
 	serverOptions: ServerOptions<Env>;
 };
 
+export type MyTransactionData = TransactionData;
+
 export type Config = {
-	executor: Executor<ExecutionSubmission, PendingExecutionStored> & ExecutorBackend;
-	scheduler: Scheduler<ExecutionSubmission> & SchedulerBackend;
-	executorStorage: ExecutorStorage;
-	schedulerStorage: SchedulerStorage<ExecutionSubmission>;
+	executor: Executor<MyTransactionData> & ExecutorBackend;
+	scheduler: Scheduler<MyTransactionData> & SchedulerBackend;
+	executorStorage: ExecutorStorage<MyTransactionData>;
+	schedulerStorage: SchedulerStorage<ExecutionSubmission<MyTransactionData>>;
 	account: ReturnType<typeof initAccountFromHD>;
 	paymentAccount?: `0x${string}`;
 	chainProtocols: ChainProtocols;
@@ -48,6 +50,16 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 
 	return async (c, next) => {
 		const env = getEnv(c);
+
+		const mnemonic: string = env.HD_MNEMONIC as string;
+		if (!mnemonic) {
+			throw new Error(`no HD_MNEMONIC defined`);
+		}
+		const seed = bip39.mnemonicToSeedSync(mnemonic);
+		const masterKey = HDKey.fromMasterSeed(seed);
+		const accountHDKey = masterKey.derive(defaultPath);
+		const account = initAccountFromHD(accountHDKey);
+
 		const contractTimestamp: `0x${string}` = env.CONTRACT_TIMESTAMP as `0x${string}`;
 		const chainProtocols: ChainProtocols = {};
 		const envKeys = Object.keys(env);
@@ -79,47 +91,23 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 					}
 				}
 
-				chainProtocols[chainId] = new EthereumChainProtocol(nodeURL, {
-					expectedFinality: finality,
-					worstCaseBlockTime,
-					contractTimestamp,
-				});
+				chainProtocols[chainId] = new EthereumChainProtocol(
+					nodeURL,
+					{
+						expectedFinality: finality,
+						worstCaseBlockTime,
+						contractTimestamp,
+					},
+					account,
+				);
 			}
 		}
 
-		const mnemonic: string = env.HD_MNEMONIC as string;
-		if (!mnemonic) {
-			throw new Error(`no HD_MNEMONIC defined`);
-		}
-		const seed = bip39.mnemonicToSeedSync(mnemonic);
-		const masterKey = HDKey.fromMasterSeed(seed);
-		const accountHDKey = masterKey.derive(defaultPath);
-		const account = initAccountFromHD(accountHDKey);
-
 		const db = getDB(c);
-		const executorStorage = new RemoteSQLExecutorStorage(db);
-		const schedulerStorage = new RemoteSQLSchedulerStorage(db);
+		const executorStorage = new RemoteSQLExecutorStorage<MyTransactionData>(db);
+		const schedulerStorage = new RemoteSQLSchedulerStorage<MyTransactionData>(db);
 
 		const baseConfig = {
-			signers: {
-				async assignProviderFor(chainId: `0x${string}`, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
-					const derivedAccount = account.deriveForAddress(forAddress);
-					return {
-						signer: new EIP1193LocalSigner(derivedAccount.privateKey),
-						assignerID: account.publicExtendedKey,
-						address: derivedAccount.address,
-					};
-				},
-				async getProviderByAssignerID(assignerID: string, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
-					const derivedAccount = account.deriveForAddress(forAddress);
-					// TODO get it from assignerID
-					return {
-						signer: new EIP1193LocalSigner(derivedAccount.privateKey),
-						assignerID,
-						address: derivedAccount.address,
-					};
-				},
-			},
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
 			chainProtocols,
@@ -131,21 +119,21 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			storage: executorStorage,
 			paymentAccount,
 		};
-		const executor = createExecutor(executorConfig);
+		const executor = createExecutor<MyTransactionData>(executorConfig);
 
 		const decrypter =
 			env.TIME_LOCK_DECRYPTION === 'false'
 				? undefined
-				: initDecrypter({
+				: initDecrypter<ExecutionSubmission<MyTransactionData>>({
 						client: mainnetClient(),
 					});
-		const schedulerConfig = {
+		const schedulerConfig: SchedulerConfig<MyTransactionData> = {
 			...baseConfig,
 			executor,
 			decrypter,
 			storage: schedulerStorage,
 		};
-		const scheduler = createScheduler(schedulerConfig);
+		const scheduler = createScheduler<MyTransactionData>(schedulerConfig);
 
 		c.set('config', {
 			executor,

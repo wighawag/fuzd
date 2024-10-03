@@ -1,35 +1,32 @@
 import {logs} from 'named-logs';
-import {BroadcasterData, ExecutionResponse, PendingExecutionStored} from './types/executor-storage';
-import {EIP1193CallParam} from 'eip-1193'; // TODO ChainProtocol
-import {
-	ExecutionSubmission,
-	ExecutorBackend,
-	RawTransactionInfo,
-	TransactionParams,
-	SchemaExecutionSubmission,
-} from './types/external';
+import {BroadcasterData} from './types/executor-storage';
+import {ExecutorBackend} from './types/external';
 import {keccak_256} from '@noble/hashes/sha3';
 import {
 	Executor,
 	ExpectedWorstCaseGasPrice,
-	EIP1193TransactionDataUsed,
-	EIP1193TransactionToFill,
 	toHex,
 	fromHex,
+	ExecutionResponse,
+	PendingExecutionStored,
+	ExecutionSubmission,
+	TransactionParametersUsed,
 } from 'fuzd-common';
-import {BroadcasterSignerData, ChainProtocols, ExecutorConfig} from './types/internal';
+import {BroadcasterSignerData, ExecutorConfig} from './types/internal';
 import {ChainProtocol} from 'fuzd-chain-protocol';
 
 const logger = logs('fuzd-executor');
 
-type ExecutionToStore = Omit<PendingExecutionStored, 'hash' | 'broadcastTime' | 'nextCheckTime' | 'transaction'> & {
-	transaction: Omit<EIP1193TransactionDataUsed, 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas'>;
-};
+// TODO (ExecutionToStore): the field `transaction` of type TransactionData should be modified to not need: 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas'
+type ExecutionToStore<T> = Omit<
+	PendingExecutionStored<T>,
+	'hash' | 'broadcastTime' | 'nextCheckTime' | 'transactionParametersUsed'
+>;
 
-export function createExecutor(
-	config: ExecutorConfig,
-): Executor<ExecutionSubmission, ExecutionResponse> & ExecutorBackend {
-	const {chainProtocols, storage, signers} = config;
+export function createExecutor<TransactionDataType>(
+	config: ExecutorConfig<TransactionDataType>,
+): Executor<TransactionDataType> & ExecutorBackend {
+	const {chainProtocols, storage} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
@@ -58,7 +55,7 @@ export function createExecutor(
 		slot: string,
 		batchIndex: number,
 		account: `0x${string}`,
-		submission: ExecutionSubmission,
+		submission: ExecutionSubmission<TransactionDataType>,
 		options?: {
 			expectedWorstCaseGasPrice?: bigint;
 			asPaymentFor?: {
@@ -69,8 +66,10 @@ export function createExecutor(
 				upToGasPrice: bigint;
 			};
 		},
-	): Promise<ExecutionResponse> {
-		submission = SchemaExecutionSubmission.parse(submission);
+	): Promise<ExecutionResponse<TransactionDataType>> {
+		const chainProtocol = _getChainProtocol(submission.chainId);
+
+		submission = chainProtocol.parseExecutionSubmission(submission);
 
 		const realTimestamp = Math.floor(Date.now() / 1000);
 
@@ -97,16 +96,15 @@ export function createExecutor(
 			return {...existingExecution, slotAlreadyUsed: true};
 		}
 
-		const chainProtocol = _getChainProtocol(submission.chainId);
 		const timestamp = await chainProtocol.getTimestamp();
 
-		const broadcaster = await signers.assignProviderFor(submission.chainId, account);
-		const pendingExecutionToStore: ExecutionToStore = {
+		const broadcaster = await chainProtocol.assignProviderFor(submission.chainId, account);
+		const pendingExecutionToStore: ExecutionToStore<TransactionDataType> = {
 			chainId: submission.chainId,
 			account,
 			slot,
 			batchIndex,
-			transaction: {...submission.transaction, from: broadcaster.address, chainId: submission.chainId},
+			transaction: submission.transaction as TransactionDataType,
 			maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
 			broadcasterAssignerID: broadcaster.assignerID,
 			isVoidTransaction: false,
@@ -135,16 +133,106 @@ export function createExecutor(
 		return result;
 	}
 
-	async function _signTransaction(
-		transactionData: EIP1193TransactionToFill,
-		broadcaster: BroadcasterSignerData,
-		txParams: TransactionParams,
-		options: {forceNonce?: number; maxFeePerGas: bigint; maxPriorityFeePerGas: bigint; forceVoid?: boolean},
-	): Promise<RawTransactionInfo> {
-		let actualTransactionData: EIP1193TransactionDataUsed;
+	async function _getBroadcasterNonce(chainId: `0x${string}`, broadcasterAddress: `0x${string}`) {
+		const chainProtocol = _getChainProtocol(chainId);
 
-		const signer = broadcaster.signer;
-		const from = broadcaster.address;
+		const nonceAsHex = await chainProtocol.getNonce(broadcasterAddress);
+		const nonce = Number(nonceAsHex);
+		if (isNaN(nonce)) {
+			throw new Error(`could not parse transaction count while checking for expected nonce`);
+		}
+		let broadcasterData: BroadcasterData;
+		const dataFromStorage = await storage.getBroadcaster({
+			chainId: chainId,
+			address: broadcasterAddress,
+		});
+		if (dataFromStorage) {
+			broadcasterData = dataFromStorage;
+		} else {
+			broadcasterData = {chainId: chainId, address: broadcasterAddress, nextNonce: nonce};
+		}
+
+		const expectedNonce = broadcasterData.nextNonce;
+		return {nonce, expectedNonce};
+	}
+
+	async function _getTxParams(
+		chainId: `0x${string}`,
+		broadcasterAddress: `0x${string}`,
+		transactionData: Partial<TransactionDataType>,
+	): Promise<
+		{expectedNonce: number; nonce: number} & ({revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean})
+	> {
+		const {expectedNonce, nonce} = await _getBroadcasterNonce(chainId, broadcasterAddress);
+
+		const chainProtocol = _getChainProtocol(chainId);
+
+		const validity = await chainProtocol.checkValidity(broadcasterAddress, transactionData);
+		return {...validity, expectedNonce, nonce};
+	}
+
+	function _getChainProtocol(chainId: `0x${string}`): ChainProtocol {
+		const chainProtocol = chainProtocols[chainId];
+		if (!chainProtocol) {
+			throw new Error(`cannot get protocol for chain with id ${chainId}`);
+		}
+		return chainProtocol;
+	}
+
+	async function _submitTransaction(
+		broadcaster: BroadcasterSignerData,
+		execution: ExecutionToStore<TransactionDataType>,
+		options: {
+			forceNonce?: number;
+			maxFeePerGas: bigint;
+			maxPriorityFeePerGas: bigint;
+			forceVoid?: boolean;
+			gasPriceEstimate?: {maxFeePerGas: bigint; maxPriorityFeePerGas: bigint};
+			previouslyStored?: PendingExecutionStored<TransactionDataType>;
+		},
+		asPaymentFor?: {
+			chainId: `0x${string}`;
+			account: `0x${string}`;
+			slot: string;
+			batchIndex: number;
+			upToGasPrice: bigint;
+		},
+	): Promise<PendingExecutionStored<TransactionDataType> | undefined> {
+		// we get broadcast from storage
+		// we the pass the broadcaster
+		// signTransaction then handle the fetching of estimate, etc...
+
+		const chainProtocol = _getChainProtocol(execution.chainId);
+		const txParams = await _getTxParams(execution.chainId, broadcaster.address, execution.transaction);
+		if (txParams.revert === true) {
+			const errorMessage = `The transaction reverts`;
+			logger.error(errorMessage);
+			execution.lastError = errorMessage;
+			if (options.previouslyStored) {
+				// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
+				// we do that by making a simple void tx
+				options.forceVoid = true;
+			} else {
+				return undefined;
+			}
+		} else if (txParams.revert === 'unknown') {
+			// we keep going anyway
+		} else if (txParams.notEnoughGas) {
+			const errorMessage = `The transaction requires more gas than provided. Aborting here`;
+			logger.error(errorMessage);
+			execution.lastError = errorMessage;
+			if (options.previouslyStored) {
+				// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
+				// we do that by making a simple void tx
+				options.forceVoid = true;
+			} else {
+				return undefined;
+			}
+		}
+
+		if (options.forceVoid) {
+			// TODO if forceVoid, we can use more gasPrive as long as total do not exceed gas * maxFeePerGasAuthorized
+		}
 
 		const expectedNonce = txParams.expectedNonce;
 		let nonce = txParams.nonce;
@@ -155,12 +243,31 @@ export function createExecutor(
 			if (nonce !== expectedNonce) {
 				if (nonce > expectedNonce) {
 					const message = `nonce not matching, expected ${expectedNonce}, got ${nonce}. this means some tx went through in between`;
-					logger.error(message);
+					// logger.error(message);
 					nonceIncreased = true;
 				} else {
 					const message = `nonce not matching, expected ${expectedNonce}, got ${nonce}, this means some tx has not been included yet and we should still keep using the exepected value. We prefer to throw and make the user retry`;
-					logger.error(message);
+					// logger.error(message);
 					throw new Error(message);
+				}
+			}
+		}
+
+		// logger.info('checking if tx should still be submitted');
+		const already_resolved = false;
+		// TODO allow execution of logic
+		// To be fair if the tx fails this should be enough
+		if (options?.forceVoid || already_resolved) {
+			options.forceVoid = true;
+			if (nonceIncreased) {
+				// return {error: {message: 'nonce increased but fleet already resolved', code: 5502}};
+				if (already_resolved) {
+					throw new Error(`nonce increased but already resolved. we can skip`);
+					// TODO delete instead of error ?
+				} else {
+					throw new Error(
+						`nonce increased but already resolved. this should never happen since forceNonce should have been used here`,
+					);
 				}
 			}
 		}
@@ -176,198 +283,23 @@ export function createExecutor(
 		const maxFeePerGasAs0xString = `0x${maxFeePerGas.toString(16)}` as `0x${string}`;
 		const maxPriorityFeePerGasAs0xString = `0x${maxPriorityFeePerGas.toString(16)}` as `0x${string}`;
 
-		logger.info('checking if tx should still be submitted');
-		const already_resolved = false;
-		// TODO allow execution of logic
-		// To be fair if the tx fails this should be enough
-		if (options?.forceVoid || already_resolved) {
-			if (nonceIncreased) {
-				// return {error: {message: 'nonce increased but fleet already resolved', code: 5502}};
-				if (already_resolved) {
-					throw new Error(`nonce increased but already resolved. we can skip`);
-					// TODO delete instead of error ?
-				} else {
-					throw new Error(
-						`nonce increased but already resolved. this should never happen since forceNonce should have been used here`,
-					);
-				}
-			} else {
-				logger.error('already done, sending dummy transaction');
+		const transactionParametersUsed: TransactionParametersUsed = {
+			maxFeePerGas: maxFeePerGasAs0xString,
+			maxPriorityFeePerGas: maxPriorityFeePerGasAs0xString,
+			from: broadcaster.address,
+			nonce: `0x${nonce.toString(16)}`,
+		};
 
-				try {
-					// compute maxFeePerGas and maxPriorityFeePerGas to fill the total gas cost  * price that was alocated
-					// maybe not fill but increase from previoyus considering current fee and allowance
-					actualTransactionData = {
-						type: '0x2',
-						from: from,
-						to: from,
-						nonce: `0x${nonce.toString(16)}` as `0x${string}`,
-						maxFeePerGas: maxFeePerGasAs0xString,
-						maxPriorityFeePerGas: maxPriorityFeePerGasAs0xString,
-						chainId: transactionData.chainId,
-						gas: `0x${(21000).toString(16)}`,
-					};
-					const rawTx = await signer.request({
-						method: 'eth_signTransaction',
-						params: [actualTransactionData],
-					});
-					return {
-						rawTx,
-						transactionData: actualTransactionData,
-						isVoidTransaction: true,
-					};
-				} catch (e) {
-					logger.error(`FAILED TO SEND DUMMY TX`, e);
-					// TODO do something
-					throw e;
-				}
-			}
-		} else {
-			// TODO if nonceIncreased
-			//
-			actualTransactionData = {
-				type: transactionData.type,
-				accessList: transactionData.accessList,
-				chainId: transactionData.chainId,
-				data: transactionData.data,
-				gas: transactionData.gas,
-				to: transactionData.to,
-				value: transactionData.value,
-				nonce: `0x${nonce.toString(16)}` as `0x${string}`,
-				from: from,
-				maxFeePerGas: maxFeePerGasAs0xString,
-				maxPriorityFeePerGas: maxPriorityFeePerGasAs0xString,
-			};
-
-			const rawTx = await await signer.request({
-				method: 'eth_signTransaction',
-				params: [actualTransactionData],
-			});
-			return {
-				rawTx,
-				transactionData: actualTransactionData,
-				isVoidTransaction: false,
-			};
-		}
-	}
-
-	async function _getTxParams(
-		broadcasterAddress: `0x${string}`,
-		transactionData: EIP1193TransactionToFill,
-	): Promise<TransactionParams> {
-		const chainProtocol = _getChainProtocol(transactionData.chainId);
-
-		const nonceAsHex = await chainProtocol.getNonce(broadcasterAddress);
-		const nonce = Number(nonceAsHex);
-		if (isNaN(nonce)) {
-			throw new Error(`could not parse transaction count while checking for expected nonce`);
-		}
-		let broadcasterData: BroadcasterData;
-		const dataFromStorage = await storage.getBroadcaster({
-			chainId: transactionData.chainId,
-			address: broadcasterAddress,
-		});
-		if (dataFromStorage) {
-			broadcasterData = dataFromStorage;
-		} else {
-			broadcasterData = {chainId: transactionData.chainId, address: broadcasterAddress, nextNonce: nonce};
-		}
-
-		const expectedNonce = broadcasterData.nextNonce;
-
-		let gasRequired: bigint;
-		try {
-			// TODO ChainProtocol
-			gasRequired = await chainProtocol.estimateGasNeeded({
-				from: broadcasterAddress,
-				to: transactionData.to,
-				data: transactionData.data,
-				value: transactionData.value,
-			} as EIP1193CallParam);
-		} catch (err: any) {
-			if (err.isInvalidError) {
-				return {expectedNonce, nonce, revert: 'unknown'};
-			} else if (err.message?.indexOf('revert')) {
-				// not 100% sure ?
-				// TODO error message // viem
-				logger.error('The transaction reverts?', err, {
-					from: broadcasterAddress,
-					to: transactionData.to,
-					data: transactionData.data,
-					value: transactionData.value,
-				});
-				return {expectedNonce, nonce, gasRequired: BigInt(Number.MAX_SAFE_INTEGER), revert: true};
-			} else {
-				return {expectedNonce, nonce, revert: 'unknown'};
-			}
-		}
-
-		return {expectedNonce, nonce, gasRequired, revert: false};
-	}
-
-	function _getChainProtocol(chainId: `0x${string}`): ChainProtocol {
-		const chainProtocol = chainProtocols[chainId];
-		if (!chainProtocol) {
-			throw new Error(`cannot get protocol for chain with id ${chainId}`);
-		}
-		return chainProtocol;
-	}
-
-	async function _submitTransaction(
-		broadcaster: BroadcasterSignerData,
-		transactionData: ExecutionToStore,
-		options: {
-			forceNonce?: number;
-			maxFeePerGas: bigint;
-			maxPriorityFeePerGas: bigint;
-			forceVoid?: boolean;
-			gasPriceEstimate?: {maxFeePerGas: bigint; maxPriorityFeePerGas: bigint};
-			previouslyStored?: PendingExecutionStored;
-		},
-		asPaymentFor?: {
-			chainId: `0x${string}`;
-			account: `0x${string}`;
-			slot: string;
-			batchIndex: number;
-			upToGasPrice: bigint;
-		},
-	): Promise<PendingExecutionStored | undefined> {
-		const chainProtocol = _getChainProtocol(transactionData.chainId);
-		const txParams = await _getTxParams(broadcaster.address, transactionData.transaction);
-		if (txParams.revert === true) {
-			const errorMessage = `The transaction reverts`;
-			logger.error(errorMessage);
-			transactionData.lastError = errorMessage;
-			if (options.previouslyStored) {
-				// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
-				// we do that by making a simple void tx
-				options.forceVoid = true;
-			} else {
-				return undefined;
-			}
-		} else if (txParams.revert === 'unknown') {
-			// we keep going anyway
-		} else if (txParams.gasRequired > BigInt(transactionData.transaction.gas)) {
-			const errorMessage = `The transaction requires more gas than provided. Aborting here`;
-			logger.error(errorMessage);
-			transactionData.lastError = errorMessage;
-			if (options.previouslyStored) {
-				// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
-				// we do that by making a simple void tx
-				options.forceVoid = true;
-			} else {
-				return undefined;
-			}
-		}
-
-		if (options.forceVoid) {
-			// TODO if forceVoid, we can use more gasPrive as long as total do not exceed gas * maxFeePerGasAuthorized
-		}
-
-		const rawTxInfo = await _signTransaction(transactionData.transaction, broadcaster, txParams, options);
+		const rawTxInfo = await chainProtocol.signTransaction<TransactionDataType>(
+			execution.chainId,
+			execution.transaction,
+			broadcaster,
+			transactionParametersUsed,
+			options,
+		);
 		const hash = toHex(keccak_256(fromHex(rawTxInfo.rawTx)));
 
-		const retries = typeof transactionData.retries === 'undefined' ? 0 : transactionData.retries + 1;
+		const retries = typeof execution.retries === 'undefined' ? 0 : execution.retries + 1;
 
 		const timestamp = await chainProtocol.getTimestamp();
 		const nextCheckTime = timestamp + 60; // retry in 60 seconds // TODO config
@@ -378,17 +310,18 @@ export function createExecutor(
 			lastError = 'potentially underpriced';
 		}
 
-		const newTransactionData: PendingExecutionStored = {
-			chainId: rawTxInfo.transactionData.chainId,
-			transaction: {...rawTxInfo.transactionData},
-			maxFeePerGasAuthorized: transactionData.maxFeePerGasAuthorized,
-			initialTime: transactionData.initialTime,
-			expiryTime: transactionData.expiryTime,
-			slot: transactionData.slot,
-			batchIndex: transactionData.batchIndex,
-			account: transactionData.account,
-			expectedWorstCaseGasPrice: transactionData.expectedWorstCaseGasPrice,
-			finalized: transactionData.finalized,
+		const newExecution: PendingExecutionStored<TransactionDataType> = {
+			chainId: execution.chainId,
+			transaction: execution.transaction, // we never change it, all data changed are captured by : transactionParametersUsed
+			transactionParametersUsed: transactionParametersUsed,
+			maxFeePerGasAuthorized: execution.maxFeePerGasAuthorized,
+			initialTime: execution.initialTime,
+			expiryTime: execution.expiryTime,
+			slot: execution.slot,
+			batchIndex: execution.batchIndex,
+			account: execution.account,
+			expectedWorstCaseGasPrice: execution.expectedWorstCaseGasPrice,
+			finalized: execution.finalized,
 			hash,
 			broadcastTime: timestamp,
 			nextCheckTime,
@@ -397,7 +330,7 @@ export function createExecutor(
 			isVoidTransaction: rawTxInfo.isVoidTransaction,
 			lastError,
 		};
-		await storage.createOrUpdatePendingExecution(newTransactionData, asPaymentFor);
+		await storage.createOrUpdatePendingExecution(newExecution, asPaymentFor);
 
 		try {
 			await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
@@ -423,9 +356,9 @@ export function createExecutor(
 					errorString = 'failed to parse error';
 				}
 
-				newTransactionData.lastError = errorString;
+				newExecution.lastError = errorString;
 
-				await storage.createOrUpdatePendingExecution(newTransactionData);
+				await storage.createOrUpdatePendingExecution(newExecution);
 				logger.error(
 					`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.`,
 					err,
@@ -433,10 +366,10 @@ export function createExecutor(
 			}
 		}
 
-		return newTransactionData;
+		return newExecution;
 	}
 
-	async function _resubmitIfNeeded(pendingExecution: PendingExecutionStored): Promise<void> {
+	async function _resubmitIfNeeded(pendingExecution: PendingExecutionStored<TransactionDataType>): Promise<void> {
 		const chainProtocol = _getChainProtocol(pendingExecution.chainId);
 		const timestamp = await chainProtocol.getTimestamp();
 		const diffSinceInitiated = timestamp - pendingExecution.initialTime;
@@ -470,29 +403,28 @@ export function createExecutor(
 				}
 
 				if (diffToCover > 0n) {
-					const valueToSend = diffToCover * BigInt(pendingExecution.transaction.gas);
-
 					const paymentAccount = config.paymentAccount;
 					if (paymentAccount) {
-						const broadcaster = await signers.assignProviderFor(pendingExecution.chainId, paymentAccount);
+						const broadcaster = await chainProtocol.assignProviderFor(pendingExecution.chainId, paymentAccount);
 						const broadcasterBalance = await chainProtocol.getBalance(broadcaster.address);
-						const gas = BigInt(30000);
-						const cost = gas * gasPriceEstimate.maxFeePerGas; // TODO handle extra Fee like Optimism
+						const {transaction, cost} = chainProtocol.generatePaymentTransaction(
+							pendingExecution.transaction,
+							gasPriceEstimate.maxFeePerGas,
+							pendingExecution.transactionParametersUsed.from,
+							diffToCover,
+						);
+
 						if (cost <= broadcasterBalance) {
+							const execution: ExecutionSubmission<TransactionDataType> = {
+								chainId: pendingExecution.chainId,
+								maxFeePerGasAuthorized: `0x38D7EA4C68000`, // 1000 gwei // TODO CONFIGURE per network: max worst worst case
+								transaction: transaction,
+							};
 							await broadcastExecution(
-								`${pendingExecution.account}_${pendingExecution.transaction.from}_${pendingExecution.transaction.nonce}_${gasPriceEstimate.maxFeePerGas.toString()}`,
+								`${pendingExecution.account}_${pendingExecution.transactionParametersUsed.from}_${pendingExecution.transactionParametersUsed.nonce}_${gasPriceEstimate.maxFeePerGas.toString()}`,
 								0,
 								paymentAccount,
-								{
-									chainId: pendingExecution.chainId,
-									maxFeePerGasAuthorized: `0x38D7EA4C68000`, // 1000 gwei // TODO CONFIGURE per network: max worst worst case
-									transaction: {
-										gas: `0x${gas.toString(16)}`,
-										to: pendingExecution.transaction.from,
-										type: '0x2',
-										value: `0x${valueToSend.toString(16)}`,
-									},
-								},
+								execution,
 								{
 									asPaymentFor: {
 										chainId: pendingExecution.chainId,
@@ -513,9 +445,8 @@ export function createExecutor(
 			}
 		}
 
-		const transaction = pendingExecution.transaction;
-		const maxFeePerGasUsed = BigInt(transaction.maxFeePerGas);
-		const maxPriorityFeePerGasUsed = BigInt(transaction.maxFeePerGas);
+		const maxFeePerGasUsed = BigInt(pendingExecution.transactionParametersUsed.maxFeePerGas);
+		const maxPriorityFeePerGasUsed = BigInt(pendingExecution.transactionParametersUsed.maxFeePerGas);
 
 		let transactionIsPending = await chainProtocol.isTransactionPending(pendingExecution.hash);
 
@@ -524,7 +455,7 @@ export function createExecutor(
 			maxFeePerGasUsed < maxFeePerGas ||
 			(maxFeePerGasUsed === maxFeePerGas && maxPriorityFeePerGasUsed < maxPriorityFeePerGas)
 		) {
-			const signer = await signers.getProviderByAssignerID(
+			const signer = await chainProtocol.getProviderByAssignerID(
 				pendingExecution.broadcasterAssignerID,
 				pendingExecution.account,
 			);
@@ -535,7 +466,7 @@ export function createExecutor(
 				`resubmit with maxFeePerGas: ${maxFeePerGas} and maxPriorityFeePerGas: ${maxPriorityFeePerGas} \n(maxFeePerGasUsed: ${maxFeePerGasUsed}, maxPriorityFeePerGasUsed: ${maxPriorityFeePerGasUsed})`,
 			);
 			await _submitTransaction(signer, pendingExecution, {
-				forceNonce: Number(transaction.nonce),
+				forceNonce: Number(pendingExecution.transactionParametersUsed.nonce),
 				maxFeePerGas,
 				maxPriorityFeePerGas,
 				gasPriceEstimate: gasPriceEstimate,
@@ -545,8 +476,10 @@ export function createExecutor(
 		}
 	}
 
-	async function __processPendingTransaction(pendingExecution: PendingExecutionStored): Promise<void> {
-		const chainProtocol = _getChainProtocol(pendingExecution.transaction.chainId);
+	async function __processPendingTransaction(
+		pendingExecution: PendingExecutionStored<TransactionDataType>,
+	): Promise<void> {
+		const chainProtocol = _getChainProtocol(pendingExecution.chainId);
 
 		const txStatus = await chainProtocol.isTransactionFinalised(pendingExecution.hash);
 		if (txStatus.finalised) {

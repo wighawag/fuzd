@@ -1,14 +1,37 @@
-import {ChainProtocol, GasEstimate, Transaction, TransactionStatus} from '..';
-import type {EIP1193Transaction, EIP1193TransactionReceipt, Methods} from 'eip-1193';
+import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, TransactionStatus} from '..';
+import type {
+	EIP1193CallParam,
+	EIP1193Transaction,
+	EIP1193TransactionData,
+	EIP1193TransactionReceipt,
+	Methods,
+} from 'eip-1193';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC} from 'remote-procedure-call';
 import {getRoughGasPriceEstimate} from './utils';
+import {
+	ExecutionSubmission,
+	GenericSchemaExecutionSubmission,
+	TransactionParametersUsed,
+	TransactionParams,
+} from 'fuzd-common';
+import {FullTransactionData, SchemaTransactionData, TransactionData} from './types';
+import {initAccountFromHD} from 'remote-account';
+import {EIP1193LocalSigner} from 'eip-1193-signer';
+
+export {SchemaTransactionData} from './types';
+export type {TransactionData} from './types';
 
 export class EthereumChainProtocol implements ChainProtocol {
 	private rpc: CurriedRPC<Methods>;
 	constructor(
 		public readonly url: string | RequestRPC<Methods>,
-		public readonly config: {expectedFinality: number; worstCaseBlockTime: number; contractTimestamp?: `0x${string}`},
+		public readonly config: {
+			expectedFinality: number;
+			worstCaseBlockTime: number;
+			contractTimestamp?: `0x${string}`;
+		},
+		public account: ReturnType<typeof initAccountFromHD>, // TODO remote-account : export this type
 	) {
 		this.rpc = createCurriedJSONRPC<Methods>(url);
 	}
@@ -164,6 +187,163 @@ export class EthereumChainProtocol implements ChainProtocol {
 		}
 
 		return {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate};
+	}
+
+	parseExecutionSubmission<TransactionDataType>(
+		execution: ExecutionSubmission<TransactionDataType>,
+	): ExecutionSubmission<TransactionDataType> {
+		return GenericSchemaExecutionSubmission(SchemaTransactionData).parse(
+			execution,
+		) as ExecutionSubmission<TransactionDataType>;
+	}
+
+	async assignProviderFor(chainId: `0x${string}`, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
+		const derivedAccount = this.account.deriveForAddress(forAddress);
+		return {
+			signer: new EIP1193LocalSigner(derivedAccount.privateKey),
+			assignerID: this.account.publicExtendedKey,
+			address: derivedAccount.address,
+		};
+	}
+	async getProviderByAssignerID(assignerID: string, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
+		const derivedAccount = this.account.deriveForAddress(forAddress);
+		// TODO get it from assignerID
+		return {
+			signer: new EIP1193LocalSigner(derivedAccount.privateKey),
+			assignerID,
+			address: derivedAccount.address,
+		};
+	}
+
+	async checkValidity<TransactionDataType>(
+		broadcasterAddress: `0x${string}`,
+		data: Partial<TransactionDataType>,
+	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}> {
+		let transactionData = data as unknown as EIP1193TransactionData;
+		if (!transactionData.gas) {
+			throw new Error(`invalid transaction data, no gas parameter`);
+		}
+		let gasRequired: bigint;
+		try {
+			// TODO ChainProtocol
+			gasRequired = await this.estimateGasNeeded({
+				...transactionData,
+				from: broadcasterAddress,
+			} as EIP1193CallParam);
+		} catch (err: any) {
+			if (err.isInvalidError) {
+				return {revert: 'unknown'};
+			} else if (err.message?.indexOf('revert')) {
+				// not 100% sure ?
+				// TODO error message // viem
+				// logger.error('The transaction reverts?', err, {
+				// 	from: broadcasterAddress,
+				// 	to: transactionData.to,
+				// 	data: transactionData.data,
+				// 	value: transactionData.value,
+				// });
+				return {notEnoughGas: true, revert: true};
+			} else {
+				return {revert: 'unknown'};
+			}
+		}
+		return {notEnoughGas: gasRequired > BigInt(transactionData.gas) ? true : false, revert: false};
+	}
+
+	async signTransaction<TransactionDataType>(
+		chainId: `0x${string}`,
+		data: Partial<TransactionDataType>,
+		broadcaster: BroadcasterSignerData,
+		transactionParameters: TransactionParametersUsed,
+		options: {
+			forceVoid?: boolean;
+		},
+	): Promise<{
+		rawTx: any;
+		transactionData: TransactionDataType;
+		isVoidTransaction: boolean;
+	}> {
+		let transactionData = data as Partial<TransactionData>;
+
+		let actualTransactionData: FullTransactionData | undefined;
+
+		const signer = broadcaster.signer;
+
+		if (options?.forceVoid) {
+			// logger.error('already done, sending dummy transaction');
+			try {
+				// compute maxFeePerGas and maxPriorityFeePerGas to fill the total gas cost  * price that was alocated
+				// maybe not fill but increase from previoyus considering current fee and allowance
+				actualTransactionData = {
+					type: '0x2',
+					from: broadcaster.address,
+					to: broadcaster.address,
+					nonce: transactionParameters.nonce,
+					maxFeePerGas: transactionParameters.maxFeePerGas,
+					maxPriorityFeePerGas: transactionParameters.maxPriorityFeePerGas,
+					chainId: chainId,
+					gas: `0x${(21000).toString(16)}`,
+				};
+				const rawTx = await signer.request({
+					method: 'eth_signTransaction',
+					params: [actualTransactionData],
+				});
+				return {
+					rawTx,
+					transactionData: actualTransactionData as unknown as TransactionDataType,
+					isVoidTransaction: true,
+				};
+			} catch (e) {
+				// logger.error(`FAILED TO SEND DUMMY TX`, e);
+				// TODO do something
+				throw e;
+			}
+		} else {
+			// TODO if nonceIncreased
+			//
+			actualTransactionData = {
+				type: transactionData.type,
+				accessList: transactionData.accessList,
+				chainId: chainId,
+				data: transactionData.data,
+				gas: transactionData.gas,
+				to: transactionData.to,
+				value: transactionData.value,
+				nonce: transactionParameters.nonce,
+				from: broadcaster.address,
+				maxFeePerGas: transactionParameters.maxFeePerGas,
+				maxPriorityFeePerGas: transactionParameters.maxPriorityFeePerGas,
+			};
+
+			const rawTx = await await signer.request({
+				method: 'eth_signTransaction',
+				params: [actualTransactionData],
+			});
+			return {
+				rawTx,
+				transactionData: actualTransactionData as TransactionDataType,
+				isVoidTransaction: false,
+			};
+		}
+	}
+
+	generatePaymentTransaction<TransactionDataType>(
+		data: TransactionDataType,
+		maxFeePerGas: bigint,
+		from: `0x${string}`,
+		diffToCover: bigint,
+	): {transaction: TransactionDataType; cost: bigint} {
+		const transactionData = data as TransactionData;
+		const gas = BigInt(30000);
+		const cost = gas * maxFeePerGas; // TODO handle extra Fee like Optimism
+		const valueToSend = diffToCover * BigInt(transactionData.gas);
+		const transactionToBroadcast: TransactionDataType = {
+			gas: `0x${gas.toString(16)}`,
+			to: from,
+			type: '0x2',
+			value: `0x${valueToSend.toString(16)}`,
+		} as TransactionDataType;
+		return {transaction: transactionToBroadcast, cost};
 	}
 
 	offset = 0;

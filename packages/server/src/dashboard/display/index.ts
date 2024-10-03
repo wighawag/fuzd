@@ -2,8 +2,8 @@ import {PendingExecutionStored} from 'fuzd-executor';
 import {ScheduledExecutionQueued} from 'fuzd-scheduler';
 import {formatEther, formatUnits, zeroAddress} from 'viem';
 
-export function displayScheduledExecutionQueued<TransactionData>(timeDiff: number = 0, showPayload = false) {
-	return (v: ScheduledExecutionQueued<TransactionData>) => ({
+export function displayScheduledExecutionQueued<TransactionDataType>(timeDiff: number = 0, showPayload = false) {
+	return (v: ScheduledExecutionQueued<TransactionDataType>) => ({
 		account: v.account,
 		chainId: v.chainId,
 		slot: v.slot,

@@ -1,9 +1,9 @@
 import type {RemoteSQL} from 'remote-sql';
-import type {ExecutorStorage, PendingExecutionStored, BroadcasterData} from 'fuzd-executor';
+import type {ExecutorStorage, BroadcasterData} from 'fuzd-executor';
 import {sqlToStatements, toValues} from './utils';
 import {logs} from 'named-logs';
 import setupTables from '../schema/ts/executor.sql';
-import {ExpectedWorstCaseGasPrice} from 'fuzd-common';
+import {ExpectedWorstCaseGasPrice, PendingExecutionStored, TransactionParametersUsed} from 'fuzd-common';
 
 const logger = logs('fuzd-server-executor-storage-sql');
 
@@ -49,7 +49,8 @@ type ExecutionInDB = {
 	lastError: string | null;
 	expiryTime: number | null;
 	broadcaster: `0x${string}`;
-	nonce: number;
+	nonce: number; // TODO might need to make it a string
+	transactionParametersUsed: string;
 	transactionData: string;
 };
 
@@ -77,7 +78,8 @@ function toExpectedGasPriceInDB(chainId: `0x${string}`, obj: ExpectedWorstCaseGa
 	};
 }
 
-function fromExecutionInDB(inDB: ExecutionInDB): PendingExecutionStored {
+function fromExecutionInDB<TransactionDataType>(inDB: ExecutionInDB): PendingExecutionStored<TransactionDataType> {
+	const extraTransactionParametersUsed = JSON.parse(inDB.transactionParametersUsed);
 	return {
 		chainId: inDB.chainId,
 		account: inDB.account,
@@ -98,10 +100,16 @@ function fromExecutionInDB(inDB: ExecutionInDB): PendingExecutionStored {
 		expiryTime: inDB.expiryTime || undefined,
 		transaction: JSON.parse(inDB.transactionData),
 		finalized: inDB.finalized == 0 ? false : true,
+		transactionParametersUsed: {
+			from: inDB.broadcaster,
+			nonce: `0x${inDB.nonce.toString(16)}`,
+			maxFeePerGas: extraTransactionParametersUsed.maxFeePerGas,
+			maxPriorityFeePerGas: extraTransactionParametersUsed.maxPriorityFeePerGas,
+		},
 	};
 }
 
-function toExecutionInDB(obj: PendingExecutionStored): ExecutionInDB {
+function toExecutionInDB<TransactionDataType>(obj: PendingExecutionStored<TransactionDataType>): ExecutionInDB {
 	return {
 		chainId: obj.chainId,
 		account: obj.account,
@@ -120,14 +128,15 @@ function toExecutionInDB(obj: PendingExecutionStored): ExecutionInDB {
 		retries: typeof obj.retries === 'undefined' ? null : obj.retries,
 		lastError: obj.lastError || null,
 		expiryTime: obj.expiryTime || null,
-		broadcaster: obj.transaction.from,
-		nonce: Number(obj.transaction.nonce),
+		broadcaster: obj.transactionParametersUsed.from,
+		nonce: Number(obj.transactionParametersUsed.nonce),
+		transactionParametersUsed: JSON.stringify(obj.transactionParametersUsed),
 		transactionData: JSON.stringify(obj.transaction),
 		finalized: obj.finalized ? 1 : 0,
 	};
 }
 
-export class RemoteSQLExecutorStorage implements ExecutorStorage {
+export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorStorage<TransactionDataType> {
 	constructor(private db: RemoteSQL) {}
 
 	async getPendingExecution(params: {
@@ -135,7 +144,7 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		account: `0x${string}`;
 		slot: string;
 		batchIndex: number;
-	}): Promise<PendingExecutionStored | undefined> {
+	}): Promise<PendingExecutionStored<TransactionDataType> | undefined> {
 		const statement = this.db.prepare(
 			'SELECT * FROM BroadcastedExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3 AND batchIndex = ?4;',
 		);
@@ -152,13 +161,13 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		chainId: `0x${string}`;
 		account: `0x${string}`;
 		slot: string;
-	}): Promise<PendingExecutionStored[] | undefined> {
+	}): Promise<PendingExecutionStored<TransactionDataType>[] | undefined> {
 		const statement = this.db.prepare(
 			'SELECT * FROM BroadcastedExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;',
 		);
 		const {account, chainId, slot} = params;
 		const {results} = await statement.bind(account, chainId, slot).all<ExecutionInDB>();
-		return results.map(fromExecutionInDB);
+		return results.map(fromExecutionInDB<TransactionDataType>);
 	}
 
 	async deletePendingExecution(params: {
@@ -175,7 +184,7 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 	}
 
 	async createOrUpdatePendingExecution(
-		executionToStore: PendingExecutionStored,
+		executionToStore: PendingExecutionStored<TransactionDataType>,
 		asPaymentFor?: {
 			chainId: `0x${string}`;
 			account: `0x${string}`;
@@ -183,7 +192,7 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 			batchIndex: number;
 			upToGasPrice: bigint;
 		},
-	): Promise<PendingExecutionStored> {
+	): Promise<PendingExecutionStored<TransactionDataType>> {
 		const inDB = toExecutionInDB(executionToStore);
 		const {values, columns, bindings, overwrites} = toValues(inDB);
 		const sqlStatement = `INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot, batchIndex) DO UPDATE SET ${overwrites};`;
@@ -209,19 +218,19 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 		return executionToStore;
 	}
 
-	async getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored[]> {
+	async getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored<TransactionDataType>[]> {
 		const statement = this.db.prepare(
 			`SELECT * FROM BroadcastedExecutions  WHERE finalized = FALSE  ORDER BY nextCheckTime ASC LIMIT ?1;`,
 		);
 		const {results} = await statement.bind(params.limit).all<ExecutionInDB>();
-		return results.map(fromExecutionInDB);
+		return results.map(fromExecutionInDB<TransactionDataType>);
 	}
 
-	async getAllExecutions(params: {limit: number}): Promise<PendingExecutionStored[]> {
+	async getAllExecutions(params: {limit: number}): Promise<PendingExecutionStored<TransactionDataType>[]> {
 		const sqlStatement = `SELECT * FROM BroadcastedExecutions ORDER BY nextCheckTime ASC LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ExecutionInDB>();
-		return results.map(fromExecutionInDB);
+		return results.map(fromExecutionInDB<TransactionDataType>);
 	}
 
 	// TODO use this to update teh tx
@@ -231,14 +240,14 @@ export class RemoteSQLExecutorStorage implements ExecutorStorage {
 			broadcaster: `0x${string}`;
 		},
 		params: {limit: number},
-	): Promise<PendingExecutionStored[]> {
+	): Promise<PendingExecutionStored<TransactionDataType>[]> {
 		const statement = this.db.prepare(
 			`SELECT * FROM BroadcastedExecutions WHERE broadcaster = ?1 AND chainId = ?2 ORDER BY nonce ASC LIMIT ?3;`,
 		);
 		const {results} = await statement
 			.bind(broadcasterData.broadcaster, broadcasterData.chainId, params.limit)
 			.all<ExecutionInDB>();
-		return results.map(fromExecutionInDB);
+		return results.map(fromExecutionInDB<TransactionDataType>);
 	}
 
 	async getBroadcaster(params: {chainId: `0x${string}`; address: string}): Promise<BroadcasterData | undefined> {

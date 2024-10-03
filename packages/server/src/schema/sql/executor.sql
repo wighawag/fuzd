@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     finalized                  integer     NOT NULL, -- 0: false, 1: true
 
     broadcaster                text        NOT NULL, -- tx from
-    nonce                      integer     NOT NULL, -- tx nonce
+    nonce                      text        NOT NULL, -- tx nonce
+    transactionParametersUsed  text        NOT NULL, -- tx maxFeePerGas,maxPriorityFeePerGas
 
     transactionData            text        NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
     

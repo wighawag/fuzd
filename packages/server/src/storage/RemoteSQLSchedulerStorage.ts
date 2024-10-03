@@ -26,9 +26,9 @@ type ScheduledExecutionInDB = {
 	expiry: number | null;
 };
 
-function fromScheduledExecutionInDB<ExecutionDataType>(
+function fromScheduledExecutionInDB<TransactionDataType>(
 	inDB: ScheduledExecutionInDB,
-): ScheduledExecutionQueued<ExecutionDataType> {
+): ScheduledExecutionQueued<TransactionDataType> {
 	if (inDB.type === 'time-locked') {
 		return {
 			account: inDB.account,
@@ -72,8 +72,8 @@ function fromScheduledExecutionInDB<ExecutionDataType>(
 	}
 }
 
-function toScheduledExecutionInDB<ExecutionDataType>(
-	obj: ScheduledExecutionQueued<ExecutionDataType>,
+function toScheduledExecutionInDB<TransactionDataType>(
+	obj: ScheduledExecutionQueued<TransactionDataType>,
 ): ScheduledExecutionInDB {
 	return {
 		account: obj.account,
@@ -101,14 +101,14 @@ function toScheduledExecutionInDB<ExecutionDataType>(
 	};
 }
 
-export class RemoteSQLSchedulerStorage<ExecutionDataType> implements SchedulerStorage<ExecutionDataType> {
+export class RemoteSQLSchedulerStorage<TransactionDataType> implements SchedulerStorage<TransactionDataType> {
 	constructor(private db: RemoteSQL) {}
 
 	async getQueuedExecution(params: {
 		chainId: `0x${string}`;
 		account: `0x${string}`;
 		slot: string;
-	}): Promise<ScheduledExecutionQueued<ExecutionDataType> | undefined> {
+	}): Promise<ScheduledExecutionQueued<TransactionDataType> | undefined> {
 		const sqlStatement = 'SELECT * FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;';
 		const statement = this.db.prepare(sqlStatement);
 		const {account, chainId, slot} = params;
@@ -123,13 +123,13 @@ export class RemoteSQLSchedulerStorage<ExecutionDataType> implements SchedulerSt
 		chainId: `0x${string}`;
 		account: `0x${string}`;
 		limit: number;
-	}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]> {
+	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
 		const sqlStatement = 'SELECT * FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2;';
 		const statement = this.db.prepare(sqlStatement);
 		const {account, chainId} = params;
 		const {results} = await statement.bind(account, chainId).all<ScheduledExecutionInDB>();
 
-		return results.map(fromScheduledExecutionInDB<ExecutionDataType>);
+		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 
 	async deleteExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void> {
@@ -141,7 +141,7 @@ export class RemoteSQLSchedulerStorage<ExecutionDataType> implements SchedulerSt
 	}
 
 	// TODO add reason for archive
-	async archiveExecution(executionToStore: ScheduledExecutionQueued<ExecutionDataType>): Promise<void> {
+	async archiveExecution(executionToStore: ScheduledExecutionQueued<TransactionDataType>): Promise<void> {
 		const {account, chainId, slot} = executionToStore;
 		const inDB = toScheduledExecutionInDB(executionToStore);
 		const {values, columns, bindings} = toValues(inDB);
@@ -156,8 +156,8 @@ export class RemoteSQLSchedulerStorage<ExecutionDataType> implements SchedulerSt
 	}
 
 	async createOrUpdateQueuedExecution(
-		executionToStore: ScheduledExecutionQueued<ExecutionDataType>,
-	): Promise<ScheduledExecutionQueued<ExecutionDataType>> {
+		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
+	): Promise<ScheduledExecutionQueued<TransactionDataType>> {
 		const inDB = toScheduledExecutionInDB(executionToStore);
 		const {values, columns, bindings, overwrites} = toValues(inDB);
 		const sqlStatement = `INSERT INTO ScheduledExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites};`;
@@ -166,58 +166,58 @@ export class RemoteSQLSchedulerStorage<ExecutionDataType> implements SchedulerSt
 		return executionToStore;
 	}
 
-	async getQueueTopMostExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]> {
+	async getQueueTopMostExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
 		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcasted = FALSE ORDER BY nextCheckTime ASC LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
-		return results.map(fromScheduledExecutionInDB<ExecutionDataType>);
+		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 
 	async getUnFinalizedBroadcastedScheduledExecutions(params: {
 		limit: number;
-	}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]> {
+	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
 		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcasted = TRUE AND finalized = FALSE ORDER BY nextCheckTime ASC LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
-		return results.map(fromScheduledExecutionInDB<ExecutionDataType>);
+		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 
 	async getUnFinalizedScheduledExecutionsPerAccount(params: {
 		chainId: `0x${string}`;
 		account: `0x${string}`;
 		limit: number;
-	}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]> {
+	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
 		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE chainId = ?1 AND account = ?2 AND finalized = FALSE ORDER BY nextCheckTime ASC LIMIT ?3;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.chainId, params.account, params.limit).all<ScheduledExecutionInDB>();
-		return results.map(fromScheduledExecutionInDB<ExecutionDataType>);
+		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 
-	async getAllExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<ExecutionDataType>[]> {
+	async getAllExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
 		const sqlStatement = `SELECT * FROM ScheduledExecutions ORDER BY nextCheckTime ASC LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
-		return results.map(fromScheduledExecutionInDB<ExecutionDataType>);
+		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 
 	async getAccountSubmissions(
 		account: `0x${string}`,
 		params: {limit: number},
-	): Promise<ScheduledExecutionQueued<ExecutionDataType>[]> {
+	): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
 		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE account = ?1 ORDER BY nextCheckTime ASC LIMIT ?2;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(account, params.limit).all<ScheduledExecutionInDB>();
-		return results.map(fromScheduledExecutionInDB<ExecutionDataType>);
+		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 
 	async getAccountArchivedSubmissions(
 		account: `0x${string}`,
 		params: {limit: number},
-	): Promise<ScheduledExecutionQueued<ExecutionDataType>[]> {
+	): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
 		const sqlStatement = `SELECT * FROM ArchivedScheduledExecutions WHERE account = ?1 ORDER BY nextCheckTime ASC LIMIT ?2;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(account, params.limit).all<ScheduledExecutionInDB>();
-		return results.map(fromScheduledExecutionInDB<ExecutionDataType>);
+		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 
 	async clear(): Promise<void> {
