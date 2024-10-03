@@ -203,8 +203,8 @@ export class EthereumChainProtocol implements ChainProtocol {
 	async assignProviderFor(chainId: `0x${string}`, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
 		const derivedAccount = this.account.deriveForAddress(forAddress);
 		return {
-			signer: new EIP1193LocalSigner(derivedAccount.privateKey),
 			assignerID: this.account.publicExtendedKey,
+			signer: `privateKey:${derivedAccount.privateKey}`,
 			address: derivedAccount.address,
 		};
 	}
@@ -212,7 +212,7 @@ export class EthereumChainProtocol implements ChainProtocol {
 		const derivedAccount = this.account.deriveForAddress(forAddress);
 		// TODO get it from assignerID
 		return {
-			signer: new EIP1193LocalSigner(derivedAccount.privateKey),
+			signer: `privateKey:${derivedAccount.privateKey}`,
 			assignerID,
 			address: derivedAccount.address,
 		};
@@ -270,9 +270,15 @@ export class EthereumChainProtocol implements ChainProtocol {
 	}> {
 		let transactionData = data as Partial<TransactionData>;
 
-		let actualTransactionData: FullTransactionData | undefined;
+		let actualTransactionData: FullTransactionData;
 
-		const signer = broadcaster.signer;
+		let signer: EIP1193LocalSigner;
+		const [protocol, protocolData] = broadcaster.signer.split(':');
+		if (protocol === 'privateKey') {
+			signer = new EIP1193LocalSigner(protocolData as `0x${string}`);
+		} else {
+			throw new Error(`protocol ${protocol} not supported`);
+		}
 
 		if (options?.forceVoid) {
 			// logger.error('already done, sending dummy transaction');
@@ -322,7 +328,7 @@ export class EthereumChainProtocol implements ChainProtocol {
 				maxPriorityFeePerGas: transactionParameters.maxPriorityFeePerGas,
 			};
 
-			const rawTx = await await signer.request({
+			const rawTx = await signer.request({
 				method: 'eth_signTransaction',
 				params: [actualTransactionData],
 			});

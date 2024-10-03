@@ -37,11 +37,11 @@ export type GasPrice = {
 
 export type GasEstimate = GasPrice & {gasPriceEstimate: GasPrice};
 
-export type BroadcasterSignerData = {
-	assignerID: string;
-	signer: any;
-	address: `0x${string}`;
-};
+// ------------------------------------------------------------------------------------------------
+// BroadcasterSignerData
+// ------------------------------------------------------------------------------------------------
+export type BroadcasterSignerData = {assignerID: string; signer: string; address: `0x${string}`};
+// ------------------------------------------------------------------------------------------------
 
 export interface ExecutorChainProtocol {
 	isTransactionFinalised(txHash: `0x${string}`): Promise<{finalised: true} | {finalised: false; pending: boolean}>;

@@ -4,18 +4,13 @@ import {ExecutorBackend} from './types/external';
 import {
 	Executor,
 	ExpectedWorstCaseGasPrice,
-	toHex,
-	fromHex,
 	ExecutionResponse,
 	PendingExecutionStored,
 	ExecutionSubmission,
 	TransactionParametersUsed,
 } from 'fuzd-common';
-import {
-	BroadcasterSignerData, // TODO remove
-	ExecutorConfig,
-} from './types/internal';
-import {ChainProtocol} from 'fuzd-chain-protocol';
+import {ExecutorConfig} from './types/internal';
+import {BroadcasterSignerData, ChainProtocol} from 'fuzd-chain-protocol';
 
 const logger = logs('fuzd-executor');
 

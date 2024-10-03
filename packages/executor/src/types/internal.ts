@@ -1,5 +1,4 @@
 import {ExecutorStorage} from './executor-storage';
-import {EIP1193SignerProvider} from 'eip-1193'; // TODO ChainProtocol
 import {ChainProtocol} from 'fuzd-chain-protocol';
 
 // ------------------------------------------------------------------------------------------------
@@ -18,10 +17,4 @@ export type ExecutorConfig<TransactionDataType> = {
 export type ChainProtocols = {
 	[chainId: `0x${string}`]: ChainProtocol;
 };
-// ------------------------------------------------------------------------------------------------
-
-// ------------------------------------------------------------------------------------------------
-// BroadcasterSignerData
-// ------------------------------------------------------------------------------------------------
-export type BroadcasterSignerData = {assignerID: string; signer: EIP1193SignerProvider; address: `0x${string}`};
 // ------------------------------------------------------------------------------------------------
