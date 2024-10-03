@@ -69,9 +69,11 @@ export interface ExecutorChainProtocol {
 		transactionParameters: TransactionParametersUsed,
 		options: {
 			forceVoid?: boolean;
+			nonceIncreased: boolean;
 		},
 	): Promise<{
 		rawTx: any;
+		hash: `0x${string}`;
 		transactionData: TransactionDataType;
 		isVoidTransaction: boolean;
 	}>;

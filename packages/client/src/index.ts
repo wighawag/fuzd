@@ -1,8 +1,9 @@
 import {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
 import {timelockEncrypt, HttpChainClient, roundAt} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';
-import {ExecutionSubmission} from 'fuzd-executor';
 import {deriveRemoteAddress} from 'remote-account';
+import {ExecutionSubmission} from 'fuzd-common';
+import {TransactionData} from 'fuzd-chain-protocol/ethereum';
 export {testnetClient, mainnetClient} from 'tlock-js';
 
 export type ClientConfig = {
@@ -29,13 +30,13 @@ export function createClient(config: ClientConfig) {
 		maxFeePerGasAuthorized: bigint;
 		time: number;
 	}): Promise<ScheduleInfo> {
-		let executionToSend: ScheduledExecution<ExecutionSubmission>;
+		let executionToSend: ScheduledExecution<ExecutionSubmission<TransactionData>>;
 
 		const chainId = (
 			execution.chainId.startsWith('0x') ? execution.chainId : `0x` + parseInt(execution.chainId).toString(16)
 		) as `0x${string}`;
 
-		const payloadJSON: DecryptedPayload<ExecutionSubmission> = {
+		const payloadJSON: DecryptedPayload<ExecutionSubmission<TransactionData>> = {
 			type: 'clear',
 			executions: [
 				{

@@ -11,13 +11,16 @@ import {createCurriedJSONRPC} from 'remote-procedure-call';
 import {getRoughGasPriceEstimate} from './utils';
 import {
 	ExecutionSubmission,
+	fromHex,
 	GenericSchemaExecutionSubmission,
+	toHex,
 	TransactionParametersUsed,
 	TransactionParams,
 } from 'fuzd-common';
 import {FullTransactionData, SchemaTransactionData, TransactionData} from './types';
 import {initAccountFromHD} from 'remote-account';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
+import {keccak_256} from '@noble/hashes/sha3';
 
 export {SchemaTransactionData} from './types';
 export type {TransactionData} from './types';
@@ -257,9 +260,11 @@ export class EthereumChainProtocol implements ChainProtocol {
 		transactionParameters: TransactionParametersUsed,
 		options: {
 			forceVoid?: boolean;
+			nonceIncreased: boolean;
 		},
 	): Promise<{
 		rawTx: any;
+		hash: `0x${string}`;
 		transactionData: TransactionDataType;
 		isVoidTransaction: boolean;
 	}> {
@@ -288,8 +293,10 @@ export class EthereumChainProtocol implements ChainProtocol {
 					method: 'eth_signTransaction',
 					params: [actualTransactionData],
 				});
+				const hash = toHex(keccak_256(fromHex(rawTx)));
 				return {
 					rawTx,
+					hash,
 					transactionData: actualTransactionData as unknown as TransactionDataType,
 					isVoidTransaction: true,
 				};
@@ -319,8 +326,10 @@ export class EthereumChainProtocol implements ChainProtocol {
 				method: 'eth_signTransaction',
 				params: [actualTransactionData],
 			});
+			const hash = toHex(keccak_256(fromHex(rawTx)));
 			return {
 				rawTx,
+				hash,
 				transactionData: actualTransactionData as TransactionDataType,
 				isVoidTransaction: false,
 			};
@@ -346,6 +355,7 @@ export class EthereumChainProtocol implements ChainProtocol {
 		return {transaction: transactionToBroadcast, cost};
 	}
 
+	// TODO FOR TEST ONLY
 	offset = 0;
 	async getTimestamp(): Promise<number> {
 		if (this.config.contractTimestamp) {

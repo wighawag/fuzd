@@ -32,6 +32,8 @@
   "dependencies": {
     "commander": "^12.0.0",
     "fuzd-executor": "workspace:*",
+    "fuzd-chain-protocol": "workspace:*",
+    "fuzd-common": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "named-logs": "npm:named-logs-for-servers@0.0.1",
     "remote-account": "^0.1.0",

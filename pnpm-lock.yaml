@@ -47,6 +47,9 @@ importers:
 
   packages/chain-protocol:
     dependencies:
+      '@noble/hashes':
+        specifier: ^1.4.0
+        version: 1.4.0
       eip-1193-signer:
         specifier: ^0.0.2
         version: 0.0.2(typescript@5.4.5)(zod@3.23.8)
@@ -84,6 +87,12 @@ importers:
       commander:
         specifier: ^12.0.0
         version: 12.0.0
+      fuzd-chain-protocol:
+        specifier: workspace:*
+        version: link:../chain-protocol
+      fuzd-common:
+        specifier: workspace:*
+        version: link:../common
       fuzd-executor:
         specifier: workspace:*
         version: link:../executor
@@ -124,12 +133,6 @@ importers:
 
   packages/common:
     dependencies:
-      eip-1193:
-        specifier: ^0.5.0
-        version: 0.5.0
-      eip-1193-signer:
-        specifier: ^0.0.2
-        version: 0.0.2(typescript@5.4.5)(zod@3.23.8)
       named-logs:
         specifier: npm:named-logs-for-servers@0.0.1
         version: named-logs-for-servers@0.0.1
@@ -152,18 +155,6 @@ importers:
 
   packages/executor:
     dependencies:
-      '@noble/hashes':
-        specifier: ^1.4.0
-        version: 1.4.0
-      abitype:
-        specifier: ^1.0.2
-        version: 1.0.2(typescript@5.4.5)(zod@3.23.8)
-      eip-1193:
-        specifier: ^0.5.0
-        version: 0.5.0
-      eip-1193-signer:
-        specifier: ^0.0.2
-        version: 0.0.2(typescript@5.4.5)(zod@3.23.8)
       fuzd-chain-protocol:
         specifier: workspace:*
         version: link:../chain-protocol
@@ -192,9 +183,6 @@ importers:
 
   packages/scheduler:
     dependencies:
-      abitype:
-        specifier: ^1.0.2
-        version: 1.0.2(typescript@5.4.5)(zod@3.23.8)
       fuzd-chain-protocol:
         specifier: workspace:*
         version: link:../chain-protocol
@@ -2088,17 +2076,6 @@ packages:
 
   abitype@1.0.0:
     resolution: {integrity: sha512-NMeMah//6bJ56H5XRj8QCV4AwuW6hB6zqz2LnhhLdcWVQOsXki6/Pn3APeqxCma62nXIcmZWdu1DlHWS74umVQ==}
-    peerDependencies:
-      typescript: '>=5.0.4'
-      zod: ^3 >=3.22.0
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-      zod:
-        optional: true
-
-  abitype@1.0.2:
-    resolution: {integrity: sha512-aFt4k2H+eiAKy/zxtnORa9iIb10BMBeWL18l8v4+QuwYEBXPxxjSB1bFZCzQmKPoj8m7j68K705l3uY+E2gAjg==}
     peerDependencies:
       typescript: '>=5.0.4'
       zod: ^3 >=3.22.0
@@ -7383,11 +7360,6 @@ snapshots:
       through: 2.3.8
 
   abitype@1.0.0(typescript@5.4.5)(zod@3.23.8):
-    optionalDependencies:
-      typescript: 5.4.5
-      zod: 3.23.8
-
-  abitype@1.0.2(typescript@5.4.5)(zod@3.23.8):
     optionalDependencies:
       typescript: 5.4.5
       zod: 3.23.8

@@ -1,7 +1,6 @@
 import {logs} from 'named-logs';
 import {BroadcasterData} from './types/executor-storage';
 import {ExecutorBackend} from './types/external';
-import {keccak_256} from '@noble/hashes/sha3';
 import {
 	Executor,
 	ExpectedWorstCaseGasPrice,
@@ -12,7 +11,10 @@ import {
 	ExecutionSubmission,
 	TransactionParametersUsed,
 } from 'fuzd-common';
-import {BroadcasterSignerData, ExecutorConfig} from './types/internal';
+import {
+	BroadcasterSignerData, // TODO remove
+	ExecutorConfig,
+} from './types/internal';
 import {ChainProtocol} from 'fuzd-chain-protocol';
 
 const logger = logs('fuzd-executor');
@@ -295,9 +297,8 @@ export function createExecutor<TransactionDataType>(
 			execution.transaction,
 			broadcaster,
 			transactionParametersUsed,
-			options,
+			{forceVoid: options.forceVoid, nonceIncreased: nonceIncreased},
 		);
-		const hash = toHex(keccak_256(fromHex(rawTxInfo.rawTx)));
 
 		const retries = typeof execution.retries === 'undefined' ? 0 : execution.retries + 1;
 
@@ -322,7 +323,7 @@ export function createExecutor<TransactionDataType>(
 			account: execution.account,
 			expectedWorstCaseGasPrice: execution.expectedWorstCaseGasPrice,
 			finalized: execution.finalized,
-			hash,
+			hash: rawTxInfo.hash,
 			broadcastTime: timestamp,
 			nextCheckTime,
 			retries,

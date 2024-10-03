@@ -27,10 +27,6 @@
     "src"
   ],
   "dependencies": {
-    "@noble/hashes": "^1.4.0",
-    "abitype": "^1.0.2",
-    "eip-1193": "^0.5.0",
-    "eip-1193-signer": "^0.0.2",
     "fuzd-chain-protocol": "workspace:*",
     "fuzd-common": "workspace:*",
     "named-logs": "npm:named-logs-for-servers@0.0.1",
