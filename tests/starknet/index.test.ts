@@ -10,6 +10,7 @@ import {
 	calculateContractAddressFromHash,
 	computePoseidonHashOnElements,
 	computePedersenHashOnElements,
+	computePedersenHash,
 } from 'starknet-core/utils/hash';
 import {toHex} from 'starknet-core/utils/num';
 import {starknetKeccak} from 'starknet-core/utils/hash';
@@ -53,12 +54,13 @@ test('deploy_GreetingsRegistry', async function () {
 		// this should be handled by encodeShortString
 		prefix = [];
 	}
-	const unique = false; // TODO use from_zero
+	const unique = true;
 	const salt = 0;
 	const invoke_transaction = create_invoke_transaction_v1_from_calls({
 		chain_id: KATANA_CHAIN_ID,
 		calls: [
 			{
+				//https://github.com/dojoengine/dojo/blob/main/crates/katana/contracts/universal_deployer.cairo
 				contractAddress: UniversalDeployerContract.contract_address,
 				entrypoint: 'deployContract',
 				calldata: [GreetingsRegistry.class_hash, salt, unique, [prefix]],
@@ -100,7 +102,7 @@ test('deploy_GreetingsRegistry', async function () {
 
 	const expectedContractAddress = unique
 		? calculateContractAddressFromHash(
-				computePoseidonHashOnElements([test_accounts[0].contract_address, salt]),
+				computePedersenHash(test_accounts[0].contract_address, salt),
 				GreetingsRegistry.class_hash,
 				[prefix],
 				UniversalDeployerContract.contract_address,
