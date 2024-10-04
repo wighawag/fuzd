@@ -1,0 +1,16 @@
+{
+  "name": "tests-starknet",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "devDependencies": {
+    "@starknet-io/types-js": "^0.7.7",
+    "prool": "^0.0.16",
+    "prool-katana": "^0.0.2",
+    "remote-procedure-call": "^0.0.12",
+    "vitest": "^2.1.2"
+  },
+  "scripts": {
+    "test": "vitest"
+  }
+}
