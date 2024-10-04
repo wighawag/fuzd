@@ -522,9 +522,12 @@ importers:
 
   tests/starknet:
     dependencies:
+      starknet-core:
+        specifier: ^0.0.3
+        version: 0.0.3
       strk:
-        specifier: ^0.0.11
-        version: 0.0.11
+        specifier: ^0.0.12
+        version: 0.0.12
     devDependencies:
       '@starknet-io/types-js':
         specifier: ^0.7.7
@@ -5142,6 +5145,9 @@ packages:
   starknet-core@0.0.2:
     resolution: {integrity: sha512-/+H49M0+v/0h4gv3WktUtrd9f/mF/hwWqM/oC08uMgrrwOMHZYJwGWN/8ygm4yXzGi8JHK7CZcyx/zOqgA3evg==}
 
+  starknet-core@0.0.3:
+    resolution: {integrity: sha512-Ys/7x5ipRPah5qRLDtMPSFsSsiwIhlQGbEAG4xVBg/1sboqpOLYLYlrVlEB/xu/h97l1sfI/aLrbnRrswaZ8TQ==}
+
   statuses@1.5.0:
     resolution: {integrity: sha512-OpZ3zP+jT1PI7I8nemJX4AKmAX070ZkYPVWV/AaKTJl+tXCTGyVdC1a4SL8RUQYEwk/f34ZX8UTykN68FwrqAA==}
     engines: {node: '>= 0.6'}
@@ -5260,8 +5266,8 @@ packages:
   strip-literal@2.1.0:
     resolution: {integrity: sha512-Op+UycaUt/8FbN/Z2TWPBLge3jWrP3xj10f3fnYxf052bKuS3EKs1ZQcVGjnEMdsNVAM+plXRdmjrZ/KgG3Skw==}
 
-  strk@0.0.11:
-    resolution: {integrity: sha512-8VwZHX8F7IxpqBIvaXRXjf/gHNNnJgAFb/RIrom9KXfvvgcBJzSHc17o5KMOuTEU9Dn1K78wlkwN8PeJetxFVQ==}
+  strk@0.0.12:
+    resolution: {integrity: sha512-SsEKyXFEdgFBpR+JtGXQSs5j9HyMp8Bo6NbYXw/HZZf90dKJDCyuvqt5QQuqHmnO1RN2otH6t6g6187LsCSqpw==}
 
   supports-color@5.5.0:
     resolution: {integrity: sha512-QjVjwdXIt408MIiAqCX4oUKsgU2EqAGzs2Ppkm4aQYbjm+ZEWEcW4SfFNTr4uMNZma0ey4f5lgLrkB0aX0QMow==}
@@ -7235,13 +7241,13 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.2.0
       '@noble/secp256k1': 1.7.1
-      '@scure/base': 1.1.6
+      '@scure/base': 1.1.9
 
   '@scure/bip32@1.3.2':
     dependencies:
       '@noble/curves': 1.2.0
-      '@noble/hashes': 1.3.2
-      '@scure/base': 1.1.6
+      '@noble/hashes': 1.3.3
+      '@scure/base': 1.1.9
 
   '@scure/bip32@1.4.0':
     dependencies:
@@ -7252,12 +7258,12 @@ snapshots:
   '@scure/bip39@1.1.1':
     dependencies:
       '@noble/hashes': 1.2.0
-      '@scure/base': 1.1.6
+      '@scure/base': 1.1.9
 
   '@scure/bip39@1.2.1':
     dependencies:
-      '@noble/hashes': 1.3.2
-      '@scure/base': 1.1.6
+      '@noble/hashes': 1.3.3
+      '@scure/base': 1.1.9
 
   '@scure/bip39@1.3.0':
     dependencies:
@@ -8441,7 +8447,7 @@ snapshots:
   drand-client@1.2.5:
     dependencies:
       '@babel/traverse': 7.24.5
-      '@noble/curves': 1.4.0
+      '@noble/curves': 1.6.0
       buffer: 6.0.3
     transitivePeerDependencies:
       - supports-color
@@ -11105,6 +11111,15 @@ snapshots:
       '@starknet-io/types-js': 0.7.7
       pako: 2.1.0
 
+  starknet-core@0.0.3:
+    dependencies:
+      '@noble/curves': 1.6.0
+      '@noble/hashes': 1.5.0
+      '@scure/base': 1.1.9
+      '@scure/starknet': 1.0.0
+      '@starknet-io/types-js': 0.7.7
+      pako: 2.1.0
+
   statuses@1.5.0: {}
 
   statuses@2.0.1: {}
@@ -11222,7 +11237,7 @@ snapshots:
     dependencies:
       js-tokens: 9.0.0
 
-  strk@0.0.11:
+  strk@0.0.12:
     dependencies:
       '@scure/starknet': 1.0.0
       starknet-core: 0.0.2

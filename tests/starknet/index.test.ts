@@ -3,11 +3,28 @@ import {createProxiedJSONRPC} from 'remote-procedure-call';
 import {Methods as StarknetMethods} from '@starknet-io/types-js';
 import assert from 'assert';
 import {RPC_URL} from './prool';
-import {create_declare_transaction_v2, create_invoke_transaction_v1_from_calls} from 'strk';
+import {create_declare_transaction_v2, create_invoke_transaction_v1_from_calls, create_call} from 'strk';
+import {encodeShortString, decodeShortString} from 'starknet-core/utils/shortString';
+import {
+	getSelectorFromName,
+	calculateContractAddressFromHash,
+	computePoseidonHashOnElements,
+	computePedersenHashOnElements,
+} from 'starknet-core/utils/hash';
+import {toHex} from 'starknet-core/utils/num';
+import {starknetKeccak} from 'starknet-core/utils/hash';
 import GreetingsRegistry from './ts-artifacts/GreetingsRegistry';
 import {KATANA_CHAIN_ID, test_accounts, UniversalDeployerContract} from './katana';
 
 const rpc = createProxiedJSONRPC<StarknetMethods>(RPC_URL);
+
+async function waitForTransaction(transaction_hash: string) {
+	let txResponse = await rpc.starknet_getTransactionReceipt({transaction_hash});
+	while (!(txResponse.success && txResponse.value.block_hash)) {
+		txResponse = await rpc.starknet_getTransactionReceipt({transaction_hash});
+	}
+	return txResponse.value;
+}
 
 test('starknet_chainId', async function () {
 	const chainIdResponse = await rpc.starknet_chainId();
@@ -27,17 +44,24 @@ test('declare_GreetingsRegistry', async function () {
 	});
 	const chainIdResponse = await rpc.starknet_addDeclareTransaction({declare_transaction});
 	expect(chainIdResponse.success).to.be.true;
-	assert(chainIdResponse.success);
 });
 
+let contractAddress: string;
 test('deploy_GreetingsRegistry', async function () {
+	let prefix: string | [] = encodeShortString('');
+	if (prefix == '0x') {
+		// this should be handled by encodeShortString
+		prefix = [];
+	}
+	const unique = false; // TODO use from_zero
+	const salt = 0;
 	const invoke_transaction = create_invoke_transaction_v1_from_calls({
 		chain_id: KATANA_CHAIN_ID,
 		calls: [
 			{
 				contractAddress: UniversalDeployerContract.contract_address,
 				entrypoint: 'deployContract',
-				calldata: [GreetingsRegistry.class_hash, 0, true, []],
+				calldata: [GreetingsRegistry.class_hash, salt, unique, [prefix]],
 			},
 		],
 		max_fee: '0xFFFFFFFFFFFFFFFFFF',
@@ -45,7 +69,95 @@ test('deploy_GreetingsRegistry', async function () {
 		sender_address: test_accounts[0].contract_address,
 		private_key: test_accounts[0].private_key,
 	});
-	const chainIdResponse = await rpc.starknet_addInvokeTransaction({invoke_transaction});
-	expect(chainIdResponse.success).to.be.true;
-	assert(chainIdResponse.success);
+	const invokeResponse = await rpc.starknet_addInvokeTransaction({invoke_transaction});
+	expect(invokeResponse.success).to.be.true;
+
+	assert(invokeResponse.success);
+	let receipt = await waitForTransaction(invokeResponse.value.transaction_hash);
+	expect(receipt.execution_status).to.equals('SUCCEEDED');
+
+	// const lastBlockResponse = await rpc.starknet_blockNumber();
+	// assert(lastBlockResponse.success);
+	// const keyFilter = [[toHex(starknetKeccak('ContractDeployed'))]];
+	// const logsResponse = await rpc.starknet_getEvents({
+	// 	filter: {
+	// 		address: UniversalDeployerContract.contract_address,
+	// 		chunk_size: 10,
+	// 		from_block: {block_number: Math.max(lastBlockResponse.value - 9, 0)},
+	// 		to_block: {block_number: lastBlockResponse.value},
+	// 		keys: keyFilter,
+	// 	},
+	// });
+	const logsResponse = await rpc.starknet_getEvents({
+		filter: {
+			address: UniversalDeployerContract.contract_address,
+			chunk_size: 10,
+		},
+	});
+	expect(logsResponse.success).to.be.true;
+	assert(logsResponse.success);
+	contractAddress = logsResponse.value.events[0].data[0];
+
+	const expectedContractAddress = unique
+		? calculateContractAddressFromHash(
+				computePoseidonHashOnElements([test_accounts[0].contract_address, salt]),
+				GreetingsRegistry.class_hash,
+				[prefix],
+				UniversalDeployerContract.contract_address,
+			)
+		: calculateContractAddressFromHash(salt, GreetingsRegistry.class_hash, [prefix], 0);
+	expect(contractAddress).to.equals(expectedContractAddress);
+});
+
+test('invoke_GreetingsRegistry', async function () {
+	const precallResponse = await rpc.starknet_call(
+		create_call({
+			contract_address: contractAddress,
+			calldata: [test_accounts[0].contract_address],
+			entry_point: 'lastGreetingOf',
+		}),
+	);
+	expect(precallResponse.success).to.be.true;
+	assert(precallResponse.success);
+
+	// fix decodeShortString and encodeShortString for ""
+	expect(precallResponse.value[0]).to.equals('0x0');
+
+	const messageAsFelt = encodeShortString('hello');
+	console.log({messageAsFelt});
+	const invoke_transaction = create_invoke_transaction_v1_from_calls({
+		chain_id: KATANA_CHAIN_ID,
+		calls: [
+			{
+				contractAddress: contractAddress,
+				entrypoint: 'setMessage',
+				calldata: [messageAsFelt, 12],
+			},
+		],
+		max_fee: '0xFFFFFFFFFFFFFFFFFF',
+		nonce: '0x2',
+		sender_address: test_accounts[0].contract_address,
+		private_key: test_accounts[0].private_key,
+	});
+	const invokeResponse = await rpc.starknet_addInvokeTransaction({invoke_transaction});
+	expect(invokeResponse.success).to.be.true;
+	assert(invokeResponse.success);
+	let receipt = await waitForTransaction(invokeResponse.value.transaction_hash);
+	expect(receipt.execution_status).to.equals('SUCCEEDED');
+
+	const callResponse = await rpc.starknet_call(
+		create_call({
+			block_id: {
+				block_hash: receipt.block_hash,
+			},
+			contract_address: contractAddress,
+			calldata: [test_accounts[0].contract_address],
+			entry_point: 'lastGreetingOf',
+		}),
+	);
+	expect(callResponse.success).to.be.true;
+	assert(callResponse.success);
+
+	expect(callResponse.value[0]).to.equals(messageAsFelt);
+	expect(decodeShortString(callResponse.value[0])).to.equals('hello');
 });

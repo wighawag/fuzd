@@ -144,8 +144,7 @@ mod GreetingsRegistry {
         fn _setMessageFor(ref self: ContractState, account: ContractAddress, message: felt252, dayTimeInSeconds: u32) {
             // TODO string memory actualMessage = string(bytes.concat(bytes(_prefix), bytes(message)));
             let actual_message = message;
-            let timestamp = 1;
-            let dayTimeInSeconds: u32 = 1;
+            let timestamp = 1; // TODO
             self.messages.entry(account).write(Message {
                 content: actual_message,
                 timestamp: timestamp,
