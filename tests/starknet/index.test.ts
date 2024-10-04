@@ -112,6 +112,7 @@ test('deploy_GreetingsRegistry', async function () {
 });
 
 test('invoke_GreetingsRegistry', async function () {
+	const message = 'hello';
 	const precallResponse = await rpc.starknet_call(
 		create_call({
 			contract_address: contractAddress,
@@ -125,8 +126,7 @@ test('invoke_GreetingsRegistry', async function () {
 	// fix decodeShortString and encodeShortString for ""
 	expect(precallResponse.value[0]).to.equals('0x0');
 
-	const messageAsFelt = encodeShortString('hello');
-	console.log({messageAsFelt});
+	const messageAsFelt = encodeShortString(message);
 	const invoke_transaction = create_invoke_transaction_v1_from_calls({
 		chain_id: KATANA_CHAIN_ID,
 		calls: [
@@ -161,5 +161,5 @@ test('invoke_GreetingsRegistry', async function () {
 	assert(callResponse.success);
 
 	expect(callResponse.value[0]).to.equals(messageAsFelt);
-	expect(decodeShortString(callResponse.value[0])).to.equals('hello');
+	expect(decodeShortString(callResponse.value[0])).to.equals(message);
 });
