@@ -5,6 +5,7 @@
   "type": "module",
   "devDependencies": {
     "@starknet-io/types-js": "^0.7.7",
+    "prettier": "^3.2.5",
     "prool": "^0.0.16",
     "prool-katana": "^0.0.2",
     "remote-procedure-call": "^0.0.12",
@@ -12,5 +13,8 @@
   },
   "scripts": {
     "test": "vitest"
+  },
+  "dependencies": {
+    "strk": "^0.0.11"
   }
 }
