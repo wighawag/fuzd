@@ -3,12 +3,6 @@ pragma solidity ^0.8.13;
 
 import 'solidity-proxy/solc_0_8/ERC1967/Proxied.sol';
 
-/// @notice a registry that let user send greetings to the world
-///  It is used as a demo for jolly-roger,
-///  a fully featured SDK to build entirely decentralised apps and games
-///  It is inteded to be deployed via upgradeable proxy locally
-///  to showcase the HCR (Hot Contract Replacement) capabilities of `hardhat-deploy`
-///  but immutable on live networks.
 contract ExecutionOnChain is Proxied {
 
     event ExecutionSubmitted(ScheduledExecution execution);
