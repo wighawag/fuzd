@@ -5,6 +5,7 @@ import assert from 'assert';
 import {RPC_URL} from './prool';
 import {create_declare_transaction_v2, create_invoke_transaction_v1_from_calls, create_call} from 'strk';
 import {encodeShortString, decodeShortString} from 'starknet-core/utils/shortString';
+import {CallData} from 'starknet-core/utils/calldata';
 import {
 	getSelectorFromName,
 	calculateContractAddressFromHash,
@@ -126,6 +127,9 @@ test('invoke_GreetingsRegistry', async function () {
 	// fix decodeShortString and encodeShortString for ""
 	expect(precallResponse.value[0]).to.equals('0x0');
 
+	const abi = JSON.parse(GreetingsRegistry.abi);
+	const calldataParser = new CallData(abi);
+
 	const messageAsFelt = encodeShortString(message);
 	const invoke_transaction = create_invoke_transaction_v1_from_calls({
 		chain_id: KATANA_CHAIN_ID,
@@ -133,7 +137,7 @@ test('invoke_GreetingsRegistry', async function () {
 			{
 				contractAddress: contractAddress,
 				entrypoint: 'setMessage',
-				calldata: [messageAsFelt, 12],
+				calldata: calldataParser.compile('setMessage', ['hello', 12]),
 			},
 		],
 		max_fee: '0xFFFFFFFFFFFFFFFFFF',
