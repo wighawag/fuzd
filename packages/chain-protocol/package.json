@@ -33,9 +33,11 @@
     "fuzd-common": "workspace:*",
     "remote-account": "^0.1.0",
     "remote-procedure-call": "^0.0.12",
+    "strk": "^0.0.13",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@starknet-io/types-js": "^0.7.7",
     "eip-1193": "^0.6.1",
     "ldenv": "^0.3.10",
     "pkgroll": "^2.0.2",

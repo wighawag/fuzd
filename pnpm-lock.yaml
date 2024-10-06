@@ -62,10 +62,16 @@ importers:
       remote-procedure-call:
         specifier: ^0.0.12
         version: 0.0.12(@types/node@20.12.12)
+      strk:
+        specifier: ^0.0.13
+        version: 0.0.13
       zod:
         specifier: ^3.23.8
         version: 3.23.8
     devDependencies:
+      '@starknet-io/types-js':
+        specifier: ^0.7.7
+        version: 0.7.7
       eip-1193:
         specifier: ^0.6.1
         version: 0.6.1
@@ -3934,7 +3940,6 @@ packages:
 
   libsql@0.3.18:
     resolution: {integrity: sha512-lvhKr7WV3NLWRbXkjn/MeKqXOAqWKU0PX9QYrvDh7fneukapj+iUQ4qgJASrQyxcCrEsClXCQiiK5W6OoYPAlA==}
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lines-and-columns@1.2.4:
@@ -5268,6 +5273,9 @@ packages:
 
   strk@0.0.12:
     resolution: {integrity: sha512-SsEKyXFEdgFBpR+JtGXQSs5j9HyMp8Bo6NbYXw/HZZf90dKJDCyuvqt5QQuqHmnO1RN2otH6t6g6187LsCSqpw==}
+
+  strk@0.0.13:
+    resolution: {integrity: sha512-H56cW9Y+Bg1t/LB0/glXbX+XX2D/IE7Usw0Eu5cfvebN7P6G4iWXOiNMY1/ybBhQJ/bYjtJgBfm7XvHzuzTSrQ==}
 
   supports-color@5.5.0:
     resolution: {integrity: sha512-QjVjwdXIt408MIiAqCX4oUKsgU2EqAGzs2Ppkm4aQYbjm+ZEWEcW4SfFNTr4uMNZma0ey4f5lgLrkB0aX0QMow==}
@@ -7078,7 +7086,7 @@ snapshots:
 
   '@rocketh/deploy@0.10.6(rocketh@0.10.13(typescript@5.4.5)(zod@3.23.8))(typescript@5.4.5)(zod@3.23.8)':
     dependencies:
-      named-logs: named-logs-for-servers@0.0.1
+      named-logs: 0.2.4
       rocketh: 0.10.13(typescript@5.4.5)(zod@3.23.8)
       viem: 2.10.8(typescript@5.4.5)(zod@3.23.8)
     transitivePeerDependencies:
@@ -11238,6 +11246,11 @@ snapshots:
       js-tokens: 9.0.0
 
   strk@0.0.12:
+    dependencies:
+      '@scure/starknet': 1.0.0
+      starknet-core: 0.0.2
+
+  strk@0.0.13:
     dependencies:
       '@scure/starknet': 1.0.0
       starknet-core: 0.0.2

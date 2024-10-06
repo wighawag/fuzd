@@ -17,6 +17,7 @@ import {toHex} from 'starknet-core/utils/num';
 import {starknetKeccak} from 'starknet-core/utils/hash';
 import GreetingsRegistry from './ts-artifacts/GreetingsRegistry';
 import {KATANA_CHAIN_ID, test_accounts, UniversalDeployerContract} from './katana';
+import {createTestExecutor} from '../ethereum/test/utils/executor';
 
 const rpc = createProxiedJSONRPC<StarknetMethods>(RPC_URL);
 
@@ -137,7 +138,7 @@ test('invoke_GreetingsRegistry', async function () {
 			{
 				contractAddress: contractAddress,
 				entrypoint: 'setMessage',
-				calldata: calldataParser.compile('setMessage', ['hello', 12]),
+				calldata: calldataParser.compile('setMessage', [message, 12]),
 			},
 		],
 		max_fee: '0xFFFFFFFFFFFFFFFFFF',
@@ -153,9 +154,85 @@ test('invoke_GreetingsRegistry', async function () {
 
 	const callResponse = await rpc.starknet_call(
 		create_call({
-			block_id: {
-				block_hash: receipt.block_hash,
+			block_id: 'latest',
+			contract_address: contractAddress,
+			calldata: [test_accounts[0].contract_address],
+			entry_point: 'lastGreetingOf',
+		}),
+	);
+	expect(callResponse.success).to.be.true;
+	assert(callResponse.success);
+
+	expect(callResponse.value[0]).to.equals(messageAsFelt);
+	expect(decodeShortString(callResponse.value[0])).to.equals(message);
+});
+
+test.skip('invoke_GreetingsRegistry_via_fuzd', async function () {
+	const message = 'yo!';
+	const precallResponse = await rpc.starknet_call(
+		create_call({
+			contract_address: contractAddress,
+			calldata: [test_accounts[0].contract_address],
+			entry_point: 'lastGreetingOf',
+		}),
+	);
+	expect(precallResponse.success).to.be.true;
+	assert(precallResponse.success);
+
+	// fix decodeShortString and encodeShortString for ""
+	expect(precallResponse.value[0]).to.equals('0x0');
+
+	const abi = JSON.parse(GreetingsRegistry.abi);
+	const calldataParser = new CallData(abi);
+
+	const messageAsFelt = encodeShortString(message);
+	const invoke_transaction = create_invoke_transaction_v1_from_calls({
+		chain_id: KATANA_CHAIN_ID,
+		calls: [
+			{
+				contractAddress: contractAddress,
+				entrypoint: 'setMessage',
+				calldata: calldataParser.compile('setMessage', [message, 12]),
 			},
+		],
+		max_fee: '0xFFFFFFFFFFFFFFFFFF',
+		nonce: '0x2',
+		sender_address: test_accounts[0].contract_address,
+		private_key: test_accounts[0].private_key,
+	});
+
+	// TODO
+	const paymentAccount = '0x0000000000000000000000000000000000000001';
+
+	const defaultPath = "m/44'/60'/0'/0/0";
+	const mnemonic: string = 'test test test test test test test test test test test junk';
+	const seed = bip39.mnemonicToSeedSync(mnemonic);
+	const masterKey = HDKey.fromMasterSeed(seed);
+	const accountHDKey = masterKey.derive(defaultPath);
+	const account = initAccountFromHD(accountHDKey);
+	const {executor, publicExtendedKey} = await createTestExecutor({
+		chainProtocols: {
+			// TODO any
+			[KATANA_CHAIN_ID]: new StarknetChainProtocol(),
+			// provider as any,
+			// {
+			// 	expectedFinality: 1,
+			// 	worstCaseBlockTime: 3,
+			// },
+			// account,
+		},
+		paymentAccount,
+		expectedWorstCaseGasPrices: [
+			{
+				chainId: '0x7a69',
+				value: 0n,
+			},
+		],
+	});
+
+	const callResponse = await rpc.starknet_call(
+		create_call({
+			block_id: 'latest',
 			contract_address: contractAddress,
 			calldata: [test_accounts[0].contract_address],
 			entry_point: 'lastGreetingOf',
