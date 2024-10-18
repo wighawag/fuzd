@@ -27,7 +27,7 @@
     "src"
   ],
   "dependencies": {
-    "named-logs": "npm:named-logs-for-servers@0.0.1",
+    "named-logs": "^0.2.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {

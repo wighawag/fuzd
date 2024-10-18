@@ -10,7 +10,7 @@
     "tsconfig.json"
   ],
   "dependencies": {
-    "named-logs": "npm:named-logs-for-servers@0.0.1",
+    "named-logs": "^0.2.4",
     "remote-sql-d1": "^0.0.5",
     "workers-logger": "^0.2.0"
   },

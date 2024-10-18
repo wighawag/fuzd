@@ -44,6 +44,9 @@ importers:
       vitepress:
         specifier: 1.1.4
         version: 1.1.4(@algolia/client-search@4.23.3)(@types/node@20.12.12)(change-case@5.4.4)(postcss@8.4.38)(search-insights@2.13.0)(typescript@5.4.5)
+      zellij-launcher:
+        specifier: ^0.0.1
+        version: 0.0.1
 
   packages/chain-protocol:
     dependencies:
@@ -106,8 +109,8 @@ importers:
         specifier: workspace:*
         version: link:../scheduler
       named-logs:
-        specifier: npm:named-logs-for-servers@0.0.1
-        version: named-logs-for-servers@0.0.1
+        specifier: ^0.2.4
+        version: 0.2.4
       remote-account:
         specifier: ^0.1.0
         version: 0.1.0
@@ -140,8 +143,8 @@ importers:
   packages/common:
     dependencies:
       named-logs:
-        specifier: npm:named-logs-for-servers@0.0.1
-        version: named-logs-for-servers@0.0.1
+        specifier: ^0.2.4
+        version: 0.2.4
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -168,8 +171,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       named-logs:
-        specifier: npm:named-logs-for-servers@0.0.1
-        version: named-logs-for-servers@0.0.1
+        specifier: ^0.2.4
+        version: 0.2.4
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -196,8 +199,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       named-logs:
-        specifier: npm:named-logs-for-servers@0.0.1
-        version: named-logs-for-servers@0.0.1
+        specifier: ^0.2.4
+        version: 0.2.4
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -254,8 +257,8 @@ importers:
         specifier: ^4.3.3
         version: 4.3.7
       named-logs:
-        specifier: npm:named-logs-for-servers@0.0.1
-        version: named-logs-for-servers@0.0.1
+        specifier: ^0.2.4
+        version: 0.2.4
       remote-account:
         specifier: ^0.1.0
         version: 0.1.0
@@ -294,8 +297,8 @@ importers:
         specifier: workspace:*
         version: link:../scheduler
       named-logs:
-        specifier: npm:named-logs-for-servers@0.0.1
-        version: named-logs-for-servers@0.0.1
+        specifier: ^0.2.4
+        version: 0.2.4
       tlock-js:
         specifier: ^0.9.0
         version: 0.9.0
@@ -319,8 +322,8 @@ importers:
   platforms/cf-worker:
     dependencies:
       named-logs:
-        specifier: npm:named-logs-for-servers@0.0.1
-        version: named-logs-for-servers@0.0.1
+        specifier: ^0.2.4
+        version: 0.2.4
       remote-sql-d1:
         specifier: ^0.0.5
         version: 0.0.5(@cloudflare/workers-types@4.20240512.0)
@@ -3940,6 +3943,7 @@ packages:
 
   libsql@0.3.18:
     resolution: {integrity: sha512-lvhKr7WV3NLWRbXkjn/MeKqXOAqWKU0PX9QYrvDh7fneukapj+iUQ4qgJASrQyxcCrEsClXCQiiK5W6OoYPAlA==}
+    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lines-and-columns@1.2.4:
@@ -5982,6 +5986,10 @@ packages:
   youch@3.3.3:
     resolution: {integrity: sha512-qSFXUk3UZBLfggAW3dJKg0BMblG5biqSF8M34E06o5CSsZtH92u9Hqmj2RzGiHDi64fhe83+4tENFP2DB6t6ZA==}
 
+  zellij-launcher@0.0.1:
+    resolution: {integrity: sha512-IJLqHkAFp6NvSUlYZLeVua8tCZ0OT4do+pBQjv/QLLP/TrHgHp2g4i93fd5N4F4DsklTyj24xBwvmVaBaMSuKQ==}
+    hasBin: true
+
   zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
 
@@ -7086,7 +7094,7 @@ snapshots:
 
   '@rocketh/deploy@0.10.6(rocketh@0.10.13(typescript@5.4.5)(zod@3.23.8))(typescript@5.4.5)(zod@3.23.8)':
     dependencies:
-      named-logs: 0.2.4
+      named-logs: named-logs-for-servers@0.0.1
       rocketh: 0.10.13(typescript@5.4.5)(zod@3.23.8)
       viem: 2.10.8(typescript@5.4.5)(zod@3.23.8)
     transitivePeerDependencies:
@@ -12002,5 +12010,7 @@ snapshots:
       cookie: 0.5.0
       mustache: 4.2.0
       stacktracey: 2.1.8
+
+  zellij-launcher@0.0.1: {}
 
   zod@3.23.8: {}

@@ -14,13 +14,14 @@
     "typedoc-plugin-zod": "^1.1.2",
     "typedoc-vitepress-theme": "1.0.0",
     "typescript": "^5.4.5",
-    "vitepress": "1.1.4"
+    "vitepress": "1.1.4",
+    "zellij-launcher": "^0.0.1"
   },
   "scripts": {
     "prepare": "set-defaults .vscode",
     "build": "pnpm -r build",
     "sync-deps": "syncpack fix-mismatches",
-    "start": "zellij --layout zellij.kdl a $npm_package_name || zellij delete-session $npm_package_name && zellij --layout zellij.kdl -s $npm_package_name",
+    "start": "pnpm zellij-launcher --layout zellij.kdl a $npm_package_name|| zellij --layout zellij.kdl -s $npm_package_name",
     "publish-typedoc": "typedoc --options typedoc.json --excludeExternals",
     "serve-docs": "ipfs-emulator --only -d docs/.vitepress/dist -p 8888",
     "docs:dev": "pwag docs/public/icon.svg docs/web-config.json -o docs/public && pnpm run publish-typedoc && vitepress dev docs",
