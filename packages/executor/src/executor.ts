@@ -8,6 +8,9 @@ import {
 	PendingExecutionStored,
 	ExecutionSubmission,
 	TransactionParametersUsed,
+	String0x,
+	numToHex,
+	bigintToHex,
 } from 'fuzd-common';
 import {ExecutorConfig} from './types/internal';
 import {BroadcasterSignerData, ChainProtocol} from 'fuzd-chain-protocol';
@@ -27,14 +30,14 @@ export function createExecutor<TransactionDataType>(
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
-	function getExpectedWorstCaseGasPrice(chainId: `0x${string}`): Promise<ExpectedWorstCaseGasPrice> {
+	function getExpectedWorstCaseGasPrice(chainId: String0x): Promise<ExpectedWorstCaseGasPrice> {
 		return storage.getExpectedWorstCaseGasPrice(chainId);
 	}
 
 	async function getExecutionStatus(executionBatch: {
-		chainId: `0x${string}`;
+		chainId: String0x;
 		slot: string;
-		account: `0x${string}`;
+		account: String0x;
 	}): Promise<'finalized' | 'broadcasted' | undefined> {
 		const batch = await storage.getPendingExecutionBatch(executionBatch);
 		if (!batch) {
@@ -51,13 +54,13 @@ export function createExecutor<TransactionDataType>(
 	async function broadcastExecution(
 		slot: string,
 		batchIndex: number,
-		account: `0x${string}`,
+		account: String0x,
 		submission: ExecutionSubmission<TransactionDataType>,
 		options?: {
 			expectedWorstCaseGasPrice?: bigint;
 			asPaymentFor?: {
-				chainId: `0x${string}`;
-				account: `0x${string}`;
+				chainId: String0x;
+				account: String0x;
 				slot: string;
 				batchIndex: number;
 				upToGasPrice: bigint;
@@ -108,7 +111,7 @@ export function createExecutor<TransactionDataType>(
 			initialTime: timestamp,
 			expiryTime: submission.expiryTime,
 			expectedWorstCaseGasPrice:
-				expectedWorstCaseGasPrice != undefined ? `0x${expectedWorstCaseGasPrice.toString(16)}` : undefined,
+				expectedWorstCaseGasPrice != undefined ? bigintToHex(expectedWorstCaseGasPrice) : undefined,
 			finalized: false,
 		};
 
@@ -130,7 +133,7 @@ export function createExecutor<TransactionDataType>(
 		return result;
 	}
 
-	async function _getBroadcasterNonce(chainId: `0x${string}`, broadcasterAddress: `0x${string}`) {
+	async function _getBroadcasterNonce(chainId: String0x, broadcasterAddress: String0x) {
 		const chainProtocol = _getChainProtocol(chainId);
 
 		const nonceAsHex = await chainProtocol.getNonce(broadcasterAddress);
@@ -154,8 +157,8 @@ export function createExecutor<TransactionDataType>(
 	}
 
 	async function _getTxParams(
-		chainId: `0x${string}`,
-		broadcasterAddress: `0x${string}`,
+		chainId: String0x,
+		broadcasterAddress: String0x,
 		transactionData: Partial<TransactionDataType>,
 	): Promise<
 		{expectedNonce: number; nonce: number} & ({revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean})
@@ -168,7 +171,7 @@ export function createExecutor<TransactionDataType>(
 		return {...validity, expectedNonce, nonce};
 	}
 
-	function _getChainProtocol(chainId: `0x${string}`): ChainProtocol {
+	function _getChainProtocol(chainId: String0x): ChainProtocol {
 		const chainProtocol = chainProtocols[chainId];
 		if (!chainProtocol) {
 			throw new Error(`cannot get protocol for chain with id ${chainId}`);
@@ -188,8 +191,8 @@ export function createExecutor<TransactionDataType>(
 			previouslyStored?: PendingExecutionStored<TransactionDataType>;
 		},
 		asPaymentFor?: {
-			chainId: `0x${string}`;
-			account: `0x${string}`;
+			chainId: String0x;
+			account: String0x;
 			slot: string;
 			batchIndex: number;
 			upToGasPrice: bigint;
@@ -277,14 +280,14 @@ export function createExecutor<TransactionDataType>(
 
 		// then we ensure maxPriorityFeePerGas do not exceeed maxFeePerGas
 		const maxPriorityFeePerGas = maxPriorityFeePerGasTMP > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTMP;
-		const maxFeePerGasAs0xString = `0x${maxFeePerGas.toString(16)}` as `0x${string}`;
-		const maxPriorityFeePerGasAs0xString = `0x${maxPriorityFeePerGas.toString(16)}` as `0x${string}`;
+		const maxFeePerGasAs0xString = bigintToHex(maxFeePerGas);
+		const maxPriorityFeePerGasAs0xString = bigintToHex(maxPriorityFeePerGas);
 
 		const transactionParametersUsed: TransactionParametersUsed = {
 			maxFeePerGas: maxFeePerGasAs0xString,
 			maxPriorityFeePerGas: maxPriorityFeePerGasAs0xString,
 			from: broadcaster.address,
-			nonce: `0x${nonce.toString(16)}`,
+			nonce: numToHex(nonce),
 		};
 
 		const rawTxInfo = await chainProtocol.signTransaction<TransactionDataType>(
