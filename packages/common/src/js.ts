@@ -46,3 +46,11 @@ export function fromHex(str: `0x${string}`): Uint8Array {
 	}
 	return new Uint8Array(0);
 }
+
+export function numToHex(num: number): `0x${string}` {
+	return `0x${num.toString(16)}`;
+}
+
+export function bigintToHex(num: BigInt): `0x${string}` {
+	return `0x${num.toString(16)}`;
+}
