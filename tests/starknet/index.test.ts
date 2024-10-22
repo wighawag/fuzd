@@ -16,7 +16,7 @@ import {
 import {toHex} from 'starknet-core/utils/num';
 import {starknetKeccak} from 'starknet-core/utils/hash';
 import GreetingsRegistry from './ts-artifacts/GreetingsRegistry';
-import {KATANA_CHAIN_ID, test_accounts, UniversalDeployerContract} from './katana';
+import {KATANA_CHAIN_ID, test_accounts, UniversalDeployerContract} from 'katana-rpc';
 import {createTestExecutor} from '../ethereum/test/utils/executor';
 
 const rpc = createProxiedJSONRPC<StarknetMethods>(RPC_URL);
@@ -213,7 +213,7 @@ test.skip('invoke_GreetingsRegistry_via_fuzd', async function () {
 	const {executor, publicExtendedKey} = await createTestExecutor({
 		chainProtocols: {
 			// TODO any
-			[KATANA_CHAIN_ID]: new StarknetChainProtocol(),
+			[KATANA_CHAIN_ID]: new StarknetChainProtocol(KATANA_CHAIN_ID),
 			// provider as any,
 			// {
 			// 	expectedFinality: 1,

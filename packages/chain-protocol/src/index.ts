@@ -43,6 +43,11 @@ export type GasEstimate = GasPrice & {gasPriceEstimate: GasPrice};
 export type BroadcasterSignerData = {assignerID: string; signer: string; address: `0x${string}`};
 // ------------------------------------------------------------------------------------------------
 
+export type SignedTransactionInfo = {
+	rawTx: any;
+	hash: `0x${string}`;
+};
+
 export interface ExecutorChainProtocol {
 	isTransactionFinalised(txHash: `0x${string}`): Promise<{finalised: true} | {finalised: false; pending: boolean}>;
 	isTransactionPending(txHash: `0x${string}`): Promise<boolean>;
@@ -55,6 +60,11 @@ export interface ExecutorChainProtocol {
 		execution: ExecutionSubmission<TransactionDataType>,
 	): ExecutionSubmission<TransactionDataType>;
 
+	requiredPreliminaryTransaction?<TransactionDataType>(
+		chainId: string,
+		broadcaster: BroadcasterSignerData,
+	): TransactionDataType;
+
 	assignProviderFor(chainId: `0x${string}`, forAddress: `0x${string}`): Promise<BroadcasterSignerData>;
 	getProviderByAssignerID(assignerID: string, forAddress: `0x${string}`): Promise<BroadcasterSignerData>;
 
@@ -64,19 +74,15 @@ export interface ExecutorChainProtocol {
 	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}>;
 	signTransaction<TransactionDataType>(
 		chainId: `0x${string}`,
-		data: Partial<TransactionDataType>,
+		data: TransactionDataType,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
-		options: {
-			forceVoid?: boolean;
-			nonceIncreased: boolean;
-		},
-	): Promise<{
-		rawTx: any;
-		hash: `0x${string}`;
-		transactionData: TransactionDataType;
-		isVoidTransaction: boolean;
-	}>;
+	): Promise<SignedTransactionInfo>;
+	signVoidTransaction?(
+		chainId: `0x${string}`,
+		broadcaster: BroadcasterSignerData,
+		transactionParameters: TransactionParametersUsed,
+	): Promise<SignedTransactionInfo>;
 
 	generatePaymentTransaction<TransactionDataType>(
 		transaction: TransactionDataType,

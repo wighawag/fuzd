@@ -13,7 +13,7 @@ import {
 	bigintToHex,
 } from 'fuzd-common';
 import {ExecutorConfig} from './types/internal';
-import {BroadcasterSignerData, ChainProtocol} from 'fuzd-chain-protocol';
+import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo} from 'fuzd-chain-protocol';
 
 const logger = logs('fuzd-executor');
 
@@ -99,6 +99,29 @@ export function createExecutor<TransactionDataType>(
 		const timestamp = await chainProtocol.getTimestamp();
 
 		const broadcaster = await chainProtocol.assignProviderFor(submission.chainId, account);
+
+		if ('requiredPreliminaryTransaction' in chainProtocol && chainProtocol.requiredPreliminaryTransaction) {
+			const {expectedNonce, currentNonceAsPerNetwork} = await _getBroadcasterNonce(
+				submission.chainId,
+				broadcaster.address,
+			);
+			if (expectedNonce == 0) {
+				const preliminaryTransaction = chainProtocol.requiredPreliminaryTransaction<TransactionDataType>(
+					submission.chainId,
+					broadcaster,
+				);
+				const batchIndex = 0;
+				// TODO ensure _INTERNAL_ prefixed slots cannot be used
+				await broadcastExecution(`_INTERNAL_preliminary_${broadcaster.address}`, batchIndex, account, {
+					chainId: submission.chainId,
+					maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
+					transaction: preliminaryTransaction,
+					expiryTime: submission.expiryTime,
+					onBehalf: submission.onBehalf,
+				});
+			}
+		}
+
 		const pendingExecutionToStore: ExecutionToStore<TransactionDataType> = {
 			chainId: submission.chainId,
 			account,
@@ -293,13 +316,21 @@ export function createExecutor<TransactionDataType>(
 			nonce: numToHex(nonce),
 		};
 
-		const rawTxInfo = await chainProtocol.signTransaction<TransactionDataType>(
-			execution.chainId,
-			execution.transaction,
-			broadcaster,
-			transactionParametersUsed,
-			{forceVoid: options.forceVoid, nonceIncreased: nonceIncreased},
-		);
+		// TODO if nonceIncreased
+		//
+		let rawTxInfo: SignedTransactionInfo;
+		let isVoidTransaction = false;
+		if (options.forceVoid && 'signVoidTransaction' in chainProtocol && chainProtocol.signVoidTransaction) {
+			rawTxInfo = await chainProtocol.signVoidTransaction(execution.chainId, broadcaster, transactionParametersUsed);
+			isVoidTransaction = true;
+		} else {
+			rawTxInfo = await chainProtocol.signTransaction<TransactionDataType>(
+				execution.chainId,
+				execution.transaction,
+				broadcaster,
+				transactionParametersUsed,
+			);
+		}
 
 		const retries = typeof execution.retries === 'undefined' ? 0 : execution.retries + 1;
 
@@ -329,7 +360,7 @@ export function createExecutor<TransactionDataType>(
 			nextCheckTime,
 			retries,
 			broadcasterAssignerID: broadcaster.assignerID,
-			isVoidTransaction: rawTxInfo.isVoidTransaction,
+			isVoidTransaction,
 			lastError,
 		};
 		await storage.createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(newExecution, asPaymentFor);

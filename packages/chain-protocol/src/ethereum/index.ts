@@ -1,4 +1,11 @@
-import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, TransactionStatus} from '..';
+import {
+	BroadcasterSignerData,
+	ChainProtocol,
+	GasEstimate,
+	SignedTransactionInfo,
+	Transaction,
+	TransactionStatus,
+} from '..';
 import type {
 	EIP1193CallParam,
 	EIP1193Transaction,
@@ -15,7 +22,6 @@ import {
 	GenericSchemaExecutionSubmission,
 	toHex,
 	TransactionParametersUsed,
-	TransactionParams,
 } from 'fuzd-common';
 import {FullTransactionData, SchemaTransactionData, TransactionData} from './types';
 import {initAccountFromHD} from 'remote-account';
@@ -255,22 +261,11 @@ export class EthereumChainProtocol implements ChainProtocol {
 
 	async signTransaction<TransactionDataType>(
 		chainId: `0x${string}`,
-		data: Partial<TransactionDataType>,
+		data: TransactionDataType,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
-		options: {
-			forceVoid?: boolean;
-			nonceIncreased: boolean;
-		},
-	): Promise<{
-		rawTx: any;
-		hash: `0x${string}`;
-		transactionData: TransactionDataType;
-		isVoidTransaction: boolean;
-	}> {
-		let transactionData = data as Partial<TransactionData>;
-
-		let actualTransactionData: FullTransactionData;
+	): Promise<SignedTransactionInfo> {
+		const transactionData = data as TransactionData;
 
 		let signer: EIP1193LocalSigner;
 		const [protocol, protocolData] = broadcaster.signer.split(':');
@@ -280,54 +275,58 @@ export class EthereumChainProtocol implements ChainProtocol {
 			throw new Error(`protocol ${protocol} not supported`);
 		}
 
-		if (options?.forceVoid) {
-			// logger.error('already done, sending dummy transaction');
-			try {
-				// compute maxFeePerGas and maxPriorityFeePerGas to fill the total gas cost  * price that was alocated
-				// maybe not fill but increase from previoyus considering current fee and allowance
-				actualTransactionData = {
-					type: '0x2',
-					from: broadcaster.address,
-					to: broadcaster.address,
-					nonce: transactionParameters.nonce,
-					maxFeePerGas: transactionParameters.maxFeePerGas,
-					maxPriorityFeePerGas: transactionParameters.maxPriorityFeePerGas,
-					chainId: chainId,
-					gas: `0x${(21000).toString(16)}`,
-				};
-				const rawTx = await signer.request({
-					method: 'eth_signTransaction',
-					params: [actualTransactionData],
-				});
-				const hash = toHex(keccak_256(fromHex(rawTx)));
-				return {
-					rawTx,
-					hash,
-					transactionData: actualTransactionData as unknown as TransactionDataType,
-					isVoidTransaction: true,
-				};
-			} catch (e) {
-				// logger.error(`FAILED TO SEND DUMMY TX`, e);
-				// TODO do something
-				throw e;
-			}
+		const actualTransactionData: FullTransactionData = {
+			type: transactionData.type,
+			accessList: transactionData.accessList,
+			chainId: chainId,
+			data: transactionData.data,
+			gas: transactionData.gas,
+			to: transactionData.to,
+			value: transactionData.value,
+			nonce: transactionParameters.nonce,
+			from: broadcaster.address,
+			maxFeePerGas: transactionParameters.maxFeePerGas,
+			maxPriorityFeePerGas: transactionParameters.maxPriorityFeePerGas,
+		};
+
+		const rawTx = await signer.request({
+			method: 'eth_signTransaction',
+			params: [actualTransactionData],
+		});
+		const hash = toHex(keccak_256(fromHex(rawTx)));
+		return {
+			rawTx,
+			hash,
+		};
+	}
+
+	async signVoidTransaction(
+		chainId: `0x${string}`,
+		broadcaster: BroadcasterSignerData,
+		transactionParameters: TransactionParametersUsed,
+	): Promise<SignedTransactionInfo> {
+		let signer: EIP1193LocalSigner;
+		const [protocol, protocolData] = broadcaster.signer.split(':');
+		if (protocol === 'privateKey') {
+			signer = new EIP1193LocalSigner(protocolData as `0x${string}`);
 		} else {
-			// TODO if nonceIncreased
-			//
-			actualTransactionData = {
-				type: transactionData.type,
-				accessList: transactionData.accessList,
-				chainId: chainId,
-				data: transactionData.data,
-				gas: transactionData.gas,
-				to: transactionData.to,
-				value: transactionData.value,
-				nonce: transactionParameters.nonce,
+			throw new Error(`protocol ${protocol} not supported`);
+		}
+
+		// logger.error('already done, sending dummy transaction');
+		try {
+			// compute maxFeePerGas and maxPriorityFeePerGas to fill the total gas cost  * price that was alocated
+			// maybe not fill but increase from previoyus considering current fee and allowance
+			const actualTransactionData: FullTransactionData = {
+				type: '0x2',
 				from: broadcaster.address,
+				to: broadcaster.address,
+				nonce: transactionParameters.nonce,
 				maxFeePerGas: transactionParameters.maxFeePerGas,
 				maxPriorityFeePerGas: transactionParameters.maxPriorityFeePerGas,
+				chainId: chainId,
+				gas: `0x${(21000).toString(16)}`,
 			};
-
 			const rawTx = await signer.request({
 				method: 'eth_signTransaction',
 				params: [actualTransactionData],
@@ -336,9 +335,11 @@ export class EthereumChainProtocol implements ChainProtocol {
 			return {
 				rawTx,
 				hash,
-				transactionData: actualTransactionData as TransactionDataType,
-				isVoidTransaction: false,
 			};
+		} catch (e) {
+			// logger.error(`FAILED TO SEND DUMMY TX`, e);
+			// TODO do something
+			throw e;
 		}
 	}
 
@@ -352,13 +353,13 @@ export class EthereumChainProtocol implements ChainProtocol {
 		const gas = BigInt(30000);
 		const cost = gas * maxFeePerGas; // TODO handle extra Fee like Optimism
 		const valueToSend = diffToCover * BigInt(transactionData.gas);
-		const transactionToBroadcast: TransactionDataType = {
+		const transactionToBroadcast: TransactionData = {
 			gas: `0x${gas.toString(16)}`,
 			to: from,
 			type: '0x2',
 			value: `0x${valueToSend.toString(16)}`,
-		} as TransactionDataType;
-		return {transaction: transactionToBroadcast, cost};
+		};
+		return {transaction: transactionToBroadcast as TransactionDataType, cost};
 	}
 
 	// TODO FOR TEST ONLY

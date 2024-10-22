@@ -2,12 +2,33 @@ import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, Transact
 import type {Methods} from '@starknet-io/types-js';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC} from 'remote-procedure-call';
-import {ExecutionSubmission} from 'fuzd-common';
-import type {INVOKE_TXN_V1} from 'strk/types/rpc/components';
+import {ExecutionSubmission, TransactionParametersUsed} from 'fuzd-common';
+import type {TXN} from 'strk/types/rpc/components';
 
 import {initAccountFromHD} from 'remote-account';
 
-type TransactionData = INVOKE_TXN_V1;
+import ERC20ABI from './abis/ERC20';
+import {
+	create_call,
+	create_declare_transaction_intent_v2,
+	create_deploy_account_transaction_intent_v1,
+	create_deploy_account_transaction_v1,
+	create_invoke_transaction_v1,
+} from 'strk';
+
+type FullTransactionData = TXN; // TODO do not accept deploy_account tx ?
+// TODO v1
+type TransactionData = Omit<FullTransactionData, 'signaure' | 'chain_id' | 'resource_bounds' | 'tip'> & {
+	resource_bounds: {
+		l1_gas: {
+			max_amount: string;
+		};
+		l2_gas: {
+			max_amount: string;
+		};
+	};
+};
+type FullTransactionDataWithoutSignature = Omit<TXN, 'signature'>; // TODO do not accept deploy_account tx ?
 
 export class StarknetChainProtocol implements ChainProtocol {
 	private rpc: CurriedRPC<Methods>;
@@ -17,6 +38,8 @@ export class StarknetChainProtocol implements ChainProtocol {
 			expectedFinality: number;
 			worstCaseBlockTime: number;
 			contractTimestamp?: `0x${string}`;
+			tokenContractAddress: `0x${string}`;
+			accountContractClassHash: `0x${string}`; // should not be changed unless we handle broadcaster data
 		},
 		public account: ReturnType<typeof initAccountFromHD>, // TODO remote-account : export this type
 	) {
@@ -129,15 +152,19 @@ export class StarknetChainProtocol implements ChainProtocol {
 	}
 
 	async getBalance(account: `0x${string}`): Promise<bigint> {
-		const balanceResponse = await this.rpc.call('starknet_call')({
-			block_id: 'latest',
-			request: {
-				// TODO
-				calldata: [],
-				contract_address: '0x',
-				entry_point_selector: '',
-			},
-		});
+		// const contractCallData: CallData = new CallData(contract.sierra.abi);
+		// const contractConstructor: Calldata = contractCallData.compile('constructor', {
+		// 	public_key: publicKey0,
+		// });
+
+		const balanceResponse = await this.rpc.call('starknet_call')(
+			create_call({
+				block_id: 'latest',
+				contract_address: this.config.tokenContractAddress,
+				calldata: [account],
+				entry_point: 'balanceOf',
+			}),
+		);
 		if (!balanceResponse.success) {
 			throw new Error(`failed to fetch balance`, {cause: balanceResponse.error});
 		}
@@ -254,24 +281,106 @@ export class StarknetChainProtocol implements ChainProtocol {
 		broadcasterAddress: `0x${string}`,
 		data: Partial<TransactionDataType>,
 	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}> {
+		// TODO
 		// return {notEnoughGas: gasRequired > BigInt(transactionData.gas) ? true : false, revert: false};
+		return {
+			notEnoughGas: false,
+			revert: false,
+		};
 	}
 
 	async signTransaction<TransactionDataType>(
 		chainId: `0x${string}`,
-		data: Partial<TransactionDataType>,
+		data: TransactionDataType,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
-		options: {
-			forceVoid?: boolean;
-			nonceIncreased: boolean;
-		},
 	): Promise<{
 		rawTx: any;
 		hash: `0x${string}`;
 		transactionData: TransactionDataType;
 		isVoidTransaction: boolean;
-	}> {}
+	}> {
+		let signer: any; // TODO
+		const [protocol, protocolData] = broadcaster.signer.split(':');
+		if (protocol === 'privateKey') {
+			signer = new EIP1193LocalSigner(protocolData as `0x${string}`);
+		} else {
+			throw new Error(`protocol ${protocol} not supported`);
+		}
+
+		let transactionData = data as TransactionData;
+
+		// let signer: EIP1193LocalSigner;
+		// const [protocol, protocolData] = broadcaster.signer.split(':');
+		// if (protocol === 'privateKey') {
+		// 	signer = new EIP1193LocalSigner(protocolData as `0x${string}`);
+		// } else {
+		// 	throw new Error(`protocol ${protocol} not supported`);
+		// }
+
+		const actualTransactionData: FullTransactionDataWithoutSignature = {
+			...transactionData,
+		};
+
+		const hash = '0x';
+
+		const signature = '0x';
+
+		const rawTx = {
+			signature,
+		};
+
+		// const rawTx = await signer.request({
+		// 	method: 'eth_signTransaction',
+		// 	params: [actualTransactionData],
+		// });
+		// const hash = toHex(keccak_256(fromHex(rawTx)));
+		return {
+			rawTx,
+			hash,
+			transactionData: actualTransactionData as TransactionDataType,
+			isVoidTransaction: false,
+		};
+	}
+
+	// async signVoidTransaction<TransactionDataType>(
+	// 	chainId: `0x${string}`,
+	// 	broadcaster: BroadcasterSignerData,
+	// 	transactionParameters: TransactionParametersUsed,
+	// ): Promise<{
+	// 	rawTx: any;
+	// 	hash: `0x${string}`;
+	// 	transactionData: TransactionDataType;
+	// 	isVoidTransaction: boolean;
+	// }> {
+
+	// }
+
+	requiredPreliminaryTransaction<TransactionDataType>(
+		chainId: string,
+		broadcaster: BroadcasterSignerData,
+	): TransactionDataType {
+		let signer: any; // TODO
+		const [protocol, protocolData] = broadcaster.signer.split(':');
+		if (protocol === 'privateKey') {
+			signer = new EIP1193LocalSigner(protocolData as `0x${string}`);
+		} else {
+			throw new Error(`protocol ${protocol} not supported`);
+		}
+
+		const {data} = create_deploy_account_transaction_intent_v1({
+			chain_id: chainId,
+			class_hash: this.config.accountContractClassHash,
+			constructor_calldata: [signerPublicKey], // TODO
+			contract_address_salt: 0,
+			max_fee: 0, // TODO
+			nonce: 0,
+		});
+
+		const tx: TransactionData = data;
+
+		return tx as TransactionDataType;
+	}
 
 	generatePaymentTransaction<TransactionDataType>(
 		data: TransactionDataType,
@@ -280,7 +389,18 @@ export class StarknetChainProtocol implements ChainProtocol {
 		diffToCover: bigint,
 	): {transaction: TransactionDataType; cost: bigint} {
 		// TODO ERC20  contract...
-		// return {transaction: transactionToBroadcast, cost};
+
+		const transactionData = data as TransactionData;
+		const gas = BigInt(30000);
+		const cost = gas * maxFeePerGas; // TODO handle extra Fee like Optimism
+		const valueToSend = diffToCover * BigInt(transactionData.maxfee); // TODO or v3 resource_bounds
+		const transactionToBroadcast: TransactionData = {
+			gas: `0x${gas.toString(16)}`,
+			to: from,
+			type: '0x2',
+			value: `0x${valueToSend.toString(16)}`,
+		};
+		return {transaction: transactionToBroadcast, cost};
 	}
 
 	// TODO FOR TEST ONLY
