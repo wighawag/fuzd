@@ -183,7 +183,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		await statement.bind(account, chainId, slot, batchIndex).all();
 	}
 
-	async createOrUpdatePendingExecution(
+	async createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(
 		executionToStore: PendingExecutionStored<TransactionDataType>,
 		asPaymentFor?: {
 			chainId: `0x${string}`;
@@ -195,15 +195,32 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	): Promise<PendingExecutionStored<TransactionDataType>> {
 		const inDB = toExecutionInDB(executionToStore);
 		const {values, columns, bindings, overwrites} = toValues(inDB);
-		const sqlStatement = `INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot, batchIndex) DO UPDATE SET ${overwrites};`;
-		logger.debug(sqlStatement);
-		const statement = this.db.prepare(sqlStatement);
+		const sqlExecutionInsertionStatement = `INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot, batchIndex) DO UPDATE SET ${overwrites};`;
+		logger.debug(sqlExecutionInsertionStatement);
+		const executionInsertionStatement = this.db.prepare(sqlExecutionInsertionStatement);
+
+		// TODO use number of string ?
+		const nextNonce = Number(executionToStore.transactionParametersUsed.nonce);
+		if (`0x${nextNonce.toString(16)}` != executionToStore.transactionParametersUsed.nonce) {
+			throw new Error(
+				`could not handle nonce comversion to number: ${executionToStore.transactionParametersUsed.nonce}`,
+			);
+		}
+		const broadcasterInDB = toBroadcasterInDB({
+			address: executionToStore.transactionParametersUsed.from,
+			chainId: executionToStore.chainId,
+			nextNonce,
+		});
+		const broadcasterTableData = toValues(broadcasterInDB);
+		const sqlUpdateNonceStatement = `INSERT INTO Broadcasters (${broadcasterTableData.columns}) VALUES (${broadcasterTableData.bindings}) ON CONFLICT(address, chainId) DO UPDATE SET nextNonce = MAX(nextNonce, excluded.nextNonce);`;
+		const updateNonceStatement = this.db.prepare(sqlUpdateNonceStatement);
 		if (asPaymentFor) {
 			const asPaymentForStatement = this.db.prepare(
 				`UPDATE BroadcastedExecutions SET helpedForUpToGasPrice = ?1 WHERE chainId = ?2 AND account = ?3 AND slot = ?4 AND batchIndex = ?5;`,
 			);
 			await this.db.batch([
-				statement.bind(...values),
+				updateNonceStatement.bind(...broadcasterTableData.values),
+				executionInsertionStatement.bind(...values),
 				asPaymentForStatement.bind(
 					asPaymentFor.upToGasPrice,
 					asPaymentFor.chainId,
@@ -213,7 +230,10 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 				),
 			]);
 		} else {
-			await statement.bind(...values).all();
+			await this.db.batch([
+				updateNonceStatement.bind(...broadcasterTableData.values),
+				executionInsertionStatement.bind(...values),
+			]);
 		}
 		return executionToStore;
 	}

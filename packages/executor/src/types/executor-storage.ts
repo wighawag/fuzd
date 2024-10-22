@@ -26,7 +26,7 @@ export interface ExecutorStorage<TransactionDataType> {
 		slot: string;
 		batchIndex: number;
 	}): Promise<void>;
-	createOrUpdatePendingExecution(
+	createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(
 		executionToStore: PendingExecutionStored<TransactionDataType>,
 		asPaymentFor?: {
 			chainId: `0x${string}`;

@@ -137,8 +137,8 @@ export function createExecutor<TransactionDataType>(
 		const chainProtocol = _getChainProtocol(chainId);
 
 		const nonceAsHex = await chainProtocol.getNonce(broadcasterAddress);
-		const nonce = Number(nonceAsHex);
-		if (isNaN(nonce)) {
+		const currentNonceAsPerNetwork = Number(nonceAsHex);
+		if (isNaN(currentNonceAsPerNetwork)) {
 			throw new Error(`could not parse transaction count while checking for expected nonce`);
 		}
 		let broadcasterData: BroadcasterData;
@@ -149,11 +149,11 @@ export function createExecutor<TransactionDataType>(
 		if (dataFromStorage) {
 			broadcasterData = dataFromStorage;
 		} else {
-			broadcasterData = {chainId: chainId, address: broadcasterAddress, nextNonce: nonce};
+			broadcasterData = {chainId: chainId, address: broadcasterAddress, nextNonce: currentNonceAsPerNetwork};
 		}
 
 		const expectedNonce = broadcasterData.nextNonce;
-		return {nonce, expectedNonce};
+		return {currentNonceAsPerNetwork, expectedNonce};
 	}
 
 	async function _getTxParams(
@@ -161,14 +161,17 @@ export function createExecutor<TransactionDataType>(
 		broadcasterAddress: String0x,
 		transactionData: Partial<TransactionDataType>,
 	): Promise<
-		{expectedNonce: number; nonce: number} & ({revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean})
+		{expectedNonce: number; currentNonceAsPerNetwork: number} & (
+			| {revert: 'unknown'}
+			| {revert: boolean; notEnoughGas: boolean}
+		)
 	> {
-		const {expectedNonce, nonce} = await _getBroadcasterNonce(chainId, broadcasterAddress);
+		const {expectedNonce, currentNonceAsPerNetwork} = await _getBroadcasterNonce(chainId, broadcasterAddress);
 
 		const chainProtocol = _getChainProtocol(chainId);
 
 		const validity = await chainProtocol.checkValidity(broadcasterAddress, transactionData);
-		return {...validity, expectedNonce, nonce};
+		return {...validity, expectedNonce, currentNonceAsPerNetwork};
 	}
 
 	function _getChainProtocol(chainId: String0x): ChainProtocol {
@@ -235,7 +238,7 @@ export function createExecutor<TransactionDataType>(
 		}
 
 		const expectedNonce = txParams.expectedNonce;
-		let nonce = txParams.nonce;
+		let nonce = txParams.currentNonceAsPerNetwork; // TODO TOFIX use expectedNonce
 		let nonceIncreased = false;
 		if (options.forceNonce) {
 			nonce = options.forceNonce;
@@ -329,7 +332,7 @@ export function createExecutor<TransactionDataType>(
 			isVoidTransaction: rawTxInfo.isVoidTransaction,
 			lastError,
 		};
-		await storage.createOrUpdatePendingExecution(newExecution, asPaymentFor);
+		await storage.createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(newExecution, asPaymentFor);
 
 		try {
 			await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
@@ -357,7 +360,7 @@ export function createExecutor<TransactionDataType>(
 
 				newExecution.lastError = errorString;
 
-				await storage.createOrUpdatePendingExecution(newExecution);
+				await storage.createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(newExecution);
 				logger.error(
 					`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.`,
 					err,
@@ -483,7 +486,7 @@ export function createExecutor<TransactionDataType>(
 		const txStatus = await chainProtocol.isTransactionFinalised(pendingExecution.hash);
 		if (txStatus.finalised) {
 			pendingExecution.finalized = true;
-			storage.createOrUpdatePendingExecution(pendingExecution);
+			storage.createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(pendingExecution);
 		} else if (!txStatus.pending) {
 			await _resubmitIfNeeded(pendingExecution);
 		}
