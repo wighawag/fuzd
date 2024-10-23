@@ -21,7 +21,7 @@ import {formatSignature} from 'starknet-core/utils/stark';
 import type {DeepReadonly} from 'strk';
 import {getExecuteCalldata} from 'starknet-core/utils/transaction';
 
-type FullTransactionData = TXN; // TODO do not accept deploy_account tx ?
+type FullTransactionData = TXN;
 
 type OmitSignedTransactionData<T> = Omit<T, 'sender_address' | 'signature' | 'chain_id' | 'nonce'>;
 
@@ -38,6 +38,7 @@ type InvokeTransactionData =
 			};
 	  });
 
+// TODO should not be accepted unless for preliminary
 type DeployAccountTransactionData =
 	| OmitSignedTransactionData<DeepReadonly<DEPLOY_ACCOUNT_TXN_V1>>
 	| (Omit<OmitSignedTransactionData<DeepReadonly<DEPLOY_ACCOUNT_TXN_V3>>, 'resource_bounds' | 'tip'> & {
@@ -196,11 +197,24 @@ export class StarknetChainProtocol implements ChainProtocol {
 	}
 
 	async broadcastSignedTransaction(tx: any): Promise<`0x${string}`> {
-		const invokeResponse = await this.rpc.call('starknet_addInvokeTransaction')({invoke_transaction: tx});
-		if (!invokeResponse.success) {
-			throw new Error(`could not send response`, {cause: invokeResponse.error});
+		const transaction = tx as FullTransactionData;
+		if (transaction.type === 'INVOKE') {
+			const invokeResponse = await this.rpc.call('starknet_addInvokeTransaction')({invoke_transaction: transaction});
+			if (!invokeResponse.success) {
+				throw new Error(`could not send response`, {cause: invokeResponse.error});
+			}
+			return invokeResponse.value.transaction_hash as `0x${string}`; // TODO string ?
+		} else if (transaction.type === 'DEPLOY_ACCOUNT') {
+			const invokeResponse = await this.rpc.call('starknet_addDeployAccountTransaction')({
+				deploy_account_transaction: transaction,
+			});
+			if (!invokeResponse.success) {
+				throw new Error(`could not send response`, {cause: invokeResponse.error});
+			}
+			return invokeResponse.value.transaction_hash as `0x${string}`; // TODO string ?
+		} else {
+			throw new Error(`transaction type not supported: ${transaction.type}`);
 		}
-		return invokeResponse.value.transaction_hash as `0x${string}`; // TODO string ?
 	}
 
 	async getNonce(account: `0x${string}`): Promise<`0x${string}`> {

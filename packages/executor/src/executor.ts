@@ -180,24 +180,6 @@ export function createExecutor<TransactionDataType>(
 		return {currentNonceAsPerNetwork, expectedNonce};
 	}
 
-	async function _getTxParams(
-		chainId: String0x,
-		broadcasterAddress: String0x,
-		transactionData: Partial<TransactionDataType>,
-	): Promise<
-		{expectedNonce: number; currentNonceAsPerNetwork: number} & (
-			| {revert: 'unknown'}
-			| {revert: boolean; notEnoughGas: boolean}
-		)
-	> {
-		const {expectedNonce, currentNonceAsPerNetwork} = await _getBroadcasterNonce(chainId, broadcasterAddress);
-
-		const chainProtocol = _getChainProtocol(chainId);
-
-		const validity = await chainProtocol.checkValidity(broadcasterAddress, transactionData);
-		return {...validity, expectedNonce, currentNonceAsPerNetwork};
-	}
-
 	function _getChainProtocol(chainId: String0x): ChainProtocol {
 		const chainProtocol = chainProtocols[chainId];
 		if (!chainProtocol) {
@@ -230,50 +212,23 @@ export function createExecutor<TransactionDataType>(
 		// signTransaction then handle the fetching of estimate, etc...
 
 		const chainProtocol = _getChainProtocol(execution.chainId);
-		const txParams = await _getTxParams(execution.chainId, broadcaster.address, execution.transaction);
-		if (txParams.revert === true) {
-			const errorMessage = `The transaction reverts`;
-			logger.error(errorMessage);
-			execution.lastError = errorMessage;
-			if (options.previouslyStored) {
-				// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
-				// we do that by making a simple void tx
-				options.forceVoid = true;
-			} else {
-				return undefined;
-			}
-		} else if (txParams.revert === 'unknown') {
-			// we keep going anyway
-		} else if (txParams.notEnoughGas) {
-			const errorMessage = `The transaction requires more gas than provided. Aborting here`;
-			logger.error(errorMessage);
-			execution.lastError = errorMessage;
-			if (options.previouslyStored) {
-				// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
-				// we do that by making a simple void tx
-				options.forceVoid = true;
-			} else {
-				return undefined;
-			}
-		}
+		const {expectedNonce, currentNonceAsPerNetwork} = await _getBroadcasterNonce(
+			execution.chainId,
+			broadcaster.address,
+		);
 
-		if (options.forceVoid) {
-			// TODO if forceVoid, we can use more gasPrive as long as total do not exceed gas * maxFeePerGasAuthorized
-		}
-
-		const expectedNonce = txParams.expectedNonce;
-		let nonce = txParams.currentNonceAsPerNetwork; // TODO TOFIX use expectedNonce
-		let nonceIncreased = false;
+		let nonce = expectedNonce;
+		let noncePassedAlready = false;
 		if (options.forceNonce) {
 			nonce = options.forceNonce;
 		} else {
-			if (nonce !== expectedNonce) {
-				if (nonce > expectedNonce) {
-					const message = `nonce not matching, expected ${expectedNonce}, got ${nonce}. this means some tx went through in between`;
+			if (nonce !== currentNonceAsPerNetwork) {
+				if (currentNonceAsPerNetwork > nonce) {
+					const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}. this means some tx went through in between`;
 					// logger.error(message);
-					nonceIncreased = true;
+					noncePassedAlready = true;
 				} else {
-					const message = `nonce not matching, expected ${expectedNonce}, got ${nonce}, this means some tx has not been included yet and we should still keep using the exepected value. We prefer to throw and make the user retry`;
+					const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}, this means some tx has not been included yet and we should still keep using the exepected value. We prefer to throw and make the user retry`;
 					// logger.error(message);
 					throw new Error(message);
 				}
@@ -286,14 +241,14 @@ export function createExecutor<TransactionDataType>(
 		// To be fair if the tx fails this should be enough
 		if (options?.forceVoid || already_resolved) {
 			options.forceVoid = true;
-			if (nonceIncreased) {
+			if (noncePassedAlready) {
 				// return {error: {message: 'nonce increased but fleet already resolved', code: 5502}};
 				if (already_resolved) {
-					throw new Error(`nonce increased but already resolved. we can skip`);
+					throw new Error(`nonce already passed but already resolved. we can skip`);
 					// TODO delete instead of error ?
 				} else {
 					throw new Error(
-						`nonce increased but already resolved. this should never happen since forceNonce should have been used here`,
+						`nonce already passed but not already resolved. this should never happen since forceNonce should have been used here`,
 					);
 				}
 			}
@@ -316,6 +271,38 @@ export function createExecutor<TransactionDataType>(
 			from: broadcaster.address,
 			nonce: numToHex(nonce),
 		};
+
+		const validity = await chainProtocol.checkValidity<TransactionDataType>(broadcaster.address, execution.transaction);
+
+		if (validity.revert === true) {
+			const errorMessage = `The transaction reverts`;
+			logger.error(errorMessage);
+			execution.lastError = errorMessage;
+			if (options.previouslyStored) {
+				// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
+				// we do that by making a simple void tx
+				options.forceVoid = true;
+			} else {
+				return undefined;
+			}
+		} else if (validity.revert === 'unknown') {
+			// we keep going anyway
+		} else if (validity.notEnoughGas) {
+			const errorMessage = `The transaction requires more gas than provided. Aborting here`;
+			logger.error(errorMessage);
+			execution.lastError = errorMessage;
+			if (options.previouslyStored) {
+				// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
+				// we do that by making a simple void tx
+				options.forceVoid = true;
+			} else {
+				return undefined;
+			}
+		}
+
+		if (options.forceVoid) {
+			// TODO if forceVoid, we can use more gasPrive as long as total do not exceed gas * maxFeePerGasAuthorized
+		}
 
 		// TODO if nonceIncreased
 		//

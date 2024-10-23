@@ -54,7 +54,6 @@ export interface ExecutorChainProtocol {
 	getBalance(account: `0x${string}`): Promise<bigint>;
 	broadcastSignedTransaction(tx: any): Promise<`0x${string}`>;
 	getNonce(account: `0x${string}`): Promise<`0x${string}`>;
-	estimateGasNeeded(tx: any): Promise<bigint>;
 	getGasFee(executionData: {maxFeePerGasAuthorized: `0x${string}`}): Promise<GasEstimate>;
 	parseExecutionSubmission<TransactionDataType>(
 		execution: ExecutionSubmission<TransactionDataType>,
