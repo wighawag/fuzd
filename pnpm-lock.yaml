@@ -584,6 +584,9 @@ importers:
       strk:
         specifier: ^0.0.12
         version: 0.0.12
+      strk-account:
+        specifier: ^0.0.1
+        version: 0.0.1
       tlock-js:
         specifier: ^0.9.0
         version: 0.9.0
@@ -3982,6 +3985,7 @@ packages:
 
   libsql@0.3.18:
     resolution: {integrity: sha512-lvhKr7WV3NLWRbXkjn/MeKqXOAqWKU0PX9QYrvDh7fneukapj+iUQ4qgJASrQyxcCrEsClXCQiiK5W6OoYPAlA==}
+    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lines-and-columns@1.2.4:
@@ -4323,6 +4327,9 @@ packages:
 
   named-logs-console@0.3.1:
     resolution: {integrity: sha512-qExLlmkSSrI/57Juvc94c0zlldI5IvreilyFeg7KfxMGGotTVER6xfk+KB7DZ5m18GYnFZn77z2kyigtcn2zHA==}
+
+  named-logs-for-servers@0.0.1:
+    resolution: {integrity: sha512-fuYEOBPjBOjbSjTIpOYOxmhhHgPXApyvR7h/o9f7YuNrFd10hOkS9iSxlXyq6u9+AevrvqVtnGbrTPn3HPuMRg==}
 
   named-logs@0.2.4:
     resolution: {integrity: sha512-QHlcLpK2Ij+u7ZYDYgaYkTIlC/NcOwEnFdqbY+PF9ewAMUjvBwRVUyqBUtVaJ3V2YKVy2HiloAgLUdOEVRRyBA==}
@@ -5304,6 +5311,9 @@ packages:
 
   strip-literal@2.1.0:
     resolution: {integrity: sha512-Op+UycaUt/8FbN/Z2TWPBLge3jWrP3xj10f3fnYxf052bKuS3EKs1ZQcVGjnEMdsNVAM+plXRdmjrZ/KgG3Skw==}
+
+  strk-account@0.0.1:
+    resolution: {integrity: sha512-64llBxFT8YA9o0dpHlpWhWnLPxGW35lBIU9gmxqxd6DmpXYgZQ1iASUSBKD2jMF8y93DLIaM3qoOW9YEeVvK4Q==}
 
   strk@0.0.12:
     resolution: {integrity: sha512-SsEKyXFEdgFBpR+JtGXQSs5j9HyMp8Bo6NbYXw/HZZf90dKJDCyuvqt5QQuqHmnO1RN2otH6t6g6187LsCSqpw==}
@@ -7124,7 +7134,7 @@ snapshots:
 
   '@rocketh/deploy@0.10.6(rocketh@0.10.13(typescript@5.4.5)(zod@3.23.8))(typescript@5.4.5)(zod@3.23.8)':
     dependencies:
-      named-logs: 0.2.4
+      named-logs: named-logs-for-servers@0.0.1
       rocketh: 0.10.13(typescript@5.4.5)(zod@3.23.8)
       viem: 2.10.8(typescript@5.4.5)(zod@3.23.8)
     transitivePeerDependencies:
@@ -10182,6 +10192,8 @@ snapshots:
     dependencies:
       named-logs: 0.2.4
 
+  named-logs-for-servers@0.0.1: {}
+
   named-logs@0.2.4: {}
 
   nanoid@3.3.7: {}
@@ -11280,6 +11292,11 @@ snapshots:
   strip-literal@2.1.0:
     dependencies:
       js-tokens: 9.0.0
+
+  strk-account@0.0.1:
+    dependencies:
+      '@scure/starknet': 1.0.0
+      starknet-core: 0.0.2
 
   strk@0.0.12:
     dependencies:

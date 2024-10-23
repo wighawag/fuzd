@@ -16,12 +16,13 @@ import {
 import {toHex} from 'starknet-core/utils/num';
 import {starknetKeccak} from 'starknet-core/utils/hash';
 import GreetingsRegistry from './ts-artifacts/GreetingsRegistry';
-import {KATANA_CHAIN_ID, test_accounts, UniversalDeployerContract} from 'katana-rpc';
+import {KATANA_CHAIN_ID, test_accounts, UniversalDeployerContract, ETHTokenContract} from 'katana-rpc';
 import {createTestExecutor} from '../ethereum/test/utils/executor';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import {initAccountFromHD} from 'remote-account';
 import {StarknetChainProtocol} from 'fuzd-chain-protocol/starknet';
+import AccountContract from 'strk-account';
 
 const rpc = createProxiedJSONRPC<StarknetMethods>(RPC_URL);
 
@@ -40,12 +41,25 @@ test('starknet_chainId', async function () {
 	expect(chainIdResponse.value).to.equal(KATANA_CHAIN_ID);
 });
 
+test('declare_Account', async function () {
+	const declare_transaction = create_declare_transaction_v2({
+		chain_id: KATANA_CHAIN_ID,
+		contract: AccountContract,
+		max_fee: '0xFFFFFFFFFFFFFF',
+		nonce: '0x0',
+		sender_address: test_accounts[0].contract_address,
+		private_key: test_accounts[0].private_key,
+	});
+	const chainIdResponse = await rpc.starknet_addDeclareTransaction({declare_transaction});
+	expect(chainIdResponse.success).to.be.true;
+});
+
 test('declare_GreetingsRegistry', async function () {
 	const declare_transaction = create_declare_transaction_v2({
 		chain_id: KATANA_CHAIN_ID,
 		contract: GreetingsRegistry,
-		max_fee: '0xFFFFFFFFFFFFFFFFFF',
-		nonce: '0x0',
+		max_fee: '0xFFFFFFFFFFFFFF',
+		nonce: '0x1',
 		sender_address: test_accounts[0].contract_address,
 		private_key: test_accounts[0].private_key,
 	});
@@ -72,8 +86,8 @@ test('deploy_GreetingsRegistry', async function () {
 				calldata: [GreetingsRegistry.class_hash, salt, unique, [prefix]],
 			},
 		],
-		max_fee: '0xFFFFFFFFFFFFFFFFFF',
-		nonce: '0x1',
+		max_fee: '0xFFFFFFFFFFFFFF',
+		nonce: '0x2',
 		sender_address: test_accounts[0].contract_address,
 		private_key: test_accounts[0].private_key,
 	});
@@ -145,8 +159,8 @@ test('invoke_GreetingsRegistry', async function () {
 				calldata: calldataParser.compile('setMessage', [message, 12]),
 			},
 		],
-		max_fee: '0xFFFFFFFFFFFFFFFFFF',
-		nonce: '0x2',
+		max_fee: '0xFFFFFFFFFFFFFF',
+		nonce: '0x3',
 		sender_address: test_accounts[0].contract_address,
 		private_key: test_accounts[0].private_key,
 	});
@@ -199,8 +213,8 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 				calldata: calldataParser.compile('setMessage', [message, 12]),
 			},
 		],
-		max_fee: '0xFFFFFFFFFFFFFFFFFF',
-		nonce: '0x2',
+		max_fee: '0xFFFFFFFFFFFFFF',
+		nonce: '0x3',
 		sender_address: test_accounts[0].contract_address,
 		private_key: test_accounts[0].private_key,
 	});
@@ -220,19 +234,13 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 			[KATANA_CHAIN_ID]: new StarknetChainProtocol(
 				RPC_URL,
 				{
-					accountContractClassHash: '0x', // TODO
+					accountContractClassHash: AccountContract.class_hash,
 					expectedFinality: 1,
-					tokenContractAddress: '0x', // TOD
+					tokenContractAddress: ETHTokenContract.contract_address as `0x${string}`,
 					worstCaseBlockTime: 1,
 				},
 				account,
 			),
-			// provider as any,
-			// {
-			// 	expectedFinality: 1,
-			// 	worstCaseBlockTime: 3,
-			// },
-			// account,
 		},
 		paymentAccount,
 		expectedWorstCaseGasPrices: [
