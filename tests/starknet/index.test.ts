@@ -3,7 +3,12 @@ import {createProxiedJSONRPC} from 'remote-procedure-call';
 import {Methods as StarknetMethods} from '@starknet-io/types-js';
 import assert from 'assert';
 import {RPC_URL} from './prool';
-import {create_declare_transaction_v2, create_invoke_transaction_v1_from_calls, create_call} from 'strk';
+import {
+	create_declare_transaction_v2,
+	create_invoke_transaction_v1_from_calls,
+	create_call,
+	create_invoke_transaction_intent_v1_from_calls,
+} from 'strk';
 import {encodeShortString, decodeShortString} from 'starknet-core/utils/shortString';
 import {CallData} from 'starknet-core/utils/calldata';
 import {
@@ -21,7 +26,7 @@ import {createTestExecutor} from '../ethereum/test/utils/executor';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import {initAccountFromHD} from 'remote-account';
-import {StarknetChainProtocol} from 'fuzd-chain-protocol/starknet';
+import {AllowedTransactionData, StarknetChainProtocol} from 'fuzd-chain-protocol/starknet';
 import AccountContract from 'strk-account';
 
 const rpc = createProxiedJSONRPC<StarknetMethods>(RPC_URL);
@@ -190,7 +195,7 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 	const precallResponse = await rpc.starknet_call(
 		create_call({
 			contract_address: contractAddress,
-			calldata: [test_accounts[0].contract_address],
+			calldata: [test_accounts[1].contract_address],
 			entry_point: 'lastGreetingOf',
 		}),
 	);
@@ -199,25 +204,6 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 
 	// fix decodeShortString and encodeShortString for ""
 	expect(precallResponse.value[0]).to.equals('0x0');
-
-	const abi = JSON.parse(GreetingsRegistry.abi);
-	const calldataParser = new CallData(abi);
-
-	const messageAsFelt = encodeShortString(message);
-	const invoke_transaction = create_invoke_transaction_v1_from_calls({
-		chain_id: KATANA_CHAIN_ID,
-		calls: [
-			{
-				contractAddress: contractAddress,
-				entrypoint: 'setMessage',
-				calldata: calldataParser.compile('setMessage', [message, 12]),
-			},
-		],
-		max_fee: '0xFFFFFFFFFFFFFF',
-		nonce: '0x3',
-		sender_address: test_accounts[0].contract_address,
-		private_key: test_accounts[0].private_key,
-	});
 
 	// TODO
 	const paymentAccount = '0x0000000000000000000000000000000000000001';
@@ -250,6 +236,43 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 			},
 		],
 	});
+
+	const abi = JSON.parse(GreetingsRegistry.abi);
+	const calldataParser = new CallData(abi);
+
+	const messageAsFelt = encodeShortString(message);
+	const intent = create_invoke_transaction_intent_v1_from_calls({
+		chain_id: KATANA_CHAIN_ID,
+		calls: [
+			{
+				contractAddress: contractAddress,
+				entrypoint: 'setMessage',
+				calldata: calldataParser.compile('setMessage', [message, 12]),
+			},
+		],
+		max_fee: '0xFFFFFFFFFFFFFF',
+		nonce: '0x3', // not used
+		sender_address: test_accounts[0].contract_address, // not used
+	});
+
+	const transaction: AllowedTransactionData = {
+		type: 'INVOKE',
+		version: '0x1',
+		calldata: intent.data.calldata,
+		max_fee: '0xFFFFFFFFFFFFFF',
+	};
+
+	// account is ethereum account, right ?
+	const txInfo = await executor.broadcastExecution(
+		(1).toString(),
+		0,
+		test_accounts[1].contract_address as `0x${string}`,
+		{
+			chainId: KATANA_CHAIN_ID,
+			transaction,
+			maxFeePerGasAuthorized: `0xFFFFF` as `0x${string}`,
+		},
+	);
 
 	const callResponse = await rpc.starknet_call(
 		create_call({

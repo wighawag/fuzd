@@ -52,6 +52,7 @@ type DeployAccountTransactionData =
 			};
 	  });
 
+export type AllowedTransactionData = InvokeTransactionData;
 type TransactionData = InvokeTransactionData | DeployAccountTransactionData;
 type FullTransactionDataWithoutSignature = Omit<FullTransactionData, 'signature'>; // TODO do not accept deploy_account tx ?
 
