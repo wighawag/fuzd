@@ -109,6 +109,7 @@ export function createExecutor<TransactionDataType>(
 				const preliminaryTransaction = chainProtocol.requiredPreliminaryTransaction<TransactionDataType>(
 					submission.chainId,
 					broadcaster,
+					account,
 				);
 				const batchIndex = 0;
 				// TODO ensure _INTERNAL_ prefixed slots cannot be used

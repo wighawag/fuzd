@@ -63,6 +63,7 @@ export interface ExecutorChainProtocol {
 	requiredPreliminaryTransaction?<TransactionDataType>(
 		chainId: string,
 		broadcaster: BroadcasterSignerData,
+		account: `0x${string}`,
 	): TransactionDataType;
 
 	assignProviderFor(chainId: `0x${string}`, forAddress: `0x${string}`): Promise<BroadcasterSignerData>;

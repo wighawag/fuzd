@@ -13,8 +13,13 @@ import {
 	create_declare_transaction_intent_v2,
 	create_deploy_account_transaction_intent_v1,
 	create_deploy_account_transaction_v1,
+	create_invoke_transaction_intent_v1,
+	create_invoke_transaction_intent_v1_from_calls,
 	create_invoke_transaction_v1,
 } from 'strk';
+import {BigNumberish, hash} from 'starknet-core';
+import {getStarkKey, sign} from '@scure/starknet';
+import {formatSignature} from 'starknet-core/utils/stark';
 
 type FullTransactionData = TXN; // TODO do not accept deploy_account tx ?
 // TODO v1
@@ -260,20 +265,37 @@ export class StarknetChainProtocol implements ChainProtocol {
 	}
 
 	async assignProviderFor(chainId: `0x${string}`, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
-		const derivedAccount = this.account.deriveForAddress(forAddress);
+		const serverAccount = this.account; // TODO save in assignmentID: initAccountFromHD(this.hdkey);
+		const derivedAccount = serverAccount.deriveForAddress(forAddress);
+		const publicKey = getStarkKey(derivedAccount.privateKey);
+		const accountContractAddress = hash.calculateContractAddressFromHash(
+			publicKey,
+			this.config.accountContractClassHash,
+			[publicKey],
+			0,
+		) as `0x${string}`;
 		return {
-			assignerID: this.account.publicExtendedKey,
+			assignerID: `${serverAccount.publicExtendedKey}:${this.config.accountContractClassHash}`,
 			signer: `privateKey:${derivedAccount.privateKey}`,
-			address: derivedAccount.address, // TODO contract_address
+			address: accountContractAddress,
 		};
 	}
 	async getProviderByAssignerID(assignerID: string, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
-		const derivedAccount = this.account.deriveForAddress(forAddress);
-		// TODO get it from assignerID
+		const [serverPublicKey, accountContractClassHash] = assignerID.split(':');
+		const serverAccount = this.account; // TODO get from assignmentID: initAccountFromHD(this.hdkey);
+		const derivedAccount = serverAccount.deriveForAddress(forAddress);
+		const publicKey = getStarkKey(derivedAccount.privateKey);
+		const accountContractAddress = hash.calculateContractAddressFromHash(
+			publicKey,
+			accountContractClassHash,
+			[publicKey],
+			0,
+		) as `0x${string}`;
+
 		return {
 			signer: `privateKey:${derivedAccount.privateKey}`,
 			assignerID,
-			address: derivedAccount.address, // TODO contract_address
+			address: accountContractAddress,
 		};
 	}
 
@@ -300,41 +322,41 @@ export class StarknetChainProtocol implements ChainProtocol {
 		transactionData: TransactionDataType;
 		isVoidTransaction: boolean;
 	}> {
-		let signer: any; // TODO
 		const [protocol, protocolData] = broadcaster.signer.split(':');
+		let privateKey: `0x${string}`;
 		if (protocol === 'privateKey') {
-			signer = new EIP1193LocalSigner(protocolData as `0x${string}`);
+			privateKey = protocolData as `0x${string}`;
 		} else {
 			throw new Error(`protocol ${protocol} not supported`);
 		}
 
 		let transactionData = data as TransactionData;
 
-		// let signer: EIP1193LocalSigner;
-		// const [protocol, protocolData] = broadcaster.signer.split(':');
-		// if (protocol === 'privateKey') {
-		// 	signer = new EIP1193LocalSigner(protocolData as `0x${string}`);
-		// } else {
-		// 	throw new Error(`protocol ${protocol} not supported`);
-		// }
+		let hash: `0x${string}`;
+		let signature: BigNumberish[];
+		if (transactionData.type === 'INVOKE') {
+			const intent = create_invoke_transaction_intent_v1({
+				...transactionData,
+				chain_id: chainId,
+				nonce: transactionParameters.nonce,
+				sender_address: broadcaster.address,
+				max_fee: 1,
+			});
+			hash = intent.hash as `0x${string}`;
+			signature = formatSignature(sign(intent.hash, privateKey));
+		} else {
+			throw new Error(`type ${transactionData.type} not supported yet`);
+		}
 
 		const actualTransactionData: FullTransactionDataWithoutSignature = {
 			...transactionData,
 		};
 
-		const hash = '0x';
-
-		const signature = '0x';
-
 		const rawTx = {
+			...data,
 			signature,
 		};
 
-		// const rawTx = await signer.request({
-		// 	method: 'eth_signTransaction',
-		// 	params: [actualTransactionData],
-		// });
-		// const hash = toHex(keccak_256(fromHex(rawTx)));
 		return {
 			rawTx,
 			hash,
@@ -359,19 +381,17 @@ export class StarknetChainProtocol implements ChainProtocol {
 	requiredPreliminaryTransaction<TransactionDataType>(
 		chainId: string,
 		broadcaster: BroadcasterSignerData,
+		account: `0x${string}`,
 	): TransactionDataType {
-		let signer: any; // TODO
-		const [protocol, protocolData] = broadcaster.signer.split(':');
-		if (protocol === 'privateKey') {
-			signer = new EIP1193LocalSigner(protocolData as `0x${string}`);
-		} else {
-			throw new Error(`protocol ${protocol} not supported`);
-		}
+		const [serverPublicKey, accountContractClassHash] = broadcaster.assignerID.split(':');
+		const serverAccount = this.account; // TODO get from assignmentID: initAccountFromHD(this.hdkey);
+		const derivedAccount = serverAccount.deriveForAddress(account);
+		const publicKey = getStarkKey(derivedAccount.privateKey);
 
 		const {data} = create_deploy_account_transaction_intent_v1({
 			chain_id: chainId,
 			class_hash: this.config.accountContractClassHash,
-			constructor_calldata: [signerPublicKey], // TODO
+			constructor_calldata: [publicKey],
 			contract_address_salt: 0,
 			max_fee: 0, // TODO
 			nonce: 0,
@@ -394,8 +414,12 @@ export class StarknetChainProtocol implements ChainProtocol {
 		const gas = BigInt(30000);
 		const cost = gas * maxFeePerGas; // TODO handle extra Fee like Optimism
 		const valueToSend = diffToCover * BigInt(transactionData.maxfee); // TODO or v3 resource_bounds
+		// const intent = create_invoke_transaction_intent_v1_from_calls_with_abi({
+
+		// })
 		const transactionToBroadcast: TransactionData = {
-			gas: `0x${gas.toString(16)}`,
+			type: 'INVOKE'
+			maxfee: `0x${gas.toString(16)}`,
 			to: from,
 			type: '0x2',
 			value: `0x${valueToSend.toString(16)}`,
