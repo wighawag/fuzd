@@ -69,8 +69,10 @@ export interface ExecutorChainProtocol {
 	getProviderByAssignerID(assignerID: string, forAddress: `0x${string}`): Promise<BroadcasterSignerData>;
 
 	checkValidity<TransactionDataType>(
-		broadcasterAddress: `0x${string}`,
-		transactionData: Partial<TransactionDataType>,
+		chainId: `0x${string}`,
+		data: TransactionDataType,
+		broadcaster: BroadcasterSignerData,
+		transactionParameters: TransactionParametersUsed,
 	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}>;
 	signTransaction<TransactionDataType>(
 		chainId: `0x${string}`,

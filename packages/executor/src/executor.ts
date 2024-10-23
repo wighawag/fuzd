@@ -272,7 +272,12 @@ export function createExecutor<TransactionDataType>(
 			nonce: numToHex(nonce),
 		};
 
-		const validity = await chainProtocol.checkValidity<TransactionDataType>(broadcaster.address, execution.transaction);
+		const validity = await chainProtocol.checkValidity<TransactionDataType>(
+			execution.chainId,
+			execution.transaction,
+			broadcaster,
+			transactionParametersUsed,
+		);
 
 		if (validity.revert === true) {
 			const errorMessage = `The transaction reverts`;

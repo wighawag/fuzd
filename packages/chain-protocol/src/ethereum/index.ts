@@ -170,14 +170,6 @@ export class EthereumChainProtocol implements ChainProtocol {
 		return nonceAsHex;
 	}
 
-	async estimateGasNeeded(tx: any): Promise<bigint> {
-		const gas = await this.rpc.request({
-			method: 'eth_estimateGas',
-			params: [tx],
-		});
-		return BigInt(gas);
-	}
-
 	async getGasFee(executionData: {maxFeePerGasAuthorized: `0x${string}`}): Promise<GasEstimate> {
 		const maxFeePerGasAuthorized = BigInt(executionData.maxFeePerGasAuthorized);
 
@@ -225,8 +217,10 @@ export class EthereumChainProtocol implements ChainProtocol {
 	}
 
 	async checkValidity<TransactionDataType>(
-		broadcasterAddress: `0x${string}`,
-		data: Partial<TransactionDataType>,
+		chainId: `0x${string}`,
+		data: TransactionDataType,
+		broadcaster: BroadcasterSignerData,
+		transactionParameters: TransactionParametersUsed,
 	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}> {
 		let transactionData = data as unknown as EIP1193TransactionData;
 		if (!transactionData.gas) {
@@ -235,9 +229,9 @@ export class EthereumChainProtocol implements ChainProtocol {
 		let gasRequired: bigint;
 		try {
 			// TODO ChainProtocol
-			gasRequired = await this.estimateGasNeeded({
+			gasRequired = await this._estimateGasNeeded({
 				...transactionData,
-				from: broadcasterAddress,
+				from: broadcaster.address,
 			} as EIP1193CallParam);
 		} catch (err: any) {
 			if (err.isInvalidError) {
@@ -387,5 +381,17 @@ export class EthereumChainProtocol implements ChainProtocol {
 	}
 	async increaseTime(amount: number): Promise<void> {
 		this.offset += amount;
+	}
+
+	// ---------------------------------------------
+	// INTERNAL
+	// ---------------------------------------------
+
+	async _estimateGasNeeded(tx: any): Promise<bigint> {
+		const gas = await this.rpc.request({
+			method: 'eth_estimateGas',
+			params: [tx],
+		});
+		return BigInt(gas);
 	}
 }

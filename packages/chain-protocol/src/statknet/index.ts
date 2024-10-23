@@ -228,21 +228,6 @@ export class StarknetChainProtocol implements ChainProtocol {
 		return nonceReponse.value as `0x${string}`;
 	}
 
-	async estimateGasNeeded(tx: any): Promise<bigint> {
-		const gasResponse = await this.rpc.call('starknet_estimateFee')({
-			block_id: 'latest',
-			request: [tx],
-			simulation_flags: [],
-			// TODO signature
-		});
-		if (!gasResponse.success) {
-			throw new Error(`could not estimateFee`);
-		}
-		const gasEstimate = gasResponse.value[0];
-		const {data_gas_consumed, data_gas_price, gas_consumed, gas_price, overall_fee, unit} = gasEstimate;
-		return BigInt(gas_consumed) + BigInt(data_gas_consumed); // TODO check
-	}
-
 	async getGasFee(executionData: {maxFeePerGasAuthorized: `0x${string}`}): Promise<GasEstimate> {
 		// const gasResponse = await this.rpc.call('starknet_estimateFee')({
 		// 	block_id: 'latest',
@@ -333,8 +318,10 @@ export class StarknetChainProtocol implements ChainProtocol {
 	}
 
 	async checkValidity<TransactionDataType>(
-		broadcasterAddress: `0x${string}`,
-		data: Partial<TransactionDataType>,
+		chainId: `0x${string}`,
+		data: TransactionDataType,
+		broadcaster: BroadcasterSignerData,
+		transactionParameters: TransactionParametersUsed,
 	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}> {
 		// TODO
 		// return {notEnoughGas: gasRequired > BigInt(transactionData.gas) ? true : false, revert: false};
@@ -496,5 +483,24 @@ export class StarknetChainProtocol implements ChainProtocol {
 	}
 	async increaseTime(amount: number): Promise<void> {
 		this.offset += amount;
+	}
+
+	// ---------------------------------------------
+	// INTERNAL
+	// ---------------------------------------------
+
+	async _estimateGasNeeded(tx: any): Promise<bigint> {
+		const gasResponse = await this.rpc.call('starknet_estimateFee')({
+			block_id: 'latest',
+			request: [tx],
+			simulation_flags: [],
+			// TODO signature
+		});
+		if (!gasResponse.success) {
+			throw new Error(`could not estimateFee`);
+		}
+		const gasEstimate = gasResponse.value[0];
+		const {data_gas_consumed, data_gas_price, gas_consumed, gas_price, overall_fee, unit} = gasEstimate;
+		return BigInt(gas_consumed) + BigInt(data_gas_consumed); // TODO check
 	}
 }
