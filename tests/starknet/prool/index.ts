@@ -1,4 +1,4 @@
-import * as instances from './katana-instances';
+import * as instances from './katana-instances.js';
 
 export const poolId =
 	Number(process.env.VITEST_POOL_ID ?? 1) * Number(process.env.VITEST_SHARD_ID ?? 1) +

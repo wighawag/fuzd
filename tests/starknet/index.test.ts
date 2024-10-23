@@ -18,6 +18,10 @@ import {starknetKeccak} from 'starknet-core/utils/hash';
 import GreetingsRegistry from './ts-artifacts/GreetingsRegistry';
 import {KATANA_CHAIN_ID, test_accounts, UniversalDeployerContract} from 'katana-rpc';
 import {createTestExecutor} from '../ethereum/test/utils/executor';
+import * as bip39 from '@scure/bip39';
+import {HDKey} from '@scure/bip32';
+import {initAccountFromHD} from 'remote-account';
+import {StarknetChainProtocol} from 'fuzd-chain-protocol/starknet';
 
 const rpc = createProxiedJSONRPC<StarknetMethods>(RPC_URL);
 
@@ -167,7 +171,7 @@ test('invoke_GreetingsRegistry', async function () {
 	expect(decodeShortString(callResponse.value[0])).to.equals(message);
 });
 
-test.skip('invoke_GreetingsRegistry_via_fuzd', async function () {
+test('invoke_GreetingsRegistry_via_fuzd', async function () {
 	const message = 'yo!';
 	const precallResponse = await rpc.starknet_call(
 		create_call({
@@ -213,7 +217,16 @@ test.skip('invoke_GreetingsRegistry_via_fuzd', async function () {
 	const {executor, publicExtendedKey} = await createTestExecutor({
 		chainProtocols: {
 			// TODO any
-			[KATANA_CHAIN_ID]: new StarknetChainProtocol(KATANA_CHAIN_ID),
+			[KATANA_CHAIN_ID]: new StarknetChainProtocol(
+				RPC_URL,
+				{
+					accountContractClassHash: '0x', // TODO
+					expectedFinality: 1,
+					tokenContractAddress: '0x', // TOD
+					worstCaseBlockTime: 1,
+				},
+				account,
+			),
 			// provider as any,
 			// {
 			// 	expectedFinality: 1,

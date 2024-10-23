@@ -21,6 +21,16 @@
         "types": "./dist/ethereum/index.d.ts",
         "default": "./dist/ethereum/index.mjs"
       }
+    },
+    "./starknet": {
+      "require": {
+        "types": "./dist/starknet/index.d.ts",
+        "default": "./dist/starknet/index.cjs"
+      },
+      "import": {
+        "types": "./dist/starknet/index.d.ts",
+        "default": "./dist/starknet/index.mjs"
+      }
     }
   },
   "files": [
