@@ -36,7 +36,7 @@
     "remote-account": "^0.1.0",
     "remote-procedure-call": "^0.0.12",
     "starknet-core": "^0.0.3",
-    "strk": "^0.0.13",
+    "strk": "^0.0.15",
     "zod": "^3.23.8"
   },
   "devDependencies": {

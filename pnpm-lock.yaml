@@ -75,8 +75,8 @@ importers:
         specifier: ^0.0.3
         version: 0.0.3
       strk:
-        specifier: ^0.0.13
-        version: 0.0.13
+        specifier: ^0.0.15
+        version: 0.0.15
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -5287,8 +5287,8 @@ packages:
   strk@0.0.12:
     resolution: {integrity: sha512-SsEKyXFEdgFBpR+JtGXQSs5j9HyMp8Bo6NbYXw/HZZf90dKJDCyuvqt5QQuqHmnO1RN2otH6t6g6187LsCSqpw==}
 
-  strk@0.0.13:
-    resolution: {integrity: sha512-H56cW9Y+Bg1t/LB0/glXbX+XX2D/IE7Usw0Eu5cfvebN7P6G4iWXOiNMY1/ybBhQJ/bYjtJgBfm7XvHzuzTSrQ==}
+  strk@0.0.15:
+    resolution: {integrity: sha512-tsYNBxI1Q9aRQQNAnmn5fF/UoM81CJHDflVDtUv6FEPv2yEpa5Ieo4H2ZiqBgsFk3JDm7vNeCnAPtXeV8EX9+A==}
 
   supports-color@5.5.0:
     resolution: {integrity: sha512-QjVjwdXIt408MIiAqCX4oUKsgU2EqAGzs2Ppkm4aQYbjm+ZEWEcW4SfFNTr4uMNZma0ey4f5lgLrkB0aX0QMow==}
@@ -11267,7 +11267,7 @@ snapshots:
       '@scure/starknet': 1.0.0
       starknet-core: 0.0.2
 
-  strk@0.0.13:
+  strk@0.0.15:
     dependencies:
       '@scure/starknet': 1.0.0
       starknet-core: 0.0.2

@@ -3,37 +3,56 @@ import type {Methods} from '@starknet-io/types-js';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC} from 'remote-procedure-call';
 import {ExecutionSubmission, TransactionParametersUsed} from 'fuzd-common';
-import type {TXN} from 'strk/types/rpc/components';
+import type {
+	DEPLOY_ACCOUNT_TXN_V1,
+	DEPLOY_ACCOUNT_TXN_V3,
+	INVOKE_TXN_V1,
+	INVOKE_TXN_V3,
+	TXN,
+} from 'strk/types/rpc/components';
 
 import {initAccountFromHD} from 'remote-account';
 
 import ERC20ABI from './abis/ERC20';
-import {
-	create_call,
-	create_declare_transaction_intent_v2,
-	create_deploy_account_transaction_intent_v1,
-	create_deploy_account_transaction_v1,
-	create_invoke_transaction_intent_v1,
-	create_invoke_transaction_intent_v1_from_calls,
-	create_invoke_transaction_v1,
-} from 'strk';
-import {BigNumberish, hash} from 'starknet-core';
+import {create_call, create_deploy_account_transaction_intent_v1, create_invoke_transaction_intent_v1} from 'strk';
+import {BigNumberish, Call, CallData, hash} from 'starknet-core';
 import {getStarkKey, sign} from '@scure/starknet';
 import {formatSignature} from 'starknet-core/utils/stark';
+import type {DeepReadonly} from 'strk';
+import {getExecuteCalldata} from 'starknet-core/utils/transaction';
 
 type FullTransactionData = TXN; // TODO do not accept deploy_account tx ?
-// TODO v1
-type TransactionData = Omit<FullTransactionData, 'signaure' | 'chain_id' | 'resource_bounds' | 'tip'> & {
-	resource_bounds: {
-		l1_gas: {
-			max_amount: string;
-		};
-		l2_gas: {
-			max_amount: string;
-		};
-	};
-};
-type FullTransactionDataWithoutSignature = Omit<TXN, 'signature'>; // TODO do not accept deploy_account tx ?
+
+type OmitSignedTransactionData<T> = Omit<T, 'sender_address' | 'signature' | 'chain_id' | 'nonce'>;
+
+type InvokeTransactionData =
+	| OmitSignedTransactionData<DeepReadonly<INVOKE_TXN_V1>>
+	| (Omit<OmitSignedTransactionData<DeepReadonly<INVOKE_TXN_V3>>, 'resource_bounds' | 'tip'> & {
+			resource_bounds: {
+				l1_gas: {
+					max_amount: string;
+				};
+				l2_gas: {
+					max_amount: string;
+				};
+			};
+	  });
+
+type DeployAccountTransactionData =
+	| OmitSignedTransactionData<DeepReadonly<DEPLOY_ACCOUNT_TXN_V1>>
+	| (Omit<OmitSignedTransactionData<DeepReadonly<DEPLOY_ACCOUNT_TXN_V3>>, 'resource_bounds' | 'tip'> & {
+			resource_bounds: {
+				l1_gas: {
+					max_amount: string;
+				};
+				l2_gas: {
+					max_amount: string;
+				};
+			};
+	  });
+
+type TransactionData = InvokeTransactionData | DeployAccountTransactionData;
+type FullTransactionDataWithoutSignature = Omit<FullTransactionData, 'signature'>; // TODO do not accept deploy_account tx ?
 
 export class StarknetChainProtocol implements ChainProtocol {
 	private rpc: CurriedRPC<Methods>;
@@ -408,23 +427,33 @@ export class StarknetChainProtocol implements ChainProtocol {
 		from: `0x${string}`,
 		diffToCover: bigint,
 	): {transaction: TransactionDataType; cost: bigint} {
-		// TODO ERC20  contract...
-
 		const transactionData = data as TransactionData;
 		const gas = BigInt(30000);
 		const cost = gas * maxFeePerGas; // TODO handle extra Fee like Optimism
-		const valueToSend = diffToCover * BigInt(transactionData.maxfee); // TODO or v3 resource_bounds
-		// const intent = create_invoke_transaction_intent_v1_from_calls_with_abi({
 
-		// })
-		const transactionToBroadcast: TransactionData = {
-			type: 'INVOKE'
-			maxfee: `0x${gas.toString(16)}`,
-			to: from,
-			type: '0x2',
-			value: `0x${valueToSend.toString(16)}`,
+		// TODO support v3
+		if (transactionData.version !== '0x1') {
+			throw new Error(`only support v1 transaction`);
+		}
+		const valueToSend = diffToCover * BigInt(transactionData.max_fee); // TODO or v3 resource_bounds
+
+		const calldataParser = new CallData(ERC20ABI);
+		const transferCalldata = calldataParser.compile('transfer', [from, valueToSend]);
+		const actualCall: Call = {
+			contractAddress: this.config.tokenContractAddress,
+			entrypoint: 'transfer',
+			calldata: transferCalldata,
 		};
-		return {transaction: transactionToBroadcast, cost};
+
+		const calldata = getExecuteCalldata([actualCall], '1');
+
+		const transactionToBroadcast: TransactionData = {
+			type: 'INVOKE',
+			calldata,
+			version: '0x1',
+			max_fee: `0x${gas.toString(16)}`,
+		};
+		return {transaction: transactionToBroadcast as TransactionDataType, cost};
 	}
 
 	// TODO FOR TEST ONLY
