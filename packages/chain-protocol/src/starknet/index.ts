@@ -16,10 +16,11 @@ import {initAccountFromHD} from 'remote-account';
 import ERC20ABI from './abis/ERC20';
 import {create_call, create_deploy_account_transaction_intent_v1, create_invoke_transaction_intent_v1} from 'strk';
 import {BigNumberish, Call, CallData, hash} from 'starknet-core';
-import {getStarkKey, sign} from '@scure/starknet';
+import {ethSigToPrivate, getStarkKey, sign} from '@scure/starknet';
 import {formatSignature} from 'starknet-core/utils/stark';
 import type {DeepReadonly} from 'strk';
 import {getExecuteCalldata} from 'starknet-core/utils/transaction';
+import {EIP1193LocalSigner} from 'eip-1193-signer';
 
 type FullTransactionData = TXN;
 
@@ -224,7 +225,10 @@ export class StarknetChainProtocol implements ChainProtocol {
 			contract_address: account,
 		});
 		if (!nonceReponse.success) {
-			throw new Error(`failed to fetch balance`, {cause: nonceReponse.error});
+			if (nonceReponse.error.code == 20) {
+				return `0x0`;
+			}
+			throw new Error(nonceReponse.error.message, {cause: nonceReponse.error});
 		}
 		return nonceReponse.value as `0x${string}`;
 	}
@@ -323,19 +327,21 @@ export class StarknetChainProtocol implements ChainProtocol {
 	}
 	async getBroadcaster(parameters: DerivationParameters, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
 		const validation = await this.validateDerivationParameters(parameters);
+
+		// TODO allow multiple by mapping publicExtendedKey to accounts
+		// FOR NOW: throw if different:
 		if (!validation.success) {
 			throw new Error(validation.error);
 		}
-		const derivedAccount = this.account.deriveForAddress(forAddress);
-		const publicKey = getStarkKey(derivedAccount.privateKey);
+		const {public_key, private_key} = await this._getStarknetSigner(this.account, forAddress);
 		const accountContractAddress = hash.calculateContractAddressFromHash(
-			publicKey,
+			public_key,
 			this.config.accountContractClassHash,
-			[publicKey],
+			[public_key],
 			0,
 		) as `0x${string}`;
 		return {
-			signer: `privateKey:${derivedAccount.privateKey}`,
+			signer: `privateKey:${private_key}`,
 			address: accountContractAddress,
 		};
 	}
@@ -530,4 +536,41 @@ export class StarknetChainProtocol implements ChainProtocol {
 		const {data_gas_consumed, data_gas_price, gas_consumed, gas_price, overall_fee, unit} = gasEstimate;
 		return BigInt(gas_consumed) + BigInt(data_gas_consumed); // TODO check
 	}
+
+	// TODO remote-account : export this type: ReturnType<typeof initAccountFromHD>
+	async _getStarknetSigner(
+		account: ReturnType<typeof initAccountFromHD>,
+		forAddress: `0x${string}`,
+	): Promise<{public_key: string; private_key: string}> {
+		const derivedAccount = account.deriveForAddress(forAddress);
+
+		const ethSigner = new EIP1193LocalSigner(derivedAccount.privateKey);
+		const signature = await ethSigner.request({
+			method: 'personal_sign',
+			params: ['0xFF', derivedAccount.address],
+		});
+		const starkPrivateKey = ethSigToPrivate(signature);
+		const publicKey = getStarkKey(starkPrivateKey);
+
+		return {
+			private_key: starkPrivateKey,
+			public_key: publicKey,
+		};
+	}
+
+	// // TODO remote-account : export this type: ReturnType<typeof initAccountFromHD>
+	// async _getStarkKeyFromETHAccount(ethereumSigner: {privateKey: `0x${string}`, address: `0x${string}`}): Promise<string> {
+	// 	const eip1193Signer = new EIP1193LocalSigner(ethereumSigner.privateKey);
+	// 	const signature = await eip1193Signer.request({
+	// 		method: 'personal_sign',
+	// 		params: ['0xFF', ethereumSigner.address],
+	// 	});
+	// 	const starkPrivateKey = ethSigToPrivate(signature);
+	// 	const publicKey = getStarkKey(starkPrivateKey);
+
+	// 	return {
+	// 		private_key: derivedAccount.privateKey,
+	// 		public_key: publicKey,
+	// 	};
+	// }
 }

@@ -69,7 +69,7 @@ async function prepareExecution() {
 
 	const txData = {
 		type: 'eip1559',
-		chainId: '0x7a69',
+		chainId,
 		to: GreetingsRegistry.address,
 		data,
 	} as const;

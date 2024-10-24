@@ -31,6 +31,8 @@ import AccountContract from 'strk-account';
 
 const rpc = createProxiedJSONRPC<StarknetMethods>(RPC_URL);
 
+const chainId = KATANA_CHAIN_ID;
+
 async function waitForTransaction(transaction_hash: string) {
 	let txResponse = await rpc.starknet_getTransactionReceipt({transaction_hash});
 	while (!(txResponse.success && txResponse.value.block_hash)) {
@@ -43,12 +45,12 @@ test('starknet_chainId', async function () {
 	const chainIdResponse = await rpc.starknet_chainId();
 	expect(chainIdResponse.success).to.be.true;
 	assert(chainIdResponse.success);
-	expect(chainIdResponse.value).to.equal(KATANA_CHAIN_ID);
+	expect(chainIdResponse.value).to.equal(chainId);
 });
 
 test('declare_Account', async function () {
 	const declare_transaction = create_declare_transaction_v2({
-		chain_id: KATANA_CHAIN_ID,
+		chain_id: chainId,
 		contract: AccountContract,
 		max_fee: '0xFFFFFFFFFFFFFF',
 		nonce: '0x0',
@@ -61,7 +63,7 @@ test('declare_Account', async function () {
 
 test('declare_GreetingsRegistry', async function () {
 	const declare_transaction = create_declare_transaction_v2({
-		chain_id: KATANA_CHAIN_ID,
+		chain_id: chainId,
 		contract: GreetingsRegistry,
 		max_fee: '0xFFFFFFFFFFFFFF',
 		nonce: '0x1',
@@ -82,7 +84,7 @@ test('deploy_GreetingsRegistry', async function () {
 	const unique = true;
 	const salt = 0;
 	const invoke_transaction = create_invoke_transaction_v1_from_calls({
-		chain_id: KATANA_CHAIN_ID,
+		chain_id: chainId,
 		calls: [
 			{
 				//https://github.com/dojoengine/dojo/blob/main/crates/katana/contracts/universal_deployer.cairo
@@ -156,7 +158,7 @@ test('invoke_GreetingsRegistry', async function () {
 
 	const messageAsFelt = encodeShortString(message);
 	const invoke_transaction = create_invoke_transaction_v1_from_calls({
-		chain_id: KATANA_CHAIN_ID,
+		chain_id: chainId,
 		calls: [
 			{
 				contractAddress: contractAddress,
@@ -217,7 +219,7 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 	const {executor, publicExtendedKey} = await createTestExecutor({
 		chainProtocols: {
 			// TODO any
-			[KATANA_CHAIN_ID]: new StarknetChainProtocol(
+			[chainId]: new StarknetChainProtocol(
 				RPC_URL,
 				{
 					accountContractClassHash: AccountContract.class_hash,
@@ -231,18 +233,26 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 		paymentAccount,
 		expectedWorstCaseGasPrices: [
 			{
-				chainId: '0x7a69',
+				chainId,
 				value: 0n,
 			},
 		],
 	});
+
+	const user = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+	const broadcasterInfo = await executor.getBroadcaster(chainId, user);
+	const derivationParameters = broadcasterInfo.derivationParameters;
+	const remoteAccount = broadcasterInfo.address;
+	// TODO test payment account on starknet
+	// const paymenetAccountBroadcasterInfo = await executor.getBroadcaster(chainId, paymentAccount);
+	// const paymentAccountBroadcaster = paymenetAccountBroadcasterInfo.address;
 
 	const abi = JSON.parse(GreetingsRegistry.abi);
 	const calldataParser = new CallData(abi);
 
 	const messageAsFelt = encodeShortString(message);
 	const intent = create_invoke_transaction_intent_v1_from_calls({
-		chain_id: KATANA_CHAIN_ID,
+		chain_id: chainId,
 		calls: [
 			{
 				contractAddress: contractAddress,
@@ -263,16 +273,14 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 	};
 
 	// account is ethereum account, right ?
-	const txInfo = await executor.broadcastExecution(
-		(1).toString(),
-		0,
-		test_accounts[1].contract_address as `0x${string}`,
-		{
-			chainId: KATANA_CHAIN_ID,
-			transaction,
-			maxFeePerGasAuthorized: `0xFFFFF` as `0x${string}`,
-		},
-	);
+	const txInfo = await executor.broadcastExecution((1).toString(), 0, user, {
+		chainId,
+		transaction,
+		maxFeePerGasAuthorized: `0xFFFFF` as `0x${string}`,
+		derivationParameters,
+	});
+
+	console.log(`txInfo`, txInfo);
 
 	const callResponse = await rpc.starknet_call(
 		create_call({
