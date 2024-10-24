@@ -234,10 +234,6 @@ export function createExecutor<TransactionDataType>(
 			upToGasPrice: bigint;
 		},
 	): Promise<PendingExecutionStored<TransactionDataType> | undefined> {
-		// we get broadcast from storage
-		// we the pass the broadcaster
-		// signTransaction then handle the fetching of estimate, etc...
-
 		const chainProtocol = _getChainProtocol(execution.chainId);
 		const {expectedNonce, currentNonceAsPerNetwork} = await _getBroadcasterNonce(
 			execution.chainId,
@@ -247,6 +243,7 @@ export function createExecutor<TransactionDataType>(
 		let nonce = expectedNonce;
 		let noncePassedAlready = false;
 		if (options.forceNonce) {
+			// This is a resubmit, so we reuse the same nonce and do not use latesty
 			nonce = options.forceNonce;
 		} else {
 			if (nonce !== currentNonceAsPerNetwork) {
@@ -266,6 +263,7 @@ export function createExecutor<TransactionDataType>(
 		const already_resolved = false;
 		// TODO allow execution of logic
 		// To be fair if the tx fails this should be enough
+		// But there might be cases where a tx do not fail and the use would prefer to completely avoid the tx to be published
 		if (options?.forceVoid || already_resolved) {
 			options.forceVoid = true;
 			if (noncePassedAlready) {
@@ -336,7 +334,7 @@ export function createExecutor<TransactionDataType>(
 			// TODO if forceVoid, we can use more gasPrive as long as total do not exceed gas * maxFeePerGasAuthorized
 		}
 
-		// TODO if nonceIncreased
+		// TODO if noncePassedAlready
 		//
 		let rawTxInfo: SignedTransactionInfo;
 		let isVoidTransaction = false;
