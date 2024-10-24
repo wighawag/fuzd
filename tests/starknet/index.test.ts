@@ -269,7 +269,7 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 				abi: ERC20ABI,
 				contractAddress: ETHTokenContract.contract_address,
 				entrypoint: 'transfer',
-				args: [remoteAccount, 1000000000000000000n],
+				args: [remoteAccount, 1000000000000000000000n],
 			},
 		],
 		max_fee: 10000000000000000n,
@@ -328,6 +328,8 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 	expect(txInfo.slotAlreadyUsed).to.be.undefined;
 
 	console.log(`txInfo`, txInfo);
+
+	await waitForTransaction(txInfo.hash);
 
 	const callResponse = await rpc.starknet_call(
 		create_call({

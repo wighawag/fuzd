@@ -472,7 +472,7 @@ export class StarknetChainProtocol implements ChainProtocol {
 			chain_id: chainId,
 			class_hash: this.config.accountContractClassHash,
 			constructor_calldata: [publicKey],
-			contract_address_salt: 0,
+			contract_address_salt: publicKey,
 			max_fee: '0xFFFFFFFFFFFFFFF', // TODO
 			nonce: 0,
 		});
