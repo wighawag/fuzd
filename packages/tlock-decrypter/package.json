@@ -32,11 +32,11 @@
     "tlock-js": "^0.9.0"
   },
   "devDependencies": {
-    "@types/node": "^20.12.12",
+    "@types/node": "^22.7.9",
     "ldenv": "^0.3.10",
-    "pkgroll": "^2.0.2",
-    "prettier": "^3.2.5",
-    "typescript": "^5.4.5"
+    "pkgroll": "^2.5.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
   },
   "scripts": {
     "build": "pkgroll",

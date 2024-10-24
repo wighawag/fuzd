@@ -27,31 +27,31 @@
     "src"
   ],
   "dependencies": {
-    "@hono/zod-validator": "^0.2.1",
-    "@scure/bip32": "^1.4.0",
-    "@scure/bip39": "^1.3.0",
-    "eip-1193": "^0.5.0",
-    "eip-1193-jsonrpc-provider": "^0.4.0",
-    "eip-1193-signer": "^0.0.2",
+    "@hono/zod-validator": "^0.4.1",
+    "@scure/bip32": "^1.5.0",
+    "@scure/bip39": "^1.4.0",
+    "eip-1193": "^0.6.1",
+    "eip-1193-jsonrpc-provider": "^0.4.2",
+    "eip-1193-signer": "^0.0.5",
     "fuzd-chain-protocol": "workspace:*",
     "fuzd-common": "workspace:*",
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "fuzd-tlock-decrypter": "workspace:*",
-    "hono": "^4.3.3",
+    "hono": "^4.6.6",
     "named-logs": "^0.3.0",
     "remote-account": "^0.1.0",
     "remote-sql": "^0.0.5",
     "tlock-js": "^0.9.0",
-    "viem": "^2.10.8",
+    "viem": "^2.21.34",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "as-soon": "^0.0.9",
     "ldenv": "^0.3.10",
-    "pkgroll": "^2.0.2",
-    "prettier": "^3.2.5",
-    "typescript": "^5.4.5"
+    "pkgroll": "^2.5.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
   },
   "scripts": {
     "build": "pnpm sql2ts && pkgroll",
