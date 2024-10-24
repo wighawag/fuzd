@@ -17,7 +17,6 @@ import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo} from 'fuzd-
 
 const logger = logs('fuzd-executor');
 
-// TODO (ExecutionToStore): the field `transaction` of type TransactionData should be modified to not need: 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas'
 type ExecutionToStore<T> = Omit<
 	PendingExecutionStored<T>,
 	'hash' | 'broadcastTime' | 'nextCheckTime' | 'transactionParametersUsed'
@@ -156,6 +155,34 @@ export function createExecutor<TransactionDataType>(
 		}
 		return result;
 	}
+
+	async function processPendingTransactions() {
+		const limit = maxNumTransactionsToProcessInOneGo;
+
+		const pendingExecutions = await storage.getPendingExecutions({limit});
+		if (pendingExecutions.length === 0) {
+			logger.info(`found zero transactions`);
+		} else if (pendingExecutions.length === 1) {
+			logger.info(`found 1 transaction`);
+		} else {
+			logger.info(`found ${pendingExecutions.length} transactions`);
+		}
+		if (pendingExecutions) {
+			for (const pendingExecution of pendingExecutions) {
+				try {
+					await __processPendingTransaction(pendingExecution);
+				} catch (err) {
+					logger.error(`failed to process pending tx`, pendingExecution, err);
+				}
+			}
+		}
+		// TODO make returning the pending transaction part of the api
+		return pendingExecutions as unknown as void;
+	}
+
+	// --------------------------------------------------------------------------------------------
+	// INTERNAL
+	// --------------------------------------------------------------------------------------------
 
 	async function _getBroadcasterNonce(chainId: String0x, broadcasterAddress: String0x) {
 		const chainProtocol = _getChainProtocol(chainId);
@@ -516,30 +543,11 @@ export function createExecutor<TransactionDataType>(
 		}
 	}
 
-	async function processPendingTransactions() {
-		const limit = maxNumTransactionsToProcessInOneGo;
+	// --------------------------------------------------------------------------------------------
 
-		const pendingExecutions = await storage.getPendingExecutions({limit});
-		if (pendingExecutions.length === 0) {
-			logger.info(`found zero transactions`);
-		} else if (pendingExecutions.length === 1) {
-			logger.info(`found 1 transaction`);
-		} else {
-			logger.info(`found ${pendingExecutions.length} transactions`);
-		}
-		if (pendingExecutions) {
-			for (const pendingExecution of pendingExecutions) {
-				try {
-					await __processPendingTransaction(pendingExecution);
-				} catch (err) {
-					logger.error(`failed to process pending tx`, pendingExecution, err);
-				}
-			}
-		}
-		// TODO make returning the pending transaction part of the api
-		return pendingExecutions as unknown as void;
-	}
-
+	// --------------------------------------------------------------------------------------------
+	// EXPORT
+	// --------------------------------------------------------------------------------------------
 	return {
 		broadcastExecution,
 		getExecutionStatus,
