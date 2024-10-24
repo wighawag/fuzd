@@ -1,3 +1,4 @@
+import 'named-logs-context';
 import {createServer} from 'fuzd-server';
 import type {Context} from 'hono';
 import {RemoteD1} from 'remote-sql-d1';

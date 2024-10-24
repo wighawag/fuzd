@@ -31,11 +31,11 @@
   ],
   "dependencies": {
     "commander": "^12.0.0",
-    "fuzd-executor": "workspace:*",
     "fuzd-chain-protocol": "workspace:*",
     "fuzd-common": "workspace:*",
+    "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
-    "named-logs": "^0.2.4",
+    "named-logs": "^0.3.0",
     "remote-account": "^0.1.0",
     "tlock-js": "^0.9.0",
     "viem": "^2.10.8"

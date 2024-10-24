@@ -27,9 +27,9 @@
     "src"
   ],
   "dependencies": {
-    "fuzd-common": "workspace:*",
     "fuzd-chain-protocol": "workspace:*",
-    "named-logs": "^0.2.4",
+    "fuzd-common": "workspace:*",
+    "named-logs": "^0.3.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

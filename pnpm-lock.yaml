@@ -43,7 +43,7 @@ importers:
         version: 5.4.5
       vitepress:
         specifier: 1.1.4
-        version: 1.1.4(@algolia/client-search@4.23.3)(@types/node@20.12.12)(change-case@5.4.4)(postcss@8.4.38)(search-insights@2.13.0)(typescript@5.4.5)
+        version: 1.1.4(@algolia/client-search@5.10.2)(@types/node@22.7.9)(change-case@5.4.4)(postcss@8.4.47)(search-insights@2.17.2)(typescript@5.4.5)
       zellij-launcher:
         specifier: ^0.0.1
         version: 0.0.1
@@ -70,7 +70,7 @@ importers:
         version: 0.1.0
       remote-procedure-call:
         specifier: ^0.0.12
-        version: 0.0.12(@types/node@20.12.12)
+        version: 0.0.12(@types/node@22.7.9)
       starknet-core:
         specifier: ^0.0.3
         version: 0.0.3
@@ -118,8 +118,8 @@ importers:
         specifier: workspace:*
         version: link:../scheduler
       named-logs:
-        specifier: ^0.2.4
-        version: 0.2.4
+        specifier: ^0.3.0
+        version: 0.3.0
       remote-account:
         specifier: ^0.1.0
         version: 0.1.0
@@ -152,8 +152,8 @@ importers:
   packages/common:
     dependencies:
       named-logs:
-        specifier: ^0.2.4
-        version: 0.2.4
+        specifier: ^0.3.0
+        version: 0.3.0
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -180,8 +180,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       named-logs:
-        specifier: ^0.2.4
-        version: 0.2.4
+        specifier: ^0.3.0
+        version: 0.3.0
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -208,8 +208,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       named-logs:
-        specifier: ^0.2.4
-        version: 0.2.4
+        specifier: ^0.3.0
+        version: 0.3.0
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -266,8 +266,8 @@ importers:
         specifier: ^4.3.3
         version: 4.3.7
       named-logs:
-        specifier: ^0.2.4
-        version: 0.2.4
+        specifier: ^0.3.0
+        version: 0.3.0
       remote-account:
         specifier: ^0.1.0
         version: 0.1.0
@@ -306,8 +306,8 @@ importers:
         specifier: workspace:*
         version: link:../scheduler
       named-logs:
-        specifier: ^0.2.4
-        version: 0.2.4
+        specifier: ^0.3.0
+        version: 0.3.0
       tlock-js:
         specifier: ^0.9.0
         version: 0.9.0
@@ -331,8 +331,11 @@ importers:
   platforms/cf-worker:
     dependencies:
       named-logs:
-        specifier: ^0.2.4
-        version: 0.2.4
+        specifier: ^0.3.0
+        version: 0.3.0
+      named-logs-context:
+        specifier: ^0.1.1
+        version: 0.1.1
       remote-sql-d1:
         specifier: ^0.0.5
         version: 0.0.5(@cloudflare/workers-types@4.20240512.0)
@@ -511,7 +514,7 @@ importers:
         version: 0.1.0
       remote-sql-libsql:
         specifier: ^0.0.5
-        version: 0.0.5(@libsql/core@0.6.0)
+        version: 0.0.5(@libsql/core@0.14.0)
       rocketh:
         specifier: ^0.10.13
         version: 0.10.13(typescript@5.4.5)(zod@3.23.8)
@@ -541,7 +544,7 @@ importers:
         version: 2.10.8(typescript@5.4.5)(zod@3.23.8)
       vitest:
         specifier: ^1.5.3
-        version: 1.6.0(@types/node@20.12.12)
+        version: 1.6.0(@types/node@22.7.9)
 
   tests/starknet:
     devDependencies:
@@ -580,10 +583,10 @@ importers:
         version: 0.1.0
       remote-procedure-call:
         specifier: ^0.0.12
-        version: 0.0.12(@types/node@20.12.12)
+        version: 0.0.12(@types/node@22.7.9)
       remote-sql-libsql:
         specifier: ^0.0.5
-        version: 0.0.5(@libsql/core@0.6.0)
+        version: 0.0.5(@libsql/core@0.14.0)
       starknet-core:
         specifier: ^0.0.3
         version: 0.0.3
@@ -598,7 +601,7 @@ importers:
         version: 0.9.0
       vitest:
         specifier: ^2.1.2
-        version: 2.1.2(@types/node@20.12.12)
+        version: 2.1.2(@types/node@22.7.9)
 
 packages:
 
@@ -646,11 +649,19 @@ packages:
   '@algolia/client-common@4.23.3':
     resolution: {integrity: sha512-l6EiPxdAlg8CYhroqS5ybfIczsGUIAC47slLPOMDeKSVXYG1n0qGiz4RjAHLw2aD0xzh2EXZ7aRguPfz7UKDKw==}
 
+  '@algolia/client-common@5.10.2':
+    resolution: {integrity: sha512-eE4OaTlb5KZdCehWmDARq2KEmMF7DEeFLjKqFDcZNb56k1DMSsa9zCQRXZMovlf2AXLsx0A/1q+SGAEgzF7G3w==}
+    engines: {node: '>= 14.0.0'}
+
   '@algolia/client-personalization@4.23.3':
     resolution: {integrity: sha512-3E3yF3Ocr1tB/xOZiuC3doHQBQ2zu2MPTYZ0d4lpfWads2WTKG7ZzmGnsHmm63RflvDeLK/UVx7j2b3QuwKQ2g==}
 
   '@algolia/client-search@4.23.3':
     resolution: {integrity: sha512-P4VAKFHqU0wx9O+q29Q8YVuaowaZ5EM77rxfmGnkHUJggh28useXQdopokgwMeYw2XUht49WX5RcTQ40rZIabw==}
+
+  '@algolia/client-search@5.10.2':
+    resolution: {integrity: sha512-rGX8uil2uvPycFgtS9Fzwvh4tgKvfFWG5RIh3E77W42HrO66bykCf9jHqhIIlCxdDJih1PuUqBYZIkIAAoSkww==}
+    engines: {node: '>= 14.0.0'}
 
   '@algolia/logger-common@4.23.3':
     resolution: {integrity: sha512-y9kBtmJwiZ9ZZ+1Ek66P0M68mHQzKRxkW5kAAXYN/rdzgDN0d2COsViEFufxJ0pb45K4FRcfC7+33YB4BLrZ+g==}
@@ -664,11 +675,23 @@ packages:
   '@algolia/requester-browser-xhr@4.23.3':
     resolution: {integrity: sha512-jDWGIQ96BhXbmONAQsasIpTYWslyjkiGu0Quydjlowe+ciqySpiDUrJHERIRfELE5+wFc7hc1Q5hqjGoV7yghw==}
 
+  '@algolia/requester-browser-xhr@5.10.2':
+    resolution: {integrity: sha512-gzlfE/H05ggDiEWNi8WaDSRhpE5X8rD1JqYKPPeM31JRI3TutQIKAk3MSUsa1bHM/Di56r2Gm6L1g3ZlZv2ETA==}
+    engines: {node: '>= 14.0.0'}
+
   '@algolia/requester-common@4.23.3':
     resolution: {integrity: sha512-xloIdr/bedtYEGcXCiF2muajyvRhwop4cMZo+K2qzNht0CMzlRkm8YsDdj5IaBhshqfgmBb3rTg4sL4/PpvLYw==}
 
+  '@algolia/requester-fetch@5.10.2':
+    resolution: {integrity: sha512-Q27ciW9WRdq3pUITVlxpHIwe9QWOe+oPvgs8Z+gsv8vMkwXnLfANvSgeZCyQgx3SqzUPzhel0ozVq7Qoh8xIkg==}
+    engines: {node: '>= 14.0.0'}
+
   '@algolia/requester-node-http@4.23.3':
     resolution: {integrity: sha512-zgu++8Uj03IWDEJM3fuNl34s746JnZOWn1Uz5taV1dFyJhVM/kTNw9Ik7YJWiUNHJQXcaD8IXD1eCb0nq/aByA==}
+
+  '@algolia/requester-node-http@5.10.2':
+    resolution: {integrity: sha512-WMUQ4iFhNnQXC4F1Yj51x8tgIvq5h8jtTLMBs7LbMiW6JhnLHfBVl7IVk6X1fZJO5YcvXW051HN8aFlfAb5QEw==}
+    engines: {node: '>= 14.0.0'}
 
   '@algolia/transporter@4.23.3':
     resolution: {integrity: sha512-Wjl5gttqnf/gQKJA+dafnD0Y6Yw97yvfY8R9h0dQltX1GXTgNs1zWgvtWW0tHl1EgMdhAyw189uWiZMnL3QebQ==}
@@ -1367,6 +1390,9 @@ packages:
   '@libsql/client@0.6.0':
     resolution: {integrity: sha512-qhQzTG/y2IEVbL3+9PULDvlQFWJ/RnjFXECr/Nc3nRngGiiMysDaOV5VUzYk7DulUX98EA4wi+z3FspKrUplUA==}
 
+  '@libsql/core@0.14.0':
+    resolution: {integrity: sha512-nhbuXf7GP3PSZgdCY2Ecj8vz187ptHlZQ0VRc751oB2C1W8jQUXKKklvt7t1LJiUTQBVJuadF628eUk+3cRi4Q==}
+
   '@libsql/core@0.6.0':
     resolution: {integrity: sha512-affAB8vSqQwqI9NBDJ5uJCVaHoOAS2pOpbv1kWConh1SBbmJBnHHd4KG73RAJ2sgd2+NbT9WA+XJBqxgp28YSw==}
 
@@ -2023,6 +2049,9 @@ packages:
 
   '@types/node@20.12.12':
     resolution: {integrity: sha512-eWLDGF/FOSPtAvEqeRAQ4C8LSA7M1I7i0ky1I8U7kD1J5ITyW3AsRhQrKVoWf5pFKZ2kILsEGJhsI9r93PYnOw==}
+
+  '@types/node@22.7.9':
+    resolution: {integrity: sha512-jrTfRC7FM6nChvU7X2KqcrgquofrWLFDeYC1hKfwNWomVvrn7JIksqf344WN2X/y8xrgqBd2dJATZV4GbatBfg==}
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
@@ -4333,8 +4362,14 @@ packages:
   named-logs-console@0.3.1:
     resolution: {integrity: sha512-qExLlmkSSrI/57Juvc94c0zlldI5IvreilyFeg7KfxMGGotTVER6xfk+KB7DZ5m18GYnFZn77z2kyigtcn2zHA==}
 
+  named-logs-context@0.1.1:
+    resolution: {integrity: sha512-acTLEkFeVq13r0u8shyUV/7wFmf/+JC5RF5PPRCE7ACiOGhC5mAHdSPdNJdPKv89A572UBEHxRJ+bdY9vpy4rw==}
+
   named-logs@0.2.4:
     resolution: {integrity: sha512-QHlcLpK2Ij+u7ZYDYgaYkTIlC/NcOwEnFdqbY+PF9ewAMUjvBwRVUyqBUtVaJ3V2YKVy2HiloAgLUdOEVRRyBA==}
+
+  named-logs@0.3.0:
+    resolution: {integrity: sha512-RC3u4eUFuvsACe7JQ513vIh6lYvXKXxP6f1dX4kdRGRE2Ep+QvnauybSdECXUHT/eROKaJITKQTWN9Kmd9Oh4Q==}
 
   nanoid@3.3.7:
     resolution: {integrity: sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==}
@@ -4627,6 +4662,9 @@ packages:
   picocolors@1.0.0:
     resolution: {integrity: sha512-1fygroTLlHu66zi26VoTDv8yRgm0Fccecssto+MhsZ0D/DGW2sm8E8AjW7NU5VVTRt5GxbeZ5qBuJr+HyLYkjQ==}
 
+  picocolors@1.1.1:
+    resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
+
   picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
@@ -4670,6 +4708,10 @@ packages:
 
   postcss@8.4.38:
     resolution: {integrity: sha512-Wglpdk03BSfXkHoQa3b/oulrotAkwrlLDRSOb9D0bN86FdRyE9lppSp33aHNPgBa0JKCoB+drFLZkQoRRYae5A==}
+    engines: {node: ^10 || ^12 || >=14}
+
+  postcss@8.4.47:
+    resolution: {integrity: sha512-56rxCq7G/XfB4EkXq9Egn5GCqugWvDFjafDOThIdMBsI15iqPqR5r15TfSr1YPYeEI19YeaXMCbY6u88Y76GLQ==}
     engines: {node: ^10 || ^12 || >=14}
 
   preact@10.21.0:
@@ -4994,8 +5036,8 @@ packages:
   scrypt-js@3.0.1:
     resolution: {integrity: sha512-cdwTTnqPu0Hyvf5in5asVdZocVDTNRmR7XEcJuIzMjJeSHybHl7vpB66AzwTaIg6CLSbtjcxc8fqcySfnTkccA==}
 
-  search-insights@2.13.0:
-    resolution: {integrity: sha512-Orrsjf9trHHxFRuo9/rzm0KIWmgzE8RMlZMzuhZOJ01Rnz3D0YBAe+V6473t6/H6c7irs6Lt48brULAiRWb3Vw==}
+  search-insights@2.17.2:
+    resolution: {integrity: sha512-zFNpOpUO+tY2D85KrxJ+aqwnIfdEGi06UH2+xEb+Bp9Mwznmauqc9djbnBibJO5mpfUPPa8st6Sx65+vbeO45g==}
 
   secp256k1@4.0.3:
     resolution: {integrity: sha512-NLZVf+ROMxwtEj3Xa562qgv2BK5e2WNmXPiOdVIPLgs6lyTzMvBq0aWTYMI5XCP9jZMVKOcqZLw/Wc4vDkuxhA==}
@@ -5140,6 +5182,10 @@ packages:
 
   source-map-js@1.2.0:
     resolution: {integrity: sha512-itJW8lvSA0TXEphiRoawsCksnlf8SyvmFzIhltqAHluXd88pkCd+cXJVHTDwdCr0IzwptSm035IHQktUu1QUMg==}
+    engines: {node: '>=0.10.0'}
+
+  source-map-js@1.2.1:
+    resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
 
   source-map-support@0.5.21:
@@ -5588,6 +5634,9 @@ packages:
 
   undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
+
+  undici-types@6.19.8:
+    resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
 
   undici@5.28.4:
     resolution: {integrity: sha512-72RFADWFqKmUb2hmmvNODKL3p9hcB6Gt2DOQMis1SEBaV6a4MH8soBvzg+95CYhCKPFedut2JY9bMfrDl9D23g==}
@@ -6041,32 +6090,32 @@ snapshots:
 
   '@adraffy/ens-normalize@1.10.1': {}
 
-  '@algolia/autocomplete-core@1.9.3(@algolia/client-search@4.23.3)(algoliasearch@4.23.3)(search-insights@2.13.0)':
+  '@algolia/autocomplete-core@1.9.3(@algolia/client-search@5.10.2)(algoliasearch@4.23.3)(search-insights@2.17.2)':
     dependencies:
-      '@algolia/autocomplete-plugin-algolia-insights': 1.9.3(@algolia/client-search@4.23.3)(algoliasearch@4.23.3)(search-insights@2.13.0)
-      '@algolia/autocomplete-shared': 1.9.3(@algolia/client-search@4.23.3)(algoliasearch@4.23.3)
+      '@algolia/autocomplete-plugin-algolia-insights': 1.9.3(@algolia/client-search@5.10.2)(algoliasearch@4.23.3)(search-insights@2.17.2)
+      '@algolia/autocomplete-shared': 1.9.3(@algolia/client-search@5.10.2)(algoliasearch@4.23.3)
     transitivePeerDependencies:
       - '@algolia/client-search'
       - algoliasearch
       - search-insights
 
-  '@algolia/autocomplete-plugin-algolia-insights@1.9.3(@algolia/client-search@4.23.3)(algoliasearch@4.23.3)(search-insights@2.13.0)':
+  '@algolia/autocomplete-plugin-algolia-insights@1.9.3(@algolia/client-search@5.10.2)(algoliasearch@4.23.3)(search-insights@2.17.2)':
     dependencies:
-      '@algolia/autocomplete-shared': 1.9.3(@algolia/client-search@4.23.3)(algoliasearch@4.23.3)
-      search-insights: 2.13.0
+      '@algolia/autocomplete-shared': 1.9.3(@algolia/client-search@5.10.2)(algoliasearch@4.23.3)
+      search-insights: 2.17.2
     transitivePeerDependencies:
       - '@algolia/client-search'
       - algoliasearch
 
-  '@algolia/autocomplete-preset-algolia@1.9.3(@algolia/client-search@4.23.3)(algoliasearch@4.23.3)':
+  '@algolia/autocomplete-preset-algolia@1.9.3(@algolia/client-search@5.10.2)(algoliasearch@4.23.3)':
     dependencies:
-      '@algolia/autocomplete-shared': 1.9.3(@algolia/client-search@4.23.3)(algoliasearch@4.23.3)
-      '@algolia/client-search': 4.23.3
+      '@algolia/autocomplete-shared': 1.9.3(@algolia/client-search@5.10.2)(algoliasearch@4.23.3)
+      '@algolia/client-search': 5.10.2
       algoliasearch: 4.23.3
 
-  '@algolia/autocomplete-shared@1.9.3(@algolia/client-search@4.23.3)(algoliasearch@4.23.3)':
+  '@algolia/autocomplete-shared@1.9.3(@algolia/client-search@5.10.2)(algoliasearch@4.23.3)':
     dependencies:
-      '@algolia/client-search': 4.23.3
+      '@algolia/client-search': 5.10.2
       algoliasearch: 4.23.3
 
   '@algolia/cache-browser-local-storage@4.23.3':
@@ -6097,6 +6146,8 @@ snapshots:
       '@algolia/requester-common': 4.23.3
       '@algolia/transporter': 4.23.3
 
+  '@algolia/client-common@5.10.2': {}
+
   '@algolia/client-personalization@4.23.3':
     dependencies:
       '@algolia/client-common': 4.23.3
@@ -6108,6 +6159,13 @@ snapshots:
       '@algolia/client-common': 4.23.3
       '@algolia/requester-common': 4.23.3
       '@algolia/transporter': 4.23.3
+
+  '@algolia/client-search@5.10.2':
+    dependencies:
+      '@algolia/client-common': 5.10.2
+      '@algolia/requester-browser-xhr': 5.10.2
+      '@algolia/requester-fetch': 5.10.2
+      '@algolia/requester-node-http': 5.10.2
 
   '@algolia/logger-common@4.23.3': {}
 
@@ -6133,11 +6191,23 @@ snapshots:
     dependencies:
       '@algolia/requester-common': 4.23.3
 
+  '@algolia/requester-browser-xhr@5.10.2':
+    dependencies:
+      '@algolia/client-common': 5.10.2
+
   '@algolia/requester-common@4.23.3': {}
+
+  '@algolia/requester-fetch@5.10.2':
+    dependencies:
+      '@algolia/client-common': 5.10.2
 
   '@algolia/requester-node-http@4.23.3':
     dependencies:
       '@algolia/requester-common': 4.23.3
+
+  '@algolia/requester-node-http@5.10.2':
+    dependencies:
+      '@algolia/client-common': 5.10.2
 
   '@algolia/transporter@4.23.3':
     dependencies:
@@ -6406,9 +6476,9 @@ snapshots:
 
   '@docsearch/css@3.6.0': {}
 
-  '@docsearch/js@3.6.0(@algolia/client-search@4.23.3)(search-insights@2.13.0)':
+  '@docsearch/js@3.6.0(@algolia/client-search@5.10.2)(search-insights@2.17.2)':
     dependencies:
-      '@docsearch/react': 3.6.0(@algolia/client-search@4.23.3)(search-insights@2.13.0)
+      '@docsearch/react': 3.6.0(@algolia/client-search@5.10.2)(search-insights@2.17.2)
       preact: 10.21.0
     transitivePeerDependencies:
       - '@algolia/client-search'
@@ -6417,14 +6487,14 @@ snapshots:
       - react-dom
       - search-insights
 
-  '@docsearch/react@3.6.0(@algolia/client-search@4.23.3)(search-insights@2.13.0)':
+  '@docsearch/react@3.6.0(@algolia/client-search@5.10.2)(search-insights@2.17.2)':
     dependencies:
-      '@algolia/autocomplete-core': 1.9.3(@algolia/client-search@4.23.3)(algoliasearch@4.23.3)(search-insights@2.13.0)
-      '@algolia/autocomplete-preset-algolia': 1.9.3(@algolia/client-search@4.23.3)(algoliasearch@4.23.3)
+      '@algolia/autocomplete-core': 1.9.3(@algolia/client-search@5.10.2)(algoliasearch@4.23.3)(search-insights@2.17.2)
+      '@algolia/autocomplete-preset-algolia': 1.9.3(@algolia/client-search@5.10.2)(algoliasearch@4.23.3)
       '@docsearch/css': 3.6.0
       algoliasearch: 4.23.3
     optionalDependencies:
-      search-insights: 2.13.0
+      search-insights: 2.17.2
     transitivePeerDependencies:
       - '@algolia/client-search'
 
@@ -6842,6 +6912,10 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+
+  '@libsql/core@0.14.0':
+    dependencies:
+      js-base64: 3.7.7
 
   '@libsql/core@0.6.0':
     dependencies:
@@ -7483,6 +7557,11 @@ snapshots:
     dependencies:
       undici-types: 5.26.5
 
+  '@types/node@22.7.9':
+    dependencies:
+      undici-types: 6.19.8
+    optional: true
+
   '@types/normalize-package-data@2.4.4': {}
 
   '@types/pbkdf2@3.1.2':
@@ -7510,9 +7589,9 @@ snapshots:
     dependencies:
       '@types/node': 20.12.12
 
-  '@vitejs/plugin-vue@5.0.4(vite@5.2.11(@types/node@20.12.12))(vue@3.4.26(typescript@5.4.5))':
+  '@vitejs/plugin-vue@5.0.4(vite@5.2.11(@types/node@22.7.9))(vue@3.4.26(typescript@5.4.5))':
     dependencies:
-      vite: 5.2.11(@types/node@20.12.12)
+      vite: 5.2.11(@types/node@22.7.9)
       vue: 3.4.26(typescript@5.4.5)
 
   '@vitest/expect@1.6.0':
@@ -7528,13 +7607,13 @@ snapshots:
       chai: 5.1.1
       tinyrainbow: 1.2.0
 
-  '@vitest/mocker@2.1.2(@vitest/spy@2.1.2)(vite@5.2.11(@types/node@20.12.12))':
+  '@vitest/mocker@2.1.2(@vitest/spy@2.1.2)(vite@5.2.11(@types/node@22.7.9))':
     dependencies:
       '@vitest/spy': 2.1.2
       estree-walker: 3.0.3
       magic-string: 0.30.11
     optionalDependencies:
-      vite: 5.2.11(@types/node@20.12.12)
+      vite: 5.2.11(@types/node@22.7.9)
 
   '@vitest/pretty-format@2.1.2':
     dependencies:
@@ -10194,7 +10273,13 @@ snapshots:
     dependencies:
       named-logs: 0.2.4
 
+  named-logs-context@0.1.1:
+    dependencies:
+      named-logs: 0.2.4
+
   named-logs@0.2.4: {}
+
+  named-logs@0.3.0: {}
 
   nanoid@3.3.7: {}
 
@@ -10457,6 +10542,9 @@ snapshots:
 
   picocolors@1.0.0: {}
 
+  picocolors@1.1.1:
+    optional: true
+
   picomatch@2.3.1: {}
 
   pify@4.0.1: {}
@@ -10503,6 +10591,13 @@ snapshots:
       nanoid: 3.3.7
       picocolors: 1.0.0
       source-map-js: 1.2.0
+
+  postcss@8.4.47:
+    dependencies:
+      nanoid: 3.3.7
+      picocolors: 1.1.1
+      source-map-js: 1.2.1
+    optional: true
 
   preact@10.21.0: {}
 
@@ -10706,11 +10801,11 @@ snapshots:
       '@scure/bip32': 1.4.0
       '@scure/bip39': 1.3.0
 
-  remote-procedure-call@0.0.12(@types/node@20.12.12):
+  remote-procedure-call@0.0.12(@types/node@22.7.9):
     dependencies:
       named-logs: 0.2.4
       promise-throttle: 1.1.2
-      vitest: 2.1.2(@types/node@20.12.12)
+      vitest: 2.1.2(@types/node@22.7.9)
     transitivePeerDependencies:
       - '@edge-runtime/vm'
       - '@types/node'
@@ -10732,9 +10827,9 @@ snapshots:
       '@cloudflare/workers-types': 4.20240512.0
       remote-sql: 0.0.5
 
-  remote-sql-libsql@0.0.5(@libsql/core@0.6.0):
+  remote-sql-libsql@0.0.5(@libsql/core@0.14.0):
     dependencies:
-      '@libsql/core': 0.6.0
+      '@libsql/core': 0.14.0
       remote-sql: 0.0.5
 
   remote-sql@0.0.5: {}
@@ -10920,7 +11015,7 @@ snapshots:
 
   scrypt-js@3.0.1: {}
 
-  search-insights@2.13.0: {}
+  search-insights@2.17.2: {}
 
   secp256k1@4.0.3:
     dependencies:
@@ -11102,6 +11197,9 @@ snapshots:
   solidity-proxy@0.4.0: {}
 
   source-map-js@1.2.0: {}
+
+  source-map-js@1.2.1:
+    optional: true
 
   source-map-support@0.5.21:
     dependencies:
@@ -11572,6 +11670,9 @@ snapshots:
 
   undici-types@5.26.5: {}
 
+  undici-types@6.19.8:
+    optional: true
+
   undici@5.28.4:
     dependencies:
       '@fastify/busboy': 2.1.1
@@ -11668,12 +11769,29 @@ snapshots:
       - supports-color
       - terser
 
-  vite-node@2.1.2(@types/node@20.12.12):
+  vite-node@1.6.0(@types/node@22.7.9):
+    dependencies:
+      cac: 6.7.14
+      debug: 4.3.4(supports-color@8.1.1)
+      pathe: 1.1.2
+      picocolors: 1.0.0
+      vite: 5.2.11(@types/node@22.7.9)
+    transitivePeerDependencies:
+      - '@types/node'
+      - less
+      - lightningcss
+      - sass
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+
+  vite-node@2.1.2(@types/node@22.7.9):
     dependencies:
       cac: 6.7.14
       debug: 4.3.7
       pathe: 1.1.2
-      vite: 5.2.11(@types/node@20.12.12)
+      vite: 5.2.11(@types/node@22.7.9)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -11693,14 +11811,23 @@ snapshots:
       '@types/node': 20.12.12
       fsevents: 2.3.3
 
-  vitepress@1.1.4(@algolia/client-search@4.23.3)(@types/node@20.12.12)(change-case@5.4.4)(postcss@8.4.38)(search-insights@2.13.0)(typescript@5.4.5):
+  vite@5.2.11(@types/node@22.7.9):
+    dependencies:
+      esbuild: 0.20.2
+      postcss: 8.4.38
+      rollup: 4.17.2
+    optionalDependencies:
+      '@types/node': 22.7.9
+      fsevents: 2.3.3
+
+  vitepress@1.1.4(@algolia/client-search@5.10.2)(@types/node@22.7.9)(change-case@5.4.4)(postcss@8.4.47)(search-insights@2.17.2)(typescript@5.4.5):
     dependencies:
       '@docsearch/css': 3.6.0
-      '@docsearch/js': 3.6.0(@algolia/client-search@4.23.3)(search-insights@2.13.0)
+      '@docsearch/js': 3.6.0(@algolia/client-search@5.10.2)(search-insights@2.17.2)
       '@shikijs/core': 1.4.0
       '@shikijs/transformers': 1.4.0
       '@types/markdown-it': 14.1.1
-      '@vitejs/plugin-vue': 5.0.4(vite@5.2.11(@types/node@20.12.12))(vue@3.4.26(typescript@5.4.5))
+      '@vitejs/plugin-vue': 5.0.4(vite@5.2.11(@types/node@22.7.9))(vue@3.4.26(typescript@5.4.5))
       '@vue/devtools-api': 7.1.3(vue@3.4.26(typescript@5.4.5))
       '@vueuse/core': 10.9.0(vue@3.4.26(typescript@5.4.5))
       '@vueuse/integrations': 10.9.0(change-case@5.4.4)(focus-trap@7.5.4)(vue@3.4.26(typescript@5.4.5))
@@ -11708,10 +11835,10 @@ snapshots:
       mark.js: 8.11.1
       minisearch: 6.3.0
       shiki: 1.4.0
-      vite: 5.2.11(@types/node@20.12.12)
+      vite: 5.2.11(@types/node@22.7.9)
       vue: 3.4.26(typescript@5.4.5)
     optionalDependencies:
-      postcss: 8.4.38
+      postcss: 8.4.47
     transitivePeerDependencies:
       - '@algolia/client-search'
       - '@types/node'
@@ -11772,10 +11899,43 @@ snapshots:
       - supports-color
       - terser
 
-  vitest@2.1.2(@types/node@20.12.12):
+  vitest@1.6.0(@types/node@22.7.9):
+    dependencies:
+      '@vitest/expect': 1.6.0
+      '@vitest/runner': 1.6.0
+      '@vitest/snapshot': 1.6.0
+      '@vitest/spy': 1.6.0
+      '@vitest/utils': 1.6.0
+      acorn-walk: 8.3.2
+      chai: 4.4.1
+      debug: 4.3.4(supports-color@8.1.1)
+      execa: 8.0.1
+      local-pkg: 0.5.0
+      magic-string: 0.30.10
+      pathe: 1.1.2
+      picocolors: 1.0.0
+      std-env: 3.7.0
+      strip-literal: 2.1.0
+      tinybench: 2.8.0
+      tinypool: 0.8.4
+      vite: 5.2.11(@types/node@22.7.9)
+      vite-node: 1.6.0(@types/node@22.7.9)
+      why-is-node-running: 2.2.2
+    optionalDependencies:
+      '@types/node': 22.7.9
+    transitivePeerDependencies:
+      - less
+      - lightningcss
+      - sass
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+
+  vitest@2.1.2(@types/node@22.7.9):
     dependencies:
       '@vitest/expect': 2.1.2
-      '@vitest/mocker': 2.1.2(@vitest/spy@2.1.2)(vite@5.2.11(@types/node@20.12.12))
+      '@vitest/mocker': 2.1.2(@vitest/spy@2.1.2)(vite@5.2.11(@types/node@22.7.9))
       '@vitest/pretty-format': 2.1.2
       '@vitest/runner': 2.1.2
       '@vitest/snapshot': 2.1.2
@@ -11790,11 +11950,11 @@ snapshots:
       tinyexec: 0.3.0
       tinypool: 1.0.1
       tinyrainbow: 1.2.0
-      vite: 5.2.11(@types/node@20.12.12)
-      vite-node: 2.1.2(@types/node@20.12.12)
+      vite: 5.2.11(@types/node@22.7.9)
+      vite-node: 2.1.2(@types/node@22.7.9)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 20.12.12
+      '@types/node': 22.7.9
     transitivePeerDependencies:
       - less
       - lightningcss
