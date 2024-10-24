@@ -21,11 +21,11 @@ export function getPublicAPI<Env extends Bindings = Bindings>(options: ServerOpt
 		.get('/time/:chainId', async (c) => {
 			const config = c.get('config');
 			const chainId = c.req.param('chainId');
-			const {provider} =
-				config.chainConfigs[
+			const chainProtocol =
+				config.chainProtocols[
 					(chainId.startsWith('0x') ? chainId : `0x${parseInt(chainId).toString(16)}`) as `0x${string}`
 				];
-			const timestamp = await config.time.getTimestamp(provider);
+			const timestamp = await chainProtocol.getTimestamp();
 			return c.json({timestamp});
 		})
 		.get('/contractTimestamp', async (c) => {

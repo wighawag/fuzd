@@ -1,4 +1,4 @@
-import {ExecutionSubmission} from 'fuzd-executor';
+import {ExecutionSubmission} from 'fuzd-common';
 import {ScheduledExecution} from 'fuzd-scheduler';
 import {deriveRemoteAddress} from 'remote-account';
 import {describe, beforeAll, it, expect, afterAll, afterEach, beforeEach} from 'vitest';
@@ -6,6 +6,7 @@ import {unstable_dev} from 'wrangler';
 import type {UnstableDevWorker} from 'wrangler';
 import {privateKeyToAccount} from 'viem/accounts';
 import base64 from 'base-64';
+import type {TransactionData} from 'fuzd-chain-protocol/ethereum';
 
 const schedulerEndPoint = `http://localhost`;
 
@@ -60,7 +61,7 @@ describe('Worker', () => {
 
 		// we build up first the transaction we want to submit in the future (delayed)
 		// this is mostly a normal tx object, except for the broadcastSchedule
-		const execution: ExecutionSubmission = {
+		const execution: ExecutionSubmission<TransactionData> = {
 			chainId: chainIdAsHex,
 			transaction: {
 				gas: `0x1000000`,
@@ -78,7 +79,7 @@ describe('Worker', () => {
 		// we could encrypt the tx data above and use time-lock encryption
 		// but here we showcase the simpler example where the data is actually sent to the api in clear
 
-		const fuzdExecution: ScheduledExecution<ExecutionSubmission> = {
+		const fuzdExecution: ScheduledExecution<ExecutionSubmission<TransactionData>> = {
 			type: 'clear',
 			// note that even tough you specified the chainId in the tx data, you still need to specify here
 			// this is because the scheduler need to know which network it should look for

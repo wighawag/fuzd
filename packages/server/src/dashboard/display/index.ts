@@ -1,4 +1,4 @@
-import {PendingExecutionStored} from 'fuzd-executor';
+import {PendingExecutionStored} from 'fuzd-common';
 import {ScheduledExecutionQueued} from 'fuzd-scheduler';
 import {formatEther, formatUnits, zeroAddress} from 'viem';
 
@@ -19,7 +19,8 @@ export function displayScheduledExecutionQueued<TransactionDataType>(timeDiff: n
 }
 
 export function displayExecutionBroadcasted() {
-	return (v: PendingExecutionStored) => ({
+	// TODO any should handle transaction type
+	return (v: PendingExecutionStored<any>) => ({
 		account: v.account,
 		chainId: v.chainId,
 		slot: v.slot,
@@ -28,6 +29,7 @@ export function displayExecutionBroadcasted() {
 		broadcastTime: v.broadcastTime ? new Date(v.broadcastTime * 1000).toUTCString() : 'not broadcasted yet',
 		hash: v.hash,
 		transaction: {
+			// TODO show different starknet/ethereum
 			from: v.transaction.from,
 			to: v.transaction.to,
 			gas: v.transaction.gas,

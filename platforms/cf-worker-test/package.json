@@ -7,6 +7,8 @@
     "@cloudflare/workers-types": "^4.20240512.0",
     "@types/node": "^20.12.12",
     "fuzd-cf-worker": "workspace:*",
+    "fuzd-chain-protocol": "workspace:*",
+    "fuzd-common": "workspace:*",
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "remote-account": "^0.1.0",
