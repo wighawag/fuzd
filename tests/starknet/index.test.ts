@@ -8,6 +8,7 @@ import {
 	create_invoke_transaction_v1_from_calls,
 	create_call,
 	create_invoke_transaction_intent_v1_from_calls,
+	create_invoke_transaction_v1_from_calls_with_abi,
 } from 'strk';
 import {encodeShortString, decodeShortString} from 'starknet-core/utils/shortString';
 import {CallData} from 'starknet-core/utils/calldata';
@@ -28,6 +29,7 @@ import {HDKey} from '@scure/bip32';
 import {initAccountFromHD} from 'remote-account';
 import {AllowedTransactionData, StarknetChainProtocol} from 'fuzd-chain-protocol/starknet';
 import AccountContract from 'strk-account';
+import ERC20ABI from './abis/ERC20';
 
 const rpc = createProxiedJSONRPC<StarknetMethods>(RPC_URL);
 
@@ -40,6 +42,8 @@ async function waitForTransaction(transaction_hash: string) {
 	}
 	return txResponse.value;
 }
+
+let counter = 0;
 
 test('starknet_chainId', async function () {
 	const chainIdResponse = await rpc.starknet_chainId();
@@ -57,8 +61,10 @@ test('declare_Account', async function () {
 		sender_address: test_accounts[0].contract_address,
 		private_key: test_accounts[0].private_key,
 	});
-	const chainIdResponse = await rpc.starknet_addDeclareTransaction({declare_transaction});
-	expect(chainIdResponse.success).to.be.true;
+	const declareResponse = await rpc.starknet_addDeclareTransaction({declare_transaction});
+	expect(declareResponse.success).to.be.true;
+	assert(declareResponse.success);
+	expect(declareResponse.value.class_hash).toEqual(`0x1a030827d5dda407c098f8cfc7dde025460c44202eeb487c55c89d70829fc8e`);
 });
 
 test('declare_GreetingsRegistry', async function () {
@@ -247,6 +253,45 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 	// const paymenetAccountBroadcasterInfo = await executor.getBroadcaster(chainId, paymentAccount);
 	// const paymentAccountBroadcaster = paymenetAccountBroadcasterInfo.address;
 
+	// --------------------------------------------------------------------------------------------
+	// SENT ETH
+	// --------------------------------------------------------------------------------------------
+	const senderNonceResponse = await rpc.starknet_getNonce({
+		block_id: 'latest',
+		contract_address: test_accounts[0].contract_address,
+	});
+	assert(senderNonceResponse.success);
+	console.log(`nonce: ${senderNonceResponse.value}`);
+	const send_transaction = create_invoke_transaction_v1_from_calls_with_abi({
+		chain_id: KATANA_CHAIN_ID,
+		calls: [
+			{
+				abi: ERC20ABI,
+				contractAddress: ETHTokenContract.contract_address,
+				entrypoint: 'transfer',
+				args: [remoteAccount, 1000000000000000000n],
+			},
+		],
+		max_fee: 10000000000000000n,
+		nonce: senderNonceResponse.value,
+		sender_address: test_accounts[0].contract_address,
+		private_key: test_accounts[0].private_key,
+	});
+	const sendResponse = await rpc.starknet_addInvokeTransaction({
+		invoke_transaction: send_transaction,
+	});
+	if (!sendResponse.success) {
+		console.error('send_eth failed', sendResponse.error);
+	}
+	expect(sendResponse.success).to.be.true;
+	assert(sendResponse.success);
+	let receipt = await waitForTransaction(sendResponse.value.transaction_hash);
+	if (receipt.execution_status !== 'SUCCEEDED') {
+		console.error('send_eth receipt', receipt);
+	}
+	expect(receipt.execution_status).to.equals('SUCCEEDED');
+	// --------------------------------------------------------------------------------------------
+
 	const abi = JSON.parse(GreetingsRegistry.abi);
 	const calldataParser = new CallData(abi);
 
@@ -273,12 +318,14 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 	};
 
 	// account is ethereum account, right ?
-	const txInfo = await executor.broadcastExecution((1).toString(), 0, user, {
+	const txInfo = await executor.broadcastExecution((++counter).toString(), 0, user, {
 		chainId,
 		transaction,
 		maxFeePerGasAuthorized: `0xFFFFF` as `0x${string}`,
 		derivationParameters,
 	});
+
+	expect(txInfo.slotAlreadyUsed).to.be.undefined;
 
 	console.log(`txInfo`, txInfo);
 
@@ -286,7 +333,7 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 		create_call({
 			block_id: 'latest',
 			contract_address: contractAddress,
-			calldata: [test_accounts[0].contract_address],
+			calldata: [remoteAccount],
 			entry_point: 'lastGreetingOf',
 		}),
 	);

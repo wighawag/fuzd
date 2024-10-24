@@ -24,7 +24,7 @@ import {EIP1193LocalSigner} from 'eip-1193-signer';
 
 type FullTransactionData = TXN;
 
-type OmitSignedTransactionData<T> = Omit<T, 'sender_address' | 'signature' | 'chain_id' | 'nonce'>;
+type OmitSignedTransactionData<T> = Omit<T, 'sender_address' | 'signature' | 'nonce'>;
 
 type InvokeTransactionData =
 	| OmitSignedTransactionData<DeepReadonly<INVOKE_TXN_V1>>
@@ -203,17 +203,23 @@ export class StarknetChainProtocol implements ChainProtocol {
 		if (transaction.type === 'INVOKE') {
 			const invokeResponse = await this.rpc.call('starknet_addInvokeTransaction')({invoke_transaction: transaction});
 			if (!invokeResponse.success) {
-				throw new Error(`could not send response`, {cause: invokeResponse.error});
+				throw new Error(
+					`starknet_addInvokeTransaction: ${invokeResponse.error.message} (${invokeResponse.error.code}) ${'data' in invokeResponse.error && invokeResponse.error.data ? JSON.stringify(invokeResponse.error.data) : ''}`,
+					{cause: invokeResponse.error},
+				);
 			}
 			return invokeResponse.value.transaction_hash as `0x${string}`; // TODO string ?
 		} else if (transaction.type === 'DEPLOY_ACCOUNT') {
-			const invokeResponse = await this.rpc.call('starknet_addDeployAccountTransaction')({
+			const deployAccountResponse = await this.rpc.call('starknet_addDeployAccountTransaction')({
 				deploy_account_transaction: transaction,
 			});
-			if (!invokeResponse.success) {
-				throw new Error(`could not send response`, {cause: invokeResponse.error});
+			if (!deployAccountResponse.success) {
+				throw new Error(
+					`starknet_addDeployAccountTransaction: ${deployAccountResponse.error.message} (${deployAccountResponse.error.code}) ${'data' in deployAccountResponse.error && deployAccountResponse.error.data ? JSON.stringify(deployAccountResponse.error.data) : ''}`,
+					{cause: deployAccountResponse.error},
+				);
 			}
-			return invokeResponse.value.transaction_hash as `0x${string}`; // TODO string ?
+			return deployAccountResponse.value.transaction_hash as `0x${string}`; // TODO string ?
 		} else {
 			throw new Error(`transaction type not supported: ${transaction.type}`);
 		}
@@ -258,7 +264,9 @@ export class StarknetChainProtocol implements ChainProtocol {
 
 		const blockResponse = await this.rpc.call('starknet_getBlockWithTxHashes')({block_id: 'latest'});
 		if (!blockResponse.success) {
-			throw new Error(`could not fetch block`, {cause: blockResponse.error});
+			throw new Error(`could not fetch block: ${blockResponse.error.message} (${blockResponse.error.code})`, {
+				cause: blockResponse.error,
+			});
 		}
 
 		const gas_l1_price = blockResponse.value.l1_gas_price.price_in_wei;
@@ -368,8 +376,6 @@ export class StarknetChainProtocol implements ChainProtocol {
 	): Promise<{
 		rawTx: any;
 		hash: `0x${string}`;
-		transactionData: TransactionDataType;
-		isVoidTransaction: boolean;
 	}> {
 		const [protocol, protocolData] = broadcaster.signer.split(':');
 		let privateKey: `0x${string}`;
@@ -384,34 +390,55 @@ export class StarknetChainProtocol implements ChainProtocol {
 		let hash: `0x${string}`;
 		let signature: BigNumberish[];
 		if (transactionData.type === 'INVOKE') {
-			const intent = create_invoke_transaction_intent_v1({
-				...transactionData,
-				chain_id: chainId,
-				nonce: transactionParameters.nonce,
-				sender_address: broadcaster.address,
-				max_fee: 1,
-			});
-			hash = intent.hash as `0x${string}`;
-			signature = formatSignature(sign(intent.hash, privateKey));
+			if (transactionData.version === '0x1') {
+				const intent = create_invoke_transaction_intent_v1({
+					...transactionData,
+					chain_id: chainId,
+					nonce: transactionParameters.nonce,
+					sender_address: broadcaster.address,
+				});
+				hash = intent.hash as `0x${string}`;
+				signature = formatSignature(sign(intent.hash, privateKey));
+
+				const rawTx = {
+					...intent.data,
+					signature,
+				};
+
+				return {
+					rawTx,
+					hash,
+				};
+			} else {
+				throw new Error(`invoke version: ${transactionData.version} not supported`);
+			}
+		} else if (transactionData.type === 'DEPLOY_ACCOUNT') {
+			if (transactionData.version === '0x1') {
+				const intent = create_deploy_account_transaction_intent_v1({
+					...transactionData,
+					chain_id: chainId,
+					nonce: transactionParameters.nonce,
+				});
+				hash = intent.hash as `0x${string}`;
+				signature = formatSignature(sign(intent.hash, privateKey));
+
+				const rawTx = {
+					...intent.data,
+					signature,
+				};
+
+				console.log(`DEPLOY_ACCOUNT`, rawTx);
+
+				return {
+					rawTx,
+					hash,
+				};
+			} else {
+				throw new Error(`deploy_account version: ${transactionData.version} not supported`);
+			}
 		} else {
-			throw new Error(`type ${transactionData.type} not supported yet`);
+			throw new Error(`type ${(transactionData as any).type} not supported yet`);
 		}
-
-		const actualTransactionData: FullTransactionDataWithoutSignature = {
-			...transactionData,
-		};
-
-		const rawTx = {
-			...data,
-			signature,
-		};
-
-		return {
-			rawTx,
-			hash,
-			transactionData: actualTransactionData as TransactionDataType,
-			isVoidTransaction: false,
-		};
 	}
 
 	// async signVoidTransaction<TransactionDataType>(
@@ -446,7 +473,7 @@ export class StarknetChainProtocol implements ChainProtocol {
 			class_hash: this.config.accountContractClassHash,
 			constructor_calldata: [publicKey],
 			contract_address_salt: 0,
-			max_fee: 0, // TODO
+			max_fee: '0xFFFFFFFFFFFFFFF', // TODO
 			nonce: 0,
 		});
 

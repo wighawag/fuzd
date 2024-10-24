@@ -116,7 +116,11 @@ export function createExecutor<TransactionDataType>(
 
 		const broadcaster = await chainProtocol.getBroadcaster(submission.derivationParameters, account);
 
-		if ('requiredPreliminaryTransaction' in chainProtocol && chainProtocol.requiredPreliminaryTransaction) {
+		if (
+			!slot.startsWith(`_INTERNAL_preliminary_`) &&
+			'requiredPreliminaryTransaction' in chainProtocol &&
+			chainProtocol.requiredPreliminaryTransaction
+		) {
 			const {expectedNonce, currentNonceAsPerNetwork} = await _getBroadcasterNonce(
 				submission.chainId,
 				broadcaster.address,
@@ -128,8 +132,9 @@ export function createExecutor<TransactionDataType>(
 					account,
 				);
 				const batchIndex = 0;
+				// console.log(`broadcastExecution...`, preliminaryTransaction);
 				// TODO ensure _INTERNAL_ prefixed slots cannot be used
-				await broadcastExecution(`_INTERNAL_preliminary_${broadcaster.address}`, batchIndex, account, {
+				const txInfo = await broadcastExecution(`_INTERNAL_preliminary_${broadcaster.address}`, batchIndex, account, {
 					chainId: submission.chainId,
 					maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
 					transaction: preliminaryTransaction,
@@ -137,6 +142,8 @@ export function createExecutor<TransactionDataType>(
 					onBehalf: submission.onBehalf,
 					derivationParameters: submission.derivationParameters,
 				});
+
+				// console.log(`preliminary broadcasted`, txInfo);
 			}
 		}
 
@@ -222,6 +229,7 @@ export function createExecutor<TransactionDataType>(
 		}
 
 		const expectedNonce = broadcasterData.nextNonce;
+		// console.log({expectedNonce, broadcasterAddress});
 		return {currentNonceAsPerNetwork, expectedNonce};
 	}
 
@@ -258,9 +266,11 @@ export function createExecutor<TransactionDataType>(
 			broadcaster.address,
 		);
 
+		// console.log({expectedNonce, forceNonce: options.forceNonce});
+
 		let nonce = expectedNonce;
 		let noncePassedAlready = false;
-		if (options.forceNonce) {
+		if (typeof options.forceNonce !== 'undefined') {
 			// This is a resubmit, so we reuse the same nonce and do not use latesty
 			nonce = options.forceNonce;
 		} else {
@@ -270,9 +280,8 @@ export function createExecutor<TransactionDataType>(
 					// logger.error(message);
 					noncePassedAlready = true;
 				} else {
-					const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}, this means some tx has not been included yet and we should still keep using the exepected value. We prefer to throw and make the user retry`;
-					// logger.error(message);
-					throw new Error(message);
+					const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}, this means some tx has not been included yet and we should still keep using the exepected value.`;
+					logger.error(message);
 				}
 			}
 		}
@@ -408,6 +417,7 @@ export function createExecutor<TransactionDataType>(
 			try {
 				await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
 			} catch (err) {
+				// console.error('ERROR', err);
 				let errorString: string;
 				try {
 					if (err && typeof err === 'object') {
@@ -538,6 +548,7 @@ export function createExecutor<TransactionDataType>(
 			logger.log(
 				`resubmit with maxFeePerGas: ${maxFeePerGas} and maxPriorityFeePerGas: ${maxPriorityFeePerGas} \n(maxFeePerGasUsed: ${maxFeePerGasUsed}, maxPriorityFeePerGasUsed: ${maxPriorityFeePerGasUsed})`,
 			);
+			// console.log(pendingExecution.transactionParametersUsed);
 			await _submitTransaction(broadcaster, pendingExecution, {
 				forceNonce: Number(pendingExecution.transactionParametersUsed.nonce),
 				maxFeePerGas,

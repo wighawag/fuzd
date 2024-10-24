@@ -49,7 +49,7 @@ type ExecutionInDB = {
 	lastError: string | null;
 	expiryTime: number | null;
 	broadcaster: `0x${string}`;
-	nonce: number; // TODO might need to make it a string
+	nonce: `0x${string}`;
 	transactionParametersUsed: string;
 	transactionData: string;
 };
@@ -102,7 +102,7 @@ function fromExecutionInDB<TransactionDataType>(inDB: ExecutionInDB): PendingExe
 		finalized: inDB.finalized == 0 ? false : true,
 		transactionParametersUsed: {
 			from: inDB.broadcaster,
-			nonce: `0x${inDB.nonce.toString(16)}`,
+			nonce: inDB.nonce,
 			maxFeePerGas: extraTransactionParametersUsed.maxFeePerGas,
 			maxPriorityFeePerGas: extraTransactionParametersUsed.maxPriorityFeePerGas,
 		},
@@ -129,7 +129,7 @@ function toExecutionInDB<TransactionDataType>(obj: PendingExecutionStored<Transa
 		lastError: obj.lastError || null,
 		expiryTime: obj.expiryTime || null,
 		broadcaster: obj.transactionParametersUsed.from,
-		nonce: Number(obj.transactionParametersUsed.nonce),
+		nonce: obj.transactionParametersUsed.nonce,
 		transactionParametersUsed: JSON.stringify(obj.transactionParametersUsed),
 		transactionData: JSON.stringify(obj.transaction),
 		finalized: obj.finalized ? 1 : 0,
@@ -200,12 +200,13 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		const executionInsertionStatement = this.db.prepare(sqlExecutionInsertionStatement);
 
 		// TODO use number of string ?
-		const nextNonce = Number(executionToStore.transactionParametersUsed.nonce);
-		if (`0x${nextNonce.toString(16)}` != executionToStore.transactionParametersUsed.nonce) {
+		const nonceUsed = Number(executionToStore.transactionParametersUsed.nonce);
+		if (`0x${nonceUsed.toString(16)}` != executionToStore.transactionParametersUsed.nonce) {
 			throw new Error(
 				`could not handle nonce comversion to number: ${executionToStore.transactionParametersUsed.nonce}`,
 			);
 		}
+		const nextNonce = nonceUsed + 1;
 		const broadcasterInDB = toBroadcasterInDB({
 			address: executionToStore.transactionParametersUsed.from,
 			chainId: executionToStore.chainId,

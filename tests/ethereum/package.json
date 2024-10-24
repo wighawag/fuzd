@@ -67,5 +67,8 @@
     "stop": "zellij kill-session $npm_package_name",
     "format:check": "prettier --check .",
     "format": "prettier --write ."
+  },
+  "dependencies": {
+    "named-logs-console": "^0.3.1"
   }
 }

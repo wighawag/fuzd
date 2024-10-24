@@ -1,3 +1,4 @@
+import 'named-logs-console';
 import {describe, it, expect} from 'vitest';
 import {network} from 'hardhat';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
