@@ -40,7 +40,7 @@
     "fuzd-tlock-decrypter": "workspace:*",
     "hono": "^4.6.6",
     "named-logs": "^0.3.0",
-    "remote-account": "^0.1.0",
+    "remote-account": "^0.2.0",
     "remote-sql": "^0.0.5",
     "tlock-js": "^0.9.0",
     "viem": "^2.21.34",

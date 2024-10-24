@@ -11,7 +11,7 @@
     "fuzd-common": "workspace:*",
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
-    "remote-account": "^0.1.0",
+    "remote-account": "^0.2.0",
     "typescript": "^5.6.3",
     "viem": "^2.21.34",
     "vitest": "^2.1.3",

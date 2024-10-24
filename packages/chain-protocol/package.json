@@ -43,7 +43,7 @@
     "@scure/starknet": "^1.0.0",
     "eip-1193-signer": "^0.0.5",
     "fuzd-common": "workspace:*",
-    "remote-account": "^0.1.0",
+    "remote-account": "^0.2.0",
     "remote-procedure-call": "^0.0.12",
     "starknet-core": "^0.0.3",
     "strk": "^0.0.15",

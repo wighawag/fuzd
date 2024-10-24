@@ -14,7 +14,7 @@
     "libsql": "^0.4.6",
     "prettier": "^3.3.3",
     "prool": "^0.0.16",
-    "remote-account": "^0.1.0",
+    "remote-account": "^0.2.0",
     "remote-procedure-call": "^0.0.12",
     "remote-sql-libsql": "^0.0.5",
     "starknet-core": "^0.0.3",

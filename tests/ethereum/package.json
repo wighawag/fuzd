@@ -34,7 +34,7 @@
     "libsql": "^0.4.6",
     "prettier": "^3.3.3",
     "prettier-plugin-solidity": "^1.4.1",
-    "remote-account": "^0.1.0",
+    "remote-account": "^0.2.0",
     "remote-sql-libsql": "^0.0.5",
     "rocketh": "^0.10.14",
     "rollup-plugin-node-builtins": "^2.1.2",
