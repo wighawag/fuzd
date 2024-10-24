@@ -17,6 +17,7 @@ import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC} from 'remote-procedure-call';
 import {getRoughGasPriceEstimate} from './utils';
 import {
+	DerivationParameters,
 	ExecutionSubmission,
 	fromHex,
 	GenericSchemaExecutionSubmission,
@@ -198,20 +199,38 @@ export class EthereumChainProtocol implements ChainProtocol {
 		) as ExecutionSubmission<TransactionDataType>;
 	}
 
-	async assignProviderFor(chainId: `0x${string}`, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
-		const derivedAccount = this.account.deriveForAddress(forAddress);
+	async validateDerivationParameters(
+		parameters: DerivationParameters,
+	): Promise<{success: true} | {success: false; error: string}> {
+		if (parameters.type !== 'ethereum') {
+			return {success: false, error: `invalid type: ${parameters.type}`};
+		}
+		if (parameters.data !== this.account.publicExtendedKey) {
+			return {
+				success: false,
+				error: `server public key is ${this.account.publicExtendedKey}, the one provided is ${parameters.data}`,
+			};
+		}
+		return {success: true};
+	}
+	async getCurrentDerivationParameters(): Promise<DerivationParameters> {
 		return {
-			assignerID: this.account.publicExtendedKey,
-			signer: `privateKey:${derivedAccount.privateKey}`,
-			address: derivedAccount.address,
+			type: 'ethereum',
+			data: this.account.publicExtendedKey,
 		};
 	}
-	async getProviderByAssignerID(assignerID: string, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
+	async getBroadcaster(parameters: DerivationParameters, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
+		if (parameters.type !== 'ethereum') {
+			throw new Error(`invalid type: ${parameters.type}`);
+		}
+		if (parameters.data !== this.account.publicExtendedKey) {
+			// TODO allow multiple by mapping publicExtendedKey to accounts
+			// FOR NOW: throw if different
+			throw new Error(`server public key is ${this.account.publicExtendedKey}, the one provided is ${parameters.data}`);
+		}
 		const derivedAccount = this.account.deriveForAddress(forAddress);
-		// TODO get it from assignerID
 		return {
 			signer: `privateKey:${derivedAccount.privateKey}`,
-			assignerID,
 			address: derivedAccount.address,
 		};
 	}

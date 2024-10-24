@@ -39,7 +39,7 @@ export function displayExecutionBroadcasted() {
 			maxFeePerGas: formatEther(BigInt(v.transaction.maxFeePerGas), 'gwei') + ' gwei',
 			maxPriorityFeePerGas: formatEther(BigInt(v.transaction.maxPriorityFeePerGas), 'gwei') + ' gwei',
 		},
-		broadcasterAssignerID: v.broadcasterAssignerID,
+		derivationParameters: v.derivationParameters,
 		maxFeePerGasAuthorized: v.maxFeePerGasAuthorized,
 		isVoidTransaction: v.isVoidTransaction ? 'true' : 'false',
 		retries: v.retries || 0,

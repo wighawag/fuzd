@@ -11,6 +11,7 @@ import {
 	String0x,
 	numToHex,
 	bigintToHex,
+	BroadcasterInfo,
 } from 'fuzd-common';
 import {ExecutorConfig} from './types/internal';
 import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo} from 'fuzd-chain-protocol';
@@ -48,6 +49,16 @@ export function createExecutor<TransactionDataType>(
 			}
 		}
 		return 'finalized';
+	}
+
+	async function getBroadcaster(chainId: String0x, account: String0x): Promise<BroadcasterInfo> {
+		const chainProtocol = _getChainProtocol(chainId);
+		const derivationParameters = await chainProtocol.getCurrentDerivationParameters();
+		const broadcaster = await chainProtocol.getBroadcaster(derivationParameters, account);
+		return {
+			derivationParameters,
+			address: broadcaster.address,
+		};
 	}
 
 	async function broadcastExecution(
@@ -97,7 +108,13 @@ export function createExecutor<TransactionDataType>(
 
 		const timestamp = await chainProtocol.getTimestamp();
 
-		const broadcaster = await chainProtocol.assignProviderFor(submission.chainId, account);
+		const validation = await chainProtocol.validateDerivationParameters(submission.derivationParameters);
+
+		if (!validation.success) {
+			throw new Error(validation.error);
+		}
+
+		const broadcaster = await chainProtocol.getBroadcaster(submission.derivationParameters, account);
 
 		if ('requiredPreliminaryTransaction' in chainProtocol && chainProtocol.requiredPreliminaryTransaction) {
 			const {expectedNonce, currentNonceAsPerNetwork} = await _getBroadcasterNonce(
@@ -118,6 +135,7 @@ export function createExecutor<TransactionDataType>(
 					transaction: preliminaryTransaction,
 					expiryTime: submission.expiryTime,
 					onBehalf: submission.onBehalf,
+					derivationParameters: submission.derivationParameters,
 				});
 			}
 		}
@@ -127,9 +145,9 @@ export function createExecutor<TransactionDataType>(
 			account,
 			slot,
 			batchIndex,
+			derivationParameters: submission.derivationParameters,
 			transaction: submission.transaction as TransactionDataType,
 			maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
-			broadcasterAssignerID: broadcaster.assignerID,
 			isVoidTransaction: false,
 			initialTime: timestamp,
 			expiryTime: submission.expiryTime,
@@ -365,6 +383,7 @@ export function createExecutor<TransactionDataType>(
 			chainId: execution.chainId,
 			transaction: execution.transaction, // we never change it, all data changed are captured by : transactionParametersUsed
 			transactionParametersUsed: transactionParametersUsed,
+			derivationParameters: execution.derivationParameters,
 			maxFeePerGasAuthorized: execution.maxFeePerGasAuthorized,
 			initialTime: execution.initialTime,
 			expiryTime: execution.expiryTime,
@@ -377,7 +396,6 @@ export function createExecutor<TransactionDataType>(
 			broadcastTime: timestamp,
 			nextCheckTime,
 			retries,
-			broadcasterAssignerID: broadcaster.assignerID,
 			isVoidTransaction,
 			lastError,
 		};
@@ -456,7 +474,10 @@ export function createExecutor<TransactionDataType>(
 				if (diffToCover > 0n) {
 					const paymentAccount = config.paymentAccount;
 					if (paymentAccount) {
-						const broadcaster = await chainProtocol.assignProviderFor(pendingExecution.chainId, paymentAccount);
+						const broadcaster = await chainProtocol.getBroadcaster(
+							pendingExecution.derivationParameters,
+							paymentAccount,
+						);
 						const broadcasterBalance = await chainProtocol.getBalance(broadcaster.address);
 						const {transaction, cost} = chainProtocol.generatePaymentTransaction(
 							pendingExecution.transaction,
@@ -470,6 +491,7 @@ export function createExecutor<TransactionDataType>(
 								chainId: pendingExecution.chainId,
 								maxFeePerGasAuthorized: `0x38D7EA4C68000`, // 1000 gwei // TODO CONFIGURE per network: max worst worst case
 								transaction: transaction,
+								derivationParameters: pendingExecution.derivationParameters,
 							};
 							await broadcastExecution(
 								`${pendingExecution.account}_${pendingExecution.transactionParametersUsed.from}_${pendingExecution.transactionParametersUsed.nonce}_${gasPriceEstimate.maxFeePerGas.toString()}`,
@@ -506,17 +528,17 @@ export function createExecutor<TransactionDataType>(
 			maxFeePerGasUsed < maxFeePerGas ||
 			(maxFeePerGasUsed === maxFeePerGas && maxPriorityFeePerGasUsed < maxPriorityFeePerGas)
 		) {
-			const signer = await chainProtocol.getProviderByAssignerID(
-				pendingExecution.broadcasterAssignerID,
+			const broadcaster = await chainProtocol.getBroadcaster(
+				pendingExecution.derivationParameters,
 				pendingExecution.account,
 			);
-			if (!signer) {
+			if (!broadcaster) {
 				// TODO
 			}
 			logger.log(
 				`resubmit with maxFeePerGas: ${maxFeePerGas} and maxPriorityFeePerGas: ${maxPriorityFeePerGas} \n(maxFeePerGasUsed: ${maxFeePerGasUsed}, maxPriorityFeePerGasUsed: ${maxPriorityFeePerGasUsed})`,
 			);
-			await _submitTransaction(signer, pendingExecution, {
+			await _submitTransaction(broadcaster, pendingExecution, {
 				forceNonce: Number(pendingExecution.transactionParametersUsed.nonce),
 				maxFeePerGas,
 				maxPriorityFeePerGas,
@@ -547,6 +569,7 @@ export function createExecutor<TransactionDataType>(
 	// EXPORT
 	// --------------------------------------------------------------------------------------------
 	return {
+		getBroadcaster,
 		broadcastExecution,
 		getExecutionStatus,
 		getExpectedWorstCaseGasPrice,

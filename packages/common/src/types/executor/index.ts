@@ -19,7 +19,7 @@ export type PendingExecutionStored<TransactionDataType> = {
 	slot: string;
 	batchIndex: number;
 	onBehalf?: `0x${string}`;
-	broadcasterAssignerID: string;
+	derivationParameters: DerivationParameters;
 	transaction: TransactionDataType;
 	transactionParametersUsed: TransactionParametersUsed;
 	initialTime: number;
@@ -59,6 +59,10 @@ export function GenericSchemaExecutionSubmission<TSchemaTransactionDataType exte
 ) {
 	return z.object({
 		chainId: SchemaString0x,
+		derivationParameters: z.object({
+			type: z.string(),
+			data: z.any(),
+		}),
 		transaction: SchemaTransactionDataType,
 		maxFeePerGasAuthorized: SchemaString0x,
 		expiryTime: z.number().optional(),
@@ -76,6 +80,7 @@ export type ExecutionSubmissionFromZod<TransactionDataType> = z.infer<
 
 export type ExecutionSubmission<TransactionDataType> = {
 	chainId: `0x${string}`;
+	derivationParameters: DerivationParameters;
 	transaction: TransactionDataType;
 	maxFeePerGasAuthorized: `0x${string}`; // 1000 gwei // TODO CONFIGURE per network: max worst worst case
 	expiryTime?: number;
@@ -104,6 +109,7 @@ export type ExecutionSubmission<TransactionDataType> = {
 // Executor
 // ------------------------------------------------------------------------------------------------
 export type Executor<TransactionDataType> = {
+	getBroadcaster(chainId: `0x${string}`, account: `0x${string}`): Promise<BroadcasterInfo>;
 	broadcastExecution(
 		slot: string,
 		batchIndex: number,
@@ -133,3 +139,13 @@ export type TransactionParams = {
 	nonce: number;
 };
 // ------------------------------------------------------------------------------------------------
+
+export type DerivationParameters = {
+	type: string;
+	data: any;
+};
+
+export type BroadcasterInfo = {
+	derivationParameters: DerivationParameters;
+	address: `0x${string}`;
+};

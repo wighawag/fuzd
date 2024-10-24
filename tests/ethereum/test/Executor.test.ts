@@ -25,11 +25,12 @@ async function prepareExecution() {
 	const masterKey = HDKey.fromMasterSeed(seed);
 	const accountHDKey = masterKey.derive(defaultPath);
 	const account = initAccountFromHD(accountHDKey);
+	const chainId = '0x7a69';
 
 	const {executor, publicExtendedKey} = await createTestExecutor({
 		chainProtocols: {
 			// TODO any
-			'0x7a69': new EthereumChainProtocol(
+			[chainId]: new EthereumChainProtocol(
 				provider as any,
 				{
 					expectedFinality: 1,
@@ -41,7 +42,7 @@ async function prepareExecution() {
 		paymentAccount,
 		expectedWorstCaseGasPrices: [
 			{
-				chainId: '0x7a69',
+				chainId,
 				value: 0n,
 			},
 		],
@@ -52,8 +53,12 @@ async function prepareExecution() {
 	const gasPrice = await publicClient.getGasPrice();
 
 	const user = env.namedAccounts.deployer;
-	const remoteAccount = deriveRemoteAddress(publicExtendedKey, user);
-	const paymentAccountBroadcaster = deriveRemoteAddress(publicExtendedKey, paymentAccount);
+	const broadcasterInfo = await executor.getBroadcaster(chainId, user);
+	const derivationParameters = broadcasterInfo.derivationParameters;
+	const remoteAccount = broadcasterInfo.address;
+	const paymenetAccountBroadcasterInfo = await executor.getBroadcaster(chainId, paymentAccount);
+	const paymentAccountBroadcaster = paymenetAccountBroadcasterInfo.address;
+
 	await walletClient.sendTransaction({account: user, to: paymentAccountBroadcaster, value: parseEther('0.1')});
 
 	const data = encodeFunctionData({
@@ -85,13 +90,14 @@ async function prepareExecution() {
 		await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
 	}
 
-	return {gas, gasPrice, txData, user, GreetingsRegistry, env, executor, publicExtendedKey};
+	return {gas, gasPrice, txData, user, GreetingsRegistry, env, executor, publicExtendedKey, derivationParameters};
 }
 
 let counter = 0;
 describe('Executing on the registry', function () {
 	it('Should execute without issues', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env} = await prepareExecution();
+		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, derivationParameters} =
+			await prepareExecution();
 		const txInfo = await executor.broadcastExecution((++counter).toString(), 0, user, {
 			chainId: txData.chainId,
 			transaction: {
@@ -101,6 +107,7 @@ describe('Executing on the registry', function () {
 				gas: `0x${gas.toString(16)}` as `0x${string}`,
 			},
 			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
+			derivationParameters,
 		});
 
 		expect(txInfo.isVoidTransaction).to.be.false;
@@ -108,7 +115,8 @@ describe('Executing on the registry', function () {
 	});
 
 	it('Should execute after processs is called since we allow for the paymentAccount to pay for diff', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env} = await prepareExecution();
+		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, derivationParameters} =
+			await prepareExecution();
 		const txInfo = await executor.broadcastExecution((++counter).toString(), 0, user, {
 			chainId: txData.chainId,
 			transaction: {
@@ -118,6 +126,7 @@ describe('Executing on the registry', function () {
 				gas: `0x${gas.toString(16)}` as `0x${string}`,
 			},
 			maxFeePerGasAuthorized: `0x1`,
+			derivationParameters,
 		});
 
 		expect(txInfo.isVoidTransaction).to.be.false;
@@ -126,7 +135,8 @@ describe('Executing on the registry', function () {
 	});
 
 	it('Should fails to execute right away if tx is not broadcasted, it still pass', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env} = await prepareExecution();
+		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, derivationParameters} =
+			await prepareExecution();
 		provider.override({
 			eth_sendRawTransaction: async (provider, params) => {
 				const rawTx = params[0];
@@ -143,6 +153,7 @@ describe('Executing on the registry', function () {
 				gas: `0x${gas.toString(16)}` as `0x${string}`,
 			},
 			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
+			derivationParameters,
 		});
 
 		expect(txInfo.isVoidTransaction).to.be.false;
@@ -150,7 +161,8 @@ describe('Executing on the registry', function () {
 	});
 
 	it('Should fails to execute right away if tx is not broadcasted, but succeed on checks', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env} = await prepareExecution();
+		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, derivationParameters} =
+			await prepareExecution();
 		provider.override({
 			eth_sendRawTransaction: async (provider, params) => {
 				const rawTx = params[0];
@@ -167,6 +179,7 @@ describe('Executing on the registry', function () {
 				gas: `0x${gas.toString(16)}` as `0x${string}`,
 			},
 			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
+			derivationParameters,
 		});
 
 		expect(txInfo.isVoidTransaction).to.be.false;
@@ -180,7 +193,8 @@ describe('Executing on the registry', function () {
 	});
 
 	it.skip('test reorg', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env} = await prepareExecution();
+		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, derivationParameters} =
+			await prepareExecution();
 		provider.override({
 			// we do not broadcast
 			eth_sendRawTransaction: async (provider, params) => {
@@ -207,6 +221,7 @@ describe('Executing on the registry', function () {
 				gas: `0x${gas.toString(16)}` as `0x${string}`,
 			},
 			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
+			derivationParameters,
 		});
 
 		expect(txInfo.isVoidTransaction).to.be.false;

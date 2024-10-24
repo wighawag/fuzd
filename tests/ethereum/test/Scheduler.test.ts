@@ -30,9 +30,10 @@ const chainProtocol = new EthereumChainProtocol(
 	},
 	account,
 );
+const chainId = '0x7a69';
 const executorConfig = {
 	chainProtocols: {
-		'0x7a69': chainProtocol,
+		[chainId]: chainProtocol,
 	},
 };
 
@@ -49,7 +50,10 @@ async function prepareExecution() {
 	});
 
 	const user = env.namedAccounts.deployer;
-	const remoteAccount = deriveRemoteAddress(publicExtendedKey, user);
+
+	const broadcasterInfo = await executor.getBroadcaster(chainId, user);
+	const derivationParameters = broadcasterInfo.derivationParameters;
+	const remoteAccount = broadcasterInfo.address;
 
 	const data = encodeFunctionData({
 		...GreetingsRegistry,
@@ -97,13 +101,15 @@ async function prepareExecution() {
 		scheduler,
 		schedulerStorage,
 		publicExtendedKey,
+		derivationParameters,
 	};
 }
 
 let counter = 0;
 describe('Executing on the registry', function () {
 	it('Should execute without issues', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, env, scheduler, schedulerStorage} = await prepareExecution();
+		const {gas, gasPrice, txData, user, GreetingsRegistry, env, scheduler, schedulerStorage, derivationParameters} =
+			await prepareExecution();
 		const timestamp = await chainProtocol.getTimestamp();
 		const checkinTime = timestamp + 100;
 		console.log({user});
@@ -125,6 +131,7 @@ describe('Executing on the registry', function () {
 						gas: `0x${gas.toString(16)}` as `0x${string}`,
 					},
 					maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
+					derivationParameters,
 				},
 			],
 		});
@@ -137,7 +144,8 @@ describe('Executing on the registry', function () {
 	});
 
 	it('Should execute encrypted data without issues', async function () {
-		const {gas, gasPrice, env, txData, user, GreetingsRegistry, mockDecrypter, scheduler} = await prepareExecution();
+		const {gas, gasPrice, env, txData, user, GreetingsRegistry, mockDecrypter, scheduler, derivationParameters} =
+			await prepareExecution();
 		const timestamp = await chainProtocol.getTimestamp();
 		const checkinTime = timestamp + 100;
 		const transaction: ExecutionSubmission<TransactionData> = {
@@ -149,6 +157,7 @@ describe('Executing on the registry', function () {
 				gas: `0x${gas.toString(16)}` as `0x${string}`,
 			},
 			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
+			derivationParameters,
 		};
 		const id = (++counter).toString();
 		mockDecrypter.addDecryptedResult(id, transaction);

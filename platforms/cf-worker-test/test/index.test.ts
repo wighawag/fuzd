@@ -73,6 +73,10 @@ describe('Worker', () => {
 			// Note though that the api can set its own limit and might not want to keep trying forever
 			// TODO make it simpler for now
 			maxFeePerGasAuthorized: `0x10`,
+			derivationParameters: {
+				type: 'ethereum',
+				data: publicKey, // TODO add getBroadcaster endpoint
+			},
 		};
 
 		// then we have several option

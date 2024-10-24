@@ -2,7 +2,7 @@ import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, Transact
 import type {Methods} from '@starknet-io/types-js';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC} from 'remote-procedure-call';
-import {ExecutionSubmission, TransactionParametersUsed} from 'fuzd-common';
+import {DerivationParameters, ExecutionSubmission, TransactionParametersUsed} from 'fuzd-common';
 import type {
 	DEPLOY_ACCOUNT_TXN_V1,
 	DEPLOY_ACCOUNT_TXN_V3,
@@ -283,9 +283,50 @@ export class StarknetChainProtocol implements ChainProtocol {
 		return execution;
 	}
 
-	async assignProviderFor(chainId: `0x${string}`, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
-		const serverAccount = this.account; // TODO save in assignmentID: initAccountFromHD(this.hdkey);
-		const derivedAccount = serverAccount.deriveForAddress(forAddress);
+	async validateDerivationParameters(
+		parameters: DerivationParameters,
+	): Promise<{success: true} | {success: false; error: string}> {
+		if (parameters.type !== 'starknet') {
+			return {success: false, error: `invalid type: ${parameters.type}`};
+		}
+		if (typeof parameters.data !== 'object') {
+			return {
+				success: false,
+				error: `data must be an object containing the server public key and the account class hash`,
+			};
+		}
+
+		if (typeof parameters.data.publicKey !== 'string') {
+			return {
+				success: false,
+				error: `data.publicKey is invalid`,
+			};
+		}
+
+		if (typeof parameters.data.accountClassHash !== 'string') {
+			return {
+				success: false,
+				error: `data.accountClassHash is invalid`,
+			};
+		}
+
+		return {success: true};
+	}
+	async getCurrentDerivationParameters(): Promise<DerivationParameters> {
+		return {
+			type: 'starknet',
+			data: {
+				publicKey: this.account.publicExtendedKey,
+				accountClassHash: this.config.accountContractClassHash,
+			},
+		};
+	}
+	async getBroadcaster(parameters: DerivationParameters, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
+		const validation = await this.validateDerivationParameters(parameters);
+		if (!validation.success) {
+			throw new Error(validation.error);
+		}
+		const derivedAccount = this.account.deriveForAddress(forAddress);
 		const publicKey = getStarkKey(derivedAccount.privateKey);
 		const accountContractAddress = hash.calculateContractAddressFromHash(
 			publicKey,
@@ -294,26 +335,7 @@ export class StarknetChainProtocol implements ChainProtocol {
 			0,
 		) as `0x${string}`;
 		return {
-			assignerID: `${serverAccount.publicExtendedKey}:${this.config.accountContractClassHash}`,
 			signer: `privateKey:${derivedAccount.privateKey}`,
-			address: accountContractAddress,
-		};
-	}
-	async getProviderByAssignerID(assignerID: string, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
-		const [serverPublicKey, accountContractClassHash] = assignerID.split(':');
-		const serverAccount = this.account; // TODO get from assignmentID: initAccountFromHD(this.hdkey);
-		const derivedAccount = serverAccount.deriveForAddress(forAddress);
-		const publicKey = getStarkKey(derivedAccount.privateKey);
-		const accountContractAddress = hash.calculateContractAddressFromHash(
-			publicKey,
-			accountContractClassHash,
-			[publicKey],
-			0,
-		) as `0x${string}`;
-
-		return {
-			signer: `privateKey:${derivedAccount.privateKey}`,
-			assignerID,
 			address: accountContractAddress,
 		};
 	}
@@ -404,10 +426,14 @@ export class StarknetChainProtocol implements ChainProtocol {
 		broadcaster: BroadcasterSignerData,
 		account: `0x${string}`,
 	): TransactionDataType {
-		const [serverPublicKey, accountContractClassHash] = broadcaster.assignerID.split(':');
-		const serverAccount = this.account; // TODO get from assignmentID: initAccountFromHD(this.hdkey);
-		const derivedAccount = serverAccount.deriveForAddress(account);
-		const publicKey = getStarkKey(derivedAccount.privateKey);
+		const [protocol, protocolData] = broadcaster.signer.split(':');
+		let privateKey: `0x${string}`;
+		if (protocol === 'privateKey') {
+			privateKey = protocolData as `0x${string}`;
+		} else {
+			throw new Error(`protocol ${protocol} not supported`);
+		}
+		const publicKey = getStarkKey(privateKey);
 
 		const {data} = create_deploy_account_transaction_intent_v1({
 			chain_id: chainId,

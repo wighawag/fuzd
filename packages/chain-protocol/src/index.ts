@@ -1,4 +1,4 @@
-import {ExecutionSubmission, TransactionParametersUsed, TransactionParams} from 'fuzd-common';
+import {DerivationParameters, ExecutionSubmission, TransactionParametersUsed, TransactionParams} from 'fuzd-common';
 
 export type TransactionStatus =
 	| {
@@ -40,7 +40,7 @@ export type GasEstimate = GasPrice & {gasPriceEstimate: GasPrice};
 // ------------------------------------------------------------------------------------------------
 // BroadcasterSignerData
 // ------------------------------------------------------------------------------------------------
-export type BroadcasterSignerData = {assignerID: string; signer: string; address: `0x${string}`};
+export type BroadcasterSignerData = {signer: string; address: `0x${string}`};
 // ------------------------------------------------------------------------------------------------
 
 export type SignedTransactionInfo = {
@@ -65,8 +65,11 @@ export interface ExecutorChainProtocol {
 		account: `0x${string}`,
 	): TransactionDataType;
 
-	assignProviderFor(chainId: `0x${string}`, forAddress: `0x${string}`): Promise<BroadcasterSignerData>;
-	getProviderByAssignerID(assignerID: string, forAddress: `0x${string}`): Promise<BroadcasterSignerData>;
+	validateDerivationParameters(
+		parameters: DerivationParameters,
+	): Promise<{success: true} | {success: false; error: string}>;
+	getCurrentDerivationParameters(): Promise<DerivationParameters>;
+	getBroadcaster(parameters: DerivationParameters, forAddress: `0x${string}`): Promise<BroadcasterSignerData>;
 
 	checkValidity<TransactionDataType>(
 		chainId: `0x${string}`,

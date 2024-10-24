@@ -34,9 +34,9 @@ type ExecutionInDB = {
 	chainId: `0x${string}`;
 	slot: string;
 	batchIndex: number;
+	derivationParameters: string;
 	onBehalf: `0x${string}` | null;
 	nextCheckTime: number;
-	broadcasterAssignerID: string;
 	initialTime: number;
 	broadcastTime: number | null;
 	hash: `0x${string}`;
@@ -86,7 +86,7 @@ function fromExecutionInDB<TransactionDataType>(inDB: ExecutionInDB): PendingExe
 		slot: inDB.slot,
 		batchIndex: inDB.batchIndex,
 		onBehalf: inDB.onBehalf || undefined,
-		broadcasterAssignerID: inDB.broadcasterAssignerID,
+		derivationParameters: JSON.parse(inDB.derivationParameters),
 		initialTime: inDB.initialTime,
 		broadcastTime: inDB.broadcastTime || undefined,
 		nextCheckTime: inDB.nextCheckTime,
@@ -115,8 +115,8 @@ function toExecutionInDB<TransactionDataType>(obj: PendingExecutionStored<Transa
 		account: obj.account,
 		slot: obj.slot,
 		batchIndex: obj.batchIndex,
+		derivationParameters: JSON.stringify(obj.derivationParameters),
 		onBehalf: obj.onBehalf || null,
-		broadcasterAssignerID: obj.broadcasterAssignerID,
 		initialTime: obj.initialTime,
 		broadcastTime: obj.broadcastTime || null,
 		nextCheckTime: obj.nextCheckTime,

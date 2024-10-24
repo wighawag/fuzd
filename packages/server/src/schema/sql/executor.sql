@@ -7,9 +7,9 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     slot            text       NOT NULL,
     batchIndex      number     NOT NULL,
     -------------------------------------------------------------------------------------------------------------------
+    derivationParameters       text        NOT NULL,
     onBehalf                   text,
     nextCheckTime              integer     NOT NULL,
-    broadcasterAssignerID      text        NOT NULL,
     initialTime                integer     NOT NULL,
     broadcastTime              integer,
     hash                       text        NOT NULL, -- tx hash
