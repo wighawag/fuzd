@@ -15,11 +15,6 @@ export type ClientConfig = {
 export function createClient(config: ClientConfig) {
 	const wallet = privateKeyToAccount(config.privateKey);
 
-	async function getRemoteAccount() {
-		const publicKey = await fetch(`${config.schedulerEndPoint}/publicKey`).then((v) => v.text());
-		const remoteAddress = deriveRemoteAddress(publicKey, wallet.address);
-		return remoteAddress;
-	}
 	async function scheduleExecution(execution: {
 		chainId: `0x${string}` | string;
 		transaction: {
@@ -36,6 +31,11 @@ export function createClient(config: ClientConfig) {
 			execution.chainId.startsWith('0x') ? execution.chainId : `0x` + parseInt(execution.chainId).toString(16)
 		) as `0x${string}`;
 
+		// TODO
+		const {derivationParameters, address} = await fetch(
+			`${config.schedulerEndPoint}/broadcaster/${wallet.address}`,
+		).then((v) => v.json());
+
 		const payloadJSON: DecryptedPayload<ExecutionSubmission<TransactionData>> = {
 			type: 'clear',
 			executions: [
@@ -48,6 +48,7 @@ export function createClient(config: ClientConfig) {
 						data: execution.transaction.data,
 						to: execution.transaction.to,
 					},
+					derivationParameters,
 				},
 			],
 		};
@@ -95,6 +96,5 @@ export function createClient(config: ClientConfig) {
 
 	return {
 		scheduleExecution,
-		getRemoteAccount,
 	};
 }

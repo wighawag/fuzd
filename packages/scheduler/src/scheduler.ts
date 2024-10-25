@@ -162,7 +162,7 @@ export function createScheduler<TransactionDataType>(
 		};
 	}
 
-	function _getChainProtocol(chainId: `0x${string}`): ChainProtocol {
+	function _getChainProtocol(chainId: `0x${string}`): ChainProtocol<any> {
 		const chainProtocol = chainProtocols[chainId];
 		if (!chainProtocol) {
 			throw new Error(`cannot get protocol for chain with id ${chainId}`);
@@ -189,8 +189,10 @@ export function createScheduler<TransactionDataType>(
 			case 'fixed-time':
 			case 'fixed-round':
 				if (timing.assumedTransaction && !execution.priorTransactionConfirmation) {
-					const txStatus = await chainProtocol.getTransactionStatus(timing.assumedTransaction, expectedFinality);
-
+					const txStatus = await chainProtocol.getTransactionStatus(timing.assumedTransaction);
+					if (!txStatus.success) {
+						throw txStatus.error;
+					}
 					if (!txStatus.finalised) {
 						logger.debug(`the tx the execution depends on has not finalised and the timestamp has already passed`);
 						// TODO should we delete ?
@@ -217,7 +219,10 @@ export function createScheduler<TransactionDataType>(
 				}
 			case 'delta-time':
 				if (!execution.priorTransactionConfirmation) {
-					const txStatus = await chainProtocol.getTransactionStatus(timing.startTransaction, expectedFinality);
+					const txStatus = await chainProtocol.getTransactionStatus(timing.startTransaction);
+					if (!txStatus.success) {
+						throw txStatus.error;
+					}
 					if (!txStatus.finalised) {
 						const newCheckinTime = computePotentialExecutionTime(execution, {
 							startTimeToCountFrom: txStatus.blockTime || currentTimestamp,
