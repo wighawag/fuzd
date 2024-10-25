@@ -1,16 +1,22 @@
-import {DerivationParameters, ExecutionSubmission, TransactionParametersUsed, TransactionParams} from 'fuzd-common';
+import {DerivationParameters, ExecutionSubmission, TransactionParametersUsed} from 'fuzd-common';
 
 export type TransactionStatus =
 	| {
+			success: true;
 			finalised: true;
 			blockTime: number;
 			failed: boolean;
 	  }
 	| {
+			success: true;
 			finalised: false;
 			blockTime?: number;
 			failed?: boolean;
 			pending: boolean;
+	  }
+	| {
+			success: false;
+			error: any;
 	  };
 
 export type Transaction = {
@@ -23,7 +29,7 @@ export interface SchedulerChainProtocol {
 		expectedFinality: number;
 		worstCaseBlockTime: number;
 	};
-	getTransactionStatus(transaction: Transaction, finality: number): Promise<TransactionStatus>;
+	getTransactionStatus(transaction: Transaction): Promise<TransactionStatus>;
 
 	getTimestamp(): Promise<number>;
 
@@ -51,7 +57,7 @@ export type SignedTransactionInfo = {
 };
 
 export interface ExecutorChainProtocol {
-	isTransactionFinalised(txHash: `0x${string}`): Promise<{finalised: true} | {finalised: false; pending: boolean}>;
+	getTransactionStatus(transaction: Transaction): Promise<TransactionStatus>;
 	isTransactionPending(txHash: `0x${string}`): Promise<boolean>;
 	getBalance(account: `0x${string}`): Promise<bigint>;
 	broadcastSignedTransaction(tx: any): Promise<`0x${string}`>;

@@ -25,7 +25,7 @@ import {
 	TransactionParametersUsed,
 } from 'fuzd-common';
 import {FullTransactionData, SchemaTransactionData, TransactionData} from './types';
-import {initAccountFromHD} from 'remote-account';
+import type {ETHAccount} from 'remote-account';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {keccak_256} from '@noble/hashes/sha3';
 
@@ -41,19 +41,24 @@ export class EthereumChainProtocol implements ChainProtocol {
 			worstCaseBlockTime: number;
 			contractTimestamp?: `0x${string}`;
 		},
-		public account: ReturnType<typeof initAccountFromHD>, // TODO remote-account : export this type
+		public account: ETHAccount, // TODO remote-account : export this type
 	) {
 		this.rpc = createCurriedJSONRPC<Methods>(url);
 	}
 
-	async getTransactionStatus(transaction: Transaction, finality: number): Promise<TransactionStatus> {
+	async getTransactionStatus(transaction: Transaction): Promise<TransactionStatus> {
 		let finalised = false;
 		let blockTime: number | undefined;
-		// TODO fix eip-1193 to make receipt response optional, is that a null ?
-		const receipt = await this.rpc.request({
-			method: 'eth_getTransactionReceipt',
-			params: [transaction.hash],
-		});
+		let receipt: EIP1193TransactionReceipt | null;
+		try {
+			receipt = await this.rpc.request({
+				method: 'eth_getTransactionReceipt',
+				params: [transaction.hash],
+			});
+		} catch (err) {
+			return {success: false, error: err};
+		}
+
 		if (receipt) {
 			const latestBlocknumberAshex = await this.rpc.request({method: 'eth_blockNumber'});
 			const latestBlockNumber = Number(latestBlocknumberAshex);
@@ -71,7 +76,7 @@ export class EthereumChainProtocol implements ChainProtocol {
 			});
 			if (block) {
 				blockTime = Number(block.timestamp);
-				finalised = receiptBlocknumber <= Math.max(0, latestBlockNumber - finality);
+				finalised = receiptBlocknumber <= Math.max(0, latestBlockNumber - this.config.expectedFinality);
 			}
 		}
 
@@ -88,48 +93,19 @@ export class EthereumChainProtocol implements ChainProtocol {
 
 		if (finalised) {
 			return {
+				success: true,
 				finalised,
 				blockTime: blockTime as number,
 				failed: failed as boolean,
 			};
 		} else {
 			return {
+				success: true,
 				finalised,
 				blockTime,
 				failed,
 				pending: receipt ? true : false,
 			};
-		}
-	}
-
-	async isTransactionFinalised(
-		txHash: `0x${string}`,
-	): Promise<{finalised: true} | {finalised: false; pending: boolean}> {
-		let receipt: EIP1193TransactionReceipt | null;
-		try {
-			receipt = await this.rpc.request({
-				method: 'eth_getTransactionReceipt',
-				params: [txHash],
-			});
-		} catch (err) {
-			// logger.error('ERROR fetching receipt', err);
-			receipt = null;
-		}
-
-		let finalised = false;
-		if (receipt) {
-			const latestBlocknumberAshex = await this.rpc.request({
-				method: 'eth_blockNumber',
-			});
-			const latestBlockNumber = Number(latestBlocknumberAshex);
-			const transactionBlockNumber = Number(receipt.blockNumber);
-			finalised = latestBlockNumber - this.config.expectedFinality >= transactionBlockNumber;
-		}
-
-		if (finalised) {
-			return {finalised};
-		} else {
-			return {finalised, pending: receipt ? true : false};
 		}
 	}
 

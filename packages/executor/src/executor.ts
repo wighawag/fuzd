@@ -565,7 +565,13 @@ export function createExecutor<TransactionDataType>(
 	): Promise<void> {
 		const chainProtocol = _getChainProtocol(pendingExecution.chainId);
 
-		const txStatus = await chainProtocol.isTransactionFinalised(pendingExecution.hash);
+		const txStatus = await chainProtocol.getTransactionStatus({
+			hash: pendingExecution.hash,
+			nonce: pendingExecution.transactionParametersUsed.nonce,
+		});
+		if (!txStatus.success) {
+			throw txStatus.error;
+		}
 		if (txStatus.finalised) {
 			pendingExecution.finalized = true;
 			storage.createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(pendingExecution);

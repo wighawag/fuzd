@@ -1,6 +1,6 @@
 import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, TransactionStatus} from '..';
 import type {Methods} from '@starknet-io/types-js';
-import type {CurriedRPC, JSONRPCError, RequestRPC} from 'remote-procedure-call';
+import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC, type RPCErrors} from 'remote-procedure-call';
 import {DerivationParameters, ExecutionSubmission, TransactionParametersUsed} from 'fuzd-common';
 import type {
@@ -8,14 +8,13 @@ import type {
 	DEPLOY_ACCOUNT_TXN_V3,
 	INVOKE_TXN_V1,
 	INVOKE_TXN_V3,
-	TXN,
 } from 'strk/types/rpc/components';
 
 import {initAccountFromHD, type ETHAccount} from 'remote-account';
 
 import ERC20ABI from './abis/ERC20';
 import {create_call, create_deploy_account_transaction_intent_v1, create_invoke_transaction_intent_v1} from 'strk';
-import {BigNumberish, Call, CallData, hash} from 'starknet-core';
+import {Call, CallData, hash} from 'starknet-core';
 import {ethSigToPrivate, getStarkKey, sign} from '@scure/starknet';
 import {formatSignature} from 'starknet-core/utils/stark';
 import type {DeepReadonly} from 'strk';
@@ -88,10 +87,21 @@ export class StarknetChainProtocol implements ChainProtocol {
 		this.rpc = createCurriedJSONRPC<Methods>(url);
 	}
 
-	async getTransactionStatus(transaction: Transaction, finality: number): Promise<TransactionStatus> {
+	async getTransactionStatus(transaction: Transaction): Promise<TransactionStatus> {
 		let finalised = false;
 		let blockTime: number | undefined;
 		const receiptResponse = await this.rpc.call('starknet_getTransactionReceipt')({transaction_hash: transaction.hash});
+
+		if (!receiptResponse.success) {
+			if (receiptResponse.error.code == 29) {
+				// TX_HASH_NOT_FOUND
+			} else {
+				return {
+					success: false,
+					error: receiptResponse.error,
+				};
+			}
+		}
 
 		const receipt = receiptResponse.success && receiptResponse.value.block_hash ? receiptResponse.value : undefined;
 		if (receipt) {
@@ -115,7 +125,7 @@ export class StarknetChainProtocol implements ChainProtocol {
 			});
 			if (blockResponse.success) {
 				blockTime = Number(blockResponse.value.timestamp);
-				finalised = receiptBlocknumber <= Math.max(0, latestBlockNumber - finality);
+				finalised = receiptBlocknumber <= Math.max(0, latestBlockNumber - this.config.expectedFinality);
 			}
 		}
 
@@ -134,49 +144,19 @@ export class StarknetChainProtocol implements ChainProtocol {
 
 		if (finalised) {
 			return {
+				success: true,
 				finalised,
 				blockTime: blockTime as number,
 				failed: failed as boolean,
 			};
 		} else {
 			return {
+				success: true,
 				finalised,
 				blockTime,
 				failed,
 				pending: receipt ? true : false,
 			};
-		}
-	}
-
-	async isTransactionFinalised(
-		txHash: `0x${string}`,
-	): Promise<{finalised: true} | {finalised: false; pending: boolean}> {
-		const receiptResponse = await this.rpc.call('starknet_getTransactionReceipt')({transaction_hash: txHash});
-
-		const receipt = receiptResponse.success && receiptResponse.value.block_hash ? receiptResponse.value : undefined;
-
-		let finalised = false;
-		if (receipt) {
-			const latestBlocknumberResponse = await this.rpc.call('starknet_blockNumber')();
-			if (!latestBlocknumberResponse.success) {
-				throw new Error(`Failed to get latest block number`, {cause: latestBlocknumberResponse.error});
-			}
-
-			const latestBlockNumber = Number(latestBlocknumberResponse.value);
-			const receiptBlocknumber = Number(receipt.block_number);
-
-			if (isNaN(latestBlockNumber) || isNaN(receiptBlocknumber)) {
-				throw new Error(
-					`could not parse blocknumbers, latest: ${latestBlocknumberResponse.value}, receipt: ${receipt.block_number}`,
-				);
-			}
-			finalised = latestBlockNumber - this.config.expectedFinality >= receiptBlocknumber;
-		}
-
-		if (finalised) {
-			return {finalised};
-		} else {
-			return {finalised, pending: receipt ? true : false};
 		}
 	}
 
@@ -606,20 +586,4 @@ export class StarknetChainProtocol implements ChainProtocol {
 			throw new Error(`transaction with version: "${transactionData.version}" not supported`);
 		}
 	}
-
-	// // TODO remote-account : export this type: ReturnType<typeof initAccountFromHD>
-	// async _getStarkKeyFromETHAccount(ethereumSigner: {privateKey: `0x${string}`, address: `0x${string}`}): Promise<string> {
-	// 	const eip1193Signer = new EIP1193LocalSigner(ethereumSigner.privateKey);
-	// 	const signature = await eip1193Signer.request({
-	// 		method: 'personal_sign',
-	// 		params: ['0xFF', ethereumSigner.address],
-	// 	});
-	// 	const starkPrivateKey = ethSigToPrivate(signature);
-	// 	const publicKey = getStarkKey(starkPrivateKey);
-
-	// 	return {
-	// 		private_key: derivedAccount.privateKey,
-	// 		public_key: publicKey,
-	// 	};
-	// }
 }
