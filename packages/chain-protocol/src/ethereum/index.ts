@@ -202,15 +202,11 @@ export class EthereumChainProtocol implements ChainProtocol {
 	async validateDerivationParameters(
 		parameters: DerivationParameters,
 	): Promise<{success: true} | {success: false; error: string}> {
-		if (parameters.type !== 'ethereum') {
-			return {success: false, error: `invalid type: ${parameters.type}`};
+		const validation = await this._validateDerivationParameters(parameters);
+		if (!validation.success) {
+			return validation;
 		}
-		if (parameters.data !== this.account.publicExtendedKey) {
-			return {
-				success: false,
-				error: `server public key is ${this.account.publicExtendedKey}, the one provided is ${parameters.data}`,
-			};
-		}
+
 		return {success: true};
 	}
 	async getCurrentDerivationParameters(): Promise<DerivationParameters> {
@@ -220,13 +216,9 @@ export class EthereumChainProtocol implements ChainProtocol {
 		};
 	}
 	async getBroadcaster(parameters: DerivationParameters, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
-		if (parameters.type !== 'ethereum') {
-			throw new Error(`invalid type: ${parameters.type}`);
-		}
-		if (parameters.data !== this.account.publicExtendedKey) {
-			// TODO allow multiple by mapping publicExtendedKey to accounts
-			// FOR NOW: throw if different
-			throw new Error(`server public key is ${this.account.publicExtendedKey}, the one provided is ${parameters.data}`);
+		const validation = await this.validateDerivationParameters(parameters);
+		if (!validation.success) {
+			throw new Error(validation.error);
 		}
 		const derivedAccount = this.account.deriveForAddress(forAddress);
 		return {
@@ -247,14 +239,13 @@ export class EthereumChainProtocol implements ChainProtocol {
 		}
 		let gasRequired: bigint;
 		try {
-			// TODO ChainProtocol
 			gasRequired = await this._estimateGasNeeded({
 				...transactionData,
 				from: broadcaster.address,
-			} as EIP1193CallParam);
+			});
 		} catch (err: any) {
 			if (err.isInvalidError) {
-				return {revert: 'unknown'};
+				return {revert: 'unknown'}; // TODO add error message
 			} else if (err.message?.indexOf('revert')) {
 				// not 100% sure ?
 				// TODO error message // viem
@@ -266,7 +257,7 @@ export class EthereumChainProtocol implements ChainProtocol {
 				// });
 				return {notEnoughGas: true, revert: true};
 			} else {
-				return {revert: 'unknown'};
+				return {revert: 'unknown'}; // TODO add error message
 			}
 		}
 		return {notEnoughGas: gasRequired > BigInt(transactionData.gas) ? true : false, revert: false};
@@ -405,6 +396,23 @@ export class EthereumChainProtocol implements ChainProtocol {
 	// ---------------------------------------------
 	// INTERNAL
 	// ---------------------------------------------
+
+	async _validateDerivationParameters(
+		parameters: DerivationParameters,
+	): Promise<{success: true} | {success: false; error: string}> {
+		if (parameters.type !== 'ethereum') {
+			return {success: false, error: `invalid type: ${parameters.type}`};
+		}
+		if (parameters.data !== this.account.publicExtendedKey) {
+			// TODO allow multiple by mapping publicExtendedKey to accounts
+			// FOR NOW: throw if different
+			return {
+				success: false,
+				error: `server public key is ${this.account.publicExtendedKey}, the one provided is ${parameters.data}`,
+			};
+		}
+		return {success: true};
+	}
 
 	async _estimateGasNeeded(tx: any): Promise<bigint> {
 		const gas = await this.rpc.request({

@@ -36,9 +36,9 @@
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "named-logs": "^0.3.0",
-    "remote-account": "^0.2.0",
+    "remote-account": "^0.2.1",
     "tlock-js": "^0.9.0",
-    "viem": "^2.21.34"
+    "viem": "^2.21.35"
   },
   "devDependencies": {
     "@types/node": "^22.7.9",

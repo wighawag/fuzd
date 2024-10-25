@@ -1,7 +1,7 @@
 import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, TransactionStatus} from '..';
 import type {Methods} from '@starknet-io/types-js';
-import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
-import {createCurriedJSONRPC} from 'remote-procedure-call';
+import type {CurriedRPC, JSONRPCError, RequestRPC} from 'remote-procedure-call';
+import {createCurriedJSONRPC, type RPCErrors} from 'remote-procedure-call';
 import {DerivationParameters, ExecutionSubmission, TransactionParametersUsed} from 'fuzd-common';
 import type {
 	DEPLOY_ACCOUNT_TXN_V1,
@@ -11,7 +11,7 @@ import type {
 	TXN,
 } from 'strk/types/rpc/components';
 
-import {initAccountFromHD} from 'remote-account';
+import {initAccountFromHD, type ETHAccount} from 'remote-account';
 
 import ERC20ABI from './abis/ERC20';
 import {create_call, create_deploy_account_transaction_intent_v1, create_invoke_transaction_intent_v1} from 'strk';
@@ -22,7 +22,12 @@ import type {DeepReadonly} from 'strk';
 import {getExecuteCalldata} from 'starknet-core/utils/transaction';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 
-type FullTransactionData = TXN;
+// TODO Fix readonly in @starknet-io/types-js
+type FullTransactionData =
+	| DeepReadonly<INVOKE_TXN_V1>
+	| DeepReadonly<INVOKE_TXN_V3>
+	| DeepReadonly<DEPLOY_ACCOUNT_TXN_V1>
+	| DeepReadonly<DEPLOY_ACCOUNT_TXN_V3>;
 
 type OmitSignedTransactionData<T> = Omit<T, 'sender_address' | 'signature' | 'nonce'>;
 
@@ -54,8 +59,18 @@ type DeployAccountTransactionData =
 	  });
 
 export type AllowedTransactionData = InvokeTransactionData;
-type TransactionData = InvokeTransactionData | DeployAccountTransactionData;
-type FullTransactionDataWithoutSignature = Omit<FullTransactionData, 'signature'>; // TODO do not accept deploy_account tx ?
+export type TransactionData = InvokeTransactionData | DeployAccountTransactionData;
+
+type AllMethods = Methods;
+type MethodsErrors = {
+	[K in keyof AllMethods]: AllMethods[K] extends {errors: infer E} ? E : never;
+}[keyof AllMethods];
+function createError(name: string, error: MethodsErrors | RPCErrors) {
+	return new Error(
+		`${name}: ${error.message} (${error.code}) ${'data' in error && error.data ? JSON.stringify(error.data) : ''}`,
+		{cause: error},
+	);
+}
 
 export class StarknetChainProtocol implements ChainProtocol {
 	private rpc: CurriedRPC<Methods>;
@@ -66,9 +81,9 @@ export class StarknetChainProtocol implements ChainProtocol {
 			worstCaseBlockTime: number;
 			contractTimestamp?: `0x${string}`;
 			tokenContractAddress: `0x${string}`;
-			accountContractClassHash: `0x${string}`; // should not be changed unless we handle broadcaster data
+			accountContractClassHash: `0x${string}`;
 		},
-		public account: ReturnType<typeof initAccountFromHD>, // TODO remote-account : export this type
+		public account: ETHAccount,
 	) {
 		this.rpc = createCurriedJSONRPC<Methods>(url);
 	}
@@ -179,11 +194,6 @@ export class StarknetChainProtocol implements ChainProtocol {
 	}
 
 	async getBalance(account: `0x${string}`): Promise<bigint> {
-		// const contractCallData: CallData = new CallData(contract.sierra.abi);
-		// const contractConstructor: Calldata = contractCallData.compile('constructor', {
-		// 	public_key: publicKey0,
-		// });
-
 		const balanceResponse = await this.rpc.call('starknet_call')(
 			create_call({
 				block_id: 'latest',
@@ -203,10 +213,7 @@ export class StarknetChainProtocol implements ChainProtocol {
 		if (transaction.type === 'INVOKE') {
 			const invokeResponse = await this.rpc.call('starknet_addInvokeTransaction')({invoke_transaction: transaction});
 			if (!invokeResponse.success) {
-				throw new Error(
-					`starknet_addInvokeTransaction: ${invokeResponse.error.message} (${invokeResponse.error.code}) ${'data' in invokeResponse.error && invokeResponse.error.data ? JSON.stringify(invokeResponse.error.data) : ''}`,
-					{cause: invokeResponse.error},
-				);
+				throw createError(`starknet_addInvokeTransaction`, invokeResponse.error);
 			}
 			return invokeResponse.value.transaction_hash as `0x${string}`; // TODO string ?
 		} else if (transaction.type === 'DEPLOY_ACCOUNT') {
@@ -214,14 +221,11 @@ export class StarknetChainProtocol implements ChainProtocol {
 				deploy_account_transaction: transaction,
 			});
 			if (!deployAccountResponse.success) {
-				throw new Error(
-					`starknet_addDeployAccountTransaction: ${deployAccountResponse.error.message} (${deployAccountResponse.error.code}) ${'data' in deployAccountResponse.error && deployAccountResponse.error.data ? JSON.stringify(deployAccountResponse.error.data) : ''}`,
-					{cause: deployAccountResponse.error},
-				);
+				throw createError(`starknet_addDeployAccountTransaction`, deployAccountResponse.error);
 			}
 			return deployAccountResponse.value.transaction_hash as `0x${string}`; // TODO string ?
 		} else {
-			throw new Error(`transaction type not supported: ${transaction.type}`);
+			throw new Error(`transaction type not supported: ${(transaction as any).type}`);
 		}
 	}
 
@@ -240,28 +244,6 @@ export class StarknetChainProtocol implements ChainProtocol {
 	}
 
 	async getGasFee(executionData: {maxFeePerGasAuthorized: `0x${string}`}): Promise<GasEstimate> {
-		// const gasResponse = await this.rpc.call('starknet_estimateFee')({
-		// 	block_id: 'latest',
-		// 	request: [
-		// 		{
-		// 			// TODO dummy
-		// 			type: 'INVOKE',
-		// 			version: '0x1',
-		// 			calldata: [],
-		// 			max_fee: '0xFFFFFFFFFFFFFFFF',
-		// 			sender_address: '0x',
-		// 			nonce: '0x1',
-		// 			signature: [],
-		// 		},
-		// 	],
-		// 	simulation_flags: ['SKIP_VALIDATE'], // We skip validate as we do not care of the actual gas consumed, just the price
-		// });
-		// if (!gasResponse.success) {
-		// 	throw new Error(`could not fetch gas`);
-		// }
-		// const gasEstimate = gasResponse.value[0];
-		// const {data_gas_consumed, data_gas_price, gas_consumed, gas_price, overall_fee, unit} = gasEstimate;
-
 		const blockResponse = await this.rpc.call('starknet_getBlockWithTxHashes')({block_id: 'latest'});
 		if (!blockResponse.success) {
 			throw new Error(`could not fetch block: ${blockResponse.error.message} (${blockResponse.error.code})`, {
@@ -270,16 +252,15 @@ export class StarknetChainProtocol implements ChainProtocol {
 		}
 
 		const gas_l1_price = blockResponse.value.l1_gas_price.price_in_wei;
+		// TODO
 		const gas_l1_data_price = blockResponse.value.l1_data_gas_price.price_in_wei;
-
-		// return {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate};
 
 		return {
 			maxFeePerGas: BigInt(gas_l1_price),
-			maxPriorityFeePerGas: 0n,
+			maxPriorityFeePerGas: 0n, // TODO ?
 			gasPriceEstimate: {
 				maxFeePerGas: BigInt(gas_l1_price),
-				maxPriorityFeePerGas: 0n,
+				maxPriorityFeePerGas: 0n, // TODO ?
 			},
 		};
 	}
@@ -298,32 +279,14 @@ export class StarknetChainProtocol implements ChainProtocol {
 	async validateDerivationParameters(
 		parameters: DerivationParameters,
 	): Promise<{success: true} | {success: false; error: string}> {
-		if (parameters.type !== 'starknet') {
-			return {success: false, error: `invalid type: ${parameters.type}`};
-		}
-		if (typeof parameters.data !== 'object') {
-			return {
-				success: false,
-				error: `data must be an object containing the server public key and the account class hash`,
-			};
-		}
-
-		if (typeof parameters.data.publicKey !== 'string') {
-			return {
-				success: false,
-				error: `data.publicKey is invalid`,
-			};
-		}
-
-		if (typeof parameters.data.accountClassHash !== 'string') {
-			return {
-				success: false,
-				error: `data.accountClassHash is invalid`,
-			};
+		const validation = await this._validateDerivationParameters(parameters);
+		if (!validation.success) {
+			return validation;
 		}
 
 		return {success: true};
 	}
+
 	async getCurrentDerivationParameters(): Promise<DerivationParameters> {
 		return {
 			type: 'starknet',
@@ -335,12 +298,10 @@ export class StarknetChainProtocol implements ChainProtocol {
 	}
 	async getBroadcaster(parameters: DerivationParameters, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
 		const validation = await this.validateDerivationParameters(parameters);
-
-		// TODO allow multiple by mapping publicExtendedKey to accounts
-		// FOR NOW: throw if different:
 		if (!validation.success) {
 			throw new Error(validation.error);
 		}
+
 		const {public_key, private_key} = await this._getStarknetSigner(this.account, forAddress);
 		const accountContractAddress = hash.calculateContractAddressFromHash(
 			public_key,
@@ -360,12 +321,43 @@ export class StarknetChainProtocol implements ChainProtocol {
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}> {
-		// TODO
-		// return {notEnoughGas: gasRequired > BigInt(transactionData.gas) ? true : false, revert: false};
-		return {
-			notEnoughGas: false,
-			revert: false,
-		};
+		const {rawTx, transactionData, hash} = this._createFullTransaction(
+			chainId,
+			data,
+			broadcaster,
+			transactionParameters,
+		);
+
+		let gasRequired: bigint;
+		try {
+			const gasResponse = await this.rpc.call('starknet_estimateFee')({
+				block_id: 'latest',
+				request: [rawTx],
+				simulation_flags: [],
+			});
+			if (!gasResponse.success) {
+				if (gasResponse.error.code === 41) {
+					// TODO notEnoughGas ?
+					console.error(gasResponse.error.message);
+					return {notEnoughGas: true, revert: true};
+				}
+				return {revert: 'unknown'}; // TODO add error message
+			}
+			const gasEstimate = gasResponse.value[0];
+			const {data_gas_consumed, data_gas_price, gas_consumed, gas_price, overall_fee, unit} = gasEstimate;
+			gasRequired = BigInt(gas_consumed) + BigInt(data_gas_consumed); // TODO check
+		} catch (err: any) {
+			return {revert: 'unknown'}; // TODO add error message
+		}
+		if (transactionData.version === '0x1') {
+			return {notEnoughGas: gasRequired > BigInt(transactionData.max_fee) ? true : false, revert: false};
+		} else if (transactionData.version === '0x3') {
+			throw new Error(`transaction of version ${transactionData.version} not supported`);
+			// TODO
+			// return {notEnoughGas: gasRequired > BigInt(transactionData.) ? true : false, revert: false};
+		} else {
+			throw new Error(`transaction of version ${transactionData.version} not supported`);
+		}
 	}
 
 	async signTransaction<TransactionDataType>(
@@ -377,68 +369,14 @@ export class StarknetChainProtocol implements ChainProtocol {
 		rawTx: any;
 		hash: `0x${string}`;
 	}> {
-		const [protocol, protocolData] = broadcaster.signer.split(':');
-		let privateKey: `0x${string}`;
-		if (protocol === 'privateKey') {
-			privateKey = protocolData as `0x${string}`;
-		} else {
-			throw new Error(`protocol ${protocol} not supported`);
-		}
+		const {transactionData, hash, rawTx} = this._createFullTransaction(
+			chainId,
+			data,
+			broadcaster,
+			transactionParameters,
+		);
 
-		let transactionData = data as TransactionData;
-
-		let hash: `0x${string}`;
-		let signature: BigNumberish[];
-		if (transactionData.type === 'INVOKE') {
-			if (transactionData.version === '0x1') {
-				const intent = create_invoke_transaction_intent_v1({
-					...transactionData,
-					chain_id: chainId,
-					nonce: transactionParameters.nonce,
-					sender_address: broadcaster.address,
-				});
-				hash = intent.hash as `0x${string}`;
-				signature = formatSignature(sign(intent.hash, privateKey));
-
-				const rawTx = {
-					...intent.data,
-					signature,
-				};
-
-				return {
-					rawTx,
-					hash,
-				};
-			} else {
-				throw new Error(`invoke version: ${transactionData.version} not supported`);
-			}
-		} else if (transactionData.type === 'DEPLOY_ACCOUNT') {
-			if (transactionData.version === '0x1') {
-				const intent = create_deploy_account_transaction_intent_v1({
-					...transactionData,
-					chain_id: chainId,
-					nonce: transactionParameters.nonce,
-				});
-				hash = intent.hash as `0x${string}`;
-				signature = formatSignature(sign(intent.hash, privateKey));
-
-				const rawTx = {
-					...intent.data,
-					signature,
-				};
-
-				console.log(`DEPLOY_ACCOUNT`, rawTx);
-
-				return {
-					rawTx,
-					hash,
-				};
-			} else {
-				throw new Error(`deploy_account version: ${transactionData.version} not supported`);
-			}
-		} else {
-			throw new Error(`type ${(transactionData as any).type} not supported yet`);
-		}
+		return {hash, rawTx};
 	}
 
 	// async signVoidTransaction<TransactionDataType>(
@@ -549,19 +487,43 @@ export class StarknetChainProtocol implements ChainProtocol {
 	// INTERNAL
 	// ---------------------------------------------
 
-	async _estimateGasNeeded(tx: any): Promise<bigint> {
-		const gasResponse = await this.rpc.call('starknet_estimateFee')({
-			block_id: 'latest',
-			request: [tx],
-			simulation_flags: [],
-			// TODO signature
-		});
-		if (!gasResponse.success) {
-			throw new Error(`could not estimateFee`);
+	async _validateDerivationParameters(
+		parameters: DerivationParameters,
+	): Promise<{success: true} | {success: false; error: string}> {
+		if (parameters.type !== 'starknet') {
+			return {success: false, error: `invalid type: ${parameters.type}`};
 		}
-		const gasEstimate = gasResponse.value[0];
-		const {data_gas_consumed, data_gas_price, gas_consumed, gas_price, overall_fee, unit} = gasEstimate;
-		return BigInt(gas_consumed) + BigInt(data_gas_consumed); // TODO check
+		if (typeof parameters.data !== 'object') {
+			return {
+				success: false,
+				error: `data must be an object containing the server public key and the account class hash`,
+			};
+		}
+
+		if (typeof parameters.data.publicKey !== 'string') {
+			return {
+				success: false,
+				error: `data.publicKey is invalid`,
+			};
+		}
+
+		if (typeof parameters.data.accountClassHash !== 'string') {
+			return {
+				success: false,
+				error: `data.accountClassHash is invalid`,
+			};
+		}
+
+		if (parameters.data.publicKey !== this.account.publicExtendedKey) {
+			// TODO allow multiple by mapping publicExtendedKey to accounts
+			// FOR NOW: throw if different
+			return {
+				success: false,
+				error: `server public key is ${this.account.publicExtendedKey}, the one provided is ${parameters.data.publicKey}`,
+			};
+		}
+
+		return {success: true};
 	}
 
 	// TODO remote-account : export this type: ReturnType<typeof initAccountFromHD>
@@ -583,6 +545,66 @@ export class StarknetChainProtocol implements ChainProtocol {
 			private_key: starkPrivateKey,
 			public_key: publicKey,
 		};
+	}
+
+	_createFullTransaction<TransactionDataType>(
+		chainId: `0x${string}`,
+		data: TransactionDataType,
+		broadcaster: BroadcasterSignerData,
+		transactionParameters: TransactionParametersUsed,
+	): {rawTx: FullTransactionData; transactionData: TransactionData; hash: `0x${string}`} {
+		const [protocol, protocolData] = broadcaster.signer.split(':');
+		let privateKey: `0x${string}`;
+		if (protocol === 'privateKey') {
+			privateKey = protocolData as `0x${string}`;
+		} else {
+			throw new Error(`protocol ${protocol} not supported`);
+		}
+		const transactionData = data as TransactionData;
+
+		if (transactionData.version === '0x1') {
+			if (!transactionData.max_fee) {
+				throw new Error(`invalid transaction data, no max_fee parameter`);
+			}
+			if (transactionData.type === 'INVOKE') {
+				const intent = create_invoke_transaction_intent_v1({
+					...transactionData,
+					chain_id: chainId,
+					nonce: transactionParameters.nonce,
+					sender_address: broadcaster.address,
+				});
+				const signature = formatSignature(sign(intent.hash, privateKey));
+
+				return {
+					transactionData,
+					rawTx: {
+						...intent.data,
+						signature,
+					},
+					hash: intent.hash as `0x${string}`,
+				};
+			} else if (transactionData.type === 'DEPLOY_ACCOUNT') {
+				const intent = create_deploy_account_transaction_intent_v1({
+					...transactionData,
+					chain_id: chainId,
+					nonce: transactionParameters.nonce,
+				});
+				const signature = formatSignature(sign(intent.hash, privateKey));
+
+				return {
+					transactionData,
+					rawTx: {
+						...intent.data,
+						signature,
+					},
+					hash: intent.hash as `0x${string}`,
+				};
+			} else {
+				throw new Error(`transaction type "${(transactionData as any).type}" not supported`);
+			}
+		} else {
+			throw new Error(`transaction with version: "${transactionData.version}" not supported`);
+		}
 	}
 
 	// // TODO remote-account : export this type: ReturnType<typeof initAccountFromHD>

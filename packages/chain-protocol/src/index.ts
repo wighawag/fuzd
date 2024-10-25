@@ -37,6 +37,8 @@ export type GasPrice = {
 
 export type GasEstimate = GasPrice & {gasPriceEstimate: GasPrice};
 
+export type TransactionValidity = {revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean};
+
 // ------------------------------------------------------------------------------------------------
 // BroadcasterSignerData
 // ------------------------------------------------------------------------------------------------
@@ -76,7 +78,7 @@ export interface ExecutorChainProtocol {
 		data: TransactionDataType,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
-	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}>;
+	): Promise<TransactionValidity>;
 	signTransaction<TransactionDataType>(
 		chainId: `0x${string}`,
 		data: TransactionDataType,
