@@ -1,4 +1,4 @@
-import {Bindings, MiddlewareHandler} from 'hono/types';
+import {MiddlewareHandler} from 'hono/types';
 import {ServerOptions} from './types';
 import {ExecutorBackend, ExecutorStorage, createExecutor} from 'fuzd-executor';
 import {
@@ -21,7 +21,10 @@ import type {TransactionData} from 'fuzd-chain-protocol/ethereum';
 
 const defaultPath = "m/44'/60'/0'/0/0";
 
-export type SetupOptions<Env extends Bindings = Bindings> = {
+// used to be hono Bindings but its type is now `object` which break compilation here
+type Bindings = Record<string, any>;
+
+export type SetupOptions<Env extends Bindings = Record<string, any>> = {
 	serverOptions: ServerOptions<Env>;
 };
 
@@ -31,11 +34,11 @@ export type Config = {
 	executor: Executor<MyTransactionData> & ExecutorBackend;
 	scheduler: Scheduler<MyTransactionData> & SchedulerBackend;
 	executorStorage: ExecutorStorage<MyTransactionData>;
-	schedulerStorage: SchedulerStorage<ExecutionSubmission<MyTransactionData>>;
+	schedulerStorage: SchedulerStorage<MyTransactionData>;
 	account: ReturnType<typeof initAccountFromHD>;
 	paymentAccount?: `0x${string}`;
 	chainProtocols: ChainProtocols;
-	contractTimestampAddress: `0x${string}`;
+	contractTimestampAddress?: `0x${string}`;
 	getTimeDiff(chainId: `0x${string}`): Promise<number>;
 };
 

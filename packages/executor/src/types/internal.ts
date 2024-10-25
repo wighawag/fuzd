@@ -15,6 +15,6 @@ export type ExecutorConfig<TransactionDataType> = {
 // ChainProtocols
 // ------------------------------------------------------------------------------------------------
 export type ChainProtocols = {
-	[chainId: `0x${string}`]: ChainProtocol;
+	[chainId: `0x${string}`]: ChainProtocol<any>; // TODO type restruction ?
 };
 // ------------------------------------------------------------------------------------------------

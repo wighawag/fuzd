@@ -126,7 +126,7 @@ export function createExecutor<TransactionDataType>(
 				broadcaster.address,
 			);
 			if (expectedNonce == 0) {
-				const preliminaryTransaction = chainProtocol.requiredPreliminaryTransaction<TransactionDataType>(
+				const preliminaryTransaction = chainProtocol.requiredPreliminaryTransaction(
 					submission.chainId,
 					broadcaster,
 					account,
@@ -233,7 +233,7 @@ export function createExecutor<TransactionDataType>(
 		return {currentNonceAsPerNetwork, expectedNonce};
 	}
 
-	function _getChainProtocol(chainId: String0x): ChainProtocol {
+	function _getChainProtocol(chainId: String0x): ChainProtocol<any> {
 		const chainProtocol = chainProtocols[chainId];
 		if (!chainProtocol) {
 			throw new Error(`cannot get protocol for chain with id ${chainId}`);
@@ -324,7 +324,7 @@ export function createExecutor<TransactionDataType>(
 			nonce: numToHex(nonce),
 		};
 
-		const validity = await chainProtocol.checkValidity<TransactionDataType>(
+		const validity = await chainProtocol.checkValidity(
 			execution.chainId,
 			execution.transaction,
 			broadcaster,
@@ -369,7 +369,7 @@ export function createExecutor<TransactionDataType>(
 			rawTxInfo = await chainProtocol.signVoidTransaction(execution.chainId, broadcaster, transactionParametersUsed);
 			isVoidTransaction = true;
 		} else {
-			rawTxInfo = await chainProtocol.signTransaction<TransactionDataType>(
+			rawTxInfo = await chainProtocol.signTransaction(
 				execution.chainId,
 				execution.transaction,
 				broadcaster,

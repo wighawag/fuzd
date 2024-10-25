@@ -193,7 +193,7 @@ export type SchemaScheduledExecution<TSchemaExecutionDataType extends z.ZodTypeA
 	typeof GenericSchemaScheduledExecution<TSchemaExecutionDataType>
 >;
 
-export type ScheduledExecution<TransactionDataType> = z.infer<SchemaScheduledExecution<z.ZodType<TransactionDataType>>>;
+export type ScheduledExecution<ExecutionDataType> = z.infer<SchemaScheduledExecution<z.ZodType<ExecutionDataType>>>;
 
 // ------------------------------------------------------------------------------------------------
 

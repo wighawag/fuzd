@@ -56,18 +56,18 @@ export type SignedTransactionInfo = {
 	hash: `0x${string}`;
 };
 
-export interface ExecutorChainProtocol {
+export interface ExecutorChainProtocol<TransactionDataType> {
 	getTransactionStatus(transaction: Transaction): Promise<TransactionStatus>;
 	isTransactionPending(txHash: `0x${string}`): Promise<boolean>;
 	getBalance(account: `0x${string}`): Promise<bigint>;
 	broadcastSignedTransaction(tx: any): Promise<`0x${string}`>;
 	getNonce(account: `0x${string}`): Promise<`0x${string}`>;
 	getGasFee(executionData: {maxFeePerGasAuthorized: `0x${string}`}): Promise<GasEstimate>;
-	parseExecutionSubmission<TransactionDataType>(
+	parseExecutionSubmission(
 		execution: ExecutionSubmission<TransactionDataType>,
 	): ExecutionSubmission<TransactionDataType>;
 
-	requiredPreliminaryTransaction?<TransactionDataType>(
+	requiredPreliminaryTransaction?(
 		chainId: string,
 		broadcaster: BroadcasterSignerData,
 		account: `0x${string}`,
@@ -79,13 +79,13 @@ export interface ExecutorChainProtocol {
 	getCurrentDerivationParameters(): Promise<DerivationParameters>;
 	getBroadcaster(parameters: DerivationParameters, forAddress: `0x${string}`): Promise<BroadcasterSignerData>;
 
-	checkValidity<TransactionDataType>(
+	checkValidity(
 		chainId: `0x${string}`,
 		data: TransactionDataType,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<TransactionValidity>;
-	signTransaction<TransactionDataType>(
+	signTransaction(
 		chainId: `0x${string}`,
 		data: TransactionDataType,
 		broadcaster: BroadcasterSignerData,
@@ -97,7 +97,7 @@ export interface ExecutorChainProtocol {
 		transactionParameters: TransactionParametersUsed,
 	): Promise<SignedTransactionInfo>;
 
-	generatePaymentTransaction<TransactionDataType>(
+	generatePaymentTransaction(
 		transaction: TransactionDataType,
 		maxFeePerGas: bigint,
 		from: `0x${string}`,
@@ -105,4 +105,4 @@ export interface ExecutorChainProtocol {
 	): {transaction: TransactionDataType; cost: bigint};
 }
 
-export type ChainProtocol = SchedulerChainProtocol & ExecutorChainProtocol;
+export type ChainProtocol<TransactionDataType> = SchedulerChainProtocol & ExecutorChainProtocol<TransactionDataType>;

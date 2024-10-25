@@ -32,7 +32,7 @@ import {keccak_256} from '@noble/hashes/sha3';
 export {SchemaTransactionData} from './types';
 export type {TransactionData} from './types';
 
-export class EthereumChainProtocol implements ChainProtocol {
+export class EthereumChainProtocol implements ChainProtocol<TransactionData> {
 	private rpc: CurriedRPC<Methods>;
 	constructor(
 		public readonly url: string | RequestRPC<Methods>,
@@ -167,12 +167,10 @@ export class EthereumChainProtocol implements ChainProtocol {
 		return {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate};
 	}
 
-	parseExecutionSubmission<TransactionDataType>(
-		execution: ExecutionSubmission<TransactionDataType>,
-	): ExecutionSubmission<TransactionDataType> {
+	parseExecutionSubmission(execution: ExecutionSubmission<TransactionData>): ExecutionSubmission<TransactionData> {
 		return GenericSchemaExecutionSubmission(SchemaTransactionData).parse(
 			execution,
-		) as ExecutionSubmission<TransactionDataType>;
+		) as ExecutionSubmission<TransactionData>;
 	}
 
 	async validateDerivationParameters(
@@ -203,13 +201,12 @@ export class EthereumChainProtocol implements ChainProtocol {
 		};
 	}
 
-	async checkValidity<TransactionDataType>(
+	async checkValidity(
 		chainId: `0x${string}`,
-		data: TransactionDataType,
+		transactionData: TransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}> {
-		let transactionData = data as unknown as EIP1193TransactionData;
 		if (!transactionData.gas) {
 			throw new Error(`invalid transaction data, no gas parameter`);
 		}
@@ -239,14 +236,12 @@ export class EthereumChainProtocol implements ChainProtocol {
 		return {notEnoughGas: gasRequired > BigInt(transactionData.gas) ? true : false, revert: false};
 	}
 
-	async signTransaction<TransactionDataType>(
+	async signTransaction(
 		chainId: `0x${string}`,
-		data: TransactionDataType,
+		transactionData: TransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<SignedTransactionInfo> {
-		const transactionData = data as TransactionData;
-
 		let signer: EIP1193LocalSigner;
 		const [protocol, protocolData] = broadcaster.signer.split(':');
 		if (protocol === 'privateKey') {
@@ -323,13 +318,12 @@ export class EthereumChainProtocol implements ChainProtocol {
 		}
 	}
 
-	generatePaymentTransaction<TransactionDataType>(
-		data: TransactionDataType,
+	generatePaymentTransaction(
+		transactionData: TransactionData,
 		maxFeePerGas: bigint,
 		from: `0x${string}`,
 		diffToCover: bigint,
-	): {transaction: TransactionDataType; cost: bigint} {
-		const transactionData = data as TransactionData;
+	): {transaction: TransactionData; cost: bigint} {
 		const gas = BigInt(30000);
 		const cost = gas * maxFeePerGas; // TODO handle extra Fee like Optimism
 		const valueToSend = diffToCover * BigInt(transactionData.gas);
@@ -339,7 +333,7 @@ export class EthereumChainProtocol implements ChainProtocol {
 			type: '0x2',
 			value: `0x${valueToSend.toString(16)}`,
 		};
-		return {transaction: transactionToBroadcast as TransactionDataType, cost};
+		return {transaction: transactionToBroadcast as TransactionData, cost};
 	}
 
 	// TODO FOR TEST ONLY
