@@ -2,18 +2,15 @@
 	"name": "FUZD",
 	"plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
 	"entryPointStrategy": "packages",
-	"entryPoints": ["packages/executor"], //"entryPoints": ["packages/*"],
-	// "packages/remote-account", "packages/scheduler"],
-	"out": "docs/api",
+	// "entryPoints": ["packages/executor", "packages/scheduler"],
+	"entryPoints": ["packages/*"],
+	"out": "./docs/api",
 	"excludePrivate": true,
 	"excludeExternals": true
 	// "excludeReferences": true,
-
 	// "includeVersion": true
-
 	// Potentially useful for debugging
 	// "logLevel": "Verbose"
-
 	// "excludeTags": [
 	// 	"@override",
 	// 	"@virtual",

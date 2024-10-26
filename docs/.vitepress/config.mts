@@ -15,7 +15,7 @@ function removeSlashDocs(list: List) {
 function recurseRemoveSlashDocs(item: ListItem) {
 	if (item.link) {
 		if (item.link?.startsWith('/docs/')) {
-			item.link = item.link.replace('/docs/', '');
+			item.link = item.link.replace('/docs/', '/');
 		}
 	}
 	if (item.items) {
@@ -129,11 +129,11 @@ export default defineConfig({
 				text: 'Guide',
 				items: [{text: 'Getting Started', link: '/guide/getting-started/'}],
 			},
-			// {
-			// 	text: 'API',
-			// 	link: '/api/',
-			// 	items: order(removeDuplicates(removeSlashDocs(typedocSidebar)), 'createExecutor'),
-			// },
+			{
+				text: 'API',
+				link: '/api/',
+				items: order(removeDuplicates(removeSlashDocs(typedocSidebar)), 'createExecutor'),
+			},
 		],
 
 		socialLinks: [{icon: 'github', link: 'https://github.com/wighawag/fuzd'}],
