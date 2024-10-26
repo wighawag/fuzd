@@ -4,7 +4,6 @@
 	"entryPointStrategy": "packages",
 	"entryPoints": ["packages/executor"], //"entryPoints": ["packages/*"],
 	// "packages/remote-account", "packages/scheduler"],
-	"media": "media",
 	"out": "docs/api",
 	"excludePrivate": true,
 	"excludeExternals": true
