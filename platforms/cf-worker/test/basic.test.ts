@@ -1,57 +1,23 @@
+import {describe, it, expect} from 'vitest';
+import {fetchWorker} from './utils';
+
 import {ExecutionSubmission} from 'fuzd-common';
 import {ScheduledExecution} from 'fuzd-scheduler';
 import {deriveRemoteAddress} from 'remote-account';
-import {describe, beforeAll, it, expect, afterAll, afterEach, beforeEach} from 'vitest';
-import {unstable_dev} from 'wrangler';
-import type {UnstableDevWorker} from 'wrangler';
 import {privateKeyToAccount} from 'viem/accounts';
-import base64 from 'base-64';
 import type {TransactionData} from 'fuzd-chain-protocol/ethereum';
 
-const schedulerEndPoint = `http://localhost`;
-
-describe('Worker', () => {
-	let worker: UnstableDevWorker;
-
-	beforeAll(async () => {
-		worker = await unstable_dev('node_modules/fuzd-cf-worker/src/worker.ts', {
-			experimental: {disableExperimentalWarning: true},
-		});
-	});
-
-	beforeEach(async () => {
-		const response = await worker.fetch(`${schedulerEndPoint}/api/admin/setup`, {
-			headers: {
-				Authorization: 'Basic ' + base64.encode('admin' + ':' + 'random-token'),
-			},
-		});
-	});
-
-	afterEach(async () => {
-		await worker
-			.fetch(`${schedulerEndPoint}/api/admin/clear`, {
-				headers: {
-					Authorization: 'Basic ' + base64.encode('admin' + ':' + 'random-token'),
-				},
-			})
-			.then((v) => v.text());
-	});
-
-	afterAll(async () => {
-		await worker.stop();
-	});
-
-	it('should return fuzd api', async function () {
-		const resp = await worker.fetch();
-		const text = await resp.text();
-		expect(text).toMatchInlineSnapshot(`"fuzd api"`);
+describe('fuzd api', () => {
+	it('responds with "fuzd api"', async () => {
+		const response = await fetchWorker('/');
+		expect(await response.text()).toBe('fuzd api');
 	});
 
 	it('should', async function () {
 		const wallet = privateKeyToAccount('0x1111111111111111111111111111111111111111111111111111111111111111');
 
 		// we get the remote address associated with the private key signing the execution message sent to the api
-		const publicKey = await worker.fetch(`${schedulerEndPoint}/api/publicKey`).then((v) => v.text());
+		const publicKey = await fetchWorker(`/api/publicKey`).then((v) => v.text());
 		console.log({publicKey});
 		// this will need to hold some ETH, so it can carry the execution.
 		const remoteAddress = deriveRemoteAddress(publicKey, wallet.address);
@@ -111,7 +77,7 @@ describe('Worker', () => {
 		// finally we perform the network request
 		// the json (as string) is the body
 		// and the signature, computed above is provided via headers
-		const resp = await worker.fetch(`${schedulerEndPoint}/api/scheduling/scheduleExecution`, {
+		const resp = await fetchWorker(`/api/scheduling/scheduleExecution`, {
 			body: jsonAsString,
 			headers: {
 				'content-type': 'application/json',
@@ -120,7 +86,7 @@ describe('Worker', () => {
 			method: 'POST',
 		});
 		const text = await resp.clone().text();
-		console.log(text);
+		console.log(`TEXT RESPONSE:`, text);
 		const json: any = await resp.json();
 		console.log(json);
 		expect(json.chainId).to.equal(chainIdAsHex);

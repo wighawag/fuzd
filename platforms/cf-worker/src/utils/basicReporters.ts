@@ -2,7 +2,8 @@ import {logs} from 'named-logs';
 import {type Reporter} from 'workers-logger';
 const logger = logs('worker');
 
-export const namedLogsReporter: Reporter = async (events, {req, res}) => {
+// TODO remove type any
+export const namedLogsReporter: Reporter = async (events: any, {req, res}: {req: any; res: any}) => {
 	for (const event of events) {
 		if (event.error) {
 			logger.error(event.error);
@@ -28,7 +29,8 @@ export const namedLogsReporter: Reporter = async (events, {req, res}) => {
 	}
 };
 
-export const consoleReporter: Reporter = async (events, {req, res}) => {
+// TODO remove type any
+export const consoleReporter: Reporter = async (events: any, {req, res}: {req: any; res: any}) => {
 	console.log(`reporting ${events.length} events`);
 	for (const event of events) {
 		if (event.error) {
