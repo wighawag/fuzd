@@ -1,5 +1,5 @@
 import {testnetClient} from 'tlock-js';
-import {createClient} from '.';
+import {createClient} from './index.js';
 import {loadEnv} from 'ldenv';
 import {parseEther} from 'viem';
 import {Command} from 'commander';

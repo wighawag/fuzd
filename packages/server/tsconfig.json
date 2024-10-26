@@ -1,11 +1,24 @@
 {
 	"compilerOptions": {
-		"target": "ESNext",
-		"module": "ESNext",
-		"moduleResolution": "Bundler",
 		"strict": true,
+		"strictNullChecks": true,
+		"target": "ESNext",
+		"module": "NodeNext",
 		"lib": ["ESNext", "dom"],
+		"moduleResolution": "NodeNext",
 		"jsx": "react-jsx",
-		"jsxImportSource": "hono/jsx"
-	}
+		"jsxImportSource": "hono/jsx",
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"sourceMap": true,
+		"declaration": true,
+		"rootDir": "./src",
+		"outDir": "./dist/esm",
+		"plugins": [
+			{
+				"transform": "typia/lib/transform"
+			}
+		]
+	},
+	"include": ["src/**/*.ts"]
 }

@@ -1,9 +1,9 @@
 import {Hono} from 'hono';
 import {Bindings} from 'hono/types';
-import {ServerOptions} from '../../types';
+import {ServerOptions} from '../../types.js';
 import {basicAuth} from 'hono/basic-auth';
 import {logs} from 'named-logs';
-import {SchemaEIP1193Account} from 'fuzd-common';
+import {assert} from 'typia';
 
 const logger = logs('fuzd-cf-worker-admin-api');
 
@@ -17,7 +17,7 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 		})
 		.get('/account-submissions/:account', async (c) => {
 			const config = c.get('config');
-			const account = SchemaEIP1193Account.parse(c.req.param('account'));
+			const account = assert<`0x${string}`>(c.req.param('account'));
 			const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 100});
 			return c.json(queue);
 		})

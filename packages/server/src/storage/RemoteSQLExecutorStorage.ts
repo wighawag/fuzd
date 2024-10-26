@@ -1,8 +1,8 @@
 import type {RemoteSQL} from 'remote-sql';
 import type {ExecutorStorage, BroadcasterData} from 'fuzd-executor';
-import {sqlToStatements, toValues} from './utils';
+import {sqlToStatements, toValues} from './utils.js';
 import {logs} from 'named-logs';
-import setupTables from '../schema/ts/executor.sql';
+import setupTables from '../schema/ts/executor.sql.js';
 import {ExpectedWorstCaseGasPrice, PendingExecutionStored, TransactionParametersUsed} from 'fuzd-common';
 
 const logger = logs('fuzd-server-executor-storage-sql');

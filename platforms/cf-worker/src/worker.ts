@@ -2,12 +2,12 @@ import 'named-logs-context';
 import {createServer} from 'fuzd-server';
 import type {Context} from 'hono';
 import {RemoteD1} from 'remote-sql-d1';
-import {Env} from './env';
+import {Env} from './env.js';
 import {logs} from 'named-logs';
 import {track, enable as enableWorkersLogger} from 'workers-logger';
 import {ExecutionContext} from '@cloudflare/workers-types/experimental';
-import {logflareReport} from './utils/logflare';
-import {consoleReporter} from './utils/basicReporters';
+import {logflareReport} from './utils/logflare.js';
+import {consoleReporter} from './utils/basicReporters.js';
 enableWorkersLogger('*');
 const logger = logs('worker');
 

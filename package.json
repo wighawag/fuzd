@@ -11,7 +11,6 @@
     "syncpack": "^13.0.0",
     "typedoc": "^0.25.13",
     "typedoc-plugin-markdown": "4.0.2",
-    "typedoc-plugin-zod": "^1.1.2",
     "typedoc-vitepress-theme": "1.0.0",
     "typescript": "^5.6.3",
     "vitepress": "1.4.1",

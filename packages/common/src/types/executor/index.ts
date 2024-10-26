@@ -56,23 +56,6 @@ export type ExecutionSubmission<TransactionDataType> = {
 	expiryTime?: number;
 	onBehalf?: `0x${string}`;
 };
-
-// function test<TransactionDataType>() {
-// 	function next(v: ExecutionSubmission<TransactionDataType>) {}
-// 	const transactionToBroadcast: TransactionDataType = {
-// 		gas: `0xdsad`,
-// 		to: '0xdsad',
-// 		type: '0x2',
-// 		value: `0xdsad sd}`,
-// 	} as TransactionDataType;
-
-// 	next({
-// 		chainId: '0xdsadsd' as `0x${string}`,
-// 		maxFeePerGasAuthorized: `0x38D7EA4C68000` as `0x${string}`, // 1000 gwei // TODO CONFIGURE per network: max worst worst case
-// 		transaction: transactionToBroadcast,
-// 	} satisfies ExecutionSubmissionFromZod<TransactionDataType>);
-// }
-
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------

@@ -1,13 +1,21 @@
 {
 	"compilerOptions": {
 		"strict": true,
+		"strictNullChecks": true,
 		"target": "ESNext",
-		"module": "ESNext",
+		"module": "NodeNext",
 		"lib": ["ESNext", "dom"],
-		"moduleResolution": "Bundler",
+		"moduleResolution": "NodeNext",
 		"skipLibCheck": true,
 		"sourceMap": true,
-		"outDir": "./dist/esm"
+		"declaration": true,
+		"rootDir": "./src",
+		"outDir": "./dist/esm",
+		"plugins": [
+			{
+				"transform": "typia/lib/transform"
+			}
+		]
 	},
 	"include": ["src/**/*.ts"]
 }

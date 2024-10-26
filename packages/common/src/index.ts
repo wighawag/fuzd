@@ -1,3 +1,3 @@
-export * from './js';
-export * from './time';
-export * from './types';
+export * from './js.js';
+export * from './time.js';
+export * from './types/index.js';

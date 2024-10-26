@@ -1,3 +1,4 @@
+import {assert} from 'typia';
 import {
 	BroadcasterSignerData,
 	ChainProtocol,
@@ -5,31 +6,18 @@ import {
 	SignedTransactionInfo,
 	Transaction,
 	TransactionStatus,
-} from '..';
-import type {
-	EIP1193CallParam,
-	EIP1193Transaction,
-	EIP1193TransactionData,
-	EIP1193TransactionReceipt,
-	Methods,
-} from 'eip-1193';
+} from '../index.js';
+import type {EIP1193Transaction, EIP1193TransactionReceipt, Methods} from 'eip-1193';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC} from 'remote-procedure-call';
-import {getRoughGasPriceEstimate} from './utils';
-import {
-	DerivationParameters,
-	ExecutionSubmission,
-	fromHex,
-	GenericSchemaExecutionSubmission,
-	toHex,
-	TransactionParametersUsed,
-} from 'fuzd-common';
-import {FullTransactionData, TransactionData} from './types';
+import {getRoughGasPriceEstimate} from './utils.js';
+import {DerivationParameters, ExecutionSubmission, fromHex, toHex, TransactionParametersUsed} from 'fuzd-common';
+import {FullTransactionData, TransactionData} from './types.js';
 import type {ETHAccount} from 'remote-account';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {keccak_256} from '@noble/hashes/sha3';
 
-export type {TransactionData} from './types';
+export type {TransactionData} from './types.js';
 
 export class EthereumChainProtocol implements ChainProtocol<TransactionData> {
 	private rpc: CurriedRPC<Methods>;
@@ -167,9 +155,7 @@ export class EthereumChainProtocol implements ChainProtocol<TransactionData> {
 	}
 
 	parseExecutionSubmission(execution: ExecutionSubmission<TransactionData>): ExecutionSubmission<TransactionData> {
-		return GenericSchemaExecutionSubmission(SchemaTransactionData).parse(
-			execution,
-		) as ExecutionSubmission<TransactionData>;
+		return assert(execution);
 	}
 
 	async validateDerivationParameters(

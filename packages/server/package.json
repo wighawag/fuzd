@@ -7,18 +7,11 @@
     "access": "public"
   },
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "require": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.cjs"
-      },
       "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.mjs"
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
       }
     }
   },
@@ -27,7 +20,7 @@
     "src"
   ],
   "dependencies": {
-    "@hono/zod-validator": "^0.4.1",
+    "@hono/typia-validator": "^0.0.5",
     "@scure/bip32": "^1.5.0",
     "@scure/bip39": "^1.4.0",
     "eip-1193": "^0.6.1",
@@ -38,29 +31,31 @@
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "fuzd-tlock-decrypter": "workspace:*",
-    "hono": "^4.6.6",
+    "hono": "^4.6.7",
     "named-logs": "^0.3.0",
     "remote-account": "^0.2.1",
     "remote-sql": "^0.0.5",
     "tlock-js": "npm:@bug-fix/tlock-js@0.9.0-fix.3",
-    "viem": "^2.21.35",
-    "zod": "^3.23.8"
+    "viem": "^2.21.35"
   },
   "devDependencies": {
     "as-soon": "^0.0.9",
     "ldenv": "^0.3.10",
-    "pkgroll": "^2.5.0",
     "prettier": "^3.3.3",
-    "typescript": "^5.6.3"
+    "ts-patch": "^3.2.1",
+    "typescript": "^5.6.3",
+    "typia": "^6.11.3"
   },
   "scripts": {
-    "build": "pnpm sql2ts && pkgroll",
+    "prepare": "ts-patch install && typia patch",
+    "build:ts": "tsc --project tsconfig.json",
+    "build": "pnpm sql2ts && pnpm build:ts",
     "sql2ts": "node sql2ts.cjs executor scheduler",
     "sql2ts:watch": "pnpm sql2ts && as-soon -w ./src/schema/sql pnpm sql2ts",
     "css2ts": "node css2ts.cjs global",
     "css2ts:watch": "pnpm css2ts && as-soon -w ./src/schema/css pnpm css2ts",
-    "dev": "pkgroll --watch",
+    "dev": "as-soon -w src pnpm build:ts",
     "format:check": "prettier --check .",
-    "format": "prettier --write ."
+    "format:write": "prettier --write ."
   }
 }

@@ -1,7 +1,7 @@
 /** @jsx jsx */
 /** @jsxImportSource hono/jsx */
 import {FC, jsx} from 'hono/jsx';
-import globalCss from './styles/ts/global.css';
+import globalCss from './styles/ts/global.css.js';
 import {html, raw} from 'hono/html';
 
 export const Layout: FC = (props) =>

@@ -1,5 +1,5 @@
 import {ExecutionSubmission} from 'fuzd-common';
-import {ScheduledExecution} from './external';
+import {ScheduledExecution} from './external.js';
 
 export type ScheduledExecutionQueued<TransactionDataType> = ScheduledExecution<
 	ExecutionSubmission<TransactionDataType>

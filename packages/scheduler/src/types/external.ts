@@ -1,4 +1,4 @@
-import {ScheduledExecutionQueued} from './scheduler-storage';
+import {ScheduledExecutionQueued} from './scheduler-storage.js';
 import {ExecutionSubmission} from 'fuzd-common';
 // ------------------------------------------------------------------------------------------------
 // PriorTransactionInfo

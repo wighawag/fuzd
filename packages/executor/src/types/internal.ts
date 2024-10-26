@@ -1,4 +1,4 @@
-import {ExecutorStorage} from './executor-storage';
+import {ExecutorStorage} from './executor-storage.js';
 import {ChainProtocol} from 'fuzd-chain-protocol';
 
 // ------------------------------------------------------------------------------------------------

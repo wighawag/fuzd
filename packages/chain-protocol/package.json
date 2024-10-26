@@ -7,30 +7,17 @@
     "access": "public"
   },
   "type": "module",
-  "types": "./dist/esm/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/esm/index.d.ts"
     },
     "./ethereum": {
-      "require": {
-        "types": "./dist/cjs/ethereum/index.d.ts",
-        "default": "./dist/cjs/ethereum/index.js"
-      },
-      "import": {
         "types": "./dist/esm/ethereum/index.d.ts",
         "default": "./dist/esm/ethereum/index.js"
-      }
     },
     "./starknet": {
-      "require": {
-        "types": "./dist/cjs/starknet/index.d.ts",
-        "default": "./dist/cjs/starknet/index.cs"
-      },
-      "import": {
         "types": "./dist/esm/starknet/index.d.ts",
         "default": "./dist/esm/starknet/index.js"
-      }
     }
   },
   "files": [
@@ -46,24 +33,23 @@
     "remote-account": "^0.2.1",
     "remote-procedure-call": "^0.0.13",
     "starknet-core": "^0.0.3",
-    "strk": "^0.0.15",
-    "zod": "^3.23.8"
+    "strk": "^0.0.15"
   },
   "devDependencies": {
     "@starknet-io/types-js": "^0.7.7",
+    "as-soon": "^0.0.9",
     "eip-1193": "^0.6.1",
     "ldenv": "^0.3.10",
-    "as-soon": "^0.0.9",
     "prettier": "^3.3.3",
-    "typescript": "^5.6.3"
+    "ts-patch": "^3.2.1",
+    "typescript": "^5.6.3",
+    "typia": "^6.11.3"
   },
   "scripts": {
-    "build": "pnpm build:esm && pnpm build:cjs",
-    "build:esm": "tsc --project tsconfig.json",
-    "build:cjs": "tsc --project tsconfig-cjs.json",
-    "build:watch": "as-soon -w src pnpm build",
-    "dev": "as-soon -w src pnpm build:esm",
+    "prepare": "ts-patch install && typia patch",
+    "build": "tsc --project tsconfig.json",
+    "dev": "as-soon -w src pnpm build",
     "format:check": "prettier --check .",
-    "format": "prettier --write ."
+    "format:write": "prettier --write ."
   }
 }

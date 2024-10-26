@@ -1,27 +1,24 @@
 import {Hono} from 'hono';
 import {Bindings} from 'hono/types';
-import {ServerOptions} from '../../types';
+import {ServerOptions} from '../../types.js';
+import {auth} from '../../auth.js';
+import {createValidate} from 'typia';
+import {ScheduledExecution} from 'fuzd-scheduler';
+import {typiaValidator} from '@hono/typia-validator';
 
-import {zValidator} from '@hono/zod-validator';
-import {auth} from '../../auth';
-import {GenericSchemaScheduledExecution} from 'fuzd-scheduler';
+const validate = createValidate<ScheduledExecution<any>>();
 
 export function getSchedulingAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const app = new Hono<{Bindings: Env & {}}>()
 
-		.post(
-			'/scheduleExecution',
-			auth({debug: false}),
-			zValidator('json', GenericSchemaScheduledExecution(SchemaAny)),
-			async (c) => {
-				const config = c.get('config');
-				const account = c.get('account');
-				const data = c.req.valid('json');
+		.post('/scheduleExecution', auth({debug: false}), typiaValidator('json', validate), async (c) => {
+			const config = c.get('config');
+			const account = c.get('account');
+			const data = c.req.valid('json');
 
-				const result = await config.scheduler.scheduleExecution(account, data);
-				return c.json(result);
-			},
-		)
+			const result = await config.scheduler.scheduleExecution(account, data);
+			return c.json(result);
+		})
 
 		.get('/reserved/:chainId/:account/:slot', async (c) => {
 			const config = c.get('config');

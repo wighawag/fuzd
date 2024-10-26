@@ -1,4 +1,4 @@
-import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, TransactionStatus} from '..';
+import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, TransactionStatus} from '../index.js';
 import type {Methods} from '@starknet-io/types-js';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC, type RPCErrors} from 'remote-procedure-call';
@@ -12,7 +12,7 @@ import type {
 
 import {initAccountFromHD, type ETHAccount} from 'remote-account';
 
-import ERC20ABI from './abis/ERC20';
+import ERC20ABI from './abis/ERC20.js';
 import {create_call, create_deploy_account_transaction_intent_v1, create_invoke_transaction_intent_v1} from 'strk';
 import {Call, CallData, hash} from 'starknet-core';
 import {ethSigToPrivate, getStarkKey, sign} from '@scure/starknet';

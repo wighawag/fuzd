@@ -1,5 +1,5 @@
 import {MiddlewareHandler} from 'hono/types';
-import {ServerOptions} from './types';
+import {ServerOptions} from './types.js';
 import {ExecutorBackend, ExecutorStorage, createExecutor} from 'fuzd-executor';
 import {
 	ChainProtocols,
@@ -14,8 +14,8 @@ import {ExecutionSubmission, Executor} from 'fuzd-common';
 import * as bip39 from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import {initDecrypter, mainnetClient} from 'fuzd-tlock-decrypter';
-import {RemoteSQLExecutorStorage} from './storage/RemoteSQLExecutorStorage';
-import {RemoteSQLSchedulerStorage} from './storage/RemoteSQLSchedulerStorage';
+import {RemoteSQLExecutorStorage} from './storage/RemoteSQLExecutorStorage.js';
+import {RemoteSQLSchedulerStorage} from './storage/RemoteSQLSchedulerStorage.js';
 import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
 import type {TransactionData} from 'fuzd-chain-protocol/ethereum';
 

@@ -1,6 +1,6 @@
 import {logs} from 'named-logs';
-import {computePotentialExecutionTime, computeInitialExecutionTimeFromSubmission} from './utils/execution';
-import {displayExecution} from './utils/debug';
+import {computePotentialExecutionTime, computeInitialExecutionTimeFromSubmission} from './utils/execution.js';
+import {displayExecution} from './utils/debug.js';
 import {
 	ExecutionStatus,
 	QueueProcessingResult,
@@ -8,10 +8,10 @@ import {
 	ScheduleInfo,
 	Scheduler,
 	SchedulerBackend,
-} from './types/external';
-import {ScheduledExecutionQueued} from './types/scheduler-storage';
+} from './types/external.js';
+import {ScheduledExecutionQueued} from './types/scheduler-storage.js';
 import {ExecutionResponse, ExecutionSubmission, time2text} from 'fuzd-common';
-import {SchedulerConfig} from './types/internal';
+import {SchedulerConfig} from './types/internal.js';
 import {ChainProtocol} from 'fuzd-chain-protocol';
 
 const logger = logs('fuzd-scheduler');
@@ -34,6 +34,7 @@ export function createScheduler<TransactionDataType>(
 		execution: ScheduledExecution<ExecutionSubmission<TransactionDataType>>,
 	): Promise<ScheduleInfo> {
 		if (!execution.slot) {
+			console.error(execution);
 			throw new Error(`cannot proceed. missing slot`);
 		}
 

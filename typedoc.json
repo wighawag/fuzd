@@ -1,6 +1,6 @@
 {
 	"name": "FUZD",
-	"plugin": ["typedoc-plugin-zod", "typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+	"plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
 	"entryPointStrategy": "packages",
 	"entryPoints": ["packages/executor"], //"entryPoints": ["packages/*"],
 	// "packages/remote-account", "packages/scheduler"],

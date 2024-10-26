@@ -1,5 +1,5 @@
-import {ScheduledExecution} from '../types/external';
-import {ScheduledExecutionQueued} from '../types/scheduler-storage';
+import {ScheduledExecution} from '../types/external.js';
+import {ScheduledExecutionQueued} from '../types/scheduler-storage.js';
 
 export function computeInitialExecutionTimeFromSubmission<ExecutionDataType>(
 	execution: ScheduledExecution<ExecutionDataType>,

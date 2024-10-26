@@ -3,13 +3,13 @@
 import {jsx} from 'hono/jsx';
 import {Hono} from 'hono';
 import {Bindings} from 'hono/types';
-import {ServerOptions} from '../../types';
+import {ServerOptions} from '../../types.js';
 import {basicAuth} from 'hono/basic-auth';
 import {logs} from 'named-logs';
-import {Layout} from '../layout';
-import {Table} from '../components/Table';
-import {displayExecutionBroadcasted, displayScheduledExecutionQueued} from '../display';
-import {SchemaEIP1193Account} from 'fuzd-common';
+import {Layout} from '../layout.js';
+import {Table} from '../components/Table.js';
+import {displayExecutionBroadcasted, displayScheduledExecutionQueued} from '../display/index.js';
+import {assert} from 'typia';
 
 const logger = logs('fuzd-cf-worker-admin-dashboard');
 
@@ -51,7 +51,7 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 		})
 		.get('/account-submissions/:account', async (c) => {
 			const config = c.get('config');
-			const account = SchemaEIP1193Account.parse(c.req.param('account'));
+			const account = assert<`0x${string}`>(c.req.param('account'));
 			const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
 			const displayData = queue.map(displayScheduledExecutionQueued(diff));
@@ -63,7 +63,7 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 		})
 		.get('/account-archived-submissions/:account', async (c) => {
 			const config = c.get('config');
-			const account = SchemaEIP1193Account.parse(c.req.param('account'));
+			const account = assert<`0x${string}`>(c.req.param('account'));
 			const queue = await config.schedulerStorage.getAccountArchivedSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
 			const displayData = queue.map(displayScheduledExecutionQueued(diff));

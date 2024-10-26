@@ -1,17 +1,17 @@
 import {Hono} from 'hono';
 import {cors} from 'hono/cors';
 import {Bindings} from 'hono/types';
-import {ServerOptions} from './types';
-import {getPublicAPI} from './api/public';
-import {getAdminAPI} from './api/admin';
-import {getInternalAPI} from './api/internal';
-import {getSchedulingAPI} from './api/scheduling';
-import {getExecutionAPI} from './api/execution';
-import {setup} from './setup';
-import {getAdminDashboard} from './dashboard/admin';
+import {ServerOptions} from './types.js';
+import {getPublicAPI} from './api/public/index.js';
+import {getAdminAPI} from './api/admin/index.js';
+import {getInternalAPI} from './api/internal/index.js';
+import {getSchedulingAPI} from './api/scheduling/index.js';
+import {getExecutionAPI} from './api/execution/index.js';
+import {setup} from './setup.js';
+import {getAdminDashboard} from './dashboard/admin/index.js';
 
-export * from './storage/RemoteSQLExecutorStorage';
-export * from './storage/RemoteSQLSchedulerStorage';
+export * from './storage/RemoteSQLExecutorStorage.js';
+export * from './storage/RemoteSQLSchedulerStorage.js';
 
 export function createServer<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const app = new Hono<{Bindings: Env & {}}>()

@@ -24,7 +24,7 @@
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "fuzd-server": "workspace:*",
-    "hono": "^4.6.6",
+    "hono": "^4.6.7",
     "ldenv": "^0.3.10",
     "remote-account": "^0.2.1",
     "set-defaults": "^0.0.2",

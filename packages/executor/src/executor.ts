@@ -1,6 +1,6 @@
 import {logs} from 'named-logs';
-import {BroadcasterData} from './types/executor-storage';
-import {ExecutorBackend} from './types/external';
+import {BroadcasterData} from './types/executor-storage.js';
+import {ExecutorBackend} from './types/external.js';
 import {
 	Executor,
 	ExpectedWorstCaseGasPrice,
@@ -13,7 +13,7 @@ import {
 	bigintToHex,
 	BroadcasterInfo,
 } from 'fuzd-common';
-import {ExecutorConfig} from './types/internal';
+import {ExecutorConfig} from './types/internal.js';
 import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo} from 'fuzd-chain-protocol';
 
 const logger = logs('fuzd-executor');

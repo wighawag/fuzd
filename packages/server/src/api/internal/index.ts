@@ -1,6 +1,6 @@
 import {Hono} from 'hono';
 import {Bindings} from 'hono/types';
-import {ServerOptions} from '../../types';
+import {ServerOptions} from '../../types.js';
 import {logs} from 'named-logs';
 
 const logger = logs('fuzd-server-internal-api');
