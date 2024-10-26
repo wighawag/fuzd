@@ -13,7 +13,7 @@
     "named-logs": "^0.3.0",
     "named-logs-context": "^0.1.1",
     "remote-sql-d1": "^0.0.5",
-    "workers-logger": "^0.2.0"
+    "workers-logger": "npm:@bug-fix/workers-logger"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.5.22",
