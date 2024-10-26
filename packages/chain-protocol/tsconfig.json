@@ -1,9 +1,13 @@
 {
 	"compilerOptions": {
+		"strict": true,
 		"target": "ESNext",
 		"module": "ESNext",
+		"lib": ["ESNext", "dom"],
 		"moduleResolution": "Bundler",
-		"strict": true,
-		"lib": ["ESNext", "dom"]
-	}
+		"skipLibCheck": true,
+		"sourceMap": true,
+		"outDir": "./dist/esm"
+	},
+	"include": ["src/**/*.ts"]
 }

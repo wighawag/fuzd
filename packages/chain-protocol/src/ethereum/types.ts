@@ -1,20 +1,19 @@
-import {EIP1193TransactionData, EIP1193TransactionDataOfType2} from 'eip-1193';
-import {SchemaEIP1193AccessList, SchemaEIP1193Account, SchemaEIP1193Quantity, SchemaString0x} from 'fuzd-common';
-import z from 'zod';
+import {EIP1193TransactionData} from 'eip-1193';
 
 // ------------------------------------------------------------------------------------------------
 // TransactionData
 // ------------------------------------------------------------------------------------------------
-export const SchemaTransactionData = z.object({
-	type: z.literal('0x2'),
-	to: SchemaEIP1193Account.optional(),
-	gas: SchemaEIP1193Quantity,
-	data: SchemaString0x.optional(),
-	value: SchemaString0x.optional(),
-	accessList: SchemaEIP1193AccessList.optional(),
-});
-
-export type TransactionData = z.infer<typeof SchemaTransactionData>;
+export type TransactionData = {
+	type: '0x2';
+	to?: `0x${string}`;
+	gas: `0x${string}`;
+	data?: `0x${string}`;
+	value?: `0x${string}`;
+	accessList?: {
+		address: `0x${string}`;
+		storageKeys: [`0x${string}`, ...`0x${string}`[]];
+	}[];
+};
 // ------------------------------------------------------------------------------------------------
 
 export type FullTransactionData = EIP1193TransactionData;

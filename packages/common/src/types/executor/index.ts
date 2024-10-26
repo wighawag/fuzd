@@ -1,6 +1,3 @@
-import z from 'zod';
-import {SchemaString0x} from '../utils';
-
 export type ExpectedWorstCaseGasPrice =
 	| {current: bigint; updateTimestamp: number; previous: undefined}
 	| {previous: undefined; current: undefined; updateTimestamp: undefined}
@@ -43,41 +40,14 @@ export type ExecutionResponse<TransactionDataType> = PendingExecutionStored<Tran
 // ------------------------------------------------------------------------------------------------
 // BaseTransactionData
 // ------------------------------------------------------------------------------------------------
-export const SchemaBaseTransactionData = z.object({
-	gas: SchemaString0x,
-});
-
-export type BaseTransactionData = z.infer<typeof SchemaBaseTransactionData>;
+export type BaseTransactionData = {
+	gas: `0x${string}`;
+};
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
 // ExecutionSubmission
 // ------------------------------------------------------------------------------------------------
-
-export function GenericSchemaExecutionSubmission<TSchemaTransactionDataType extends z.ZodTypeAny>(
-	SchemaTransactionDataType: TSchemaTransactionDataType,
-) {
-	return z.object({
-		chainId: SchemaString0x,
-		derivationParameters: z.object({
-			type: z.string(),
-			data: z.any(),
-		}),
-		transaction: SchemaTransactionDataType,
-		maxFeePerGasAuthorized: SchemaString0x,
-		expiryTime: z.number().optional(),
-		onBehalf: SchemaString0x.optional(),
-	});
-}
-
-export type SchemaExecutionSubmission<TSchemaTransactionDataType extends z.ZodTypeAny> = ReturnType<
-	typeof GenericSchemaExecutionSubmission<TSchemaTransactionDataType>
->;
-
-export type ExecutionSubmissionFromZod<TransactionDataType> = z.infer<
-	SchemaExecutionSubmission<z.ZodType<TransactionDataType>>
->;
-
 export type ExecutionSubmission<TransactionDataType> = {
 	chainId: `0x${string}`;
 	derivationParameters: DerivationParameters;

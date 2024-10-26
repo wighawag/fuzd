@@ -24,12 +24,11 @@ import {
 	toHex,
 	TransactionParametersUsed,
 } from 'fuzd-common';
-import {FullTransactionData, SchemaTransactionData, TransactionData} from './types';
+import {FullTransactionData, TransactionData} from './types';
 import type {ETHAccount} from 'remote-account';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {keccak_256} from '@noble/hashes/sha3';
 
-export {SchemaTransactionData} from './types';
 export type {TransactionData} from './types';
 
 export class EthereumChainProtocol implements ChainProtocol<TransactionData> {

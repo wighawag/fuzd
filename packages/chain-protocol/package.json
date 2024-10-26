@@ -7,29 +7,29 @@
     "access": "public"
   },
   "type": "module",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/esm/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts"
+      "types": "./dist/esm/index.d.ts"
     },
     "./ethereum": {
       "require": {
-        "types": "./dist/ethereum/index.d.ts",
-        "default": "./dist/ethereum/index.cjs"
+        "types": "./dist/cjs/ethereum/index.d.ts",
+        "default": "./dist/cjs/ethereum/index.js"
       },
       "import": {
-        "types": "./dist/ethereum/index.d.ts",
-        "default": "./dist/ethereum/index.mjs"
+        "types": "./dist/esm/ethereum/index.d.ts",
+        "default": "./dist/esm/ethereum/index.js"
       }
     },
     "./starknet": {
       "require": {
-        "types": "./dist/starknet/index.d.ts",
-        "default": "./dist/starknet/index.cjs"
+        "types": "./dist/cjs/starknet/index.d.ts",
+        "default": "./dist/cjs/starknet/index.cs"
       },
       "import": {
-        "types": "./dist/starknet/index.d.ts",
-        "default": "./dist/starknet/index.mjs"
+        "types": "./dist/esm/starknet/index.d.ts",
+        "default": "./dist/esm/starknet/index.js"
       }
     }
   },
@@ -53,13 +53,16 @@
     "@starknet-io/types-js": "^0.7.7",
     "eip-1193": "^0.6.1",
     "ldenv": "^0.3.10",
-    "pkgroll": "^2.5.0",
+    "as-soon": "^0.0.9",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3"
   },
   "scripts": {
-    "build": "pkgroll",
-    "dev": "pkgroll --watch",
+    "build": "pnpm build:esm && pnpm build:cjs",
+    "build:esm": "tsc --project tsconfig.json",
+    "build:cjs": "tsc --project tsconfig-cjs.json",
+    "build:watch": "as-soon -w src pnpm build",
+    "dev": "as-soon -w src pnpm build:esm",
     "format:check": "prettier --check .",
     "format": "prettier --write ."
   }

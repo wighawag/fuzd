@@ -3,11 +3,8 @@ import {Bindings} from 'hono/types';
 import {ServerOptions} from '../../types';
 
 import {zValidator} from '@hono/zod-validator';
-import zod from 'zod';
 import {auth} from '../../auth';
 import {GenericSchemaScheduledExecution} from 'fuzd-scheduler';
-
-const SchemaAny = zod.any();
 
 export function getSchedulingAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const app = new Hono<{Bindings: Env & {}}>()

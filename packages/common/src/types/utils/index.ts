@@ -1,25 +1,4 @@
-import {z} from 'zod';
-
-export const SchemaString0x = z.string().startsWith('0x').and(z.custom<`0x${string}`>());
-export type String0x = z.infer<typeof SchemaString0x>;
-
-export function toSchemaString0x(stringSchema?: ReturnType<typeof z.string>) {
-	return (stringSchema || z.string()).startsWith('0x').and(z.custom<`0x${string}`>());
-}
-
-export const SchemaEIP1193Account = toSchemaString0x(z.string().startsWith('0x').length(42)).transform(
-	(v) => v.toLowerCase() as `0x${string}`,
-);
-
-export const SchemaEIP1193Bytes32 = toSchemaString0x(z.string().startsWith('0x').length(66));
-
-export const SchemaEIP1193Quantity = toSchemaString0x(z.string().startsWith('0x').max(66));
-
-export const SchemaEIP1193AccessListEntry = z.object({
-	address: SchemaEIP1193Account,
-	storageKeys: z.array(SchemaEIP1193Bytes32).nonempty(),
-});
-export const SchemaEIP1193AccessList = z.array(SchemaEIP1193AccessListEntry);
+export type String0x = `0x${string}`;
 
 // from https://dev.to/safareli/pick-omit-and-union-types-in-typescript-4nd9
 type Keys<T> = keyof T;
