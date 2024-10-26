@@ -13,12 +13,12 @@
     "named-logs": "^0.3.0",
     "named-logs-context": "^0.1.1",
     "remote-sql-d1": "^0.0.5",
-    "workers-logger": "npm:@bug-fix/workers-logger"
+    "workers-logger": "npm:@bug-fix/workers-logger@0.2.0-fix.1"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.5.22",
     "@cloudflare/workers-types": "^4.20241022.0",
-    "@types/node": "^22.7.9",
+    "@types/node": "^22.8.1",
     "fuzd-chain-protocol": "workspace:*",
     "fuzd-common": "workspace:*",
     "fuzd-executor": "workspace:*",

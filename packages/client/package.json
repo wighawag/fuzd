@@ -9,8 +9,8 @@
   "type": "module",
   "exports": {
     ".": {
-        "types": "./dist/esm/index.d.ts",
-        "default": "./dist/esm/index.js"
+      "types": "./dist/esm/index.d.ts",
+      "default": "./dist/esm/index.js"
     }
   },
   "bin": {
@@ -32,7 +32,7 @@
     "viem": "^2.21.35"
   },
   "devDependencies": {
-    "@types/node": "^22.7.9",
+    "@types/node": "^22.8.1",
     "as-soon": "^0.0.9",
     "ldenv": "^0.3.10",
     "prettier": "^3.3.3",
