@@ -30,17 +30,22 @@ This is a commin library used by the other fuzd-packages
 
 ### fuzd-tlock-decrypter
 
-This package allow to accept Drand encrypted payload and decrypt them as transaction to be executed
+This package allow to accept [Drand](https://drand.love/) encrypted payload and decrypt them as transaction to be executed
 
-### fuzd-gateways
+### fuzd-server
 
-## Auxiliary Packages
+An api server built on [Hono](https://hono.dev/) that use fuzd-scheduler and fuzd-executor to schedule and execute on behalf of users
 
-There is also auxiliary packages you ll find in this repo:
+### fuzd-chain-protocol
 
-### remote-account
+An abstraction layer so that fuzd can easily support any network. It currently support
 
-This package provide a mechanism by which a remote-account can be controlled by a local account. Used by the fuzd-executor to perform paid tx.
+- any evm network that follow ethereum rpc spec
+- starknet
+
+### fuzd-client
+
+A simple client, that also contains a cli to schedule execution from the command line
 
 ## FUZD platforms
 
@@ -48,6 +53,4 @@ FUZD can run on any platform that support javascript. FUZD aims to provide basic
 
 ### fuzd-cf-worker
 
-This package provide a basic implementation of FUZD api as a cloudflare worker.
-
-It provided both the scheduler and execution api
+This package wrap `fuzd-server` into a cloudflare worker, ready to be deployed, using D1 as database

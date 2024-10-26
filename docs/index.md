@@ -27,6 +27,8 @@ features:
     details: User can specify a specific time at which the tx need to be executed
   - title: Transactions are encrypted
     details: They remain encrypted until execution time using Drand
+    link: https://drand.love/
+    linkText: Learn about drand
   - title: Modular
     details: You can switch the execution engine or even the decryption system
 ---
