@@ -1,7 +1,6 @@
 import type {LogEvent, Reporter} from 'workers-logger';
 import {format} from 'workers-logger';
 
-// TODO lib ?
 export const logflareReport: ({apiKey, source}: {apiKey: string; source: string}) => Reporter = ({apiKey, source}) => {
 	return (events: LogEvent[], {req, res}: {req: Request; res: Response}) => {
 		const url = new URL(req.url);
