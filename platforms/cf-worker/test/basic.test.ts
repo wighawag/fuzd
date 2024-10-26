@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {fetchWorker} from './utils';
+import {fetchWorker, setupWorker} from './utils';
 
 import {ExecutionSubmission} from 'fuzd-common';
 import {ScheduledExecution} from 'fuzd-scheduler';
@@ -7,9 +7,13 @@ import {deriveRemoteAddress} from 'remote-account';
 import {privateKeyToAccount} from 'viem/accounts';
 import type {TransactionData} from 'fuzd-chain-protocol/ethereum';
 
+const worker = setupWorker({
+	// CHAIN_0x7a69: `http://localhost:8888#finality=2&worstCaseBlockTime=5`,
+});
+
 describe('fuzd api', () => {
 	it('responds with "fuzd api"', async () => {
-		const response = await fetchWorker('/');
+		const response = await worker.fetch('/');
 		expect(await response.text()).toBe('fuzd api');
 	});
 
@@ -17,7 +21,7 @@ describe('fuzd api', () => {
 		const wallet = privateKeyToAccount('0x1111111111111111111111111111111111111111111111111111111111111111');
 
 		// we get the remote address associated with the private key signing the execution message sent to the api
-		const publicKey = await fetchWorker(`/api/publicKey`).then((v) => v.text());
+		const publicKey = await worker.fetch(`/api/publicKey`).then((v) => v.text());
 		console.log({publicKey});
 		// this will need to hold some ETH, so it can carry the execution.
 		const remoteAddress = deriveRemoteAddress(publicKey, wallet.address);
@@ -77,7 +81,7 @@ describe('fuzd api', () => {
 		// finally we perform the network request
 		// the json (as string) is the body
 		// and the signature, computed above is provided via headers
-		const resp = await fetchWorker(`/api/scheduling/scheduleExecution`, {
+		const resp = await worker.fetch(`/api/scheduling/scheduleExecution`, {
 			body: jsonAsString,
 			headers: {
 				'content-type': 'application/json',

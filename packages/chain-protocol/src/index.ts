@@ -1,3 +1,9 @@
+/**
+ * fuzd-chain-protocol is the abstraction layer that let fuzd operate on any type of network
+ * Ethereum and Starknet are currently implemented in this package
+ * @module
+ */
+
 import {DerivationParameters, ExecutionSubmission, TransactionParametersUsed} from 'fuzd-common';
 
 export type TransactionStatus =

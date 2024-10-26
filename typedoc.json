@@ -1,6 +1,7 @@
 {
 	"name": "FUZD",
 	"plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+	// "plugin": ["typedoc-plugin-markdown"],
 	"entryPointStrategy": "packages",
 	// "entryPoints": ["packages/executor", "packages/scheduler"],
 	"entryPoints": ["packages/*"],
