@@ -18,4 +18,5 @@ export const wrangler = createWranglerDevServer(WORKER_URL, {
 		`pnpm wrangler --config ${wranglerTOML} d1 execute --local --persist-to ${folder} fuzd-db --env production --file=node_modules/fuzd-server/src/schema/sql/scheduler.sql`,
 		`pnpm wrangler --config ${wranglerTOML} d1 execute --local --persist-to ${folder} fuzd-db --env production --file=node_modules/fuzd-server/src/schema/sql/executor.sql`,
 	],
+	onStopCommands: [`rm -Rf ${folder}`],
 });

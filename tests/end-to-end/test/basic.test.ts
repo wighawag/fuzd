@@ -9,6 +9,14 @@ import {connectToWorker} from './external-worker';
 const worker = connectToWorker();
 
 describe('fuzd api', () => {
+	// --------------------------------------------------------------------------------------------
+	// wakup worker
+	// --------------------------------------------------------------------------------------------
+	it('startup', {timeout: 10000}, async () => {
+		await worker.fetch('/');
+	});
+	// --------------------------------------------------------------------------------------------
+
 	it('responds with "fuzd api"', async () => {
 		const response = await worker.fetch('/');
 		expect(await response.text()).toBe('fuzd api');
