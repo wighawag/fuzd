@@ -26,6 +26,10 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 				credentials: true,
 			}),
 		)
+		// .use('*', async (ctx, next) => {
+		// 	console.log(ctx);
+		// 	await next();
+		// })
 		.get('/', (c) => {
 			return c.text('fuzd api');
 		});
