@@ -1,3 +1,8 @@
+/**
+ * fuzd-client is a wrapper to make it easier to send request to fuzd api
+ * @module
+ */
+
 import {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
 import {timelockEncrypt, HttpChainClient, roundAt} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';

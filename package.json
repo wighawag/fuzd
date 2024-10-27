@@ -21,7 +21,7 @@
     "build": "pnpm -r build",
     "sync-deps": "syncpack fix-mismatches",
     "start": "pnpm zellij-launcher --layout zellij.kdl a $npm_package_name|| zellij --layout zellij.kdl -s $npm_package_name",
-    "publish-typedoc": "typedoc --options typedoc.json --excludeExternals",
+    "publish-typedoc": "typedoc --options typedoc.json --excludeExternals --mergeReadme",
     "serve-docs": "ipfs-emulator --only -d docs/.vitepress/dist -p 8888",
     "docs:dev": "pwag docs/public/icon.svg docs/web-config.json -o docs/public && pnpm run publish-typedoc && vitepress dev docs",
     "docs:build": "pwag docs/public/icon.svg docs/web-config.json -o docs/public && pnpm run publish-typedoc && vitepress build docs",
