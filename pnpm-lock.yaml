@@ -220,6 +220,9 @@ importers:
 
   packages/server:
     dependencies:
+      '@hono/swagger-ui':
+        specifier: ^0.4.1
+        version: 0.4.1(hono@4.6.7)
       '@hono/typia-validator':
         specifier: ^0.0.5
         version: 0.0.5(hono@4.6.7)(typia@6.11.3(typescript@5.6.3))
@@ -275,6 +278,9 @@ importers:
       as-soon:
         specifier: ^0.0.9
         version: 0.0.9
+      hono-typia-openapi:
+        specifier: ^0.1.0
+        version: link:../../../hono-typia-openapi
       ldenv:
         specifier: ^0.3.10
         version: 0.3.10
@@ -402,7 +408,7 @@ importers:
         version: link:../../packages/server
       prool-cf-worker:
         specifier: ^0.1.3
-        version: link:../../../prool-cf-worker
+        version: 0.1.5
       typescript:
         specifier: ^5.6.3
         version: 5.6.3
@@ -1370,6 +1376,11 @@ packages:
   '@hapi/bourne@3.0.0':
     resolution: {integrity: sha512-Waj1cwPXJDucOib4a3bAISsKJVb15MKi9IvmTI/7ssVEm6sywXGjVJDhl6/umt1pK1ZS7PacXU3A1PmFKHEZ2w==}
 
+  '@hono/swagger-ui@0.4.1':
+    resolution: {integrity: sha512-kPaJatHffeYQ3yVkHo878hCqwfapqx54FczJVJ+eRWt8J4biyVVMIdCAJb6MyA8bcnHUoTmUpPc7OJAV1VTg2g==}
+    peerDependencies:
+      hono: '*'
+
   '@hono/typia-validator@0.0.5':
     resolution: {integrity: sha512-sE5hKxLx/hymwNbQoUppyjahQFPN9lQF6Yd0Y1A9Zn5HH47sZfmOsB5/M1SUDAKX3DG6iXwNpQ5G7ZrICypgGw==}
     peerDependencies:
@@ -2019,6 +2030,15 @@ packages:
 
   '@starknet-io/types-js@0.7.7':
     resolution: {integrity: sha512-WLrpK7LIaIb8Ymxu6KF/6JkGW1sso988DweWu7p5QY/3y7waBIiPvzh27D9bX5KIJNRDyOoOVoHVEKYUYWZ/RQ==}
+
+  '@taped/prool@0.0.16-proxy-pathname.2':
+    resolution: {integrity: sha512-dAiDyl4CIPGM5+2Cz3OU72ZAnzLSGX32GnYsk6a+EqZdYom/v9J0ucjd8EK3Kkfz1KwkYI93kiPb66S7KxterQ==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      '@pimlico/alto': '*'
+    peerDependenciesMeta:
+      '@pimlico/alto':
+        optional: true
 
   '@tootallnate/once@1.1.2':
     resolution: {integrity: sha512-RbzJvlNzmRq5c3O09UipeuXno4tA1FE6ikOjxZK0tuxVv3412l64l5t1W5pj4+rJq9vpkm/kwiR07aZXnsKPxw==}
@@ -3134,6 +3154,10 @@ packages:
     resolution: {integrity: sha512-5eo/BRqZm3GYce+1jqX/tJ7duA2AnE39i88fuedNFUV8XxGxUpF3aWkBRfbUcjV49gCkvS/pzc0YrCPhaIewdg==}
     engines: {node: ^18.19.0 || >=20.5.0}
 
+  execa@9.5.0:
+    resolution: {integrity: sha512-t7vvYt+oKnMbF3O+S5+HkylsPrsUatwJSe4Cv+4017R0MCySjECxnVJ2eyDXVD/Xpj5H29YzyYn6eEpugG7GJA==}
+    engines: {node: ^18.19.0 || >=20.5.0}
+
   exif-parser@0.1.12:
     resolution: {integrity: sha512-c2bQfLNbMzLPmzQuOr8fy0csy84WmwnER81W88DzTp9CYNPJ6yzOj2EZAh9pywYpqHnshVLHQJ8WzldAyfY+Iw==}
 
@@ -3863,6 +3887,7 @@ packages:
 
   libsql@0.4.6:
     resolution: {integrity: sha512-F5M+ltteK6dCcpjMahrkgT96uFJvVI8aQ4r9f2AzHQjC7BkAYtvfMSTWGvRBezRgMUIU2h1Sy0pF9nOGOD5iyA==}
+    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lines-and-columns@1.2.4:
@@ -4550,6 +4575,9 @@ packages:
   prompts@2.4.2:
     resolution: {integrity: sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==}
     engines: {node: '>= 6'}
+
+  prool-cf-worker@0.1.5:
+    resolution: {integrity: sha512-Hi1ztqQED9QyOte2IlCjCs6VzPyP6g8P9w754AM1fhVIHTYq1bubV10rky/gjpR/vdRkDgPfcE3re2wZ4l0SzQ==}
 
   prool@0.0.16:
     resolution: {integrity: sha512-s+i66jsINIJQd8w5iGunT8hCeM6RSXjL8qgXDTvcIuaAOjVRVMh0/PgbJ90KR3JAprXWXpa5XQnDEc4fLnvy1Q==}
@@ -6450,6 +6478,10 @@ snapshots:
 
   '@hapi/bourne@3.0.0': {}
 
+  '@hono/swagger-ui@0.4.1(hono@4.6.7)':
+    dependencies:
+      hono: 4.6.7
+
   '@hono/typia-validator@0.0.5(hono@4.6.7)(typia@6.11.3(typescript@5.6.3))':
     dependencies:
       hono: 4.6.7
@@ -7104,6 +7136,17 @@ snapshots:
   '@stablelib/wipe@1.0.1': {}
 
   '@starknet-io/types-js@0.7.7': {}
+
+  '@taped/prool@0.0.16-proxy-pathname.2':
+    dependencies:
+      change-case: 5.4.4
+      eventemitter3: 5.0.1
+      execa: 9.5.0
+      get-port: 7.1.0
+      http-proxy: 1.18.1
+      tar: 7.2.0
+    transitivePeerDependencies:
+      - debug
 
   '@tootallnate/once@1.1.2': {}
 
@@ -8355,6 +8398,21 @@ snapshots:
       safe-buffer: 5.2.1
 
   execa@9.4.1:
+    dependencies:
+      '@sindresorhus/merge-streams': 4.0.0
+      cross-spawn: 7.0.3
+      figures: 6.1.0
+      get-stream: 9.0.1
+      human-signals: 8.0.0
+      is-plain-obj: 4.1.0
+      is-stream: 4.0.1
+      npm-run-path: 6.0.0
+      pretty-ms: 9.1.0
+      signal-exit: 4.1.0
+      strip-final-newline: 4.0.0
+      yoctocolors: 2.1.1
+
+  execa@9.5.0:
     dependencies:
       '@sindresorhus/merge-streams': 4.0.0
       cross-spawn: 7.0.3
@@ -9955,6 +10013,15 @@ snapshots:
     dependencies:
       kleur: 3.0.3
       sisteransi: 1.0.5
+
+  prool-cf-worker@0.1.5:
+    dependencies:
+      eventemitter3: 5.0.1
+      execa: 9.5.0
+      prool: '@taped/prool@0.0.16-proxy-pathname.2'
+    transitivePeerDependencies:
+      - '@pimlico/alto'
+      - debug
 
   prool@0.0.16:
     dependencies:

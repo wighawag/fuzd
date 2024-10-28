@@ -20,6 +20,7 @@
     "src"
   ],
   "dependencies": {
+    "@hono/swagger-ui": "^0.4.1",
     "@hono/typia-validator": "^0.0.5",
     "@scure/bip32": "^1.5.0",
     "@scure/bip39": "^1.4.0",
@@ -40,6 +41,7 @@
   },
   "devDependencies": {
     "as-soon": "^0.0.9",
+    "hono-typia-openapi": "^0.1.0",
     "ldenv": "^0.3.10",
     "prettier": "^3.3.3",
     "ts-patch": "^3.2.1",

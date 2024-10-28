@@ -9,6 +9,8 @@ import {getSchedulingAPI} from './api/scheduling/index.js';
 import {getExecutionAPI} from './api/execution/index.js';
 import {setup} from './setup.js';
 import {getAdminDashboard} from './dashboard/admin/index.js';
+import swagger from './doc/swagger.json';
+import {swaggerUI} from '@hono/swagger-ui';
 import {hc} from 'hono/client';
 
 export * from './storage/RemoteSQLExecutorStorage.js';
@@ -58,7 +60,10 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 		.use('*', setup({serverOptions: options}))
 		.route('/admin', adminDashboard);
 
-	return createAPI(options).route('/dashboard', dashboard);
+	return createAPI(options)
+		.route('/dashboard', dashboard)
+		.get('/doc', (c) => c.json(swagger))
+		.get('/ui', swaggerUI({url: '/doc'}));
 }
 
 export type App = ReturnType<typeof createAPI>;
