@@ -28,9 +28,12 @@
     "as-soon": "^0.0.9",
     "ldenv": "^0.3.10",
     "prettier": "^3.3.3",
-    "typescript": "^5.6.3"
+    "ts-patch": "^3.2.1",
+    "typescript": "^5.6.3",
+    "typia": "^6.11.3"
   },
   "scripts": {
+    "prepare": "ts-patch install && typia patch",
     "build": "tsc --project tsconfig.json",
     "dev": "as-soon -w src pnpm build",
     "format:check": "prettier --check .",

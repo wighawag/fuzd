@@ -28,10 +28,10 @@ async function prepareExecution() {
 	const account = initAccountFromHD(accountHDKey);
 	const chainId = '0x7a69';
 
-	const {executor, publicExtendedKey} = await createTestExecutor({
+	const {executor, publicExtendedKey} = await createTestExecutor<EthereumChainProtocol>({
 		chainProtocols: {
-			// TODO any
 			[chainId]: new EthereumChainProtocol(
+				// TODO any
 				provider as any,
 				{
 					expectedFinality: 1,
@@ -193,7 +193,7 @@ describe('Executing on the registry', function () {
 		expect((await env.read(GreetingsRegistry, {functionName: 'messages', args: [user]})).content).to.equal('hello');
 	});
 
-	it.skip('test reorg', async function () {
+	it('test reorg', async function () {
 		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, derivationParameters} =
 			await prepareExecution();
 		provider.override({
@@ -228,7 +228,7 @@ describe('Executing on the registry', function () {
 		expect(txInfo.isVoidTransaction).to.be.false;
 		expect((await env.read(GreetingsRegistry, {functionName: 'messages', args: [user]})).content).to.equal('');
 
-		// provider.removeOverride();
+		provider.removeOverride();
 
 		await executor.processPendingTransactions();
 

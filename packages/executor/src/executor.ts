@@ -15,6 +15,7 @@ import {
 } from 'fuzd-common';
 import {ExecutorConfig} from './types/internal.js';
 import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo, TransactionDataTypes} from 'fuzd-chain-protocol';
+import {validate} from 'typia';
 
 const logger = logs('fuzd-executor');
 
@@ -81,8 +82,10 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	): Promise<ExecutionResponse<TransactionDataType>> {
 		const chainProtocol = _getChainProtocol(submission.chainId);
 
-		// TODO typia validate
-		// assert;
+		const executionValidationResult = validate(submission as ExecutionSubmission<any>);
+		if (!executionValidationResult.success) {
+			throw new Error('could not validate execution object', {cause: executionValidationResult.errors});
+		}
 		const validationResult = chainProtocol.validateTransactionData(submission.transaction);
 		if (!validationResult.success) {
 			throw new Error('could not validate transationData', {cause: validationResult.errors});
