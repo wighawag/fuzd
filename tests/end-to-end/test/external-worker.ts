@@ -1,4 +1,4 @@
-import {WORKER_URL} from './prool/node-instances.js';
+import {WORKER_URL} from './prool/pool';
 
 export function connectToWorker() {
 	return {

@@ -1,11 +1,11 @@
 import {describe, it, expect} from 'vitest';
 
 import {createClient} from 'fuzd-server';
-import {WORKER_URL} from './prool/node-instances';
+import {WORKER_URL} from './prool/pool';
 
 const client = createClient(WORKER_URL);
 
-describe('fuzd api', () => {
+describe('fuzd api via hono client', () => {
 	// --------------------------------------------------------------------------------------------
 	// wakup worker
 	// --------------------------------------------------------------------------------------------
