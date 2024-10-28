@@ -14,9 +14,8 @@ import {hc} from 'hono/client';
 export * from './storage/RemoteSQLExecutorStorage.js';
 export * from './storage/RemoteSQLSchedulerStorage.js';
 
-export function createServer<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
+function createAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const app = new Hono<{Bindings: Env & {}}>().use(
-		'*',
 		cors({
 			origin: '*',
 			allowHeaders: ['X-Custom-Header', 'Upgrade-Insecure-Requests', 'Content-Type', 'SIGNATURE'],
@@ -43,22 +42,26 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 	const adminAPI = getAdminAPI<Env>(options);
 
 	const api = new Hono<{Bindings: Env & {}}>()
-		.use('*', setup({serverOptions: options}))
+		.use(setup({serverOptions: options}))
 		.route('/', publicAPI)
 		.route('/internal', internalAPI)
 		.route('/scheduling', schedulingAPI)
 		.route('/execution', executionAPI)
 		.route('/admin', adminAPI);
 
+	return app.route('/', home).route('/api', api);
+}
+
+export function createServer<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const adminDashboard = getAdminDashboard<Env>(options);
 	const dashboard = new Hono<{Bindings: Env & {}}>()
 		.use('*', setup({serverOptions: options}))
 		.route('/admin', adminDashboard);
 
-	return app.route('/', home).route('/api', api).route('/dashboard', dashboard);
+	return createAPI(options).route('/dashboard', dashboard);
 }
 
-export type App = ReturnType<typeof createServer<{}>>;
+export type App = ReturnType<typeof createAPI>;
 
 // this is a trick to calculate the type when compiling
 const client = hc<App>('');
