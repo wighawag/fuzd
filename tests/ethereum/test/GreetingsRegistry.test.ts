@@ -6,7 +6,7 @@ import {Deployment} from 'rocketh';
 
 describe('GreetingsRegistry', function () {
 	it('Should be already deployed', async function () {
-		const {env} = await await loadFixture(deployAll);
+		const {env} = await loadFixture(deployAll);
 
 		const registry = env.deployments['GreetingsRegistry'] as Deployment<typeof env.artifacts.GreetingsRegistry.abi>;
 		const prefix = await env.read(registry, {functionName: 'prefix'});

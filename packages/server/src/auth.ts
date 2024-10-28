@@ -1,4 +1,5 @@
 import {MiddlewareHandler} from 'hono';
+import {HTTPException} from 'hono/http-exception';
 import {assert} from 'typia';
 import {hashMessage, recoverAddress} from 'viem';
 
@@ -18,7 +19,9 @@ export function auth(options: AuthOptions): MiddlewareHandler {
 		const signature = c.req.header()['signature'] as `0x${string}`;
 		const hash = hashMessage(jsonAsString);
 		if (!signature) {
-			throw new Error(`signature not provided`);
+			throw new HTTPException(400, {
+				message: `signature not provided`,
+			});
 		}
 		let account: `0x${string}`;
 		if (options?.debug && signature.startsWith('debug@')) {
@@ -27,7 +30,10 @@ export function auth(options: AuthOptions): MiddlewareHandler {
 			try {
 				account = assert(await recoverAddress({hash, signature}));
 			} catch (err: any) {
-				throw new Error('failed to recover address from message and signature', {cause: err});
+				throw new HTTPException(400, {
+					message: 'failed to recover address from message and signature',
+					cause: err,
+				});
 			}
 		}
 		c.set('account', account);

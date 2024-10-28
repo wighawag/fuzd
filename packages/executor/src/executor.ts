@@ -15,7 +15,6 @@ import {
 } from 'fuzd-common';
 import {ExecutorConfig} from './types/internal.js';
 import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo, TransactionDataTypes} from 'fuzd-chain-protocol';
-import {validate} from 'typia';
 
 const logger = logs('fuzd-executor');
 

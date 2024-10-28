@@ -5,8 +5,10 @@ import {auth} from '../../auth.js';
 import {createValidate} from 'typia';
 import {ScheduledExecution} from 'fuzd-scheduler';
 import {typiaValidator} from '@hono/typia-validator';
+import {ExecutionSubmission} from 'fuzd-common';
+import {MyTransactionData} from '../../setup.js';
 
-const validate = createValidate<ScheduledExecution<any>>();
+const validate = createValidate<ScheduledExecution<ExecutionSubmission<MyTransactionData>>>();
 
 export function getSchedulingAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const app = new Hono<{Bindings: Env & {}}>()

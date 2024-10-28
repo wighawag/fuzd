@@ -25,7 +25,17 @@ describe('fuzd api via hono client', () => {
 			json: {
 				type: 'clear',
 				chainId: '0x1',
-				executions: [{}],
+				executions: [
+					{
+						chainId: '0x1',
+						derivationParameters: {data: '', type: 'ethereum'}, // TODO
+						maxFeePerGasAuthorized: '0x0', // TODO
+						transaction: {
+							type: '0x2',
+							gas: '0x0', // TODO
+						},
+					},
+				],
 				slot: '',
 				timing: {
 					type: 'fixed-time',
@@ -33,5 +43,7 @@ describe('fuzd api via hono client', () => {
 				},
 			},
 		});
+		expect(response.ok).toBe(false);
+		console.log(JSON.stringify(await response.json()));
 	});
 });

@@ -9,7 +9,7 @@ import {initAccountFromHD} from 'remote-account';
 import {createMockDecrypter, overrideProvider} from './utils/mock-provider';
 import {deployAll} from './utils';
 import {createViemContext} from '../utils/viem';
-import {EthereumChainProtocol, TransactionData} from 'fuzd-chain-protocol/ethereum';
+import {EthereumChainProtocol, EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import {ExecutionSubmission} from 'fuzd-common';
@@ -149,7 +149,7 @@ describe('Executing on the registry', function () {
 			await prepareExecution();
 		const timestamp = await chainProtocol.getTimestamp();
 		const checkinTime = timestamp + 100;
-		const transaction: ExecutionSubmission<TransactionData> = {
+		const transaction: ExecutionSubmission<EthereumTransactionData> = {
 			chainId: txData.chainId,
 			transaction: {
 				type: '0x2',

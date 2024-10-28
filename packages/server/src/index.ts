@@ -10,6 +10,7 @@ import {getExecutionAPI} from './api/execution/index.js';
 import {setup} from './setup.js';
 import {getAdminDashboard} from './dashboard/admin/index.js';
 import {hc} from 'hono/client';
+import {HTTPException} from 'hono/http-exception';
 
 export * from './storage/RemoteSQLExecutorStorage.js';
 export * from './storage/RemoteSQLSchedulerStorage.js';
@@ -26,15 +27,6 @@ function createAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>)
 		}),
 	);
 
-	const home = new Hono<{Bindings: Env & {}}>()
-		// .use('*', async (ctx, next) => {
-		// 	console.log(ctx);
-		// 	await next();
-		// })
-		.get('/', (c) => {
-			return c.text('fuzd api');
-		});
-
 	const schedulingAPI = getSchedulingAPI<Env>(options);
 	const executionAPI = getExecutionAPI<Env>(options);
 	const internalAPI = getInternalAPI<Env>(options);
@@ -49,16 +41,46 @@ function createAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>)
 		.route('/execution', executionAPI)
 		.route('/admin', adminAPI);
 
-	return app.route('/', home).route('/api', api);
+	return app
+		.get('/', (c) => {
+			return c.text('fuzd api');
+		})
+		.route('/api', api);
 }
 
 export function createServer<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const adminDashboard = getAdminDashboard<Env>(options);
 	const dashboard = new Hono<{Bindings: Env & {}}>()
-		.use('*', setup({serverOptions: options}))
+		.use(setup({serverOptions: options}))
 		.route('/admin', adminDashboard);
 
-	return createAPI(options).route('/dashboard', dashboard);
+	return createAPI(options)
+		.route('/dashboard', dashboard)
+		.onError((err, c) => {
+			console.error(err);
+			if (err instanceof HTTPException) {
+				if (err.res) {
+					return err.getResponse();
+				}
+			}
+
+			return c.json(
+				{
+					success: false,
+					errors: [
+						{
+							name: 'name' in err ? err.name : undefined,
+							code: 'code' in err ? err.code : 5000,
+							message: err.message,
+							// cause: err.cause,
+							// stack: err.stack
+						},
+					],
+					status: 'status' in err ? err.status || 500 : 500,
+				},
+				500,
+			);
+		});
 }
 
 export type App = ReturnType<typeof createAPI>;

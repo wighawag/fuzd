@@ -3,7 +3,7 @@ import {describe, it, expect} from 'vitest';
 import {ExecutionSubmission} from 'fuzd-common';
 import {ScheduledExecution} from 'fuzd-scheduler';
 import {privateKeyToAccount} from 'viem/accounts';
-import type {TransactionData} from 'fuzd-chain-protocol/ethereum';
+import type {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 import {connectToWorker} from './external-worker';
 
 const worker = connectToWorker();
@@ -27,7 +27,7 @@ describe('fuzd api', () => {
 
 		// we get the remote address associated with the private key signing the execution message sent to the api
 		const publicKey = await worker.fetch(`/api/publicKey`).then((v) => v.text());
-		console.log({publicKey});
+		// console.log({publicKey});
 		// this will need to hold some ETH, so it can carry the execution.
 		// const remoteAddress = deriveRemoteAddress(publicKey, wallet.address);
 		// this mechanism allows to isolate each account nonces and allow then for the user to update the gas pricing
@@ -36,7 +36,7 @@ describe('fuzd api', () => {
 
 		// we build up first the transaction we want to submit in the future (delayed)
 		// this is mostly a normal tx object, except for the broadcastSchedule
-		const execution: ExecutionSubmission<TransactionData> = {
+		const execution: ExecutionSubmission<EthereumTransactionData> = {
 			chainId: chainIdAsHex,
 			transaction: {
 				gas: `0x1000000`,
@@ -58,7 +58,7 @@ describe('fuzd api', () => {
 		// we could encrypt the tx data above and use time-lock encryption
 		// but here we showcase the simpler example where the data is actually sent to the api in clear
 
-		const fuzdExecution: ScheduledExecution<ExecutionSubmission<TransactionData>> = {
+		const fuzdExecution: ScheduledExecution<ExecutionSubmission<EthereumTransactionData>> = {
 			type: 'clear',
 			// note that even tough you specified the chainId in the tx data, you still need to specify here
 			// this is because the scheduler need to know which network it should look for
@@ -94,10 +94,13 @@ describe('fuzd api', () => {
 			},
 			method: 'POST',
 		});
-		const text = await resp.clone().text();
-		console.log(`TEXT RESPONSE:`, text);
+		// const text = await resp.clone().text();
+		// console.log(`TEXT RESPONSE:`, text);
 		const json: any = await resp.json();
-		console.log(json);
+		if (!resp.ok) {
+			console.log(json);
+			console.log(resp.status, resp.statusText);
+		}
 		expect(json.chainId).to.equal(chainIdAsHex);
 	});
 });

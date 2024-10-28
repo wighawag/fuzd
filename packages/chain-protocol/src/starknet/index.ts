@@ -1,15 +1,8 @@
-import {
-	BroadcasterSignerData,
-	ChainProtocol,
-	GasEstimate,
-	Transaction,
-	TransactionStatus,
-	Validation,
-} from '../index.js';
+import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, TransactionStatus} from '../index.js';
 import type {Methods} from '@starknet-io/types-js';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC, type RPCErrors} from 'remote-procedure-call';
-import {DerivationParameters, ExecutionSubmission, TransactionParametersUsed} from 'fuzd-common';
+import {DerivationParameters, TransactionParametersUsed} from 'fuzd-common';
 import type {
 	DEPLOY_ACCOUNT_TXN_V1,
 	DEPLOY_ACCOUNT_TXN_V3,
@@ -27,10 +20,9 @@ import {formatSignature} from 'starknet-core/utils/stark';
 import type {DeepReadonly} from 'strk';
 import {getExecuteCalldata} from 'starknet-core/utils/transaction';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
-import {validate} from 'typia';
 
 // TODO Fix readonly in @starknet-io/types-js
-type FullTransactionData =
+type FullStarknetTransactionData =
 	| DeepReadonly<INVOKE_TXN_V1>
 	| DeepReadonly<INVOKE_TXN_V3>
 	| DeepReadonly<DEPLOY_ACCOUNT_TXN_V1>
@@ -66,7 +58,7 @@ type DeployAccountTransactionData =
 	  });
 
 export type AllowedTransactionData = InvokeTransactionData;
-export type TransactionData = InvokeTransactionData | DeployAccountTransactionData;
+export type StarknetTransactionData = InvokeTransactionData | DeployAccountTransactionData;
 
 type AllMethods = Methods;
 type MethodsErrors = {
@@ -79,7 +71,7 @@ function createError(name: string, error: MethodsErrors | RPCErrors) {
 	);
 }
 
-export class StarknetChainProtocol implements ChainProtocol<TransactionData> {
+export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionData> {
 	private rpc: CurriedRPC<Methods>;
 	constructor(
 		public readonly url: string | RequestRPC<Methods>,
@@ -197,7 +189,7 @@ export class StarknetChainProtocol implements ChainProtocol<TransactionData> {
 	}
 
 	async broadcastSignedTransaction(tx: any): Promise<`0x${string}`> {
-		const transaction = tx as FullTransactionData;
+		const transaction = tx as FullStarknetTransactionData;
 		if (transaction.type === 'INVOKE') {
 			const invokeResponse = await this.rpc.call('starknet_addInvokeTransaction')({invoke_transaction: transaction});
 			if (!invokeResponse.success) {
@@ -294,7 +286,7 @@ export class StarknetChainProtocol implements ChainProtocol<TransactionData> {
 
 	async checkValidity(
 		chainId: `0x${string}`,
-		transactionData: TransactionData,
+		transactionData: StarknetTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}> {
@@ -334,7 +326,7 @@ export class StarknetChainProtocol implements ChainProtocol<TransactionData> {
 
 	async signTransaction(
 		chainId: `0x${string}`,
-		data: TransactionData,
+		data: StarknetTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<{
@@ -358,7 +350,7 @@ export class StarknetChainProtocol implements ChainProtocol<TransactionData> {
 	// ): Promise<{
 	// 	rawTx: any;
 	// 	hash: `0x${string}`;
-	// 	transactionData: TransactionData;
+	// 	transactionData: StarknetTransactionData;
 	// 	isVoidTransaction: boolean;
 	// }> {
 
@@ -368,7 +360,7 @@ export class StarknetChainProtocol implements ChainProtocol<TransactionData> {
 		chainId: string,
 		broadcaster: BroadcasterSignerData,
 		account: `0x${string}`,
-	): TransactionData {
+	): StarknetTransactionData {
 		const [protocol, protocolData] = broadcaster.signer.split(':');
 		let privateKey: `0x${string}`;
 		if (protocol === 'privateKey') {
@@ -391,11 +383,11 @@ export class StarknetChainProtocol implements ChainProtocol<TransactionData> {
 	}
 
 	generatePaymentTransaction(
-		transactionData: TransactionData,
+		transactionData: StarknetTransactionData,
 		maxFeePerGas: bigint,
 		from: `0x${string}`,
 		diffToCover: bigint,
-	): {transaction: TransactionData; cost: bigint} {
+	): {transaction: StarknetTransactionData; cost: bigint} {
 		const gas = BigInt(30000);
 		const cost = gas * maxFeePerGas; // TODO handle extra Fee like Optimism
 
@@ -415,7 +407,7 @@ export class StarknetChainProtocol implements ChainProtocol<TransactionData> {
 
 		const calldata = getExecuteCalldata([actualCall], '1');
 
-		const transactionToBroadcast: TransactionData = {
+		const transactionToBroadcast: StarknetTransactionData = {
 			type: 'INVOKE',
 			calldata,
 			version: '0x1',
@@ -518,10 +510,10 @@ export class StarknetChainProtocol implements ChainProtocol<TransactionData> {
 
 	_createFullTransaction(
 		chainId: `0x${string}`,
-		transactionData: TransactionData,
+		transactionData: StarknetTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
-	): {rawTx: FullTransactionData; transactionData: TransactionData; hash: `0x${string}`} {
+	): {rawTx: FullStarknetTransactionData; transactionData: StarknetTransactionData; hash: `0x${string}`} {
 		const [protocol, protocolData] = broadcaster.signer.split(':');
 		let privateKey: `0x${string}`;
 		if (protocol === 'privateKey') {
