@@ -155,10 +155,6 @@ export class EthereumChainProtocol implements ChainProtocol<TransactionData> {
 		return {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate};
 	}
 
-	validateTransactionData(transaction: TransactionData): Validation<TransactionData> {
-		return validate(transaction);
-	}
-
 	async validateDerivationParameters(
 		parameters: DerivationParameters,
 	): Promise<{success: true} | {success: false; error: string}> {

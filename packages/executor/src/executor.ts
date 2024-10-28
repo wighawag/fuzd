@@ -82,15 +82,6 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	): Promise<ExecutionResponse<TransactionDataType>> {
 		const chainProtocol = _getChainProtocol(submission.chainId);
 
-		const executionValidationResult = validate(submission as ExecutionSubmission<any>);
-		if (!executionValidationResult.success) {
-			throw new Error('could not validate execution object', {cause: executionValidationResult.errors});
-		}
-		const validationResult = chainProtocol.validateTransactionData(submission.transaction);
-		if (!validationResult.success) {
-			throw new Error('could not validate transationData', {cause: validationResult.errors});
-		}
-
 		const realTimestamp = Math.floor(Date.now() / 1000);
 
 		let expectedWorstCaseGasPrice = options?.expectedWorstCaseGasPrice;

@@ -253,10 +253,6 @@ export class StarknetChainProtocol implements ChainProtocol<TransactionData> {
 		};
 	}
 
-	validateTransactionData(transaction: TransactionData): Validation<TransactionData> {
-		return validate(transaction);
-	}
-
 	async validateDerivationParameters(
 		parameters: DerivationParameters,
 	): Promise<{success: true} | {success: false; error: string}> {

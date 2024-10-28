@@ -80,7 +80,6 @@ export interface ExecutorChainProtocol<TransactionDataType> {
 	broadcastSignedTransaction(tx: any): Promise<`0x${string}`>;
 	getNonce(account: `0x${string}`): Promise<`0x${string}`>;
 	getGasFee(executionData: {maxFeePerGasAuthorized: `0x${string}`}): Promise<GasEstimate>;
-	validateTransactionData(execution: TransactionDataType): Validation<TransactionDataType>;
 
 	requiredPreliminaryTransaction?(
 		chainId: string,
@@ -125,10 +124,10 @@ export type ChainProtocol<TransactionDataType> = SchedulerChainProtocol & Execut
 // ------------------------------------------------------------------------------------------------
 // ChainProtocols
 // ------------------------------------------------------------------------------------------------
-type FirstParameter<T extends (...args: any) => any> = T extends (first: infer F, ...args: any) => any ? F : never;
-export type TransactionDataTypes<ChainProtocolTypes extends ChainProtocol<any>> = FirstParameter<
-	ChainProtocolTypes['validateTransactionData']
->;
+type ExtractTransactionDataType<T> = T extends ChainProtocol<infer U> ? U : never;
+
+export type TransactionDataTypes<ChainProtocolTypes extends ChainProtocol<any>> =
+	ExtractTransactionDataType<ChainProtocolTypes>;
 
 export type ChainProtocols<ChainProtocolTypes extends ChainProtocol<any>> = {
 	[chainId: `0x${string}`]: ChainProtocol<TransactionDataTypes<ChainProtocolTypes>>;
