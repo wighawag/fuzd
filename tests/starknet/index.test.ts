@@ -12,19 +12,11 @@ import {
 } from 'strk';
 import {encodeShortString, decodeShortString} from 'starknet-core/utils/shortString';
 import {CallData} from 'starknet-core/utils/calldata';
-import {
-	getSelectorFromName,
-	calculateContractAddressFromHash,
-	computePoseidonHashOnElements,
-	computePedersenHashOnElements,
-	computePedersenHash,
-} from 'starknet-core/utils/hash';
-import {toHex} from 'starknet-core/utils/num';
-import {starknetKeccak} from 'starknet-core/utils/hash';
+import {calculateContractAddressFromHash, computePedersenHash} from 'starknet-core/utils/hash';
 import GreetingsRegistry from './ts-artifacts/GreetingsRegistry';
 import {KATANA_CHAIN_ID, test_accounts, UniversalDeployerContract, ETHTokenContract} from 'katana-rpc';
 import {createTestExecutor} from '../ethereum/test/utils/executor';
-import * as bip39 from '@scure/bip39';
+import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import {initAccountFromHD} from 'remote-account';
 import {AllowedTransactionData, StarknetChainProtocol} from 'fuzd-chain-protocol/starknet';
@@ -218,7 +210,7 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 
 	const defaultPath = "m/44'/60'/0'/0/0";
 	const mnemonic: string = 'test test test test test test test test test test test junk';
-	const seed = bip39.mnemonicToSeedSync(mnemonic);
+	const seed = mnemonicToSeedSync(mnemonic);
 	const masterKey = HDKey.fromMasterSeed(seed);
 	const accountHDKey = masterKey.derive(defaultPath);
 	const account = initAccountFromHD(accountHDKey);

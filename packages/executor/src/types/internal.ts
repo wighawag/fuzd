@@ -1,20 +1,12 @@
 import {ExecutorStorage} from './executor-storage.js';
-import {ChainProtocol} from 'fuzd-chain-protocol';
+import {ChainProtocol, ChainProtocols, TransactionDataTypes} from 'fuzd-chain-protocol';
 
 // ------------------------------------------------------------------------------------------------
 // ExecutorConfig
-export type ExecutorConfig<TransactionDataType> = {
-	chainProtocols: ChainProtocols;
-	storage: ExecutorStorage<TransactionDataType>;
+export type ExecutorConfig<ChainProtocolTypes extends ChainProtocol<any>> = {
+	chainProtocols: ChainProtocols<ChainProtocolTypes>;
+	storage: ExecutorStorage<TransactionDataTypes<ChainProtocolTypes>>;
 	maxExpiry?: number;
 	maxNumTransactionsToProcessInOneGo?: number;
 	paymentAccount?: `0x${string}`;
 };
-
-// ------------------------------------------------------------------------------------------------
-// ChainProtocols
-// ------------------------------------------------------------------------------------------------
-export type ChainProtocols = {
-	[chainId: `0x${string}`]: ChainProtocol<any>; // TODO type restruction ?
-};
-// ------------------------------------------------------------------------------------------------

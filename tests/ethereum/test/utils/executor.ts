@@ -1,25 +1,15 @@
-import {BroadcasterSignerData, ExecutorConfig, createExecutor} from 'fuzd-executor';
+import {ExecutorConfig, createExecutor} from 'fuzd-executor';
 import {SchedulerConfig, createScheduler} from 'fuzd-scheduler';
-import {JSONRPCHTTPProvider} from 'eip-1193-jsonrpc-provider';
-import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {initAccountFromHD} from 'remote-account';
-import * as bip39 from '@scure/bip39';
+import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import {RemoteSQLExecutorStorage, RemoteSQLSchedulerStorage} from 'fuzd-server';
 import {RemoteLibSQL} from 'remote-sql-libsql';
 import {createClient} from '@libsql/client';
-import {ExecutionSubmission} from 'fuzd-common';
-
-const provider = new JSONRPCHTTPProvider('http://localhost:8545');
-
-const time = {
-	async getTimestamp() {
-		return Math.floor(Date.now() / 1000);
-	},
-};
+import {ChainProtocol, TransactionDataTypes} from 'fuzd-chain-protocol';
 
 const defaultPath = "m/44'/60'/0'/0/0";
-const seed = bip39.mnemonicToSeedSync('test test test test test test test test test test test junk');
+const seed = mnemonicToSeedSync('test test test test test test test test test test test junk');
 const masterKey = HDKey.fromMasterSeed(seed);
 const accountHDKey = masterKey.derive(defaultPath);
 const account = initAccountFromHD(accountHDKey);
@@ -40,19 +30,22 @@ const account = initAccountFromHD(accountHDKey);
 
 // export const executorProvider = initExecutorProvider();
 
-export type TestExecutorConfig<TransactionDataType> = Omit<
-	ExecutorConfig<TransactionDataType>,
+export type TestExecutorConfig<ChainProtocolTypes extends ChainProtocol<any>> = Omit<
+	ExecutorConfig<ChainProtocolTypes>,
 	'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
 > & {
 	expectedWorstCaseGasPrices?: {chainId: `0x${string}`; value: bigint}[];
 };
 
-export async function createTestExecutor<TransactionDataType>(config: TestExecutorConfig<TransactionDataType>) {
+export async function createTestExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
+	config: TestExecutorConfig<ChainProtocolTypes>,
+) {
+	type TransactionDataType = TransactionDataTypes<ChainProtocolTypes>;
 	const client = createClient({
 		url: ':memory:',
 	});
 	const db = new RemoteLibSQL(client);
-	const storage = new RemoteSQLExecutorStorage(db);
+	const storage = new RemoteSQLExecutorStorage<TransactionDataType>(db);
 	await storage.setup();
 	if (config.expectedWorstCaseGasPrices != undefined) {
 		for (const expectedWorstCaseGasPrice of config.expectedWorstCaseGasPrices) {
@@ -75,12 +68,15 @@ export async function createTestExecutor<TransactionDataType>(config: TestExecut
 	};
 }
 
-export type TestSchedulerConfig<TransactionDataType> = Omit<
-	SchedulerConfig<TransactionDataType>,
+export type TestSchedulerConfig<ChainProtocolTypes extends ChainProtocol<any>> = Omit<
+	SchedulerConfig<ChainProtocolTypes>,
 	'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
 >;
 
-export async function createTestScheduler<TransactionDataType>(config: TestSchedulerConfig<TransactionDataType>) {
+export async function createTestScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
+	config: TestSchedulerConfig<ChainProtocolTypes>,
+) {
+	type TransactionDataType = TransactionDataTypes<ChainProtocolTypes>;
 	const client = createClient({
 		url: ':memory:',
 	});
@@ -89,7 +85,7 @@ export async function createTestScheduler<TransactionDataType>(config: TestSched
 	const storage = new RemoteSQLSchedulerStorage<TransactionDataType>(db);
 	await storage.setup();
 	return {
-		scheduler: createScheduler<TransactionDataType>({
+		scheduler: createScheduler<ChainProtocolTypes>({
 			...config,
 			storage,
 			maxExpiry: 24 * 3600,

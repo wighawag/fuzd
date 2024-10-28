@@ -1,4 +1,4 @@
-import {assert} from 'typia';
+import {validate} from 'typia';
 import {
 	BroadcasterSignerData,
 	ChainProtocol,
@@ -6,6 +6,7 @@ import {
 	SignedTransactionInfo,
 	Transaction,
 	TransactionStatus,
+	Validation,
 } from '../index.js';
 import type {EIP1193Transaction, EIP1193TransactionReceipt, Methods} from 'eip-1193';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
@@ -154,8 +155,8 @@ export class EthereumChainProtocol implements ChainProtocol<TransactionData> {
 		return {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate};
 	}
 
-	parseExecutionSubmission(execution: ExecutionSubmission<TransactionData>): ExecutionSubmission<TransactionData> {
-		return assert(execution);
+	validateTransactionData(transaction: TransactionData): Validation<TransactionData> {
+		return validate(transaction);
 	}
 
 	async validateDerivationParameters(

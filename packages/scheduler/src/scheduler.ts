@@ -12,7 +12,7 @@ import {
 import {ScheduledExecutionQueued} from './types/scheduler-storage.js';
 import {ExecutionResponse, ExecutionSubmission, time2text} from 'fuzd-common';
 import {SchedulerConfig} from './types/internal.js';
-import {ChainProtocol} from 'fuzd-chain-protocol';
+import {ChainProtocol, TransactionDataTypes} from 'fuzd-chain-protocol';
 
 const logger = logs('fuzd-scheduler');
 
@@ -22,9 +22,11 @@ const logger = logs('fuzd-scheduler');
  * - scheduleExecution: add the provided execution to a queue and send it to the executor for broadcast when times come
  * - processQueue: check the current queue and send any scheduled execution for which the time has come, to the executor
  */
-export function createScheduler<TransactionDataType>(
-	config: SchedulerConfig<TransactionDataType>,
-): Scheduler<TransactionDataType> & SchedulerBackend {
+export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
+	config: SchedulerConfig<ChainProtocolTypes>,
+): Scheduler<TransactionDataTypes<ChainProtocolTypes>> & SchedulerBackend {
+	type TransactionDataType = TransactionDataTypes<ChainProtocolTypes>;
+
 	const {chainProtocols, storage, executor} = config;
 	const maxExpiry = (config.maxExpiry = 24 * 3600);
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;

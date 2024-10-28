@@ -1,4 +1,11 @@
-import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, TransactionStatus} from '../index.js';
+import {
+	BroadcasterSignerData,
+	ChainProtocol,
+	GasEstimate,
+	Transaction,
+	TransactionStatus,
+	Validation,
+} from '../index.js';
 import type {Methods} from '@starknet-io/types-js';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC, type RPCErrors} from 'remote-procedure-call';
@@ -20,6 +27,7 @@ import {formatSignature} from 'starknet-core/utils/stark';
 import type {DeepReadonly} from 'strk';
 import {getExecuteCalldata} from 'starknet-core/utils/transaction';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
+import {validate} from 'typia';
 
 // TODO Fix readonly in @starknet-io/types-js
 type FullTransactionData =
@@ -245,13 +253,8 @@ export class StarknetChainProtocol implements ChainProtocol<TransactionData> {
 		};
 	}
 
-	parseExecutionSubmission(execution: ExecutionSubmission<TransactionData>): ExecutionSubmission<TransactionData> {
-		// return GenericSchemaExecutionSubmission(SchemaTransactionData).parse(
-		// 	execution,
-		// ) as ExecutionSubmission<TransactionData>;
-
-		// TODO
-		return execution;
+	validateTransactionData(transaction: TransactionData): Validation<TransactionData> {
+		return validate(transaction);
 	}
 
 	async validateDerivationParameters(

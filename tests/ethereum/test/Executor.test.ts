@@ -4,13 +4,13 @@ import {network} from 'hardhat';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {createTestExecutor} from './utils/executor';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {encodeFunctionData, formatEther, parseEther} from 'viem';
-import {deriveRemoteAddress, initAccountFromHD} from 'remote-account';
+import {encodeFunctionData, parseEther} from 'viem';
+import {initAccountFromHD} from 'remote-account';
 import {hashRawTx, overrideProvider} from './utils/mock-provider';
 import {deployAll} from './utils';
 import {createViemContext} from '../utils/viem';
 import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
-import * as bip39 from '@scure/bip39';
+import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 
 const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
@@ -22,7 +22,7 @@ async function prepareExecution() {
 
 	const defaultPath = "m/44'/60'/0'/0/0";
 	const mnemonic: string = 'test test test test test test test test test test test junk';
-	const seed = bip39.mnemonicToSeedSync(mnemonic);
+	const seed = mnemonicToSeedSync(mnemonic);
 	const masterKey = HDKey.fromMasterSeed(seed);
 	const accountHDKey = masterKey.derive(defaultPath);
 	const account = initAccountFromHD(accountHDKey);
