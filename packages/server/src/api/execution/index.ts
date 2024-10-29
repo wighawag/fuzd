@@ -4,7 +4,7 @@ import {ServerOptions} from '../../types.js';
 import {assert} from 'typia';
 
 export function getExecutionAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
-	const app = new Hono<{Bindings: Env & {}}>().get('/remote-account/:chainId/:account', async (c) => {
+	const app = new Hono<{Bindings: Env & {}}>().get('/remoteAccount/:chainId/:account', async (c) => {
 		const config = c.get('config');
 		const chainId = assert<`0x${string}`>(c.req.param('chainId'));
 		const account = assert<`0x${string}`>(c.req.param('account'));
