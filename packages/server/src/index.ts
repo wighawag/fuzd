@@ -1,7 +1,7 @@
 import {Hono} from 'hono';
 import {cors} from 'hono/cors';
 import {Bindings} from 'hono/types';
-import {ServerOptions} from './types.js';
+import {AddToAllOutputs, ServerOptions} from './types.js';
 import {getPublicAPI} from './api/public/index.js';
 import {getAdminAPI} from './api/admin/index.js';
 import {getInternalAPI} from './api/internal/index.js';
@@ -71,19 +71,23 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 						{
 							name: 'name' in err ? err.name : undefined,
 							code: 'code' in err ? err.code : 5000,
+							status: 'status' in err ? err.status : undefined,
 							message: err.message,
 							// cause: err.cause,
 							// stack: err.stack
 						},
 					],
-					status: 'status' in err ? err.status || 500 : 500,
 				},
 				500,
 			);
 		});
 }
 
-export type App = ReturnType<typeof createAPI>;
+type ErrorType = {
+	success: false;
+	errors: {name?: string; message: string; code?: number; status?: number}[];
+};
+export type App = AddToAllOutputs<ReturnType<typeof createAPI>, ErrorType>;
 
 // this is a trick to calculate the type when compiling
 const client = hc<App>('');

@@ -8,7 +8,7 @@ export function getPublicAPI<Env extends Bindings = Bindings>(options: ServerOpt
 	const app = new Hono<{Bindings: Env & {}}>()
 		.get('/publicKey', async (c) => {
 			const config = c.get('config');
-			return c.text(config.account.publicExtendedKey);
+			return c.text(config.account.publicExtendedKey); // TODO json
 		})
 		.get('/paymentAccountBroadcaster', async (c) => {
 			const config = c.get('config');
