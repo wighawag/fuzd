@@ -54,13 +54,13 @@ async function prepareExecution() {
 	const gasPrice = await publicClient.getGasPrice();
 
 	const user = env.namedAccounts.deployer;
-	const broadcasterInfo = await executor.getBroadcaster(chainId, user);
-	const derivationParameters = broadcasterInfo.derivationParameters;
-	const remoteAccount = broadcasterInfo.address;
-	const paymenetAccountBroadcasterInfo = await executor.getBroadcaster(chainId, paymentAccount);
-	const paymentAccountBroadcaster = paymenetAccountBroadcasterInfo.address;
+	const remoteAccountInfo = await executor.getRemoteAccount(chainId, user);
+	const derivationParameters = remoteAccountInfo.derivationParameters;
+	const remoteAccount = remoteAccountInfo.address;
+	const paymenetAccountBroadcasterInfo = await executor.getRemoteAccount(chainId, paymentAccount);
+	const paymentRemoteAccount = paymenetAccountBroadcasterInfo.address;
 
-	await walletClient.sendTransaction({account: user, to: paymentAccountBroadcaster, value: parseEther('0.1')});
+	await walletClient.sendTransaction({account: user, to: paymentRemoteAccount, value: parseEther('0.1')});
 
 	const data = encodeFunctionData({
 		...GreetingsRegistry,

@@ -52,9 +52,9 @@ async function prepareExecution() {
 
 	const user = env.namedAccounts.deployer;
 
-	const broadcasterInfo = await executor.getBroadcaster(chainId, user);
-	const derivationParameters = broadcasterInfo.derivationParameters;
-	const remoteAccount = broadcasterInfo.address;
+	const remoteAccountInfo = await executor.getRemoteAccount(chainId, user);
+	const derivationParameters = remoteAccountInfo.derivationParameters;
+	const remoteAccount = remoteAccountInfo.address;
 
 	const data = encodeFunctionData({
 		...GreetingsRegistry,

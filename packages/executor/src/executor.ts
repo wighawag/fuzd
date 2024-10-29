@@ -11,7 +11,7 @@ import {
 	String0x,
 	numToHex,
 	bigintToHex,
-	BroadcasterInfo,
+	RemoteAccountInfo,
 } from 'fuzd-common';
 import {ExecutorConfig} from './types/internal.js';
 import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo, TransactionDataTypes} from 'fuzd-chain-protocol';
@@ -53,7 +53,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		return 'finalized';
 	}
 
-	async function getBroadcaster(chainId: String0x, account: String0x): Promise<BroadcasterInfo> {
+	async function getRemoteAccount(chainId: String0x, account: String0x): Promise<RemoteAccountInfo> {
 		const chainProtocol = _getChainProtocol(chainId);
 		const derivationParameters = await chainProtocol.getCurrentDerivationParameters();
 		const broadcaster = await chainProtocol.getBroadcaster(derivationParameters, account);
@@ -586,7 +586,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	// EXPORT
 	// --------------------------------------------------------------------------------------------
 	return {
-		getBroadcaster,
+		getRemoteAccount,
 		broadcastExecution,
 		getExecutionStatus,
 		getExpectedWorstCaseGasPrice,

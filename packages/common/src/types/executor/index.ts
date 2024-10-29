@@ -62,7 +62,7 @@ export type ExecutionSubmission<TransactionDataType> = {
 // Executor
 // ------------------------------------------------------------------------------------------------
 export type Executor<TransactionDataType> = {
-	getBroadcaster(chainId: `0x${string}`, account: `0x${string}`): Promise<BroadcasterInfo>;
+	getRemoteAccount(chainId: `0x${string}`, account: `0x${string}`): Promise<RemoteAccountInfo>;
 	broadcastExecution(
 		slot: string,
 		batchIndex: number,
@@ -98,7 +98,7 @@ export type DerivationParameters = {
 	data: any;
 };
 
-export type BroadcasterInfo = {
+export type RemoteAccountInfo = {
 	derivationParameters: DerivationParameters;
 	address: `0x${string}`;
 };
