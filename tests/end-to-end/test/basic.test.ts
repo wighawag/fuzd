@@ -8,7 +8,7 @@ import {connectToWorker} from './external-worker';
 
 const worker = connectToWorker();
 
-describe('fuzd api', () => {
+describe('basic test', () => {
 	// --------------------------------------------------------------------------------------------
 	// wakup worker
 	// --------------------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ describe('fuzd api', () => {
 		const wallet = privateKeyToAccount('0x1111111111111111111111111111111111111111111111111111111111111111');
 
 		// we get the remote address associated with the private key signing the execution message sent to the api
-		const publicKey = await worker.fetch(`/api/publicKey`).then((v) => v.text());
+		const {publicKey} = await worker.fetch(`/api/publicKey`).then((v) => v.json());
 		// console.log({publicKey});
 		// this will need to hold some ETH, so it can carry the execution.
 		// const remoteAddress = deriveRemoteAddress(publicKey, wallet.address);
@@ -101,6 +101,7 @@ describe('fuzd api', () => {
 			console.log(json);
 			console.log(resp.status, resp.statusText);
 		}
-		expect(json.chainId).to.equal(chainIdAsHex);
+		expect(json.success).toBe(true);
+		expect(json.info.chainId).to.equal(chainIdAsHex);
 	});
 });

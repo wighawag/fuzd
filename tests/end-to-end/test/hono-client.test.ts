@@ -1,4 +1,4 @@
-import {describe, it, expect} from 'vitest';
+import {describe, it, expect, assert} from 'vitest';
 
 import {createClient} from 'fuzd-server';
 import {WORKER_URL} from './prool/pool';
@@ -15,9 +15,11 @@ describe('fuzd api via hono client', () => {
 	// --------------------------------------------------------------------------------------------
 
 	it(`fuzd-api`, async () => {
-		const publicKey = await (await client.api.publicKey.$get()).text();
-		expect(publicKey).toBeTypeOf('string');
-		expect(publicKey.length).toBeGreaterThan(0);
+		const json = await (await client.api.publicKey.$get()).json();
+		expect(json.success).toBe(true);
+		assert(json.success);
+		expect(json.publicKey).toBeTypeOf('string');
+		expect(json.publicKey.length).toBeGreaterThan(0);
 	});
 
 	it(`schedule`, async () => {
@@ -44,6 +46,7 @@ describe('fuzd api via hono client', () => {
 			},
 		});
 		expect(response.ok).toBe(false);
-		console.log(JSON.stringify(await response.json()));
+		const json = await response.json();
+		console.log(JSON.stringify(json));
 	});
 });
