@@ -12,6 +12,8 @@ import {getAdminDashboard} from './dashboard/admin/index.js';
 import {hc} from 'hono/client';
 import {HTTPException} from 'hono/http-exception';
 
+export type {Context} from 'hono';
+
 export * from './storage/RemoteSQLExecutorStorage.js';
 export * from './storage/RemoteSQLSchedulerStorage.js';
 
@@ -81,6 +83,20 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 				500,
 			);
 		});
+
+	// .notFound((c) => {
+	// 	return c.json(
+	// 		{
+	// 			success: false,
+	// 			errors: [
+	// 				{
+	// 					message: 'Not Found',
+	// 				},
+	// 			],
+	// 		},
+	// 		404,
+	// 	);
+	// })
 }
 
 type ErrorType = {

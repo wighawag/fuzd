@@ -1,6 +1,5 @@
 import 'named-logs-context';
 import {createServer} from 'fuzd-server';
-import type {Context} from 'hono';
 import {RemoteD1} from 'remote-sql-d1';
 import {Env} from './env.js';
 import {logs} from 'named-logs';
@@ -67,8 +66,8 @@ async function wrapWithLogger(
 }
 
 export const app = createServer<Env>({
-	getDB: (c: Context<{Bindings: Env}>) => new RemoteD1(c.env.DB),
-	getEnv: (c: Context<{Bindings: Env}>) => c.env,
+	getDB: (c) => new RemoteD1(c.env.DB),
+	getEnv: (c) => c.env,
 });
 
 const fetch = async (request: Request, env: Env, ctx: ExecutionContext) => {

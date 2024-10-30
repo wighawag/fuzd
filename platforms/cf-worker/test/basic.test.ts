@@ -1,9 +1,8 @@
 import {describe, it, expect} from 'vitest';
 import {setupWorker} from './utils';
 
-import {ExecutionSubmission} from 'fuzd-common';
-import {ScheduledExecution} from 'fuzd-scheduler';
-import {deriveRemoteAddress} from 'remote-account';
+import type {ExecutionSubmission} from 'fuzd-common';
+import type {ScheduledExecution} from 'fuzd-scheduler';
 import {privateKeyToAccount} from 'viem/accounts';
 import type {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 
@@ -20,12 +19,7 @@ describe('fuzd api', () => {
 	it('should', async function () {
 		const wallet = privateKeyToAccount('0x1111111111111111111111111111111111111111111111111111111111111111');
 
-		// we get the remote address associated with the private key signing the execution message sent to the api
 		const publicKey = await worker.fetch(`/api/publicKey`).then((v) => v.text());
-		// console.log({publicKey});
-		// this will need to hold some ETH, so it can carry the execution.
-		const remoteAddress = deriveRemoteAddress(publicKey, wallet.address);
-		// this mechanism allows to isolate each account nonces and allow then for the user to update the gas pricing
 
 		const chainIdAsHex = `0x7a69`; // Note that is need to be lower case // TODO
 

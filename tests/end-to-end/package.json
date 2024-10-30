@@ -11,8 +11,8 @@
     "fuzd-server": "workspace:*",
     "prool-cf-worker": "^0.1.3",
     "typescript": "^5.6.3",
-    "viem": "^2.21.35",
-    "vitest": "^2.1.3",
+    "viem": "^2.21.37",
+    "vitest": "^2.1.4",
     "wrangler": "^3.83.0"
   },
   "scripts": {
