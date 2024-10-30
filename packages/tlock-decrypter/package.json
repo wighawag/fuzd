@@ -22,7 +22,7 @@
   "dependencies": {
     "fuzd-scheduler": "workspace:*",
     "named-logs": "^0.3.0",
-    "tlock-js": "npm:@bug-fix/tlock-js@0.9.0-fix.3"
+    "tlock-js": "npm:@bug-fix/tlock-js@0.9.0-fix.7"
   },
   "devDependencies": {
     "@types/node": "^22.8.4",

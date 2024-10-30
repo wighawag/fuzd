@@ -28,7 +28,7 @@
     "fuzd-scheduler": "workspace:*",
     "named-logs": "^0.3.0",
     "remote-account": "^0.2.1",
-    "tlock-js": "npm:@bug-fix/tlock-js@0.9.0-fix.3",
+    "tlock-js": "npm:@bug-fix/tlock-js@0.9.0-fix.7",
     "viem": "^2.21.37"
   },
   "devDependencies": {
