@@ -105,9 +105,9 @@ describe('Executing on the registry', function () {
 				type: '0x2',
 				to: txData.to,
 				data: txData.data,
-				gas: `0x${gas.toString(16)}` as `0x${string}`,
+				gas: `0x${gas.toString(16)}` as String0x,
 			},
-			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
+			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
 			derivationParameters,
 		});
 
@@ -124,7 +124,7 @@ describe('Executing on the registry', function () {
 				type: '0x2',
 				to: txData.to,
 				data: txData.data,
-				gas: `0x${gas.toString(16)}` as `0x${string}`,
+				gas: `0x${gas.toString(16)}` as String0x,
 			},
 			maxFeePerGasAuthorized: `0x1`,
 			derivationParameters,
@@ -151,9 +151,9 @@ describe('Executing on the registry', function () {
 				type: '0x2',
 				to: txData.to,
 				data: txData.data,
-				gas: `0x${gas.toString(16)}` as `0x${string}`,
+				gas: `0x${gas.toString(16)}` as String0x,
 			},
-			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
+			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
 			derivationParameters,
 		});
 
@@ -177,9 +177,9 @@ describe('Executing on the registry', function () {
 				type: '0x2',
 				to: txData.to,
 				data: txData.data,
-				gas: `0x${gas.toString(16)}` as `0x${string}`,
+				gas: `0x${gas.toString(16)}` as String0x,
 			},
-			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
+			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
 			derivationParameters,
 		});
 
@@ -219,9 +219,9 @@ describe('Executing on the registry', function () {
 				type: '0x2',
 				to: txData.to,
 				data: txData.data,
-				gas: `0x${gas.toString(16)}` as `0x${string}`,
+				gas: `0x${gas.toString(16)}` as String0x,
 			},
-			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
+			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
 			derivationParameters,
 		});
 

@@ -50,8 +50,8 @@
   },
   "scripts": {
     "prepare": "ts-patch install && typia patch",
-    "openapi": "pnpm hto --app-file ./src/index.ts --title fuzd-server --app-type App  --output ./src/doc/openapi.json --description API --app-version api --tsconfig ./tsconfig.json",
-    "build:ts": "pnpm openapi && tsc --project tsconfig.json",
+    "openapi": "pnpm hto --app-file ./src/index.ts --title fuzd-server --app-type App  --output ./doc/openapi.json --description API --app-version api --tsconfig ./tsconfig.json",
+    "build:ts": "pnpm openapi && tsc --project tsconfig.json && cp -R doc dist/doc",
     "build": "pnpm sql2ts && pnpm build:ts",
     "sql2ts": "node sql2ts.cjs executor scheduler",
     "sql2ts:watch": "pnpm sql2ts && as-soon -w ./src/schema/sql pnpm sql2ts",

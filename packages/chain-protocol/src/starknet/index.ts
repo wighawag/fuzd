@@ -2,7 +2,7 @@ import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, Transact
 import type {Methods} from '@starknet-io/types-js';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC, type RPCErrors} from 'remote-procedure-call';
-import {DerivationParameters, TransactionParametersUsed} from 'fuzd-common';
+import {DerivationParameters, String0x, TransactionParametersUsed} from 'fuzd-common';
 import type {
 	DEPLOY_ACCOUNT_TXN_V1,
 	DEPLOY_ACCOUNT_TXN_V3,
@@ -78,9 +78,9 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 		public readonly config: {
 			expectedFinality: number;
 			worstCaseBlockTime: number;
-			contractTimestamp?: `0x${string}`;
-			tokenContractAddress: `0x${string}`;
-			accountContractClassHash: `0x${string}`;
+			contractTimestamp?: String0x;
+			tokenContractAddress: String0x;
+			accountContractClassHash: String0x;
 		},
 		public account: ETHAccount,
 	) {
@@ -160,7 +160,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 		}
 	}
 
-	async isTransactionPending(txHash: `0x${string}`): Promise<boolean> {
+	async isTransactionPending(txHash: String0x): Promise<boolean> {
 		const txStatusResponse = await this.rpc.call('starknet_getTransactionStatus')({transaction_hash: txHash});
 
 		// if (!txStatusResponse.success) {
@@ -173,7 +173,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 		return pendingTansaction ? true : false;
 	}
 
-	async getBalance(account: `0x${string}`): Promise<bigint> {
+	async getBalance(account: String0x): Promise<bigint> {
 		const balanceResponse = await this.rpc.call('starknet_call')(
 			create_call({
 				block_id: 'latest',
@@ -188,14 +188,14 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 		return BigInt(balanceResponse.value[0]);
 	}
 
-	async broadcastSignedTransaction(tx: any): Promise<`0x${string}`> {
+	async broadcastSignedTransaction(tx: any): Promise<String0x> {
 		const transaction = tx as FullStarknetTransactionData;
 		if (transaction.type === 'INVOKE') {
 			const invokeResponse = await this.rpc.call('starknet_addInvokeTransaction')({invoke_transaction: transaction});
 			if (!invokeResponse.success) {
 				throw createError(`starknet_addInvokeTransaction`, invokeResponse.error);
 			}
-			return invokeResponse.value.transaction_hash as `0x${string}`; // TODO string ?
+			return invokeResponse.value.transaction_hash as String0x; // TODO string ?
 		} else if (transaction.type === 'DEPLOY_ACCOUNT') {
 			const deployAccountResponse = await this.rpc.call('starknet_addDeployAccountTransaction')({
 				deploy_account_transaction: transaction,
@@ -203,13 +203,13 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			if (!deployAccountResponse.success) {
 				throw createError(`starknet_addDeployAccountTransaction`, deployAccountResponse.error);
 			}
-			return deployAccountResponse.value.transaction_hash as `0x${string}`; // TODO string ?
+			return deployAccountResponse.value.transaction_hash as String0x; // TODO string ?
 		} else {
 			throw new Error(`transaction type not supported: ${(transaction as any).type}`);
 		}
 	}
 
-	async getNonce(account: `0x${string}`): Promise<`0x${string}`> {
+	async getNonce(account: String0x): Promise<String0x> {
 		const nonceReponse = await this.rpc.call('starknet_getNonce')({
 			block_id: 'latest',
 			contract_address: account,
@@ -220,10 +220,10 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			}
 			throw new Error(nonceReponse.error.message, {cause: nonceReponse.error});
 		}
-		return nonceReponse.value as `0x${string}`;
+		return nonceReponse.value as String0x;
 	}
 
-	async getGasFee(executionData: {maxFeePerGasAuthorized: `0x${string}`}): Promise<GasEstimate> {
+	async getGasFee(executionData: {maxFeePerGasAuthorized: String0x}): Promise<GasEstimate> {
 		const blockResponse = await this.rpc.call('starknet_getBlockWithTxHashes')({block_id: 'latest'});
 		if (!blockResponse.success) {
 			throw new Error(`could not fetch block: ${blockResponse.error.message} (${blockResponse.error.code})`, {
@@ -265,7 +265,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			},
 		};
 	}
-	async getBroadcaster(parameters: DerivationParameters, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
+	async getBroadcaster(parameters: DerivationParameters, forAddress: String0x): Promise<BroadcasterSignerData> {
 		const validation = await this.validateDerivationParameters(parameters);
 		if (!validation.success) {
 			throw new Error(validation.error);
@@ -277,7 +277,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			this.config.accountContractClassHash,
 			[public_key],
 			0,
-		) as `0x${string}`;
+		) as String0x;
 		return {
 			signer: `privateKey:${private_key}`,
 			address: accountContractAddress,
@@ -285,7 +285,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 	}
 
 	async checkValidity(
-		chainId: `0x${string}`,
+		chainId: String0x,
 		transactionData: StarknetTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
@@ -325,13 +325,13 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 	}
 
 	async signTransaction(
-		chainId: `0x${string}`,
+		chainId: String0x,
 		data: StarknetTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<{
 		rawTx: any;
-		hash: `0x${string}`;
+		hash: String0x;
 	}> {
 		const {transactionData, hash, rawTx} = this._createFullTransaction(
 			chainId,
@@ -344,12 +344,12 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 	}
 
 	// async signVoidTransaction(
-	// 	chainId: `0x${string}`,
+	// 	chainId: String0x,
 	// 	broadcaster: BroadcasterSignerData,
 	// 	transactionParameters: TransactionParametersUsed,
 	// ): Promise<{
 	// 	rawTx: any;
-	// 	hash: `0x${string}`;
+	// 	hash: String0x;
 	// 	transactionData: StarknetTransactionData;
 	// 	isVoidTransaction: boolean;
 	// }> {
@@ -359,12 +359,12 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 	requiredPreliminaryTransaction(
 		chainId: string,
 		broadcaster: BroadcasterSignerData,
-		account: `0x${string}`,
+		account: String0x,
 	): StarknetTransactionData {
 		const [protocol, protocolData] = broadcaster.signer.split(':');
-		let privateKey: `0x${string}`;
+		let privateKey: String0x;
 		if (protocol === 'privateKey') {
-			privateKey = protocolData as `0x${string}`;
+			privateKey = protocolData as String0x;
 		} else {
 			throw new Error(`protocol ${protocol} not supported`);
 		}
@@ -385,7 +385,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 	generatePaymentTransaction(
 		transactionData: StarknetTransactionData,
 		maxFeePerGas: bigint,
-		from: `0x${string}`,
+		from: String0x,
 		diffToCover: bigint,
 	): {transaction: StarknetTransactionData; cost: bigint} {
 		const gas = BigInt(30000);
@@ -490,7 +490,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 	// TODO remote-account : export this type: ReturnType<typeof initAccountFromHD>
 	async _getStarknetSigner(
 		account: ReturnType<typeof initAccountFromHD>,
-		forAddress: `0x${string}`,
+		forAddress: String0x,
 	): Promise<{public_key: string; private_key: string}> {
 		const derivedAccount = account.deriveForAddress(forAddress);
 
@@ -509,15 +509,15 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 	}
 
 	_createFullTransaction(
-		chainId: `0x${string}`,
+		chainId: String0x,
 		transactionData: StarknetTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
-	): {rawTx: FullStarknetTransactionData; transactionData: StarknetTransactionData; hash: `0x${string}`} {
+	): {rawTx: FullStarknetTransactionData; transactionData: StarknetTransactionData; hash: String0x} {
 		const [protocol, protocolData] = broadcaster.signer.split(':');
-		let privateKey: `0x${string}`;
+		let privateKey: String0x;
 		if (protocol === 'privateKey') {
-			privateKey = protocolData as `0x${string}`;
+			privateKey = protocolData as String0x;
 		} else {
 			throw new Error(`protocol ${protocol} not supported`);
 		}
@@ -541,7 +541,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 						...intent.data,
 						signature,
 					},
-					hash: intent.hash as `0x${string}`,
+					hash: intent.hash as String0x,
 				};
 			} else if (transactionData.type === 'DEPLOY_ACCOUNT') {
 				const intent = create_deploy_account_transaction_intent_v1({
@@ -557,7 +557,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 						...intent.data,
 						signature,
 					},
-					hash: intent.hash as `0x${string}`,
+					hash: intent.hash as String0x,
 				};
 			} else {
 				throw new Error(`transaction type "${(transactionData as any).type}" not supported`);

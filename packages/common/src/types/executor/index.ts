@@ -1,36 +1,38 @@
+import {String0x} from '../utils/index.js';
+
 export type ExpectedWorstCaseGasPrice =
 	| {current: bigint; updateTimestamp: number; previous: undefined}
 	| {previous: undefined; current: undefined; updateTimestamp: undefined}
 	| {previous: bigint; current: bigint; updateTimestamp: number};
 
 export type TransactionParametersUsed = {
-	maxFeePerGas: `0x${string}`;
-	maxPriorityFeePerGas: `0x${string}`;
-	nonce: `0x${string}`;
-	from: `0x${string}`;
+	maxFeePerGas: String0x;
+	maxPriorityFeePerGas: String0x;
+	nonce: String0x;
+	from: String0x;
 };
 
 export type PendingExecutionStored<TransactionDataType> = {
-	chainId: `0x${string}`;
-	account: `0x${string}`;
+	chainId: String0x;
+	account: String0x;
 	slot: string;
 	batchIndex: number;
-	onBehalf?: `0x${string}`;
+	onBehalf?: String0x;
 	derivationParameters: DerivationParameters;
 	transaction: TransactionDataType;
 	transactionParametersUsed: TransactionParametersUsed;
 	initialTime: number;
 	broadcastTime?: number;
 	nextCheckTime: number;
-	hash: `0x${string}`;
-	maxFeePerGasAuthorized: `0x${string}`;
-	helpedForUpToGasPrice?: `0x${string}`;
+	hash: String0x;
+	maxFeePerGasAuthorized: String0x;
+	helpedForUpToGasPrice?: String0x;
 	isVoidTransaction: boolean;
 	finalized: boolean;
 	retries?: number;
 	lastError?: string;
 	expiryTime?: number;
-	expectedWorstCaseGasPrice?: `0x${string}`;
+	expectedWorstCaseGasPrice?: String0x;
 };
 
 export type ExecutionResponse<TransactionDataType> = PendingExecutionStored<TransactionDataType> & {
@@ -41,7 +43,7 @@ export type ExecutionResponse<TransactionDataType> = PendingExecutionStored<Tran
 // BaseTransactionData
 // ------------------------------------------------------------------------------------------------
 export type BaseTransactionData = {
-	gas: `0x${string}`;
+	gas: String0x;
 };
 // ------------------------------------------------------------------------------------------------
 
@@ -49,12 +51,12 @@ export type BaseTransactionData = {
 // ExecutionSubmission
 // ------------------------------------------------------------------------------------------------
 export type ExecutionSubmission<TransactionDataType> = {
-	chainId: `0x${string}`;
+	chainId: String0x;
 	derivationParameters: DerivationParameters;
 	transaction: TransactionDataType;
-	maxFeePerGasAuthorized: `0x${string}`; // 1000 gwei // TODO CONFIGURE per network: max worst worst case
+	maxFeePerGasAuthorized: String0x; // 1000 gwei // TODO CONFIGURE per network: max worst worst case
 	expiryTime?: number;
-	onBehalf?: `0x${string}`;
+	onBehalf?: String0x;
 };
 // ------------------------------------------------------------------------------------------------
 
@@ -62,11 +64,11 @@ export type ExecutionSubmission<TransactionDataType> = {
 // Executor
 // ------------------------------------------------------------------------------------------------
 export type Executor<TransactionDataType> = {
-	getRemoteAccount(chainId: `0x${string}`, account: `0x${string}`): Promise<RemoteAccountInfo>;
+	getRemoteAccount(chainId: String0x, account: String0x): Promise<RemoteAccountInfo>;
 	broadcastExecution(
 		slot: string,
 		batchIndex: number,
-		account: `0x${string}`,
+		account: String0x,
 		execution: ExecutionSubmission<TransactionDataType>,
 		options?: {
 			expectedWorstCaseGasPrice?: bigint;
@@ -74,12 +76,12 @@ export type Executor<TransactionDataType> = {
 	): Promise<ExecutionResponse<TransactionDataType>>;
 
 	getExecutionStatus(executionBatch: {
-		chainId: `0x${string}`;
+		chainId: String0x;
 		slot: string;
-		account: `0x${string}`;
+		account: String0x;
 	}): Promise<'finalized' | 'broadcasted' | undefined>;
 
-	getExpectedWorstCaseGasPrice?(chainId: `0x${string}`): Promise<ExpectedWorstCaseGasPrice>;
+	getExpectedWorstCaseGasPrice?(chainId: String0x): Promise<ExpectedWorstCaseGasPrice>;
 };
 // ------------------------------------------------------------------------------------------------
 
@@ -87,7 +89,7 @@ export type Executor<TransactionDataType> = {
 // TransactionParams
 // ------------------------------------------------------------------------------------------------
 export type TransactionParams = {
-	chainId: `0x${string}`;
+	chainId: String0x;
 	expectedNonce: number;
 	nonce: number;
 };
@@ -100,5 +102,5 @@ export type DerivationParameters = {
 
 export type RemoteAccountInfo = {
 	derivationParameters: DerivationParameters;
-	address: `0x${string}`;
+	address: String0x;
 };

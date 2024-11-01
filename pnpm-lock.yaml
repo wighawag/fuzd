@@ -161,6 +161,9 @@ importers:
       typescript:
         specifier: ^5.6.3
         version: 5.6.3
+      typia:
+        specifier: ^6.11.3
+        version: 6.11.3(typescript@5.6.3)
 
   packages/executor:
     dependencies:
@@ -284,9 +287,6 @@ importers:
       ts-patch:
         specifier: ^3.2.1
         version: 3.2.1
-      tsx:
-        specifier: ^4.19.2
-        version: 4.19.2
       typescript:
         specifier: ^5.6.3
         version: 5.6.3

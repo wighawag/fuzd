@@ -87,6 +87,6 @@ describe('fuzd api', () => {
 		// console.log(`TEXT RESPONSE:`, text);
 		const json: any = await resp.json();
 		// console.log(json);
-		expect(json.chainId).to.equal(chainIdAsHex);
+		expect(json.info.chainId).to.equal(chainIdAsHex);
 	});
 });

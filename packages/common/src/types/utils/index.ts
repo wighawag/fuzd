@@ -1,4 +1,16 @@
-export type String0x = `0x${string}`;
+import {tags} from 'typia';
+
+export type String0x = `0x${string}` & tags.Pattern<'^0[xX][A-Fa-f0-9][A-Fa-f0-9]+$'>;
+
+export type Bytes0x = String0x;
+
+export type Bytes320x = String0x;
+
+export type Value0x = String0x;
+
+export type Value256Bit0x = String0x;
+
+export type EthereumAccount = String0x;
 
 // from https://dev.to/safareli/pick-omit-and-union-types-in-typescript-4nd9
 type Keys<T> = keyof T;

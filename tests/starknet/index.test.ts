@@ -22,6 +22,7 @@ import {initAccountFromHD} from 'remote-account';
 import {AllowedTransactionData, StarknetChainProtocol} from 'fuzd-chain-protocol/starknet';
 import AccountContract from 'strk-account';
 import ERC20ABI from './abis/ERC20';
+import {String0x} from '../../packages/common/dist/esm/types';
 
 const rpc = createProxiedJSONRPC<StarknetMethods>(RPC_URL);
 
@@ -222,7 +223,7 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 				{
 					accountContractClassHash: AccountContract.class_hash,
 					expectedFinality: 1,
-					tokenContractAddress: ETHTokenContract.contract_address as `0x${string}`,
+					tokenContractAddress: ETHTokenContract.contract_address as String0x,
 					worstCaseBlockTime: 1,
 				},
 				account,
@@ -238,9 +239,9 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 	});
 
 	const user = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
-	const broadcasterInfo = await executor.getBroadcaster(chainId, user);
-	const derivationParameters = broadcasterInfo.derivationParameters;
-	const remoteAccount = broadcasterInfo.address;
+	const remoteAccountInfo = await executor.getRemoteAccount(chainId, user);
+	const derivationParameters = remoteAccountInfo.derivationParameters;
+	const remoteAccount = remoteAccountInfo.address;
 	// TODO test payment account on starknet
 	// const paymenetAccountBroadcasterInfo = await executor.getBroadcaster(chainId, paymentAccount);
 	// const paymentAccountBroadcaster = paymenetAccountBroadcasterInfo.address;
@@ -313,7 +314,7 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 	const txInfo = await executor.broadcastExecution((++counter).toString(), 0, user, {
 		chainId,
 		transaction,
-		maxFeePerGasAuthorized: `0xFFFFF` as `0x${string}`,
+		maxFeePerGasAuthorized: `0xFFFFF` as String0x,
 		derivationParameters,
 	});
 

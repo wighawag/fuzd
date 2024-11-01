@@ -54,8 +54,8 @@ function createAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>)
 export function createDoc() {
 	return new Hono()
 		.get('/openapi.json', async (c) => {
-			const json = await import('./doc/openapi.json');
-			return c.json(json);
+			const jsonModule = await import('../doc/openapi.json', {assert: {type: 'json'}});
+			return c.json(jsonModule.default, 200);
 		})
 		.get('/ui', swaggerUI({url: '/doc/openapi.json'}));
 }
@@ -114,7 +114,8 @@ type ErrorType = {
 	success: false;
 	errors: {name?: string; message: string; code?: number; status?: number}[];
 };
-export type App = AddToAllOutputs<ReturnType<typeof createAPI>, ErrorType>;
+// export type App = AddToAllOutputs<ReturnType<typeof createAPI>, ErrorType>;
+export type App = ReturnType<typeof createAPI>;
 
 // this is a trick to calculate the type when compiling
 const client = hc<App>('');

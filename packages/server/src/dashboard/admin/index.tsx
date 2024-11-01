@@ -10,6 +10,7 @@ import {Layout} from '../layout.js';
 import {Table} from '../components/Table.js';
 import {displayExecutionBroadcasted, displayScheduledExecutionQueued} from '../display/index.js';
 import {assert} from 'typia';
+import {String0x} from 'fuzd-common';
 
 const logger = logs('fuzd-cf-worker-admin-dashboard');
 
@@ -51,7 +52,7 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 		})
 		.get('/account-submissions/:account', async (c) => {
 			const config = c.get('config');
-			const account = assert<`0x${string}`>(c.req.param('account'));
+			const account = assert<String0x>(c.req.param('account'));
 			const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
 			const displayData = queue.map(displayScheduledExecutionQueued(diff));
@@ -63,7 +64,7 @@ export function getAdminDashboard<Env extends Bindings = Bindings>(options: Serv
 		})
 		.get('/account-archived-submissions/:account', async (c) => {
 			const config = c.get('config');
-			const account = assert<`0x${string}`>(c.req.param('account'));
+			const account = assert<String0x>(c.req.param('account'));
 			const queue = await config.schedulerStorage.getAccountArchivedSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
 			const displayData = queue.map(displayScheduledExecutionQueued(diff));

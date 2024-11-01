@@ -3,14 +3,14 @@ import {keccak_256} from '@noble/hashes/sha3';
 import {ExecutionSubmission} from 'fuzd-common';
 import {Decrypter, DecryptionResult, ScheduledExecutionQueued} from 'fuzd-scheduler';
 
-function toHex(arr: Uint8Array): `0x${string}` {
+function toHex(arr: Uint8Array): String0x {
 	let str = `0x`;
 	for (const element of arr) {
 		str += element.toString(16).padStart(2, '0');
 	}
-	return str as `0x${string}`;
+	return str as String0x;
 }
-function fromHex(str: `0x${string}`): Uint8Array {
+function fromHex(str: String0x): Uint8Array {
 	const matches = str.slice(2).match(/.{1,2}/g);
 	if (matches) {
 		return Uint8Array.from(matches.map((byte) => parseInt(byte, 16)));
@@ -18,7 +18,7 @@ function fromHex(str: `0x${string}`): Uint8Array {
 	return new Uint8Array(0);
 }
 
-export function hashRawTx(rawTx: `0x${string}`): `0x${string}` {
+export function hashRawTx(rawTx: String0x): String0x {
 	return toHex(keccak_256(fromHex(rawTx)));
 }
 

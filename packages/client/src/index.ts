@@ -6,25 +6,25 @@
 import {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
 import {timelockEncrypt, HttpChainClient, roundAt} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';
-import {ExecutionSubmission} from 'fuzd-common';
+import {ExecutionSubmission, String0x} from 'fuzd-common';
 import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 export {testnetClient, mainnetClient} from 'tlock-js';
 
 export type ClientConfig = {
 	drand: HttpChainClient;
-	schedulerEndPoint: string | ((execution: string, signature: `0x${string}`) => Promise<ScheduleInfo>);
-	privateKey: `0x${string}`;
+	schedulerEndPoint: string | ((execution: string, signature: String0x) => Promise<ScheduleInfo>);
+	privateKey: String0x;
 };
 
 export function createClient(config: ClientConfig) {
 	const wallet = privateKeyToAccount(config.privateKey);
 
 	async function scheduleExecution(execution: {
-		chainId: `0x${string}` | string;
+		chainId: String0x | string;
 		transaction: {
 			gas: bigint;
-			data?: `0x${string}`;
-			to?: `0x${string}`;
+			data?: String0x;
+			to?: String0x;
 		};
 		maxFeePerGasAuthorized: bigint;
 		time: number;
@@ -33,7 +33,7 @@ export function createClient(config: ClientConfig) {
 
 		const chainId = (
 			execution.chainId.startsWith('0x') ? execution.chainId : `0x` + parseInt(execution.chainId).toString(16)
-		) as `0x${string}`;
+		) as String0x;
 
 		// TODO
 		const {derivationParameters, address} = await fetch(
@@ -45,10 +45,10 @@ export function createClient(config: ClientConfig) {
 			executions: [
 				{
 					chainId,
-					maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as `0x${string}`,
+					maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as String0x,
 					transaction: {
 						type: '0x2',
-						gas: ('0x' + execution.transaction.gas.toString(16)) as `0x${string}`,
+						gas: ('0x' + execution.transaction.gas.toString(16)) as String0x,
 						data: execution.transaction.data,
 						to: execution.transaction.to,
 					},

@@ -1,11 +1,11 @@
-import {ExecutionSubmission} from 'fuzd-common';
+import {ExecutionSubmission, String0x} from 'fuzd-common';
 import {ScheduledExecution} from './external.js';
 
 export type ScheduledExecutionQueued<TransactionDataType> = ScheduledExecution<
 	ExecutionSubmission<TransactionDataType>
 > & {
 	slot: string;
-	account: `0x${string}`;
+	account: String0x;
 	broadcasted: boolean;
 	finalized: boolean;
 	checkinTime: number;
@@ -19,15 +19,15 @@ export type ScheduledExecutionQueued<TransactionDataType> = ScheduledExecution<
 
 export interface SchedulerStorage<TransactionDataType> {
 	getQueuedExecution(params: {
-		chainId: `0x${string}`;
-		account: `0x${string}`;
+		chainId: String0x;
+		account: String0x;
 		slot: string;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType> | undefined>;
 	getQueuedExecutionsForAccount(params: {
-		chainId: `0x${string}`;
-		account: `0x${string}`;
+		chainId: String0x;
+		account: String0x;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
-	deleteExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void>;
+	deleteExecution(params: {chainId: String0x; account: String0x; slot: string}): Promise<void>;
 	archiveExecution(executionToStore: ScheduledExecutionQueued<TransactionDataType>): Promise<void>;
 	createOrUpdateQueuedExecution(
 		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
@@ -37,17 +37,17 @@ export interface SchedulerStorage<TransactionDataType> {
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	getUnFinalizedScheduledExecutionsPerAccount(params: {
-		chainId: `0x${string}`;
-		account: `0x${string}`;
+		chainId: String0x;
+		account: String0x;
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	getAllExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	getAccountSubmissions(
-		account: `0x${string}`,
+		account: String0x,
 		params: {limit: number},
 	): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	getAccountArchivedSubmissions(
-		account: `0x${string}`,
+		account: String0x,
 		params: {limit: number},
 	): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	clear(): Promise<void>;

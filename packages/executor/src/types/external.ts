@@ -1,8 +1,11 @@
 // ------------------------------------------------------------------------------------------------
 // RawTransactionInfo
+
+import {String0x} from 'fuzd-common';
+
 // ------------------------------------------------------------------------------------------------
 export type RawTransactionInfo<TransactionDataType> = {
-	rawTx: `0x${string}`;
+	rawTx: String0x;
 	transactionData: TransactionDataType;
 	isVoidTransaction: boolean;
 };

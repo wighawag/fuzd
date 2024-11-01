@@ -3,13 +3,13 @@ import type {ExecutorStorage, BroadcasterData} from 'fuzd-executor';
 import {sqlToStatements, toValues} from './utils.js';
 import {logs} from 'named-logs';
 import setupTables from '../schema/ts/executor.sql.js';
-import {ExpectedWorstCaseGasPrice, PendingExecutionStored, TransactionParametersUsed} from 'fuzd-common';
+import {ExpectedWorstCaseGasPrice, PendingExecutionStored, String0x, TransactionParametersUsed} from 'fuzd-common';
 
 const logger = logs('fuzd-server-executor-storage-sql');
 
 type BroadcasterInDB = {
-	address: `0x${string}`;
-	chainId: `0x${string}`;
+	address: String0x;
+	chainId: String0x;
 	nextNonce: number;
 };
 
@@ -30,32 +30,32 @@ function toBroadcasterInDB(obj: BroadcasterData): BroadcasterInDB {
 }
 
 type ExecutionInDB = {
-	account: `0x${string}`;
-	chainId: `0x${string}`;
+	account: String0x;
+	chainId: String0x;
 	slot: string;
 	batchIndex: number;
 	derivationParameters: string;
-	onBehalf: `0x${string}` | null;
+	onBehalf: String0x | null;
 	nextCheckTime: number;
 	initialTime: number;
 	broadcastTime: number | null;
-	hash: `0x${string}`;
-	maxFeePerGasAuthorized: `0x${string}`;
-	helpedForUpToGasPrice: `0x${string}` | null;
-	expectedWorstCaseGasPrice: `0x${string}` | null;
+	hash: String0x;
+	maxFeePerGasAuthorized: String0x;
+	helpedForUpToGasPrice: String0x | null;
+	expectedWorstCaseGasPrice: String0x | null;
 	isVoidTransaction: 0 | 1;
 	finalized: 0 | 1;
 	retries: number | null;
 	lastError: string | null;
 	expiryTime: number | null;
-	broadcaster: `0x${string}`;
-	nonce: `0x${string}`;
+	broadcaster: String0x;
+	nonce: String0x;
 	transactionParametersUsed: string;
 	transactionData: string;
 };
 
 type ExpectedWorstCaseGasPriceInDB = {
-	chainId: `0x${string}`;
+	chainId: String0x;
 	currentExpectedGasPrice: string | null;
 	previousExpectedGasPrice: string | null;
 	expectedGasPriceUpdate: number | null;
@@ -69,7 +69,7 @@ function fromExpectedGasPriceInDB(inDb: ExpectedWorstCaseGasPriceInDB): Expected
 	} as ExpectedWorstCaseGasPrice;
 }
 
-function toExpectedGasPriceInDB(chainId: `0x${string}`, obj: ExpectedWorstCaseGasPrice): ExpectedWorstCaseGasPriceInDB {
+function toExpectedGasPriceInDB(chainId: String0x, obj: ExpectedWorstCaseGasPrice): ExpectedWorstCaseGasPriceInDB {
 	return {
 		chainId,
 		currentExpectedGasPrice: obj.current?.toString() || null,
@@ -140,8 +140,8 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	constructor(private db: RemoteSQL) {}
 
 	async getPendingExecution(params: {
-		chainId: `0x${string}`;
-		account: `0x${string}`;
+		chainId: String0x;
+		account: String0x;
 		slot: string;
 		batchIndex: number;
 	}): Promise<PendingExecutionStored<TransactionDataType> | undefined> {
@@ -158,8 +158,8 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	}
 
 	async getPendingExecutionBatch(params: {
-		chainId: `0x${string}`;
-		account: `0x${string}`;
+		chainId: String0x;
+		account: String0x;
 		slot: string;
 	}): Promise<PendingExecutionStored<TransactionDataType>[] | undefined> {
 		const statement = this.db.prepare(
@@ -171,8 +171,8 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	}
 
 	async deletePendingExecution(params: {
-		chainId: `0x${string}`;
-		account: `0x${string}`;
+		chainId: String0x;
+		account: String0x;
 		slot: string;
 		batchIndex: number;
 	}): Promise<void> {
@@ -186,8 +186,8 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	async createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(
 		executionToStore: PendingExecutionStored<TransactionDataType>,
 		asPaymentFor?: {
-			chainId: `0x${string}`;
-			account: `0x${string}`;
+			chainId: String0x;
+			account: String0x;
 			slot: string;
 			batchIndex: number;
 			upToGasPrice: bigint;
@@ -257,8 +257,8 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	// TODO use this to update teh tx
 	async getPendingExecutionsPerBroadcaster(
 		broadcasterData: {
-			chainId: `0x${string}`;
-			broadcaster: `0x${string}`;
+			chainId: String0x;
+			broadcaster: String0x;
 		},
 		params: {limit: number},
 	): Promise<PendingExecutionStored<TransactionDataType>[]> {
@@ -271,7 +271,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		return results.map(fromExecutionInDB<TransactionDataType>);
 	}
 
-	async getBroadcaster(params: {chainId: `0x${string}`; address: string}): Promise<BroadcasterData | undefined> {
+	async getBroadcaster(params: {chainId: String0x; address: string}): Promise<BroadcasterData | undefined> {
 		const statement = this.db.prepare(`SELECT * FROM Broadcasters WHERE address = ?1 AND chainId = ?2;`);
 		const {results} = await statement.bind(params.address, params.chainId).all<BroadcasterInDB>();
 		if (results.length === 0) {
@@ -298,7 +298,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		await this.db.batch(statements.map((v) => this.db.prepare(v)));
 	}
 
-	async getExpectedWorstCaseGasPrice(chainId: `0x${string}`): Promise<ExpectedWorstCaseGasPrice> {
+	async getExpectedWorstCaseGasPrice(chainId: String0x): Promise<ExpectedWorstCaseGasPrice> {
 		const statement = this.db.prepare(`SELECT * FROM ChainConfigurations WHERE chainId = ?1;`);
 		const {results} = await statement.bind(chainId).all<ExpectedWorstCaseGasPriceInDB>();
 		if (results.length === 0) {
@@ -309,7 +309,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	}
 
 	async updateExpectedWorstCaseGasPrice(
-		chainId: `0x${string}`,
+		chainId: String0x,
 		timestamp: number,
 		newGasPrice: bigint,
 	): Promise<ExpectedWorstCaseGasPrice> {

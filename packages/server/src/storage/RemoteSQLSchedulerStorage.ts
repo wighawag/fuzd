@@ -2,13 +2,14 @@ import type {RemoteSQL} from 'remote-sql';
 import type {ScheduledExecutionQueued, SchedulerStorage} from 'fuzd-scheduler';
 import {sqlToStatements, toValues} from './utils.js';
 import setupTables from '../schema/ts/scheduler.sql.js';
+import {String0x} from 'fuzd-common';
 
 type ScheduledExecutionInDB = {
-	account: `0x${string}`;
-	chainId: `0x${string}`;
+	account: String0x;
+	chainId: String0x;
 	slot: string;
 
-	onBehalf: `0x${string}` | null;
+	onBehalf: String0x | null;
 
 	broadcasted: 0 | 1;
 	finalized: 0 | 1;
@@ -105,8 +106,8 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 	constructor(private db: RemoteSQL) {}
 
 	async getQueuedExecution(params: {
-		chainId: `0x${string}`;
-		account: `0x${string}`;
+		chainId: String0x;
+		account: String0x;
 		slot: string;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType> | undefined> {
 		const sqlStatement = 'SELECT * FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;';
@@ -120,8 +121,8 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		}
 	}
 	async getQueuedExecutionsForAccount(params: {
-		chainId: `0x${string}`;
-		account: `0x${string}`;
+		chainId: String0x;
+		account: String0x;
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
 		const sqlStatement = 'SELECT * FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2;';
@@ -132,7 +133,7 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 
-	async deleteExecution(params: {chainId: `0x${string}`; account: `0x${string}`; slot: string}): Promise<void> {
+	async deleteExecution(params: {chainId: String0x; account: String0x; slot: string}): Promise<void> {
 		const sqlStatement = 'DELETE FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;';
 
 		const statement = this.db.prepare(sqlStatement);
@@ -183,8 +184,8 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 	}
 
 	async getUnFinalizedScheduledExecutionsPerAccount(params: {
-		chainId: `0x${string}`;
-		account: `0x${string}`;
+		chainId: String0x;
+		account: String0x;
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
 		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE chainId = ?1 AND account = ?2 AND finalized = FALSE ORDER BY nextCheckTime ASC LIMIT ?3;`;
@@ -201,7 +202,7 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 	}
 
 	async getAccountSubmissions(
-		account: `0x${string}`,
+		account: String0x,
 		params: {limit: number},
 	): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
 		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE account = ?1 ORDER BY nextCheckTime ASC LIMIT ?2;`;
@@ -211,7 +212,7 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 	}
 
 	async getAccountArchivedSubmissions(
-		account: `0x${string}`,
+		account: String0x,
 		params: {limit: number},
 	): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
 		const sqlStatement = `SELECT * FROM ArchivedScheduledExecutions WHERE account = ?1 ORDER BY nextCheckTime ASC LIMIT ?2;`;

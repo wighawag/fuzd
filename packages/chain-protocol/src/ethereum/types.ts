@@ -1,17 +1,18 @@
 import {EIP1193TransactionData} from 'eip-1193';
+import {String0x} from 'fuzd-common';
 
 // ------------------------------------------------------------------------------------------------
 // TransactionData
 // ------------------------------------------------------------------------------------------------
 export type EthereumTransactionData = {
 	type: '0x2';
-	to?: `0x${string}`;
-	gas: `0x${string}`;
-	data?: `0x${string}`;
-	value?: `0x${string}`;
+	to?: String0x;
+	gas: String0x;
+	data?: String0x;
+	value?: String0x;
 	accessList?: {
-		address: `0x${string}`;
-		storageKeys: [`0x${string}`, ...`0x${string}`[]];
+		address: String0x;
+		storageKeys: [String0x, ...String0x[]];
 	}[];
 };
 // ------------------------------------------------------------------------------------------------

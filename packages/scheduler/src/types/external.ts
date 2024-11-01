@@ -1,11 +1,11 @@
 import {ScheduledExecutionQueued} from './scheduler-storage.js';
-import {ExecutionSubmission} from 'fuzd-common';
+import {ExecutionSubmission, String0x} from 'fuzd-common';
 // ------------------------------------------------------------------------------------------------
 // PriorTransactionInfo
 // ------------------------------------------------------------------------------------------------
 export type PriorTransactionInfo = {
-	hash: `0x${string}`;
-	nonce: `0x${string}`;
+	hash: String0x;
+	nonce: String0x;
 	broadcastTime: number;
 	// TODO
 	// expectEvent?: {
@@ -90,9 +90,9 @@ export type DecryptedPayload<ExecutionDataType> =
 // ------------------------------------------------------------------------------------------------
 export type ScheduledTimeLockedExecution = {
 	type: 'time-locked';
-	chainId: `0x${string}`;
+	chainId: String0x;
 	slot: string;
-	onBehalf?: `0x${string}`;
+	onBehalf?: String0x;
 	payload: string;
 	timing: TimingTypesCompatibleWithTimeLock;
 	paymentReserve?: string;
@@ -104,9 +104,9 @@ export type ScheduledTimeLockedExecution = {
 // ------------------------------------------------------------------------------------------------
 export type ScheduledExecutionInClear<ExecutionDataType> = {
 	type: 'clear';
-	chainId: `0x${string}`;
+	chainId: String0x;
 	slot: string;
-	onBehalf?: `0x${string}`;
+	onBehalf?: String0x;
 	executions: ExecutionDataType[];
 	timing: TimingTypes;
 	paymentReserve?: string;
@@ -126,8 +126,8 @@ export type ScheduledExecution<ExecutionDataType> =
 // ------------------------------------------------------------------------------------------------
 export type ScheduleInfo = {
 	checkinTime: number;
-	chainId: `0x${string}`;
-	account: `0x${string}`;
+	chainId: String0x;
+	account: String0x;
 	slot: string;
 };
 // ------------------------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ export type ScheduleInfo = {
 // ------------------------------------------------------------------------------------------------
 export type Scheduler<TransactionDataType> = {
 	scheduleExecution(
-		account: `0x${string}`,
+		account: String0x,
 		execution: ScheduledExecution<ExecutionSubmission<TransactionDataType>>,
 	): Promise<ScheduleInfo>;
 };
@@ -156,7 +156,7 @@ export type ExecutionStatus = {
 // ------------------------------------------------------------------------------------------------
 export type QueueProcessingResult = {
 	limit: number;
-	executions: {chainId: string; account: `0x${string}`; slot: string; checkinTime: number; status: ExecutionStatus}[];
+	executions: {chainId: string; account: String0x; slot: string; checkinTime: number; status: ExecutionStatus}[];
 	chainTimestamps: {[chainId: string]: number};
 };
 // ------------------------------------------------------------------------------------------------

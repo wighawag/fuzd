@@ -4,6 +4,7 @@ import {loadEnv} from 'ldenv';
 import {parseEther} from 'viem';
 import {Command} from 'commander';
 import pkg from '../package.json';
+import {String0x} from 'fuzd-common';
 loadEnv();
 
 async function main() {
@@ -39,7 +40,7 @@ async function main() {
 
 	const options: Options = program.opts();
 
-	const privateKey = process.env.PRIVATE_KEY as `0x${string}` | undefined;
+	const privateKey = process.env.PRIVATE_KEY as String0x | undefined;
 	const endpoint = options.endpoint || (process.env.FUZD_ENDPOINT as string | undefined);
 	if (!privateKey) {
 		throw new Error(`no private provided, add PRIVATE_KEY to an .env file`);
@@ -53,8 +54,8 @@ async function main() {
 	}
 	const gas = BigInt(options.gas);
 	const time = delta + Math.floor(Date.now() / 1000);
-	const data = options.delta ? (options.delta as `0x${string}`) : undefined;
-	const to = options.to ? (options.to as `0x${string}`) : undefined;
+	const data = options.delta ? (options.delta as String0x) : undefined;
+	const to = options.to ? (options.to as String0x) : undefined;
 	let maxFeePerGasAuthorized = BigInt(0);
 	const split = options.maxFeePerGas.split(' ');
 	if (split.length > 1) {

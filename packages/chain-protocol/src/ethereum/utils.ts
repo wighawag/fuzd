@@ -1,8 +1,9 @@
 import type {EIP1193BlockTag, EIP1193ProviderWithoutEvents, EIP1193QUANTITY, EIP1193TransactionReceipt} from 'eip-1193';
+import {String0x} from 'fuzd-common';
 
 export async function getTransactionStatus(
 	provider: EIP1193ProviderWithoutEvents,
-	transaction: {hash: `0x${string}`; nonce: number},
+	transaction: {hash: String0x; nonce: number},
 	finality: number,
 ): Promise<
 	| {finalised: true; blockTime: number; receipt: EIP1193TransactionReceipt; failed: boolean}
@@ -70,7 +71,7 @@ function avg(arr: bigint[]) {
 }
 export type EIP1193FeeHistory = {
 	oldestBlock: string;
-	reward: `0x${string}`[][];
+	reward: String0x[][];
 	baseFeePerGas: string[];
 	gasUsedRatio: string[];
 };

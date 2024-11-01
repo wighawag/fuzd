@@ -3,7 +3,7 @@ import {ServerOptions} from './types.js';
 import {ExecutorBackend, ExecutorStorage, createExecutor} from 'fuzd-executor';
 import {Scheduler, SchedulerBackend, SchedulerConfig, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
 import {initAccountFromHD} from 'remote-account';
-import {ExecutionSubmission, Executor} from 'fuzd-common';
+import {ExecutionSubmission, Executor, String0x} from 'fuzd-common';
 import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import {initDecrypter, mainnetClient} from 'fuzd-tlock-decrypter';
@@ -12,6 +12,7 @@ import {RemoteSQLSchedulerStorage} from './storage/RemoteSQLSchedulerStorage.js'
 import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
 import {ChainProtocols, TransactionDataTypes} from 'fuzd-chain-protocol';
 import {StarknetChainProtocol} from 'fuzd-chain-protocol/starknet';
+import {tags} from 'typia';
 
 const defaultPath = "m/44'/60'/0'/0/0";
 
@@ -32,10 +33,10 @@ export type Config = {
 	executorStorage: ExecutorStorage<MyTransactionData>;
 	schedulerStorage: SchedulerStorage<MyTransactionData>;
 	account: ReturnType<typeof initAccountFromHD>;
-	paymentAccount?: `0x${string}`;
+	paymentAccount?: String0x;
 	chainProtocols: ChainProtocols<MyChainProtocols>;
-	contractTimestampAddress?: `0x${string}`;
-	getTimeDiff(chainId: `0x${string}`): Promise<number>;
+	contractTimestampAddress?: String0x & tags.Pattern<'^0[xX][A-Fa-f0-9][A-Fa-f0-9]+$'>;
+	getTimeDiff(chainId: String0x): Promise<number>;
 };
 
 declare module 'hono' {
@@ -59,12 +60,12 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 		const accountHDKey = masterKey.derive(defaultPath);
 		const account = initAccountFromHD(accountHDKey);
 
-		const contractTimestamp: `0x${string}` = env.CONTRACT_TIMESTAMP as `0x${string}`;
+		const contractTimestamp: String0x = env.CONTRACT_TIMESTAMP as String0x;
 		const chainProtocols: ChainProtocols<MyChainProtocols> = {};
 		const envKeys = Object.keys(env);
 		for (const envKey of envKeys) {
 			if (envKey.startsWith('CHAIN_0x')) {
-				const chainId = envKey.substring(6) as `0x${string}`;
+				const chainId = envKey.substring(6) as String0x;
 				const chainString = env[envKey as `CHAIN_0x${string}`] as string;
 				const [nodeURL, paramsString] = chainString.split('#');
 
@@ -131,7 +132,7 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			chainProtocols,
 			contractTimestampAddress: contractTimestamp,
 		};
-		const paymentAccount = env.PAYMENT_ACCOUNT as `0x${string}` | undefined;
+		const paymentAccount = env.PAYMENT_ACCOUNT as String0x | undefined;
 		const executorConfig = {
 			...baseConfig,
 			storage: executorStorage,
@@ -161,7 +162,7 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			account,
 			chainProtocols,
 			paymentAccount,
-			async getTimeDiff(chainId: `0x${string}`) {
+			async getTimeDiff(chainId: String0x) {
 				if (!chainId) {
 					return 0;
 				}

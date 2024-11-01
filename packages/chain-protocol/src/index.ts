@@ -4,7 +4,7 @@
  * @module
  */
 
-import {DerivationParameters, ExecutionSubmission, TransactionParametersUsed} from 'fuzd-common';
+import {DerivationParameters, String0x, TransactionParametersUsed} from 'fuzd-common';
 
 export type TransactionStatus =
 	| {
@@ -26,8 +26,8 @@ export type TransactionStatus =
 	  };
 
 export type Transaction = {
-	hash: `0x${string}`;
-	nonce: `0x${string}`;
+	hash: String0x;
+	nonce: String0x;
 };
 
 export interface SchedulerChainProtocol {
@@ -54,12 +54,12 @@ export type TransactionValidity = {revert: 'unknown'} | {revert: boolean; notEno
 // ------------------------------------------------------------------------------------------------
 // BroadcasterSignerData
 // ------------------------------------------------------------------------------------------------
-export type BroadcasterSignerData = {signer: string; address: `0x${string}`};
+export type BroadcasterSignerData = {signer: string; address: String0x};
 // ------------------------------------------------------------------------------------------------
 
 export type SignedTransactionInfo = {
 	rawTx: any;
-	hash: `0x${string}`;
+	hash: String0x;
 };
 
 export type Validation<T> = ValidationSuccess<T> | ValidationFailure;
@@ -75,38 +75,38 @@ export interface ValidationFailure {
 
 export interface ExecutorChainProtocol<TransactionDataType> {
 	getTransactionStatus(transaction: Transaction): Promise<TransactionStatus>;
-	isTransactionPending(txHash: `0x${string}`): Promise<boolean>;
-	getBalance(account: `0x${string}`): Promise<bigint>;
-	broadcastSignedTransaction(tx: any): Promise<`0x${string}`>;
-	getNonce(account: `0x${string}`): Promise<`0x${string}`>;
-	getGasFee(executionData: {maxFeePerGasAuthorized: `0x${string}`}): Promise<GasEstimate>;
+	isTransactionPending(txHash: String0x): Promise<boolean>;
+	getBalance(account: String0x): Promise<bigint>;
+	broadcastSignedTransaction(tx: any): Promise<String0x>;
+	getNonce(account: String0x): Promise<String0x>;
+	getGasFee(executionData: {maxFeePerGasAuthorized: String0x}): Promise<GasEstimate>;
 
 	requiredPreliminaryTransaction?(
 		chainId: string,
 		broadcaster: BroadcasterSignerData,
-		account: `0x${string}`,
+		account: String0x,
 	): TransactionDataType;
 
 	validateDerivationParameters(
 		parameters: DerivationParameters,
 	): Promise<{success: true} | {success: false; error: string}>;
 	getCurrentDerivationParameters(): Promise<DerivationParameters>;
-	getBroadcaster(parameters: DerivationParameters, forAddress: `0x${string}`): Promise<BroadcasterSignerData>;
+	getBroadcaster(parameters: DerivationParameters, forAddress: String0x): Promise<BroadcasterSignerData>;
 
 	checkValidity(
-		chainId: `0x${string}`,
+		chainId: String0x,
 		data: TransactionDataType,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<TransactionValidity>;
 	signTransaction(
-		chainId: `0x${string}`,
+		chainId: String0x,
 		data: TransactionDataType,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<SignedTransactionInfo>;
 	signVoidTransaction?(
-		chainId: `0x${string}`,
+		chainId: String0x,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<SignedTransactionInfo>;
@@ -114,7 +114,7 @@ export interface ExecutorChainProtocol<TransactionDataType> {
 	generatePaymentTransaction(
 		transaction: TransactionDataType,
 		maxFeePerGas: bigint,
-		from: `0x${string}`,
+		from: String0x,
 		diffToCover: bigint,
 	): {transaction: TransactionDataType; cost: bigint};
 }
@@ -130,7 +130,7 @@ export type TransactionDataTypes<ChainProtocolTypes extends ChainProtocol<any>> 
 	ExtractTransactionDataType<ChainProtocolTypes>;
 
 export type ChainProtocols<ChainProtocolTypes extends ChainProtocol<any>> = {
-	[chainId: `0x${string}`]: ChainProtocol<TransactionDataTypes<ChainProtocolTypes>>;
+	[chainId: String0x]: ChainProtocol<TransactionDataTypes<ChainProtocolTypes>>;
 };
 // ------------------------------------------------------------------------------------------------
 

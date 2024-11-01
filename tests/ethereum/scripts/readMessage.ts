@@ -12,7 +12,7 @@ async function main() {
 	);
 
 	const args = process.argv.slice(2);
-	const account = (args[0] || process.env.ACCOUNT) as `0x${string}`;
+	const account = (args[0] || process.env.ACCOUNT) as String0x;
 	const Registry = env.deployments.Registry as Deployment<typeof context.artifacts.GreetingsRegistry.abi>;
 	const message = await env.read(Registry, {functionName: 'messages', args: [account]});
 

@@ -1,4 +1,5 @@
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
+import {String0x} from 'fuzd-common';
 import {getChain} from 'rocketh';
 import {Abi, createPublicClient, createWalletClient, custom, getContract} from 'viem';
 
@@ -19,7 +20,7 @@ export async function createViemContext(provider: EIP1193ProviderWithoutEvents) 
 		return walletClient.getAddresses();
 	}
 
-	function contract<TAbi extends Abi>(contractInfo: {address: `0x${string}`; abi: TAbi}) {
+	function contract<TAbi extends Abi>(contractInfo: {address: String0x; abi: TAbi}) {
 		return getContract({
 			...contractInfo,
 			client: {

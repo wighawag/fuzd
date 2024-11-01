@@ -17,7 +17,7 @@ async function main() {
 
 	const args = process.argv.slice(2);
 	const schedulerHost = args[0];
-	const message = (args[1] || process.env.MESSAGE) as `0x${string}`;
+	const message = (args[1] || process.env.MESSAGE) as String0x;
 	const delayString = args[2] || process.env.DELAY;
 	const delay = delayString ? parseInt(delayString) : 30;
 

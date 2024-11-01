@@ -10,7 +10,7 @@ import {
 	SchedulerBackend,
 } from './types/external.js';
 import {ScheduledExecutionQueued} from './types/scheduler-storage.js';
-import {ExecutionResponse, ExecutionSubmission, time2text} from 'fuzd-common';
+import {ExecutionResponse, ExecutionSubmission, String0x, time2text} from 'fuzd-common';
 import {SchedulerConfig} from './types/internal.js';
 import {ChainProtocol, TransactionDataTypes} from 'fuzd-chain-protocol';
 
@@ -32,7 +32,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
 	async function scheduleExecution(
-		account: `0x${string}`,
+		account: String0x,
 		execution: ScheduledExecution<ExecutionSubmission<TransactionDataType>>,
 	): Promise<ScheduleInfo> {
 		if (!execution.slot) {
@@ -165,7 +165,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		};
 	}
 
-	function _getChainProtocol(chainId: `0x${string}`): ChainProtocol<any> {
+	function _getChainProtocol(chainId: String0x): ChainProtocol<any> {
 		const chainProtocol = chainProtocols[chainId];
 		if (!chainProtocol) {
 			throw new Error(`cannot get protocol for chain with id ${chainId}`);

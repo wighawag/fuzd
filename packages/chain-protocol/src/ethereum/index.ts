@@ -10,7 +10,7 @@ import type {EIP1193Transaction, EIP1193TransactionReceipt, Methods} from 'eip-1
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC} from 'remote-procedure-call';
 import {getRoughGasPriceEstimate} from './utils.js';
-import {DerivationParameters, ExecutionSubmission, fromHex, toHex, TransactionParametersUsed} from 'fuzd-common';
+import {DerivationParameters, fromHex, String0x, toHex, TransactionParametersUsed} from 'fuzd-common';
 import type {FullEthereumTransactionData, EthereumTransactionData} from './types.js';
 import type {ETHAccount} from 'remote-account';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
@@ -24,7 +24,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		public readonly config: {
 			expectedFinality: number;
 			worstCaseBlockTime: number;
-			contractTimestamp?: `0x${string}`;
+			contractTimestamp?: String0x;
 		},
 		public account: ETHAccount, // TODO remote-account : export this type
 	) {
@@ -94,7 +94,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		}
 	}
 
-	async isTransactionPending(txHash: `0x${string}`): Promise<boolean> {
+	async isTransactionPending(txHash: String0x): Promise<boolean> {
 		let pendingTansaction: EIP1193Transaction | null;
 		try {
 			pendingTansaction = await this.rpc.request({
@@ -108,7 +108,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		return pendingTansaction ? true : false;
 	}
 
-	async getBalance(account: `0x${string}`): Promise<bigint> {
+	async getBalance(account: String0x): Promise<bigint> {
 		const balanceString = await this.rpc.request({
 			method: 'eth_getBalance',
 			params: [account, 'latest'],
@@ -116,7 +116,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		return BigInt(balanceString);
 	}
 
-	async broadcastSignedTransaction(tx: any): Promise<`0x${string}`> {
+	async broadcastSignedTransaction(tx: any): Promise<String0x> {
 		const txHash = await this.rpc.request({
 			method: 'eth_sendRawTransaction',
 			params: [tx],
@@ -124,7 +124,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		return txHash;
 	}
 
-	async getNonce(account: `0x${string}`): Promise<`0x${string}`> {
+	async getNonce(account: String0x): Promise<String0x> {
 		const nonceAsHex = await this.rpc.request({
 			method: 'eth_getTransactionCount',
 			params: [account, 'latest'],
@@ -132,7 +132,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		return nonceAsHex;
 	}
 
-	async getGasFee(executionData: {maxFeePerGasAuthorized: `0x${string}`}): Promise<GasEstimate> {
+	async getGasFee(executionData: {maxFeePerGasAuthorized: String0x}): Promise<GasEstimate> {
 		const maxFeePerGasAuthorized = BigInt(executionData.maxFeePerGasAuthorized);
 
 		const estimates = await getRoughGasPriceEstimate(this.rpc);
@@ -168,7 +168,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 			data: this.account.publicExtendedKey,
 		};
 	}
-	async getBroadcaster(parameters: DerivationParameters, forAddress: `0x${string}`): Promise<BroadcasterSignerData> {
+	async getBroadcaster(parameters: DerivationParameters, forAddress: String0x): Promise<BroadcasterSignerData> {
 		const validation = await this.validateDerivationParameters(parameters);
 		if (!validation.success) {
 			throw new Error(validation.error);
@@ -181,7 +181,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 	}
 
 	async checkValidity(
-		chainId: `0x${string}`,
+		chainId: String0x,
 		transactionData: EthereumTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
@@ -216,7 +216,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 	}
 
 	async signTransaction(
-		chainId: `0x${string}`,
+		chainId: String0x,
 		transactionData: EthereumTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
@@ -224,7 +224,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		let signer: EIP1193LocalSigner;
 		const [protocol, protocolData] = broadcaster.signer.split(':');
 		if (protocol === 'privateKey') {
-			signer = new EIP1193LocalSigner(protocolData as `0x${string}`);
+			signer = new EIP1193LocalSigner(protocolData as String0x);
 		} else {
 			throw new Error(`protocol ${protocol} not supported`);
 		}
@@ -255,14 +255,14 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 	}
 
 	async signVoidTransaction(
-		chainId: `0x${string}`,
+		chainId: String0x,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<SignedTransactionInfo> {
 		let signer: EIP1193LocalSigner;
 		const [protocol, protocolData] = broadcaster.signer.split(':');
 		if (protocol === 'privateKey') {
-			signer = new EIP1193LocalSigner(protocolData as `0x${string}`);
+			signer = new EIP1193LocalSigner(protocolData as String0x);
 		} else {
 			throw new Error(`protocol ${protocol} not supported`);
 		}
@@ -300,17 +300,17 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 	generatePaymentTransaction(
 		transactionData: EthereumTransactionData,
 		maxFeePerGas: bigint,
-		from: `0x${string}`,
+		from: String0x,
 		diffToCover: bigint,
 	): {transaction: EthereumTransactionData; cost: bigint} {
 		const gas = BigInt(30000);
 		const cost = gas * maxFeePerGas; // TODO handle extra Fee like Optimism
 		const valueToSend = diffToCover * BigInt(transactionData.gas);
 		const transactionToBroadcast: EthereumTransactionData = {
-			gas: `0x${gas.toString(16)}`,
+			gas: `0x${gas.toString(16)}` as String0x,
 			to: from,
 			type: '0x2',
-			value: `0x${valueToSend.toString(16)}`,
+			value: `0x${valueToSend.toString(16)}` as String0x,
 		};
 		return {transaction: transactionToBroadcast as EthereumTransactionData, cost};
 	}

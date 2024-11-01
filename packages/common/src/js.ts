@@ -1,3 +1,5 @@
+import {String0x} from './types/index.js';
+
 export function dequals(a: any, b: any): boolean {
 	if (a === b) {
 		return true;
@@ -31,15 +33,15 @@ export function dequals(a: any, b: any): boolean {
 	return true;
 }
 
-export function toHex(arr: Uint8Array): `0x${string}` {
+export function toHex(arr: Uint8Array): String0x {
 	let str = `0x`;
 	for (const element of arr) {
 		str += element.toString(16).padStart(2, '0');
 	}
-	return str as `0x${string}`;
+	return str as String0x;
 }
 
-export function fromHex(str: `0x${string}`): Uint8Array {
+export function fromHex(str: String0x): Uint8Array {
 	const matches = str.slice(2).match(/.{1,2}/g);
 	if (matches) {
 		return Uint8Array.from(matches.map((byte) => parseInt(byte, 16)));
@@ -47,10 +49,10 @@ export function fromHex(str: `0x${string}`): Uint8Array {
 	return new Uint8Array(0);
 }
 
-export function numToHex(num: number): `0x${string}` {
-	return `0x${num.toString(16)}`;
+export function numToHex(num: number): String0x {
+	return `0x${num.toString(16)}` as String0x;
 }
 
-export function bigintToHex(num: BigInt): `0x${string}` {
-	return `0x${num.toString(16)}`;
+export function bigintToHex(num: BigInt): String0x {
+	return `0x${num.toString(16)}` as String0x;
 }

@@ -20,7 +20,7 @@ const account = initAccountFromHD(accountHDKey);
 // 	worstCaseBlockTime: 15,
 // 	provider,
 // 	time,
-// 	async getSignerProviderFor(address: `0x${string}`) {
+// 	async getSignerProviderFor(address: String0x) {
 // 		return new EIP1193LocalSigner(account.deriveForAddress(address).privateKey);
 // 	},
 // 	storage: new KVExecutorStorage(db),
@@ -34,7 +34,7 @@ export type TestExecutorConfig<ChainProtocolTypes extends ChainProtocol<any>> = 
 	ExecutorConfig<ChainProtocolTypes>,
 	'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
 > & {
-	expectedWorstCaseGasPrices?: {chainId: `0x${string}`; value: bigint}[];
+	expectedWorstCaseGasPrices?: {chainId: String0x; value: bigint}[];
 };
 
 export async function createTestExecutor<ChainProtocolTypes extends ChainProtocol<any>>(

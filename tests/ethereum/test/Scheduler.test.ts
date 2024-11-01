@@ -12,7 +12,7 @@ import {createViemContext} from '../utils/viem';
 import {EthereumChainProtocol, EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
-import {ExecutionSubmission} from 'fuzd-common';
+import {ExecutionSubmission, String0x} from 'fuzd-common';
 
 const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
 
@@ -129,9 +129,9 @@ describe('Executing on the registry', function () {
 						type: '0x2',
 						to: txData.to,
 						data: txData.data,
-						gas: `0x${gas.toString(16)}` as `0x${string}`,
+						gas: `0x${gas.toString(16)}` as String0x,
 					},
-					maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
+					maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
 					derivationParameters,
 				},
 			],
@@ -155,9 +155,9 @@ describe('Executing on the registry', function () {
 				type: '0x2',
 				to: txData.to,
 				data: txData.data,
-				gas: `0x${gas.toString(16)}` as `0x${string}`,
+				gas: `0x${gas.toString(16)}` as String0x,
 			},
-			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as `0x${string}`,
+			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
 			derivationParameters,
 		};
 		const id = (++counter).toString();

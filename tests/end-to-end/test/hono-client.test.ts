@@ -21,7 +21,9 @@ describe('hono client', () => {
 	// --------------------------------------------------------------------------------------------
 
 	it(`fetch publicKey`, async () => {
-		const json = await (await client.api.publicKey.$get()).json();
+		const response = await client.api.publicKey.$get();
+		console.log(response);
+		const json = await response.json();
 		expect(json.success).toBe(true);
 		assert(json.success);
 		expect(json.publicKey).toBeTypeOf('string');
@@ -36,18 +38,18 @@ describe('hono client', () => {
 		const chainId = `0x7a69`;
 
 		// we get the remote address associated with local account signing the execution message sent to the api
-		const remoteAccountResponse = await client.api.execution.remoteAccount[':chainId'][':account']
-			.$get({
-				param: {
-					account: wallet.address,
-					chainId,
-				},
-			})
-			.then((v) => v.json());
+		const remoteAccountResponse = await client.api.execution.remoteAccount[':chainId'][':account'].$get({
+			param: {
+				account: wallet.address,
+				chainId,
+			},
+		});
+
+		const remoteAccountResult = await remoteAccountResponse.json();
 		// .fetch(`/api/execution/remote-account/${chainId}/${wallet.address}`)
 		// .then((v) => v.json());
-		expect(remoteAccountResponse.success).toBe(true);
-		assert(remoteAccountResponse.success);
+		expect(remoteAccountResult.success).toBe(true);
+		assert(remoteAccountResult.success);
 
 		// we build up first the transaction we want to submit in the future (delayed)
 		// this is a ethereum tx without gas pricing
@@ -61,7 +63,7 @@ describe('hono client', () => {
 				type: '0x2',
 			},
 			maxFeePerGasAuthorized: `0x10`,
-			derivationParameters: remoteAccountResponse.account.derivationParameters,
+			derivationParameters: remoteAccountResult.account.derivationParameters,
 		};
 
 		// then we have several option
@@ -109,12 +111,14 @@ describe('hono client', () => {
 				},
 			},
 		);
-		const json: any = await resp.json();
+
+		assert(resp.ok);
+		const json = await resp.json();
+		expect(json.success).toBe(true);
 		if (!resp.ok || !json.success) {
 			console.log(json);
 			console.log(resp.status, resp.statusText);
 		}
-		expect(json.success).toBe(true);
 		expect(json.info.chainId).to.equal(chainId);
 	});
 

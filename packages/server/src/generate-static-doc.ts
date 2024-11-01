@@ -3,4 +3,6 @@ import {createDoc} from './index.js';
 import {toSSG} from 'hono/ssg';
 import fs from 'fs/promises';
 
-toSSG(createDoc(), fs);
+toSSG(createDoc(), fs, {
+	dir: 'static/doc',
+});
