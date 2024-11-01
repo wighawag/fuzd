@@ -2,6 +2,11 @@ import {defineConfig} from 'vitepress';
 import typedocSidebar from '../api/typedoc-sidebar.json';
 // import {fileURLToPath, URL} from 'node:url';
 
+import {useSidebar} from 'vitepress-openapi';
+import spec from '../public/openapi.json' assert {type: 'json'};
+
+const sidebar = useSidebar({spec: spec as any, linkPrefix: '', tagLinkPrefix: ''});
+
 type ListItem = {items?: ListItem[]; link?: string};
 type List = ListItem[];
 
@@ -133,6 +138,28 @@ export default defineConfig({
 				text: 'API',
 				link: '/api/',
 				items: order(removeDuplicates(removeSlashDocs(typedocSidebar)), 'createExecutor'),
+			},
+			{
+				text: 'Example',
+				collapsed: true,
+				items: [
+					{
+						text: 'By Tags',
+						items: [
+							...sidebar.itemsByTags({
+								linkPrefix: '/example/tags/',
+							}),
+						],
+					},
+					{
+						text: 'By Operations',
+						items: [
+							...sidebar.generateSidebarGroups({
+								linkPrefix: '/example/operations/',
+							}),
+						],
+					},
+				],
 			},
 		],
 
