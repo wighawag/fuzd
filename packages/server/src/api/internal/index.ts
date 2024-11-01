@@ -9,18 +9,18 @@ export function getInternalAPI<Env extends Bindings = Bindings>(options: ServerO
 	const app = new Hono<{Bindings: Env & {}}>()
 		.get('/processQueue', async (c) => {
 			const config = c.get('config');
-			const response = await config.scheduler.processQueue();
-			return c.json(response);
+			const result = await config.scheduler.processQueue();
+			return c.json({success: true, result});
 		})
 		.get('/checkScheduledExecutionStatus', async (c) => {
 			const config = c.get('config');
-			const response = await config.scheduler.checkScheduledExecutionStatus();
-			return c.json(response);
+			const result = await config.scheduler.checkScheduledExecutionStatus();
+			return c.json({success: true, result});
 		})
 		.get('/processTransactions', async (c) => {
 			const config = c.get('config');
 			await config.executor.processPendingTransactions();
-			return c.json({ok: true}); // TODO return processed transactons ?
+			return c.json({success: true}); // TODO return processed transactons ?
 		});
 
 	return app;

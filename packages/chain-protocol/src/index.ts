@@ -62,6 +62,17 @@ export type SignedTransactionInfo = {
 	hash: `0x${string}`;
 };
 
+export type Validation<T> = ValidationSuccess<T> | ValidationFailure;
+
+export interface ValidationSuccess<T> {
+	success: true;
+	data: T;
+}
+export interface ValidationFailure {
+	success: false;
+	errors: any[];
+}
+
 export interface ExecutorChainProtocol<TransactionDataType> {
 	getTransactionStatus(transaction: Transaction): Promise<TransactionStatus>;
 	isTransactionPending(txHash: `0x${string}`): Promise<boolean>;
@@ -69,9 +80,6 @@ export interface ExecutorChainProtocol<TransactionDataType> {
 	broadcastSignedTransaction(tx: any): Promise<`0x${string}`>;
 	getNonce(account: `0x${string}`): Promise<`0x${string}`>;
 	getGasFee(executionData: {maxFeePerGasAuthorized: `0x${string}`}): Promise<GasEstimate>;
-	parseExecutionSubmission(
-		execution: ExecutionSubmission<TransactionDataType>,
-	): ExecutionSubmission<TransactionDataType>;
 
 	requiredPreliminaryTransaction?(
 		chainId: string,
@@ -112,3 +120,18 @@ export interface ExecutorChainProtocol<TransactionDataType> {
 }
 
 export type ChainProtocol<TransactionDataType> = SchedulerChainProtocol & ExecutorChainProtocol<TransactionDataType>;
+
+// ------------------------------------------------------------------------------------------------
+// ChainProtocols
+// ------------------------------------------------------------------------------------------------
+type ExtractTransactionDataType<T> = T extends ChainProtocol<infer U> ? U : never;
+
+export type TransactionDataTypes<ChainProtocolTypes extends ChainProtocol<any>> =
+	ExtractTransactionDataType<ChainProtocolTypes>;
+
+export type ChainProtocols<ChainProtocolTypes extends ChainProtocol<any>> = {
+	[chainId: `0x${string}`]: ChainProtocol<TransactionDataTypes<ChainProtocolTypes>>;
+};
+// ------------------------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------------------

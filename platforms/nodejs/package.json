@@ -1,0 +1,18 @@
+{
+  "name": "my-app",
+  "type": "module",
+  "dependencies": {
+    "@hono/node-server": "^1.13.3",
+    "@libsql/client": "^0.14.0",
+    "fuzd-server": "workspace:*",
+    "named-logs-context": "^0.1.1",
+    "remote-sql-libsql": "^0.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.8.4",
+    "tsx": "^4.19.2"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts"
+  }
+}

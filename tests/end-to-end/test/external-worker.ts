@@ -17,7 +17,6 @@ export function connectToWorker() {
 			} else {
 				request = req;
 			}
-			console.log(`fetching ${request}...`);
 			const response = await fetch(request, init);
 
 			return response;

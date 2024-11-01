@@ -3,7 +3,7 @@ import {EIP1193TransactionData} from 'eip-1193';
 // ------------------------------------------------------------------------------------------------
 // TransactionData
 // ------------------------------------------------------------------------------------------------
-export type TransactionData = {
+export type EthereumTransactionData = {
 	type: '0x2';
 	to?: `0x${string}`;
 	gas: `0x${string}`;
@@ -16,4 +16,4 @@ export type TransactionData = {
 };
 // ------------------------------------------------------------------------------------------------
 
-export type FullTransactionData = EIP1193TransactionData;
+export type FullEthereumTransactionData = EIP1193TransactionData;

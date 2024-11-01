@@ -1,7 +1,7 @@
 import {Hono} from 'hono';
 import {cors} from 'hono/cors';
 import {Bindings} from 'hono/types';
-import {ServerOptions} from './types.js';
+import {AddToAllOutputs, ServerOptions} from './types.js';
 import {getPublicAPI} from './api/public/index.js';
 import {getAdminAPI} from './api/admin/index.js';
 import {getInternalAPI} from './api/internal/index.js';
@@ -12,6 +12,9 @@ import {getAdminDashboard} from './dashboard/admin/index.js';
 import swagger from './doc/swagger.json';
 import {swaggerUI} from '@hono/swagger-ui';
 import {hc} from 'hono/client';
+import {HTTPException} from 'hono/http-exception';
+
+export type {Context} from 'hono';
 
 export * from './storage/RemoteSQLExecutorStorage.js';
 export * from './storage/RemoteSQLSchedulerStorage.js';
@@ -28,15 +31,6 @@ function createAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>)
 		}),
 	);
 
-	const home = new Hono<{Bindings: Env & {}}>()
-		// .use('*', async (ctx, next) => {
-		// 	console.log(ctx);
-		// 	await next();
-		// })
-		.get('/', (c) => {
-			return c.text('fuzd api');
-		});
-
 	const schedulingAPI = getSchedulingAPI<Env>(options);
 	const executionAPI = getExecutionAPI<Env>(options);
 	const internalAPI = getInternalAPI<Env>(options);
@@ -51,22 +45,69 @@ function createAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>)
 		.route('/execution', executionAPI)
 		.route('/admin', adminAPI);
 
-	return app.route('/', home).route('/api', api);
+	return app
+		.get('/', (c) => {
+			return c.text('fuzd api');
+		})
+		.route('/api', api);
 }
 
 export function createServer<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const adminDashboard = getAdminDashboard<Env>(options);
 	const dashboard = new Hono<{Bindings: Env & {}}>()
-		.use('*', setup({serverOptions: options}))
+		.use(setup({serverOptions: options}))
 		.route('/admin', adminDashboard);
 
 	return createAPI(options)
 		.route('/dashboard', dashboard)
 		.get('/doc', (c) => c.json(swagger))
-		.get('/ui', swaggerUI({url: '/doc'}));
+		.get('/ui', swaggerUI({url: '/doc'}))
+		.onError((err, c) => {
+			console.error(err);
+			if (err instanceof HTTPException) {
+				if (err.res) {
+					return err.getResponse();
+				}
+			}
+
+			return c.json(
+				{
+					success: false,
+					errors: [
+						{
+							name: 'name' in err ? err.name : undefined,
+							code: 'code' in err ? err.code : 5000,
+							status: 'status' in err ? err.status : undefined,
+							message: err.message,
+							// cause: err.cause,
+							// stack: err.stack
+						},
+					],
+				},
+				500,
+			);
+		});
+
+	// .notFound((c) => {
+	// 	return c.json(
+	// 		{
+	// 			success: false,
+	// 			errors: [
+	// 				{
+	// 					message: 'Not Found',
+	// 				},
+	// 			],
+	// 		},
+	// 		404,
+	// 	);
+	// })
 }
 
-export type App = ReturnType<typeof createAPI>;
+type ErrorType = {
+	success: false;
+	errors: {name?: string; message: string; code?: number; status?: number}[];
+};
+export type App = AddToAllOutputs<ReturnType<typeof createAPI>, ErrorType>;
 
 // this is a trick to calculate the type when compiling
 const client = hc<App>('');

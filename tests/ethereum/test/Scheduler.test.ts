@@ -3,14 +3,14 @@ import {describe, it, expect} from 'vitest';
 import {network} from 'hardhat';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {createTestExecutor, createTestScheduler} from './utils/executor';
-import {EIP1193ProviderWithoutEvents, EIP1193TransactionData} from 'eip-1193';
+import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {encodeFunctionData} from 'viem';
-import {deriveRemoteAddress, initAccountFromHD} from 'remote-account';
+import {initAccountFromHD} from 'remote-account';
 import {createMockDecrypter, overrideProvider} from './utils/mock-provider';
 import {deployAll} from './utils';
 import {createViemContext} from '../utils/viem';
-import {EthereumChainProtocol, TransactionData} from 'fuzd-chain-protocol/ethereum';
-import * as bip39 from '@scure/bip39';
+import {EthereumChainProtocol, EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
+import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import {ExecutionSubmission} from 'fuzd-common';
 
@@ -18,7 +18,7 @@ const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEven
 
 const defaultPath = "m/44'/60'/0'/0/0";
 const mnemonic: string = 'test test test test test test test test test test test junk';
-const seed = bip39.mnemonicToSeedSync(mnemonic);
+const seed = mnemonicToSeedSync(mnemonic);
 const masterKey = HDKey.fromMasterSeed(seed);
 const accountHDKey = masterKey.derive(defaultPath);
 const account = initAccountFromHD(accountHDKey);
@@ -52,9 +52,9 @@ async function prepareExecution() {
 
 	const user = env.namedAccounts.deployer;
 
-	const broadcasterInfo = await executor.getBroadcaster(chainId, user);
-	const derivationParameters = broadcasterInfo.derivationParameters;
-	const remoteAccount = broadcasterInfo.address;
+	const remoteAccountInfo = await executor.getRemoteAccount(chainId, user);
+	const derivationParameters = remoteAccountInfo.derivationParameters;
+	const remoteAccount = remoteAccountInfo.address;
 
 	const data = encodeFunctionData({
 		...GreetingsRegistry,
@@ -149,7 +149,7 @@ describe('Executing on the registry', function () {
 			await prepareExecution();
 		const timestamp = await chainProtocol.getTimestamp();
 		const checkinTime = timestamp + 100;
-		const transaction: ExecutionSubmission<TransactionData> = {
+		const transaction: ExecutionSubmission<EthereumTransactionData> = {
 			chainId: txData.chainId,
 			transaction: {
 				type: '0x2',

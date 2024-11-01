@@ -4,13 +4,13 @@ import {network} from 'hardhat';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {createTestExecutor} from './utils/executor';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {encodeFunctionData, formatEther, parseEther} from 'viem';
-import {deriveRemoteAddress, initAccountFromHD} from 'remote-account';
+import {encodeFunctionData, parseEther} from 'viem';
+import {initAccountFromHD} from 'remote-account';
 import {hashRawTx, overrideProvider} from './utils/mock-provider';
 import {deployAll} from './utils';
 import {createViemContext} from '../utils/viem';
 import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
-import * as bip39 from '@scure/bip39';
+import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 
 const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
@@ -22,16 +22,16 @@ async function prepareExecution() {
 
 	const defaultPath = "m/44'/60'/0'/0/0";
 	const mnemonic: string = 'test test test test test test test test test test test junk';
-	const seed = bip39.mnemonicToSeedSync(mnemonic);
+	const seed = mnemonicToSeedSync(mnemonic);
 	const masterKey = HDKey.fromMasterSeed(seed);
 	const accountHDKey = masterKey.derive(defaultPath);
 	const account = initAccountFromHD(accountHDKey);
 	const chainId = '0x7a69';
 
-	const {executor, publicExtendedKey} = await createTestExecutor({
+	const {executor, publicExtendedKey} = await createTestExecutor<EthereumChainProtocol>({
 		chainProtocols: {
-			// TODO any
 			[chainId]: new EthereumChainProtocol(
+				// TODO any
 				provider as any,
 				{
 					expectedFinality: 1,
@@ -54,13 +54,13 @@ async function prepareExecution() {
 	const gasPrice = await publicClient.getGasPrice();
 
 	const user = env.namedAccounts.deployer;
-	const broadcasterInfo = await executor.getBroadcaster(chainId, user);
-	const derivationParameters = broadcasterInfo.derivationParameters;
-	const remoteAccount = broadcasterInfo.address;
-	const paymenetAccountBroadcasterInfo = await executor.getBroadcaster(chainId, paymentAccount);
-	const paymentAccountBroadcaster = paymenetAccountBroadcasterInfo.address;
+	const remoteAccountInfo = await executor.getRemoteAccount(chainId, user);
+	const derivationParameters = remoteAccountInfo.derivationParameters;
+	const remoteAccount = remoteAccountInfo.address;
+	const paymenetAccountBroadcasterInfo = await executor.getRemoteAccount(chainId, paymentAccount);
+	const paymentRemoteAccount = paymenetAccountBroadcasterInfo.address;
 
-	await walletClient.sendTransaction({account: user, to: paymentAccountBroadcaster, value: parseEther('0.1')});
+	await walletClient.sendTransaction({account: user, to: paymentRemoteAccount, value: parseEther('0.1')});
 
 	const data = encodeFunctionData({
 		...GreetingsRegistry,
@@ -193,7 +193,7 @@ describe('Executing on the registry', function () {
 		expect((await env.read(GreetingsRegistry, {functionName: 'messages', args: [user]})).content).to.equal('hello');
 	});
 
-	it.skip('test reorg', async function () {
+	it('test reorg', async function () {
 		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, derivationParameters} =
 			await prepareExecution();
 		provider.override({
@@ -228,7 +228,7 @@ describe('Executing on the registry', function () {
 		expect(txInfo.isVoidTransaction).to.be.false;
 		expect((await env.read(GreetingsRegistry, {functionName: 'messages', args: [user]})).content).to.equal('');
 
-		// provider.removeOverride();
+		provider.removeOverride();
 
 		await executor.processPendingTransactions();
 

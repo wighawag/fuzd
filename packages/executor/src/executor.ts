@@ -11,10 +11,10 @@ import {
 	String0x,
 	numToHex,
 	bigintToHex,
-	BroadcasterInfo,
+	RemoteAccountInfo,
 } from 'fuzd-common';
 import {ExecutorConfig} from './types/internal.js';
-import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo} from 'fuzd-chain-protocol';
+import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo, TransactionDataTypes} from 'fuzd-chain-protocol';
 
 const logger = logs('fuzd-executor');
 
@@ -23,9 +23,11 @@ type ExecutionToStore<T> = Omit<
 	'hash' | 'broadcastTime' | 'nextCheckTime' | 'transactionParametersUsed'
 >;
 
-export function createExecutor<TransactionDataType>(
-	config: ExecutorConfig<TransactionDataType>,
-): Executor<TransactionDataType> & ExecutorBackend {
+export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
+	config: ExecutorConfig<ChainProtocolTypes>,
+): Executor<TransactionDataTypes<ChainProtocolTypes>> & ExecutorBackend {
+	type TransactionDataType = TransactionDataTypes<ChainProtocolTypes>;
+
 	const {chainProtocols, storage} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
@@ -51,7 +53,7 @@ export function createExecutor<TransactionDataType>(
 		return 'finalized';
 	}
 
-	async function getBroadcaster(chainId: String0x, account: String0x): Promise<BroadcasterInfo> {
+	async function getRemoteAccount(chainId: String0x, account: String0x): Promise<RemoteAccountInfo> {
 		const chainProtocol = _getChainProtocol(chainId);
 		const derivationParameters = await chainProtocol.getCurrentDerivationParameters();
 		const broadcaster = await chainProtocol.getBroadcaster(derivationParameters, account);
@@ -78,8 +80,6 @@ export function createExecutor<TransactionDataType>(
 		},
 	): Promise<ExecutionResponse<TransactionDataType>> {
 		const chainProtocol = _getChainProtocol(submission.chainId);
-
-		submission = chainProtocol.parseExecutionSubmission(submission);
 
 		const realTimestamp = Math.floor(Date.now() / 1000);
 
@@ -586,7 +586,7 @@ export function createExecutor<TransactionDataType>(
 	// EXPORT
 	// --------------------------------------------------------------------------------------------
 	return {
-		getBroadcaster,
+		getRemoteAccount,
 		broadcastExecution,
 		getExecutionStatus,
 		getExpectedWorstCaseGasPrice,

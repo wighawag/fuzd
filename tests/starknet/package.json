@@ -10,7 +10,7 @@
     "@scure/bip39": "^1.4.0",
     "@starknet-io/types-js": "^0.7.7",
     "fuzd-chain-protocol": "workspace:*",
-    "katana-rpc": "^0.0.1",
+    "katana-rpc": "^0.0.5",
     "libsql": "^0.4.6",
     "prettier": "^3.3.3",
     "prool": "^0.0.16",
@@ -20,8 +20,8 @@
     "starknet-core": "^0.0.3",
     "strk": "^0.0.15",
     "strk-account": "^0.0.1",
-    "tlock-js": "npm:@bug-fix/tlock-js@0.9.0-fix.3",
-    "vitest": "^2.1.3"
+    "tlock-js": "npm:@bug-fix/tlock-js@0.9.0-fix.9",
+    "vitest": "^2.1.4"
   },
   "scripts": {
     "test": "vitest"

@@ -47,13 +47,13 @@ export function initDecrypter<ExecutionDataType>(config: DecrypterConfig): Decry
 			let round: number;
 			switch (newTiming.type) {
 				case 'fixed-time':
-					round = roundAt(newTiming.scheduledTime, drandChainInfo);
+					round = roundAt(newTiming.scheduledTime * 1000, drandChainInfo);
 					break;
 				case 'fixed-round':
 					round = newTiming.scheduledRound;
 					break;
 			}
-			const retry = roundTime(drandChainInfo, round);
+			const retry = Math.floor(roundTime(drandChainInfo, round) / 1000);
 			return {
 				success: false,
 				newPayload: json.payload,

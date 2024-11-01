@@ -1,4 +1,3 @@
-import {assert} from 'typia';
 import {
 	BroadcasterSignerData,
 	ChainProtocol,
@@ -12,14 +11,13 @@ import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC} from 'remote-procedure-call';
 import {getRoughGasPriceEstimate} from './utils.js';
 import {DerivationParameters, ExecutionSubmission, fromHex, toHex, TransactionParametersUsed} from 'fuzd-common';
-import {FullTransactionData, TransactionData} from './types.js';
+import type {FullEthereumTransactionData, EthereumTransactionData} from './types.js';
 import type {ETHAccount} from 'remote-account';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {keccak_256} from '@noble/hashes/sha3';
+export type * from './types.js';
 
-export type {TransactionData} from './types.js';
-
-export class EthereumChainProtocol implements ChainProtocol<TransactionData> {
+export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionData> {
 	private rpc: CurriedRPC<Methods>;
 	constructor(
 		public readonly url: string | RequestRPC<Methods>,
@@ -154,10 +152,6 @@ export class EthereumChainProtocol implements ChainProtocol<TransactionData> {
 		return {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate};
 	}
 
-	parseExecutionSubmission(execution: ExecutionSubmission<TransactionData>): ExecutionSubmission<TransactionData> {
-		return assert(execution);
-	}
-
 	async validateDerivationParameters(
 		parameters: DerivationParameters,
 	): Promise<{success: true} | {success: false; error: string}> {
@@ -188,7 +182,7 @@ export class EthereumChainProtocol implements ChainProtocol<TransactionData> {
 
 	async checkValidity(
 		chainId: `0x${string}`,
-		transactionData: TransactionData,
+		transactionData: EthereumTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}> {
@@ -223,7 +217,7 @@ export class EthereumChainProtocol implements ChainProtocol<TransactionData> {
 
 	async signTransaction(
 		chainId: `0x${string}`,
-		transactionData: TransactionData,
+		transactionData: EthereumTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<SignedTransactionInfo> {
@@ -235,7 +229,7 @@ export class EthereumChainProtocol implements ChainProtocol<TransactionData> {
 			throw new Error(`protocol ${protocol} not supported`);
 		}
 
-		const actualTransactionData: FullTransactionData = {
+		const actualTransactionData: FullEthereumTransactionData = {
 			type: transactionData.type,
 			accessList: transactionData.accessList,
 			chainId: chainId,
@@ -277,7 +271,7 @@ export class EthereumChainProtocol implements ChainProtocol<TransactionData> {
 		try {
 			// compute maxFeePerGas and maxPriorityFeePerGas to fill the total gas cost  * price that was alocated
 			// maybe not fill but increase from previoyus considering current fee and allowance
-			const actualTransactionData: FullTransactionData = {
+			const actualTransactionData: FullEthereumTransactionData = {
 				type: '0x2',
 				from: broadcaster.address,
 				to: broadcaster.address,
@@ -304,21 +298,21 @@ export class EthereumChainProtocol implements ChainProtocol<TransactionData> {
 	}
 
 	generatePaymentTransaction(
-		transactionData: TransactionData,
+		transactionData: EthereumTransactionData,
 		maxFeePerGas: bigint,
 		from: `0x${string}`,
 		diffToCover: bigint,
-	): {transaction: TransactionData; cost: bigint} {
+	): {transaction: EthereumTransactionData; cost: bigint} {
 		const gas = BigInt(30000);
 		const cost = gas * maxFeePerGas; // TODO handle extra Fee like Optimism
 		const valueToSend = diffToCover * BigInt(transactionData.gas);
-		const transactionToBroadcast: TransactionData = {
+		const transactionToBroadcast: EthereumTransactionData = {
 			gas: `0x${gas.toString(16)}`,
 			to: from,
 			type: '0x2',
 			value: `0x${valueToSend.toString(16)}`,
 		};
-		return {transaction: transactionToBroadcast as TransactionData, cost};
+		return {transaction: transactionToBroadcast as EthereumTransactionData, cost};
 	}
 
 	// TODO FOR TEST ONLY

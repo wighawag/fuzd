@@ -5,8 +5,10 @@ import {auth} from '../../auth.js';
 import {createValidate} from 'typia';
 import {ScheduledExecution} from 'fuzd-scheduler';
 import {typiaValidator} from '@hono/typia-validator';
+import {ExecutionSubmission} from 'fuzd-common';
+import {MyTransactionData} from '../../setup.js';
 
-const validate = createValidate<ScheduledExecution<any>>();
+const validate = createValidate<ScheduledExecution<ExecutionSubmission<MyTransactionData>>>();
 
 export function getSchedulingAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const app = new Hono<{Bindings: Env & {}}>()
@@ -17,7 +19,7 @@ export function getSchedulingAPI<Env extends Bindings = Bindings>(options: Serve
 			const data = c.req.valid('json');
 
 			const result = await config.scheduler.scheduleExecution(account, data);
-			return c.json(result);
+			return c.json({success: true, info: result});
 		})
 
 		.get('/reserved/:chainId/:account/:slot', async (c) => {
@@ -33,7 +35,7 @@ export function getSchedulingAPI<Env extends Bindings = Bindings>(options: Serve
 			for (const execution of executionsToCount) {
 				total += execution.paymentReserve ? BigInt(execution.paymentReserve) : 0n;
 			}
-			return c.json({total: total.toString()});
+			return c.json({success: true, total: total.toString()});
 		})
 
 		.get('/queuedExecution/:chainId/:account/:slot', async (c) => {
@@ -43,7 +45,7 @@ export function getSchedulingAPI<Env extends Bindings = Bindings>(options: Serve
 				account: c.req.param('account').toLowerCase() as `0x${string}`,
 				slot: c.req.param('slot'),
 			});
-			return c.json(execution);
+			return c.json({success: true, execution});
 		})
 
 		.get('/queuedExecution/:chainId/:account', async (c) => {
@@ -52,7 +54,7 @@ export function getSchedulingAPI<Env extends Bindings = Bindings>(options: Serve
 				chainId: c.req.param('chainId') as `0x${string}`,
 				account: c.req.param('account').toLowerCase() as `0x${string}`,
 			});
-			return c.json(executions);
+			return c.json({success: true, executions}); // TODO pagination data
 		});
 
 	return app;

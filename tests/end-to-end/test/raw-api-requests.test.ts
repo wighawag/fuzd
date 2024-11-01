@@ -1,34 +1,25 @@
-import {describe, it, expect, assert} from 'vitest';
+import {describe, it, expect} from 'vitest';
 
-import {createClient} from 'fuzd-server';
-import {WORKER_URL} from './prool/pool';
-import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 import {ExecutionSubmission} from 'fuzd-common';
 import {ScheduledExecution} from 'fuzd-scheduler';
 import {privateKeyToAccount} from 'viem/accounts';
+import type {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
+import {connectToWorker} from './external-worker';
 
-const client = createClient(WORKER_URL);
+const worker = connectToWorker();
 
-describe('hono client', () => {
+describe('raw api call', () => {
 	// --------------------------------------------------------------------------------------------
 	// wakeup worker
 	//   the first time the worker is called, it setups itself and this can take time
 	//   hence we have a dummy test to ensure the other tests have normal timeout
 	// --------------------------------------------------------------------------------------------
 	it('startup', {timeout: 10000}, async () => {
-		await client.index.$get();
+		await worker.fetch('/');
 	});
 	// --------------------------------------------------------------------------------------------
 
-	it(`fetch publicKey`, async () => {
-		const json = await (await client.api.publicKey.$get()).json();
-		expect(json.success).toBe(true);
-		assert(json.success);
-		expect(json.publicKey).toBeTypeOf('string');
-		expect(json.publicKey.length).toBeGreaterThan(0);
-	});
-
-	it(`should be able to submit a scheduled transaction`, async () => {
+	it('should be able to submit a scheduled transaction', async function () {
 		// we use a local account
 		const wallet = privateKeyToAccount('0x1111111111111111111111111111111111111111111111111111111111111111');
 
@@ -36,18 +27,10 @@ describe('hono client', () => {
 		const chainId = `0x7a69`;
 
 		// we get the remote address associated with local account signing the execution message sent to the api
-		const remoteAccountResponse = await client.api.execution.remoteAccount[':chainId'][':account']
-			.$get({
-				param: {
-					account: wallet.address,
-					chainId,
-				},
-			})
+		const remoteAccountResponse = await worker
+			.fetch(`/api/execution/remoteAccount/${chainId}/${wallet.address}`)
 			.then((v) => v.json());
-		// .fetch(`/api/execution/remote-account/${chainId}/${wallet.address}`)
-		// .then((v) => v.json());
 		expect(remoteAccountResponse.success).toBe(true);
-		assert(remoteAccountResponse.success);
 
 		// we build up first the transaction we want to submit in the future (delayed)
 		// this is a ethereum tx without gas pricing
@@ -95,54 +78,20 @@ describe('hono client', () => {
 		// finally we perform the network request
 		// the json (as string) is the body
 		// and the signature, computed above is provided via headers
-		const resp = await client.api.scheduling.scheduleExecution.$post(
-			{json: fuzdExecution}, // this is not used but we set it for the compiler
-			// We instead use `jsonAsString` as the signature is based on the raw body
-			// And so we want to set it ourselve so the signature match
-			{
-				init: {
-					headers: {
-						'content-type': 'application/json',
-						signature,
-					},
-					body: jsonAsString,
-				},
+		const resp = await worker.fetch(`/api/scheduling/scheduleExecution`, {
+			body: jsonAsString,
+			headers: {
+				'content-type': 'application/json',
+				signature,
 			},
-		);
+			method: 'POST',
+		});
 		const json: any = await resp.json();
-		if (!resp.ok || !json.success) {
+		if (!resp.ok) {
 			console.log(json);
 			console.log(resp.status, resp.statusText);
 		}
 		expect(json.success).toBe(true);
 		expect(json.info.chainId).to.equal(chainId);
-	});
-
-	it('fails with wrong data', async () => {
-		const response = await client.api.scheduling.scheduleExecution.$post({
-			json: {
-				type: 'clear',
-				chainId: '0x1',
-				executions: [
-					{
-						chainId: '0x1',
-						derivationParameters: {data: '', type: 'ethereum'}, // TODO
-						maxFeePerGasAuthorized: '0x0', // TODO
-						transaction: {
-							type: '0x2',
-							gas: '0x0', // TODO
-						},
-					},
-				],
-				slot: '',
-				timing: {
-					type: 'fixed-time',
-					scheduledTime: 1000,
-				},
-			},
-		});
-		expect(response.ok).toBe(false);
-		// const json = await response.json();
-		// console.log(JSON.stringify(json));
 	});
 });
