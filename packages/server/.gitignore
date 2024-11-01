@@ -8,3 +8,6 @@ node_modules
 /dist
 
 *.sql.ts
+
+src/doc
+static

@@ -9,7 +9,6 @@ import {getSchedulingAPI} from './api/scheduling/index.js';
 import {getExecutionAPI} from './api/execution/index.js';
 import {setup} from './setup.js';
 import {getAdminDashboard} from './dashboard/admin/index.js';
-import swagger from './doc/swagger.json';
 import {swaggerUI} from '@hono/swagger-ui';
 import {hc} from 'hono/client';
 import {HTTPException} from 'hono/http-exception';
@@ -52,6 +51,15 @@ function createAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>)
 		.route('/api', api);
 }
 
+export function createDoc() {
+	return new Hono()
+		.get('/openapi.json', async (c) => {
+			const json = await import('./doc/openapi.json');
+			return c.json(json);
+		})
+		.get('/ui', swaggerUI({url: '/doc/openapi.json'}));
+}
+
 export function createServer<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const adminDashboard = getAdminDashboard<Env>(options);
 	const dashboard = new Hono<{Bindings: Env & {}}>()
@@ -60,8 +68,7 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 
 	return createAPI(options)
 		.route('/dashboard', dashboard)
-		.get('/doc', (c) => c.json(swagger))
-		.get('/ui', swaggerUI({url: '/doc'}))
+		.route('/doc', createDoc())
 		.onError((err, c) => {
 			console.error(err);
 			if (err instanceof HTTPException) {

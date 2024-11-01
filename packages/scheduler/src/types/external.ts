@@ -157,7 +157,7 @@ export type ExecutionStatus = {
 export type QueueProcessingResult = {
 	limit: number;
 	executions: {chainId: string; account: `0x${string}`; slot: string; checkinTime: number; status: ExecutionStatus}[];
-	chainTimetamps: {[chainId: string]: number};
+	chainTimestamps: {[chainId: string]: number};
 };
 // ------------------------------------------------------------------------------------------------
 

@@ -276,10 +276,10 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		// or alternatively a startTime option to diregard past transaction
 		// but this comes with its own risk.
 
-		let currentTimestamp = result.chainTimetamps[chainIdDecimal];
+		let currentTimestamp = result.chainTimestamps[chainIdDecimal];
 		if (!currentTimestamp) {
 			currentTimestamp = await chainProtocol.getTimestamp();
-			result.chainTimetamps[chainIdDecimal] = currentTimestamp;
+			result.chainTimestamps[chainIdDecimal] = currentTimestamp;
 		}
 
 		if (!currentTimestamp) {
@@ -379,7 +379,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		const result: QueueProcessingResult = {
 			limit,
 			executions: [],
-			chainTimetamps: {},
+			chainTimestamps: {},
 		};
 
 		// TODO only query up to a certain time
@@ -428,7 +428,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		const result: QueueProcessingResult = {
 			limit,
 			executions: [],
-			chainTimetamps: {},
+			chainTimestamps: {},
 		};
 
 		const executions = await storage.getUnFinalizedBroadcastedScheduledExecutions({limit});
