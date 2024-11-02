@@ -19,8 +19,8 @@ hero:
       text: Getting Started
       link: /guide/getting-started/
     - theme: alt
-      text: Git Repository
-      link: https://github.com/wighawag/fuzd
+      text: API
+      link: /api-all-in-one/
 
 features:
   - title: Execute Transaction in The Future
@@ -30,5 +30,5 @@ features:
     link: https://drand.love/
     linkText: Learn about drand
   - title: Modular
-    details: You can switch the execution engine or even the decryption system
+    details: You can switch the execution engine or even the decryption system. Support any chain. Currently Starknet and EVM.
 ---

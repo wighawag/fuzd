@@ -1,5 +1,5 @@
 import {defineConfig} from 'vitepress';
-import typedocSidebar from '../modules/typedoc-sidebar.json';
+import typedocSidebar from '../packages/typedoc-sidebar.json';
 // import {fileURLToPath, URL} from 'node:url';
 
 import {useSidebar} from 'vitepress-openapi';
@@ -124,7 +124,8 @@ export default defineConfig({
 		nav: [
 			{text: 'Home', link: '/'},
 			{text: 'Getting Started', link: '/guide/getting-started/'},
-			// {text: 'API', link: '/api/'},
+			{text: 'API', link: '/api-all-in-one/'},
+			{text: 'Packages', link: '/packages/'},
 		],
 
 		siteTitle: ' ',
@@ -133,11 +134,6 @@ export default defineConfig({
 			{
 				text: 'Guide',
 				items: [{text: 'Getting Started', link: '/guide/getting-started/'}],
-			},
-			{
-				text: 'modules',
-				link: '/modules/',
-				items: order(removeDuplicates(removeSlashDocs(typedocSidebar)), 'createExecutor'),
 			},
 			{
 				text: 'API',
@@ -151,6 +147,12 @@ export default defineConfig({
 			{
 				text: 'ALL-In-ONE',
 				link: '/api-all-in-one/',
+			},
+			{
+				text: 'Packages',
+				link: '/packages/',
+				collapsed: true,
+				items: order(removeDuplicates(removeSlashDocs(typedocSidebar)), 'createExecutor'),
 			},
 		],
 
