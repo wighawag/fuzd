@@ -1,11 +1,11 @@
 import {defineConfig} from 'vitepress';
-import typedocSidebar from '../api/typedoc-sidebar.json';
+import typedocSidebar from '../modules/typedoc-sidebar.json';
 // import {fileURLToPath, URL} from 'node:url';
 
 import {useSidebar} from 'vitepress-openapi';
 import spec from '../public/openapi.json' assert {type: 'json'};
 
-const sidebar = useSidebar({spec: spec as any, linkPrefix: '', tagLinkPrefix: ''});
+const sidebar = useSidebar({spec: spec as any, linkPrefix: '', tagLinkPrefix: '', defaultTag: ''});
 
 type ListItem = {items?: ListItem[]; link?: string};
 type List = ListItem[];
@@ -135,30 +135,17 @@ export default defineConfig({
 				items: [{text: 'Getting Started', link: '/guide/getting-started/'}],
 			},
 			{
-				text: 'API',
-				link: '/api/',
+				text: 'modules',
+				link: '/modules/',
 				items: order(removeDuplicates(removeSlashDocs(typedocSidebar)), 'createExecutor'),
 			},
 			{
-				text: 'Example',
+				text: 'API',
 				collapsed: true,
 				items: [
-					{
-						text: 'By Tags',
-						items: [
-							...sidebar.itemsByTags({
-								linkPrefix: '/example/tags/',
-							}),
-						],
-					},
-					{
-						text: 'By Operations',
-						items: [
-							...sidebar.generateSidebarGroups({
-								linkPrefix: '/example/operations/',
-							}),
-						],
-					},
+					...sidebar.generateSidebarGroups({
+						linkPrefix: '/api/',
+					}),
 				],
 			},
 		],

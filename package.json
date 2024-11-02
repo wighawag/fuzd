@@ -2,6 +2,7 @@
   "name": "fuzd-project",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "devDependencies": {
     "@changesets/cli": "^2.27.9",
     "ipfs-gateway-emulator": "4.2.1-ipfs.2",
@@ -14,7 +15,7 @@
     "typedoc-vitepress-theme": "1.0.2",
     "typescript": "^5.6.3",
     "vitepress": "1.4.2",
-    "vitepress-openapi": "0.0.3-alpha.46",
+    "vitepress-openapi": "0.0.3-alpha.47",
     "zellij-launcher": "^0.0.1"
   },
   "scripts": {

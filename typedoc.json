@@ -5,7 +5,7 @@
 	"entryPointStrategy": "packages",
 	// "entryPoints": ["packages/executor", "packages/scheduler"],
 	"entryPoints": ["packages/*"],
-	"out": "./docs/api",
+	"out": "./docs/modules",
 	"excludePrivate": true,
 	"excludeExternals": true
 	// "excludeReferences": true,

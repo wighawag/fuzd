@@ -1,6 +1,10 @@
 import {tags} from 'typia';
 
-export type String0x = `0x${string}` & tags.Pattern<'^0[xX][A-Fa-f0-9][A-Fa-f0-9]+$'>;
+// TODO this break all use of String0x where `0x${string}` is expected
+// export type String0x = string & tags.Pattern<'^0x[a-f0-9]+$'>;
+// for now:
+//  but see: https://github.com/samchon/typia/issues/1346
+export type String0x = `0x${string}` & tags.Pattern<'^0x[a-f0-9]+$'>;
 
 export type Bytes0x = String0x;
 

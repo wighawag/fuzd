@@ -1,7 +1,7 @@
 import DefaultTheme from 'vitepress/theme';
 import './custom.css';
 import MyLayout from './MyLayout.vue';
-import {theme, useOpenapi} from 'vitepress-openapi';
+import {theme, useOpenapi, useTheme} from 'vitepress-openapi';
 import 'vitepress-openapi/dist/style.css';
 import spec from '../../public/openapi.json' assert {type: 'json'};
 
@@ -14,6 +14,14 @@ export default {
 		// Set the OpenAPI specification.
 		const openapi = useOpenapi({
 			spec,
+		});
+
+		// Does not work
+		useTheme({
+			request: {
+				// Set the default schema view.
+				defaultView: 'schema', // schema or contentType
+			},
 		});
 
 		// Use the theme.
