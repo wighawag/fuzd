@@ -148,6 +148,10 @@ export default defineConfig({
 					}),
 				],
 			},
+			{
+				text: 'ALL-In-ONE',
+				link: '/api-all-in-one/',
+			},
 		],
 
 		socialLinks: [{icon: 'github', link: 'https://github.com/wighawag/fuzd'}],

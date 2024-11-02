@@ -18,7 +18,7 @@ export type {Context} from 'hono';
 export * from './storage/RemoteSQLExecutorStorage.js';
 export * from './storage/RemoteSQLSchedulerStorage.js';
 
-function createAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
+function createPublicAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const app = new Hono<{Bindings: Env & {}}>().use(
 		cors({
 			origin: '*',
@@ -32,17 +32,13 @@ function createAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>)
 
 	const schedulingAPI = getSchedulingAPI<Env>(options);
 	const executionAPI = getExecutionAPI<Env>(options);
-	const internalAPI = getInternalAPI<Env>(options);
 	const publicAPI = getPublicAPI<Env>(options);
-	const adminAPI = getAdminAPI<Env>(options);
 
 	const api = new Hono<{Bindings: Env & {}}>()
 		.use(setup({serverOptions: options}))
 		.route('/', publicAPI)
-		.route('/internal', internalAPI)
 		.route('/scheduling', schedulingAPI)
-		.route('/execution', executionAPI)
-		.route('/admin', adminAPI);
+		.route('/execution', executionAPI);
 
 	return app
 		.get('/', (c) => {
@@ -66,7 +62,12 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 		.use(setup({serverOptions: options}))
 		.route('/admin', adminDashboard);
 
-	return createAPI(options)
+	const internalAPI = getInternalAPI<Env>(options);
+	const adminAPI = getAdminAPI<Env>(options);
+
+	return createPublicAPI(options)
+		.route('/internal', internalAPI)
+		.route('/admin', adminAPI)
 		.route('/dashboard', dashboard)
 		.route('/doc', createDoc())
 		.onError((err, c) => {
@@ -115,7 +116,8 @@ type ErrorType = {
 	errors: {name?: string; message: string; code?: number; status?: number}[];
 };
 // export type App = AddToAllOutputs<ReturnType<typeof createAPI>, ErrorType>;
-export type App = ReturnType<typeof createAPI>;
+export type PublicAPI = ReturnType<typeof createPublicAPI>;
+export type App = ReturnType<typeof createServer>;
 
 // this is a trick to calculate the type when compiling
 const client = hc<App>('');
