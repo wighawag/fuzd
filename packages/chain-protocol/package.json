@@ -12,12 +12,12 @@
       "types": "./dist/esm/index.d.ts"
     },
     "./ethereum": {
-        "types": "./dist/esm/ethereum/index.d.ts",
-        "default": "./dist/esm/ethereum/index.js"
+      "types": "./dist/esm/ethereum/index.d.ts",
+      "default": "./dist/esm/ethereum/index.js"
     },
     "./starknet": {
-        "types": "./dist/esm/starknet/index.d.ts",
-        "default": "./dist/esm/starknet/index.js"
+      "types": "./dist/esm/starknet/index.d.ts",
+      "default": "./dist/esm/starknet/index.js"
     }
   },
   "files": [
@@ -31,7 +31,7 @@
     "eip-1193-signer": "^0.0.5",
     "fuzd-common": "workspace:*",
     "remote-account": "^0.2.1",
-    "remote-procedure-call": "^0.0.13",
+    "remote-procedure-call": "^0.0.15",
     "starknet-core": "^0.0.3",
     "strk": "^0.0.15"
   },

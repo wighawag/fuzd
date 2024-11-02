@@ -12,6 +12,7 @@ import {createViemContext} from '../utils/viem';
 import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
 import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
+import {String0x} from 'fuzd-common';
 
 const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
 

@@ -42,6 +42,9 @@ export function getPublicAPI<Env extends Bindings = Bindings>(options: ServerOpt
 					config.chainProtocols[
 						(chainId.startsWith('0x') ? chainId : `0x${parseInt(chainId).toString(16)}`) as String0x
 					];
+				if (!chainProtocol) {
+					throw new Error(`cannot get protocol for chain with id ${chainId}`);
+				}
 				const timestamp = await chainProtocol.getTimestamp();
 				return c.json({success: true as const, timestamp}, 200);
 			} catch (err) {

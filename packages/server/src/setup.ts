@@ -167,6 +167,9 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 					return 0;
 				}
 				const chainProtocol = chainProtocols[chainId];
+				if (!chainProtocol) {
+					throw new Error(`cannot get protocol for chain with id ${chainId}`);
+				}
 				const virtualTimestamp = await chainProtocol.getTimestamp();
 				const timestamp = Math.floor(Date.now() / 1000);
 				return virtualTimestamp - timestamp;
