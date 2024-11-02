@@ -43,7 +43,11 @@
 // 	}
 // }
 
-export function createErrorObject(err: any) {
+export type ErrorType = {
+	success: false;
+	errors: {name?: string; message: string; code?: number; status?: number}[];
+};
+export function createErrorObject(err: any): ErrorType {
 	return {
 		success: false,
 		errors: [
@@ -56,5 +60,5 @@ export function createErrorObject(err: any) {
 				// stack: err.stack
 			},
 		],
-	} as const;
+	};
 }

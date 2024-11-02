@@ -111,10 +111,6 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 	// })
 }
 
-type ErrorType = {
-	success: false;
-	errors: {name?: string; message: string; code?: number; status?: number}[];
-};
 // export type App = AddToAllOutputs<ReturnType<typeof createAPI>, ErrorType>;
 export type PublicAPI = ReturnType<typeof createPublicAPI>;
 export type App = ReturnType<typeof createServer>;

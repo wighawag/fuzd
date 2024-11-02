@@ -49,9 +49,13 @@ export function getPublicAPI<Env extends Bindings = Bindings>(options: ServerOpt
 			}
 		})
 		.get('/contractTimestamp', async (c) => {
-			const config = c.get('config');
-			const address = config.contractTimestampAddress;
-			return c.json({success: true as const, timeContract: address}, 200);
+			try {
+				const config = c.get('config');
+				const address = config.contractTimestampAddress;
+				return c.json({success: true as const, timeContract: address}, 200);
+			} catch (err) {
+				return c.json(createErrorObject(err), 500);
+			}
 		});
 
 	return app;
