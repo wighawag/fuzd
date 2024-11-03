@@ -18,9 +18,15 @@ export default {
 
 		// Does not work
 		useTheme({
-			request: {
+			requestBody: {
 				// Set the default schema view.
 				defaultView: 'schema', // schema or contentType
+			},
+			spec: {
+				defaultTag: 'TODO Custom Default Tag',
+				defaultTagDescription: 'TODO Custom Default Tag Description',
+				// showPathsSummary: false, // <-- Add this
+				// groupByTags: false, // <-- Also maybe this
 			},
 		});
 
