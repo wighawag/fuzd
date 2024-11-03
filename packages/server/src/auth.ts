@@ -3,14 +3,17 @@ import {MiddlewareHandler} from 'hono';
 import {HTTPException} from 'hono/http-exception';
 import {assert} from 'typia';
 import {hashMessage, recoverAddress} from 'viem';
+import {privateKeyToAccount} from 'viem/accounts';
 
 export type AuthOptions = {
 	debug?: boolean;
+	signReception?: boolean;
 };
 
 declare module 'hono' {
 	interface ContextVariableMap {
 		account: String0x;
+		receptionSignature?: String0x;
 	}
 }
 
@@ -38,6 +41,14 @@ export function auth(options: AuthOptions): MiddlewareHandler {
 			}
 		}
 		c.set('account', account);
+
+		if (options.signReception) {
+			const config = c.get('config');
+			const serverAccount = config.account;
+			const wallet = privateKeyToAccount(serverAccount.privateKey);
+			const receptionSignature = await wallet.signMessage({message: jsonAsString});
+			c.set('receptionSignature', receptionSignature);
+		}
 
 		return next();
 	};

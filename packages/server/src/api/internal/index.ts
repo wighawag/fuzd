@@ -17,15 +17,6 @@ export function getInternalAPI<Env extends Bindings = Bindings>(options: ServerO
 				return c.json(createErrorObject(err), 500);
 			}
 		})
-		.get('/checkScheduledExecutionStatus', async (c) => {
-			try {
-				const config = c.get('config');
-				const result = await config.scheduler.checkScheduledExecutionStatus();
-				return c.json({success: true as const, result}, 200);
-			} catch (err) {
-				return c.json(createErrorObject(err), 500);
-			}
-		})
 		.get('/processTransactions', async (c) => {
 			try {
 				const config = c.get('config');

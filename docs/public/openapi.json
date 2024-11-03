@@ -52,68 +52,6 @@
 				}
 			}
 		},
-		"/api/paymentAccountBroadcaster": {
-			"get": {
-				"responses": {
-					"200": {
-						"description": "",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"success": {"const": true},
-										"paymentAccountBroadcaster": {
-											"oneOf": [
-												{"type": "null"},
-												{
-													"type": "object",
-													"properties": {
-														"address": {"type": "string", "pattern": "^(0x(.*))"},
-														"privateKey": {"type": "string", "pattern": "^(0x(.*))"},
-														"publicKey": {"type": "string", "pattern": "^(0x(.*))"},
-														"publicExtendedKey": {"type": "string"}
-													},
-													"required": ["address", "privateKey", "publicKey", "publicExtendedKey"]
-												}
-											]
-										}
-									},
-									"required": ["success", "paymentAccountBroadcaster"]
-								}
-							}
-						}
-					},
-					"500": {
-						"description": "",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"success": {"const": false},
-										"errors": {
-											"type": "array",
-											"items": {
-												"type": "object",
-												"properties": {
-													"name": {"type": "string"},
-													"message": {"type": "string"},
-													"code": {"type": "number"},
-													"status": {"type": "number"}
-												},
-												"required": ["message"]
-											}
-										}
-									},
-									"required": ["success", "errors"]
-								}
-							}
-						}
-					}
-				}
-			}
-		},
 		"/api/time/{chainId}": {
 			"get": {
 				"responses": {
@@ -230,9 +168,10 @@
 												"slot": {"type": "string"}
 											},
 											"required": ["checkinTime", "chainId", "account", "slot"]
-										}
+										},
+										"signature": {"$ref": "#/components/schemas/String0x"}
 									},
-									"required": ["success", "info"]
+									"required": ["success", "info", "signature"]
 								}
 							}
 						}
@@ -325,7 +264,7 @@
 				]
 			}
 		},
-		"/api/scheduling/queuedExecution/{chainId}/{account}/{slot}": {
+		"/api/scheduling/scheduledExecution/{chainId}/{account}/{slot}": {
 			"get": {
 				"responses": {
 					"200": {
@@ -719,7 +658,7 @@
 				]
 			}
 		},
-		"/api/scheduling/queuedExecution/{chainId}/{account}": {
+		"/api/scheduling/scheduledExecutions/{chainId}/{account}": {
 			"get": {
 				"responses": {
 					"200": {

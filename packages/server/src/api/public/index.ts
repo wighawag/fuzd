@@ -17,23 +17,6 @@ export function getPublicAPI<Env extends Bindings = Bindings>(options: ServerOpt
 				return c.json(createErrorObject(err), 500);
 			}
 		})
-		.get('/paymentAccountBroadcaster', async (c) => {
-			try {
-				const config = c.get('config');
-
-				return c.json(
-					{
-						success: true as const,
-						paymentAccountBroadcaster: config.paymentAccount
-							? config.account.deriveForAddress(config.paymentAccount)
-							: null,
-					},
-					200,
-				);
-			} catch (err) {
-				return c.json(createErrorObject(err), 500);
-			}
-		})
 		.get('/time/:chainId', async (c) => {
 			try {
 				const config = c.get('config');
