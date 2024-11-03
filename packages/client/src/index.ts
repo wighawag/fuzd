@@ -65,22 +65,26 @@ export function createClient(config: ClientConfig) {
 		transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
 		maxFeePerGasAuthorized: bigint;
 		time: number;
-	}): Promise<ScheduleInfo> {
+	}): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
 		let executionToSend: ScheduledExecution<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>>;
 
 		const chainId = (
 			execution.chainId.startsWith('0x') ? execution.chainId : `0x` + parseInt(execution.chainId).toString(16)
 		) as String0x;
 
-		const remoteAccountResponse = await fetch(
-			`${config.schedulerEndPoint}/api/remoteAccount/${chainId}/${wallet.address}`,
-		);
-		const remoteAccountResult = await remoteAccountResponse.json();
-		if (!remoteAccountResult.success) {
+		const remoteAccountRequestUrl = `${config.schedulerEndPoint}/api/execution/remoteAccount/${chainId}/${wallet.address}`;
+		const remoteAccountResponse = await fetch(remoteAccountRequestUrl);
+		let remoteAccountResult;
+		try {
+			remoteAccountResult = await remoteAccountResponse.clone().json();
+		} catch (err) {
 			throw new Error(
-				remoteAccountResult.error ||
-					`failed: ${config.schedulerEndPoint}/api/remoteAccount/${chainId}/${wallet.address}`,
+				`failed to parse response: ${remoteAccountRequestUrl}: ${err} ${await remoteAccountResponse.text()}`,
 			);
+		}
+
+		if (!remoteAccountResult.success) {
+			throw new Error(remoteAccountResult.error || `failed: ${remoteAccountRequestUrl}`);
 		}
 		const {derivationParameters, address} = remoteAccountResult.account;
 
@@ -128,14 +132,17 @@ export function createClient(config: ClientConfig) {
 					'content-type': 'application/json',
 				},
 			});
-			if (response.ok) {
+			try {
 				return response.json();
-			} else {
-				const text = await response.text();
-				throw new Error(`could not schedule execution: ${text}`);
+			} catch (err: any) {
+				throw new Error(`could not parse response: ${err}`);
 			}
 		} else {
-			return config.schedulerEndPoint(jsonAsString, signature);
+			const info = await config.schedulerEndPoint(jsonAsString, signature);
+			return {
+				success: true,
+				info,
+			};
 		}
 	}
 

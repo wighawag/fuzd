@@ -419,6 +419,9 @@ importers:
       fuzd-chain-protocol:
         specifier: workspace:*
         version: link:../../packages/chain-protocol
+      fuzd-client:
+        specifier: workspace:*
+        version: link:../../packages/client
       fuzd-common:
         specifier: workspace:*
         version: link:../../packages/common
