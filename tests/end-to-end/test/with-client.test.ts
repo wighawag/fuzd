@@ -28,10 +28,11 @@ describe('with client', () => {
 		const remoteAccount = client.assignRemoteAccount(chainId);
 		// we can now send fund to remoteAccount.address
 
+		const executionTime = Math.floor(Date.now() / 1000) + 10;
 		const result = await client.scheduleExecution({
 			chainId,
 			maxFeePerGasAuthorized: 1n,
-			time: Math.floor(Date.now() / 1000) + 10,
+			time: executionTime,
 			transaction: {
 				gas: 10000n,
 			},
@@ -40,5 +41,6 @@ describe('with client', () => {
 		expect(result.success).toBe(true);
 		assert(result.success);
 		expect(result.info.chainId).to.equal(chainId);
+		expect(result.info.checkinTime).toBeGreaterThanOrEqual(executionTime);
 	});
 });
