@@ -3,19 +3,33 @@ import {createServer} from 'fuzd-server';
 import {serve} from '@hono/node-server';
 import {RemoteLibSQL} from 'remote-sql-libsql';
 import {createClient} from '@libsql/client';
+import fs from 'node:fs';
+import path from 'node:path';
 
 type Env = {
 	DB: string;
 };
+const env = process.env as Env;
+
+const args = process.argv.slice(2);
+const sqlFolder = args[0]; // packages/server/src/schema/sql
+
+const client = createClient({
+	url: env.DB,
+});
+const remoteSQL = new RemoteLibSQL(client);
+
+if (sqlFolder) {
+	console.log(`executing sql...`);
+	const executorSQL = fs.readFileSync(path.join(sqlFolder, 'executor.sql'), 'utf8');
+	const schedulerSQL = fs.readFileSync(path.join(sqlFolder, 'scheduler.sql'), 'utf8');
+	await client.executeMultiple(executorSQL + schedulerSQL);
+	console.log(`done`);
+}
 
 export const app = createServer<Env>({
-	getDB: (c) => {
-		const client = createClient({
-			url: c.env.DB, // ':memory:'
-		});
-		return new RemoteLibSQL(client);
-	},
-	getEnv: (c) => c.env,
+	getDB: (c) => remoteSQL,
+	getEnv: (c) => env,
 });
 
 const port = 3000;
