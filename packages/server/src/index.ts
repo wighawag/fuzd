@@ -40,11 +40,14 @@ function createPublicAPI<Env extends Bindings = Bindings>(options: ServerOptions
 		.route('/scheduling', schedulingAPI)
 		.route('/execution', executionAPI);
 
-	return app
-		.get('/', (c) => {
-			return c.text('fuzd api');
-		})
-		.route('/api', api);
+	return (
+		app
+			// TODO remove this from here:
+			.get('/', (c) => {
+				return c.text('fuzd api');
+			})
+			.route('/api', api)
+	);
 }
 
 export function createDoc() {
