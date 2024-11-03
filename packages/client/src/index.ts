@@ -6,7 +6,7 @@
 import {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
 import {timelockEncrypt, HttpChainClient, roundAt} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';
-import {ExecutionSubmission, String0x} from 'fuzd-common';
+import {ExecutionSubmission, RemoteAccountInfo, String0x} from 'fuzd-common';
 import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 
 import {testnetClient, mainnetClient} from 'tlock-js';
@@ -56,23 +56,20 @@ function fromSimplerTransactionData(
 	}
 }
 
+function toChainId(chainId: string | String0x): String0x {
+	return (chainId.startsWith('0x') ? chainId : `0x` + parseInt(chainId).toString(16)) as String0x;
+}
+
 export function createClient(config: ClientConfig) {
 	const wallet = privateKeyToAccount(config.privateKey);
 	const drandClient = config.drand || mainnetClient();
 
-	async function scheduleExecution(execution: {
-		chainId: String0x | string;
-		transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
-		maxFeePerGasAuthorized: bigint;
-		time: number;
-	}): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
-		let executionToSend: ScheduledExecution<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>>;
+	let _assignedRemoteAccount: RemoteAccountInfo | undefined;
 
-		const chainId = (
-			execution.chainId.startsWith('0x') ? execution.chainId : `0x` + parseInt(execution.chainId).toString(16)
-		) as String0x;
+	async function _fetchRemoteAccount(chainId: String0x | string): Promise<RemoteAccountInfo> {
+		const chainIdAsHex = toChainId(chainId);
 
-		const remoteAccountRequestUrl = `${config.schedulerEndPoint}/api/execution/remoteAccount/${chainId}/${wallet.address}`;
+		const remoteAccountRequestUrl = `${config.schedulerEndPoint}/api/execution/remoteAccount/${chainIdAsHex}/${wallet.address}`;
 		const remoteAccountResponse = await fetch(remoteAccountRequestUrl);
 		let remoteAccountResult;
 		try {
@@ -86,17 +83,35 @@ export function createClient(config: ClientConfig) {
 		if (!remoteAccountResult.success) {
 			throw new Error(remoteAccountResult.error || `failed: ${remoteAccountRequestUrl}`);
 		}
-		const {derivationParameters, address} = remoteAccountResult.account;
+		return remoteAccountResult.account;
+	}
+	async function assignRemoteAccount(chainId: String0x | string): Promise<RemoteAccountInfo> {
+		_assignedRemoteAccount = await _fetchRemoteAccount(chainId);
+		return _assignedRemoteAccount;
+	}
 
+	async function scheduleExecution(execution: {
+		chainId: String0x | string;
+		transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
+		maxFeePerGasAuthorized: bigint;
+		time: number;
+	}): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
+		const chainIdAsHex = toChainId(execution.chainId);
+
+		let executionToSend: ScheduledExecution<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>>;
+		const remoteAccount = await _fetchRemoteAccount(execution.chainId);
+		if (_assignedRemoteAccount && remoteAccount.address != _assignedRemoteAccount.address) {
+			throw new Error(`remoteAccount derivation changed`);
+		}
 		const transactionData = fromSimplerTransactionData(execution.transaction);
 		const payloadJSON: DecryptedPayload<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>> = {
 			type: 'clear',
 			executions: [
 				{
-					chainId,
+					chainId: chainIdAsHex,
 					maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as String0x,
 					transaction: transactionData,
-					derivationParameters,
+					derivationParameters: remoteAccount.derivationParameters,
 				},
 			],
 		};
@@ -111,7 +126,7 @@ export function createClient(config: ClientConfig) {
 
 		const payload = await timelockEncrypt(round, Buffer.from(payloadAsJSONString, 'utf-8'), drandClient);
 		executionToSend = {
-			chainId,
+			chainId: chainIdAsHex,
 			slot: timestamp.toString(),
 			timing: {
 				type: 'fixed-round',
@@ -147,6 +162,7 @@ export function createClient(config: ClientConfig) {
 	}
 
 	return {
+		assignRemoteAccount,
 		scheduleExecution,
 	};
 }

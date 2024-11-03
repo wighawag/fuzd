@@ -25,6 +25,9 @@ describe('with client', () => {
 
 		const chainId = `0x7a69`;
 
+		const remoteAccount = client.assignRemoteAccount(chainId);
+		// we can now send fund to remoteAccount.address
+
 		const result = await client.scheduleExecution({
 			chainId,
 			maxFeePerGasAuthorized: 1n,
