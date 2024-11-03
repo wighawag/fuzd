@@ -1,4 +1,3 @@
-import {testnetClient} from 'tlock-js';
 import {createClient} from './index.js';
 import {loadEnv} from 'ldenv';
 import {parseEther} from 'viem';
@@ -64,7 +63,6 @@ async function main() {
 		maxFeePerGasAuthorized = parseEther(split[0]);
 	}
 	const client = createClient({
-		drand: testnetClient(),
 		privateKey,
 		schedulerEndPoint: endpoint,
 	});

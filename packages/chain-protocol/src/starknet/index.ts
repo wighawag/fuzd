@@ -30,32 +30,53 @@ type FullStarknetTransactionData =
 
 type OmitSignedTransactionData<T> = Omit<T, 'sender_address' | 'signature' | 'nonce'>;
 
-type InvokeTransactionData =
-	| OmitSignedTransactionData<DeepReadonly<INVOKE_TXN_V1>>
-	| (Omit<OmitSignedTransactionData<DeepReadonly<INVOKE_TXN_V3>>, 'resource_bounds' | 'tip'> & {
-			resource_bounds: {
-				l1_gas: {
-					max_amount: string;
-				};
-				l2_gas: {
-					max_amount: string;
-				};
-			};
-	  });
+type InvokeTransactionDataV1 = {
+	type: 'INVOKE';
+	sender_address: String0x;
+	readonly calldata: String0x[];
+	max_fee: String0x;
+	version: '0x1';
+	readonly signature: String0x[];
+	nonce: String0x;
+};
+
+type DeployAccountTransactionDataV1 = {
+	type: 'DEPLOY_ACCOUNT';
+	max_fee: String0x;
+	version: '0x1';
+	readonly signature: String0x[];
+	nonce: String0x;
+	contract_address_salt: String0x;
+	readonly constructor_calldata: String0x[];
+	class_hash: String0x;
+};
+
+export type InvokeTransactionData = OmitSignedTransactionData<InvokeTransactionDataV1>;
+// TODO
+// | (Omit<OmitSignedTransactionData<DeepReadonly<INVOKE_TXN_V3>>, 'resource_bounds' | 'tip'> & {
+// 		resource_bounds: {
+// 			l1_gas: {
+// 				max_amount: string;
+// 			};
+// 			l2_gas: {
+// 				max_amount: string;
+// 			};
+// 		};
+//   });
 
 // TODO should not be accepted unless for preliminary
-type DeployAccountTransactionData =
-	| OmitSignedTransactionData<DeepReadonly<DEPLOY_ACCOUNT_TXN_V1>>
-	| (Omit<OmitSignedTransactionData<DeepReadonly<DEPLOY_ACCOUNT_TXN_V3>>, 'resource_bounds' | 'tip'> & {
-			resource_bounds: {
-				l1_gas: {
-					max_amount: string;
-				};
-				l2_gas: {
-					max_amount: string;
-				};
-			};
-	  });
+export type DeployAccountTransactionData = OmitSignedTransactionData<DeployAccountTransactionDataV1>;
+// TODO
+// | (Omit<OmitSignedTransactionData<DeepReadonly<DEPLOY_ACCOUNT_TXN_V3>>, 'resource_bounds' | 'tip'> & {
+// 		resource_bounds: {
+// 			l1_gas: {
+// 				max_amount: string;
+// 			};
+// 			l2_gas: {
+// 				max_amount: string;
+// 			};
+// 		};
+//   });
 
 export type AllowedTransactionData = InvokeTransactionData;
 export type StarknetTransactionData = InvokeTransactionData | DeployAccountTransactionData;
@@ -379,7 +400,14 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			nonce: 0,
 		});
 
-		return data;
+		return {
+			type: data.type,
+			max_fee: data.max_fee as String0x, // TODO create_deploy_account_transaction_intent_v1 fix
+			version: data.version as `0x1`, // TODO  create_deploy_account_transaction_intent_v1 should return 0x1 unless specific option is given
+			class_hash: data.class_hash as String0x, // TODO create_deploy_account_transaction_intent_v1 fix
+			contract_address_salt: data.contract_address_salt as String0x, // TODO create_deploy_account_transaction_intent_v1 fix
+			constructor_calldata: data.constructor_calldata as String0x[], // TODO create_deploy_account_transaction_intent_v1 fix
+		};
 	}
 
 	generatePaymentTransaction(
@@ -405,13 +433,13 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			calldata: transferCalldata,
 		};
 
-		const calldata = getExecuteCalldata([actualCall], '1');
+		const calldata = getExecuteCalldata([actualCall], '1') as String0x[];
 
 		const transactionToBroadcast: StarknetTransactionData = {
 			type: 'INVOKE',
 			calldata,
 			version: '0x1',
-			max_fee: `0x${gas.toString(16)}`,
+			max_fee: `0x${gas.toString(16)}` as String0x,
 		};
 		return {transaction: transactionToBroadcast, cost};
 	}
