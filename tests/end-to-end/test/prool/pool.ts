@@ -3,3 +3,5 @@ export const poolId =
 	(process.env.VITE_NETWORK_TRANSPORT_MODE === 'webSocket' ? 100 : 0);
 
 export const WORKER_URL = `http://localhost:8787/${poolId}`;
+
+export const ANVIL_URL = `http://localhost:8546/${poolId}`;

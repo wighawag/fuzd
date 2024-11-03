@@ -1,5 +1,6 @@
 import {createWranglerDevServer} from 'prool-cf-worker';
-import {WORKER_URL} from './pool';
+import {ANVIL_URL, WORKER_URL} from './pool';
+import {defineAnvil} from './anvil';
 
 const folder = `.wrangler/prool/{PORT}`;
 const wranglerTOML = 'node_modules/fuzd-cf-worker/wrangler.toml';
@@ -16,3 +17,5 @@ export const wrangler = createWranglerDevServer(WORKER_URL, {
 	onReadyCommands,
 	onStopCommands: [`rm -Rf ${folder}`],
 });
+
+export const anvil = defineAnvil(ANVIL_URL);

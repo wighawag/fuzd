@@ -437,6 +437,9 @@ importers:
       fuzd-server:
         specifier: workspace:*
         version: link:../../packages/server
+      prool:
+        specifier: ^0.0.16
+        version: 0.0.16
       prool-cf-worker:
         specifier: ^0.1.3
         version: 0.1.5

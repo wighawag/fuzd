@@ -44,10 +44,7 @@ describe('hono client', () => {
 				chainId,
 			},
 		});
-
 		const remoteAccountResult = await remoteAccountResponse.json();
-		// .fetch(`/api/execution/remote-account/${chainId}/${wallet.address}`)
-		// .then((v) => v.json());
 		expect(remoteAccountResult.success).toBe(true);
 		assert(remoteAccountResult.success);
 
