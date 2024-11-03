@@ -27,6 +27,8 @@ describe('with client', () => {
 
 		const remoteAccount = client.assignRemoteAccount(chainId);
 		// we can now send fund to remoteAccount.address
+		// if you do not, the scheduled transaction will be still scheduled
+		// but it will fails when execution as no fund will be there to pay for the tx
 
 		const executionTime = Math.floor(Date.now() / 1000) + 10;
 		const result = await client.scheduleExecution({
