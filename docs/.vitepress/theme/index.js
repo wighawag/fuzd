@@ -16,7 +16,6 @@ export default {
 			spec,
 		});
 
-		// Does not work
 		useTheme({
 			requestBody: {
 				// Set the default schema view.
