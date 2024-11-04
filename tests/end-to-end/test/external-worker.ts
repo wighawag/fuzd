@@ -1,4 +1,4 @@
-import {WORKER_URL} from './prool/pool';
+import {ANVIL_URL, WORKER_URL} from './prool/pool';
 
 export function connectToWorker() {
 	return {

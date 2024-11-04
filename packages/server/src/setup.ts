@@ -2,7 +2,7 @@ import {MiddlewareHandler} from 'hono/types';
 import {ServerOptions} from './types.js';
 import {ExecutorBackend, ExecutorStorage, createExecutor} from 'fuzd-executor';
 import {Scheduler, SchedulerBackend, SchedulerConfig, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
-import {initAccountFromHD} from 'remote-account';
+import {ETHAccount, initAccountFromHD} from 'remote-account';
 import {ExecutionSubmission, Executor, String0x} from 'fuzd-common';
 import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
@@ -45,6 +45,79 @@ declare module 'hono' {
 	}
 }
 
+const chainOverrides: Record<string, string> = {};
+
+export function setChainOverride(chainId: `0x${string}`, override: string) {
+	chainOverrides[`CHAIN_${chainId}`] = override;
+}
+
+function assignChainProtocols(
+	env: Record<string, string>,
+	chainProtocols: ChainProtocols<MyChainProtocols>,
+	contractTimestamp: `0x${string}`,
+	account: ETHAccount,
+) {
+	const envKeys = Object.keys(env);
+	for (const envKey of envKeys) {
+		if (envKey.startsWith('CHAIN_0x')) {
+			const chainId = envKey.substring(6) as String0x;
+			const chainString = env[envKey as `CHAIN_0x${string}`] as string;
+			const [nodeURL, paramsString] = chainString.split('#');
+
+			let protocol: 'ethereum' | 'starknet' = 'ethereum';
+			let finality = 12;
+			let worstCaseBlockTime = 15;
+			if (paramsString) {
+				const paramsSplits = paramsString.split('&');
+				for (const split of paramsSplits) {
+					const [key, value] = split.split('=');
+					if (value) {
+						if (key === 'finality') {
+							const intValue = parseInt(value);
+							if (!isNaN(intValue)) {
+								finality = intValue;
+							}
+						} else if (key === 'worstCaseBlockTime') {
+							const intValue = parseInt(value);
+							if (!isNaN(intValue)) {
+								worstCaseBlockTime = intValue;
+							}
+						} else if (key === 'protocol') {
+							if (value === 'starknet' || value === 'ethereum') {
+								protocol = value;
+							} else {
+								throw new Error(`invlaid protocol: ${value}`);
+							}
+						}
+					}
+				}
+			}
+			if (protocol === 'ethereum') {
+				chainProtocols[chainId] = new EthereumChainProtocol(
+					nodeURL,
+					{
+						expectedFinality: finality,
+						worstCaseBlockTime,
+						contractTimestamp,
+					},
+					account,
+				);
+			} else {
+				chainProtocols[chainId] = new StarknetChainProtocol(
+					nodeURL,
+					{
+						expectedFinality: finality,
+						worstCaseBlockTime,
+						accountContractClassHash: '0x', // TODO
+						tokenContractAddress: '0x', // TODO
+					},
+					account,
+				);
+			}
+		}
+	}
+}
+
 export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env>): MiddlewareHandler {
 	const {getDB, getEnv} = options.serverOptions;
 
@@ -62,65 +135,8 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 
 		const contractTimestamp: String0x = env.CONTRACT_TIMESTAMP as String0x;
 		const chainProtocols: ChainProtocols<MyChainProtocols> = {};
-		const envKeys = Object.keys(env);
-		for (const envKey of envKeys) {
-			if (envKey.startsWith('CHAIN_0x')) {
-				const chainId = envKey.substring(6) as String0x;
-				const chainString = env[envKey as `CHAIN_0x${string}`] as string;
-				const [nodeURL, paramsString] = chainString.split('#');
-
-				let protocol: 'ethereum' | 'starknet' = 'ethereum';
-				let finality = 12;
-				let worstCaseBlockTime = 15;
-				if (paramsString) {
-					const paramsSplits = paramsString.split('&');
-					for (const split of paramsSplits) {
-						const [key, value] = split.split('=');
-						if (value) {
-							if (key === 'finality') {
-								const intValue = parseInt(value);
-								if (!isNaN(intValue)) {
-									finality = intValue;
-								}
-							} else if (key === 'worstCaseBlockTime') {
-								const intValue = parseInt(value);
-								if (!isNaN(intValue)) {
-									worstCaseBlockTime = intValue;
-								}
-							} else if (key === 'protocol') {
-								if (value === 'starknet' || value === 'ethereum') {
-									protocol = value;
-								} else {
-									throw new Error(`invlaid protocol: ${value}`);
-								}
-							}
-						}
-					}
-				}
-				if (protocol === 'ethereum') {
-					chainProtocols[chainId] = new EthereumChainProtocol(
-						nodeURL,
-						{
-							expectedFinality: finality,
-							worstCaseBlockTime,
-							contractTimestamp,
-						},
-						account,
-					);
-				} else {
-					chainProtocols[chainId] = new StarknetChainProtocol(
-						nodeURL,
-						{
-							expectedFinality: finality,
-							worstCaseBlockTime,
-							accountContractClassHash: '0x', // TODO
-							tokenContractAddress: '0x', // TODO
-						},
-						account,
-					);
-				}
-			}
-		}
+		assignChainProtocols(env, chainProtocols, contractTimestamp, account);
+		assignChainProtocols(chainOverrides, chainProtocols, contractTimestamp, account);
 
 		const db = getDB(c);
 		const executorStorage = new RemoteSQLExecutorStorage<MyTransactionData>(db);

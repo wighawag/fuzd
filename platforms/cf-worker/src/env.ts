@@ -11,4 +11,5 @@ export type Env = {
 	LOGFLARE_SOURCE?: string;
 	NAMED_LOGS?: string;
 	NAMED_LOGS_LEVEL?: string;
+	DEV?: string;
 };

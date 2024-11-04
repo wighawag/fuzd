@@ -8,4 +8,5 @@ export type Env = {
 	TOKEN_ADMIN?: string;
 	LOGFLARE_API_KEY?: string;
 	LOGFLARE_SOURCE?: string;
+	DEV?: string;
 };

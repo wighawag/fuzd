@@ -6,6 +6,7 @@ import {logs} from 'named-logs';
 import {assert} from 'typia';
 import {createErrorObject} from '../../utils/response.js';
 import {String0x} from 'fuzd-common';
+import {setChainOverride} from '../../setup.js';
 
 const logger = logs('fuzd-cf-worker-admin-api');
 
@@ -73,6 +74,16 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 				return c.json({success: true as const, result}, 200);
 			} catch (err) {
 				return c.json(createErrorObject(err), 500);
+			}
+		})
+		.get('/setChainOverride/:chainId/:chainOverride', async (c) => {
+			if ((c.env as any).DEV === 'true') {
+				const chainId = c.req.param('chainId') as `0x${string}`;
+				const chainOverride = c.req.param('chainOverride');
+				setChainOverride(chainId, chainOverride);
+				return c.json({success: true as const}, 200);
+			} else {
+				return c.json({success: false as const}, 500);
 			}
 		})
 		.get('/test/:message', async (c) => {

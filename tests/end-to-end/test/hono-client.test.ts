@@ -1,7 +1,7 @@
 import {describe, it, expect, assert} from 'vitest';
 
 import {createClient} from 'fuzd-server';
-import {WORKER_URL} from './prool/pool';
+import {ANVIL_URL, WORKER_URL} from './prool/pool';
 import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 import {ExecutionSubmission} from 'fuzd-common';
 import {ScheduledExecution} from 'fuzd-scheduler';
@@ -14,9 +14,15 @@ describe('hono client', () => {
 	// wakeup worker
 	//   the first time the worker is called, it setups itself and this can take time
 	//   hence we have a dummy test to ensure the other tests have normal timeout
+	//   We also call setChainOverride to ensure the api is talking to the proper eth node
 	// --------------------------------------------------------------------------------------------
 	it('startup', {timeout: 10000}, async () => {
-		await client.index.$get();
+		await client.admin.setChainOverride[':chainId'][':chainOverride'].$get({
+			param: {
+				chainId: '0x7a69',
+				chainOverride: encodeURIComponent(`${ANVIL_URL}#finality=2&worstCaseBlockTime=5`),
+			},
+		});
 	});
 	// --------------------------------------------------------------------------------------------
 
