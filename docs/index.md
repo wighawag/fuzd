@@ -20,7 +20,7 @@ hero:
       link: /guide/getting-started/
     - theme: alt
       text: API
-      link: /api-all-in-one/
+      link: /api/
 
 features:
   - title: Execute Transaction in The Future

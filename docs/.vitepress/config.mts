@@ -127,7 +127,7 @@ export default defineConfig({
 		nav: [
 			{text: 'Home', link: '/'},
 			{text: 'Getting Started', link: '/guide/getting-started/'},
-			{text: 'API', link: '/api-all-in-one/'},
+			{text: 'API', link: '/api/'},
 			{text: 'Packages', link: '/packages/'},
 		],
 
@@ -146,10 +146,6 @@ export default defineConfig({
 						linkPrefix: '/api/',
 					}),
 				],
-			},
-			{
-				text: 'ALL-In-ONE',
-				link: '/api-all-in-one/',
 			},
 			{
 				text: 'Packages',
