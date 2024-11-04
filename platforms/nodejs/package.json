@@ -1,5 +1,6 @@
 {
-  "name": "my-app",
+  "name": "fuzd-noejs",
+  "version": "0.7.0",
   "type": "module",
   "dependencies": {
     "@hono/node-server": "^1.13.3",
