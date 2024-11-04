@@ -3,3 +3,4 @@
 !.vitepress/config.mts
 node_modules
 public/pwa
+public/openapi.json

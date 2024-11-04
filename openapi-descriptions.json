@@ -1,0 +1,26 @@
+{
+	"/api/publicKey": {
+		"get": "get the server public key, used to sign responses"
+	},
+	"/api/time/{chainId}": {
+		"get": "get the current time from the chain with the chainId specified. If a contract timestamp is specified, it will depends on that contract"
+	},
+	"/api/contractTimestamp": {
+		"get": "get the contract timestamp if any. This contract define the current time, can be used to accelrate time in testing"
+	},
+	"/api/scheduling/scheduleExecution": {
+		"post": "schedule an execution in the future. Can be encrypted using drand"
+	},
+	"/api/scheduling/reserved/{chainId}/{account}/{slot}": {
+		"get": "get the reserved balance for future executions"
+	},
+	"/api/scheduling/scheduledExecution/{chainId}/{account}/{slot}": {
+		"get": "get a particular scheduled execution"
+	},
+	"/api/scheduling/scheduledExecutions/{chainId}/{account}": {
+		"get": "get all scheduled executions of an account"
+	},
+	"/api/execution/remoteAccount/{chainId}/{account}": {
+		"get": "get the remote account that will execute on behalf of {account}"
+	}
+}
