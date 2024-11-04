@@ -127,7 +127,7 @@ export default defineConfig({
 		nav: [
 			{text: 'Home', link: '/'},
 			{text: 'Getting Started', link: '/guide/getting-started/'},
-			{text: 'API', link: '/api/'},
+			{text: 'API', link: '/api/get-api-publicKey.html'},
 			{text: 'Packages', link: '/packages/'},
 		],
 

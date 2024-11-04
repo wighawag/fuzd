@@ -18,7 +18,7 @@ export type {Context} from 'hono';
 export * from './storage/RemoteSQLExecutorStorage.js';
 export * from './storage/RemoteSQLSchedulerStorage.js';
 
-function createPublicAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
+function createAppWithPublicAPIOnly<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const app = new Hono<{Bindings: Env & {}}>().use(
 		cors({
 			origin: '*',
@@ -40,14 +40,7 @@ function createPublicAPI<Env extends Bindings = Bindings>(options: ServerOptions
 		.route('/scheduling', schedulingAPI)
 		.route('/execution', executionAPI);
 
-	return (
-		app
-			// TODO remove this from here:
-			.get('/', (c) => {
-				return c.text('fuzd api');
-			})
-			.route('/api', api)
-	);
+	return app.route('/api', api);
 }
 
 export function createDoc() {
@@ -68,7 +61,10 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 	const internalAPI = getInternalAPI<Env>(options);
 	const adminAPI = getAdminAPI<Env>(options);
 
-	return createPublicAPI(options)
+	return createAppWithPublicAPIOnly(options)
+		.get('/', (c) => {
+			return c.text('fuzd api');
+		})
 		.route('/internal', internalAPI)
 		.route('/admin', adminAPI)
 		.route('/dashboard', dashboard)
@@ -115,7 +111,7 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 }
 
 // export type App = AddToAllOutputs<ReturnType<typeof createAPI>, ErrorType>;
-export type PublicAPI = ReturnType<typeof createPublicAPI>;
+export type PublicAPI = ReturnType<typeof createAppWithPublicAPIOnly>;
 export type App = ReturnType<typeof createServer>;
 
 // this is a trick to calculate the type when compiling

@@ -2,11 +2,6 @@
 	"openapi": "3.1.0",
 	"info": {"title": "fuzd-server", "description": "API", "version": "api"},
 	"paths": {
-		"/": {
-			"get": {
-				"responses": {"default": {"description": "", "content": {"text/plain": {"schema": {"const": "fuzd api"}}}}}
-			}
-		},
 		"/api/publicKey": {
 			"get": {
 				"responses": {
@@ -402,69 +397,27 @@
 																				"type": "object",
 																				"properties": {
 																					"type": {"const": "INVOKE"},
-																					"calldata": {"type": "array", "items": {"type": "string"}},
-																					"max_fee": {"type": "string"},
-																					"version": {
-																						"$ref": "#/components/schemas/Readonly0x10x100000000000000000000000000000001"
-																					}
+																					"calldata": {
+																						"type": "array",
+																						"items": {"$ref": "#/components/schemas/String0x"}
+																					},
+																					"max_fee": {"$ref": "#/components/schemas/String0x"},
+																					"version": {"const": "0x1"}
 																				},
 																				"required": ["type", "calldata", "max_fee", "version"]
 																			},
 																			{
 																				"type": "object",
 																				"properties": {
-																					"type": {"const": "INVOKE"},
-																					"calldata": {"type": "array", "items": {"type": "string"}},
-																					"version": {
-																						"$ref": "#/components/schemas/Readonly0x30x100000000000000000000000000000003"
-																					},
-																					"paymaster_data": {"type": "array", "items": {"type": "string"}},
-																					"account_deployment_data": {"type": "array", "items": {"type": "string"}},
-																					"nonce_data_availability_mode": {
-																						"$ref": "#/components/schemas/ReadonlyDA_MODE"
-																					},
-																					"fee_data_availability_mode": {
-																						"$ref": "#/components/schemas/ReadonlyDA_MODE"
-																					},
-																					"resource_bounds": {
-																						"type": "object",
-																						"properties": {
-																							"l1_gas": {
-																								"type": "object",
-																								"properties": {"max_amount": {"type": "string"}},
-																								"required": ["max_amount"]
-																							},
-																							"l2_gas": {
-																								"type": "object",
-																								"properties": {"max_amount": {"type": "string"}},
-																								"required": ["max_amount"]
-																							}
-																						},
-																						"required": ["l1_gas", "l2_gas"]
-																					}
-																				},
-																				"required": [
-																					"type",
-																					"calldata",
-																					"version",
-																					"paymaster_data",
-																					"account_deployment_data",
-																					"nonce_data_availability_mode",
-																					"fee_data_availability_mode",
-																					"resource_bounds"
-																				]
-																			},
-																			{
-																				"type": "object",
-																				"properties": {
 																					"type": {"const": "DEPLOY_ACCOUNT"},
-																					"max_fee": {"type": "string"},
-																					"version": {
-																						"$ref": "#/components/schemas/Readonly0x10x100000000000000000000000000000001"
+																					"max_fee": {"$ref": "#/components/schemas/String0x"},
+																					"version": {"const": "0x1"},
+																					"contract_address_salt": {"$ref": "#/components/schemas/String0x"},
+																					"constructor_calldata": {
+																						"type": "array",
+																						"items": {"$ref": "#/components/schemas/String0x"}
 																					},
-																					"contract_address_salt": {"type": "string"},
-																					"constructor_calldata": {"type": "array", "items": {"type": "string"}},
-																					"class_hash": {"type": "string"}
+																					"class_hash": {"$ref": "#/components/schemas/String0x"}
 																				},
 																				"required": [
 																					"type",
@@ -473,52 +426,6 @@
 																					"contract_address_salt",
 																					"constructor_calldata",
 																					"class_hash"
-																				]
-																			},
-																			{
-																				"type": "object",
-																				"properties": {
-																					"type": {"const": "DEPLOY_ACCOUNT"},
-																					"version": {
-																						"$ref": "#/components/schemas/Readonly0x30x100000000000000000000000000000003"
-																					},
-																					"paymaster_data": {"type": "array", "items": {"type": "string"}},
-																					"nonce_data_availability_mode": {
-																						"$ref": "#/components/schemas/ReadonlyDA_MODE"
-																					},
-																					"fee_data_availability_mode": {
-																						"$ref": "#/components/schemas/ReadonlyDA_MODE"
-																					},
-																					"contract_address_salt": {"type": "string"},
-																					"constructor_calldata": {"type": "array", "items": {"type": "string"}},
-																					"class_hash": {"type": "string"},
-																					"resource_bounds": {
-																						"type": "object",
-																						"properties": {
-																							"l1_gas": {
-																								"type": "object",
-																								"properties": {"max_amount": {"type": "string"}},
-																								"required": ["max_amount"]
-																							},
-																							"l2_gas": {
-																								"type": "object",
-																								"properties": {"max_amount": {"type": "string"}},
-																								"required": ["max_amount"]
-																							}
-																						},
-																						"required": ["l1_gas", "l2_gas"]
-																					}
-																				},
-																				"required": [
-																					"type",
-																					"version",
-																					"paymaster_data",
-																					"nonce_data_availability_mode",
-																					"fee_data_availability_mode",
-																					"contract_address_salt",
-																					"constructor_calldata",
-																					"class_hash",
-																					"resource_bounds"
 																				]
 																			}
 																		]
@@ -798,69 +705,27 @@
 																					"type": "object",
 																					"properties": {
 																						"type": {"const": "INVOKE"},
-																						"calldata": {"type": "array", "items": {"type": "string"}},
-																						"max_fee": {"type": "string"},
-																						"version": {
-																							"$ref": "#/components/schemas/Readonly0x10x100000000000000000000000000000001"
-																						}
+																						"calldata": {
+																							"type": "array",
+																							"items": {"$ref": "#/components/schemas/String0x"}
+																						},
+																						"max_fee": {"$ref": "#/components/schemas/String0x"},
+																						"version": {"const": "0x1"}
 																					},
 																					"required": ["type", "calldata", "max_fee", "version"]
 																				},
 																				{
 																					"type": "object",
 																					"properties": {
-																						"type": {"const": "INVOKE"},
-																						"calldata": {"type": "array", "items": {"type": "string"}},
-																						"version": {
-																							"$ref": "#/components/schemas/Readonly0x30x100000000000000000000000000000003"
-																						},
-																						"paymaster_data": {"type": "array", "items": {"type": "string"}},
-																						"account_deployment_data": {"type": "array", "items": {"type": "string"}},
-																						"nonce_data_availability_mode": {
-																							"$ref": "#/components/schemas/ReadonlyDA_MODE"
-																						},
-																						"fee_data_availability_mode": {
-																							"$ref": "#/components/schemas/ReadonlyDA_MODE"
-																						},
-																						"resource_bounds": {
-																							"type": "object",
-																							"properties": {
-																								"l1_gas": {
-																									"type": "object",
-																									"properties": {"max_amount": {"type": "string"}},
-																									"required": ["max_amount"]
-																								},
-																								"l2_gas": {
-																									"type": "object",
-																									"properties": {"max_amount": {"type": "string"}},
-																									"required": ["max_amount"]
-																								}
-																							},
-																							"required": ["l1_gas", "l2_gas"]
-																						}
-																					},
-																					"required": [
-																						"type",
-																						"calldata",
-																						"version",
-																						"paymaster_data",
-																						"account_deployment_data",
-																						"nonce_data_availability_mode",
-																						"fee_data_availability_mode",
-																						"resource_bounds"
-																					]
-																				},
-																				{
-																					"type": "object",
-																					"properties": {
 																						"type": {"const": "DEPLOY_ACCOUNT"},
-																						"max_fee": {"type": "string"},
-																						"version": {
-																							"$ref": "#/components/schemas/Readonly0x10x100000000000000000000000000000001"
+																						"max_fee": {"$ref": "#/components/schemas/String0x"},
+																						"version": {"const": "0x1"},
+																						"contract_address_salt": {"$ref": "#/components/schemas/String0x"},
+																						"constructor_calldata": {
+																							"type": "array",
+																							"items": {"$ref": "#/components/schemas/String0x"}
 																						},
-																						"contract_address_salt": {"type": "string"},
-																						"constructor_calldata": {"type": "array", "items": {"type": "string"}},
-																						"class_hash": {"type": "string"}
+																						"class_hash": {"$ref": "#/components/schemas/String0x"}
 																					},
 																					"required": [
 																						"type",
@@ -869,52 +734,6 @@
 																						"contract_address_salt",
 																						"constructor_calldata",
 																						"class_hash"
-																					]
-																				},
-																				{
-																					"type": "object",
-																					"properties": {
-																						"type": {"const": "DEPLOY_ACCOUNT"},
-																						"version": {
-																							"$ref": "#/components/schemas/Readonly0x30x100000000000000000000000000000003"
-																						},
-																						"paymaster_data": {"type": "array", "items": {"type": "string"}},
-																						"nonce_data_availability_mode": {
-																							"$ref": "#/components/schemas/ReadonlyDA_MODE"
-																						},
-																						"fee_data_availability_mode": {
-																							"$ref": "#/components/schemas/ReadonlyDA_MODE"
-																						},
-																						"contract_address_salt": {"type": "string"},
-																						"constructor_calldata": {"type": "array", "items": {"type": "string"}},
-																						"class_hash": {"type": "string"},
-																						"resource_bounds": {
-																							"type": "object",
-																							"properties": {
-																								"l1_gas": {
-																									"type": "object",
-																									"properties": {"max_amount": {"type": "string"}},
-																									"required": ["max_amount"]
-																								},
-																								"l2_gas": {
-																									"type": "object",
-																									"properties": {"max_amount": {"type": "string"}},
-																									"required": ["max_amount"]
-																								}
-																							},
-																							"required": ["l1_gas", "l2_gas"]
-																						}
-																					},
-																					"required": [
-																						"type",
-																						"version",
-																						"paymaster_data",
-																						"nonce_data_availability_mode",
-																						"fee_data_availability_mode",
-																						"contract_address_salt",
-																						"constructor_calldata",
-																						"class_hash",
-																						"resource_bounds"
 																					]
 																				}
 																			]
@@ -1213,93 +1032,9 @@
 			},
 			"MyTransactionData": {
 				"oneOf": [
-					{
-						"$ref": "#/components/schemas/OmitOmitSignedTransactionDataReadonlytypeINVOKEsender_addressstringcalldatareadonlystringversionReadonly0x30x100000000000000000000000000000003signaturereadonlystringnoncestringresource_boundsReadonly......4more...fee_data_availability_modeReadonly......"
-					},
-					{
-						"$ref": "#/components/schemas/OmitOmitSignedTransactionDataReadonlytypeDEPLOY_ACCOUNTversionReadonly0x30x100000000000000000000000000000003signaturereadonlystringnoncestringcontract_address_saltstringconstructor_calldatareadonlystring...5more...fee_data_availability_modeReadonly...res..."
-					},
 					{"$ref": "#/components/schemas/EthereumTransactionData"},
-					{"$ref": "#/components/schemas/OmitSignedTransactionDataReadonly__type"},
-					{"$ref": "#/components/schemas/OmitSignedTransactionDataReadonly__type.o1"}
-				]
-			},
-			"OmitOmitSignedTransactionDataReadonlytypeINVOKEsender_addressstringcalldatareadonlystringversionReadonly0x30x100000000000000000000000000000003signaturereadonlystringnoncestringresource_boundsReadonly......4more...fee_data_availability_modeReadonly......": {
-				"type": "object",
-				"properties": {
-					"type": {"const": "INVOKE"},
-					"calldata": {"type": "array", "items": {"type": "string"}},
-					"version": {"$ref": "#/components/schemas/Readonly0x30x100000000000000000000000000000003"},
-					"paymaster_data": {"type": "array", "items": {"type": "string"}},
-					"account_deployment_data": {"type": "array", "items": {"type": "string"}},
-					"nonce_data_availability_mode": {"$ref": "#/components/schemas/ReadonlyDA_MODE"},
-					"fee_data_availability_mode": {"$ref": "#/components/schemas/ReadonlyDA_MODE"},
-					"resource_bounds": {
-						"type": "object",
-						"properties": {
-							"l1_gas": {
-								"type": "object",
-								"properties": {"max_amount": {"type": "string"}},
-								"required": ["max_amount"]
-							},
-							"l2_gas": {"type": "object", "properties": {"max_amount": {"type": "string"}}, "required": ["max_amount"]}
-						},
-						"required": ["l1_gas", "l2_gas"]
-					}
-				},
-				"required": [
-					"type",
-					"calldata",
-					"version",
-					"paymaster_data",
-					"account_deployment_data",
-					"nonce_data_availability_mode",
-					"fee_data_availability_mode",
-					"resource_bounds"
-				]
-			},
-			"Readonly0x30x100000000000000000000000000000003": {
-				"oneOf": [{"const": "0x3"}, {"const": "0x100000000000000000000000000000003"}],
-				"description": "Make all properties in T readonly"
-			},
-			"ReadonlyDA_MODE": {
-				"oneOf": [{"const": "L1"}, {"const": "L2"}],
-				"description": "Make all properties in T readonly"
-			},
-			"OmitOmitSignedTransactionDataReadonlytypeDEPLOY_ACCOUNTversionReadonly0x30x100000000000000000000000000000003signaturereadonlystringnoncestringcontract_address_saltstringconstructor_calldatareadonlystring...5more...fee_data_availability_modeReadonly...res...": {
-				"type": "object",
-				"properties": {
-					"type": {"const": "DEPLOY_ACCOUNT"},
-					"version": {"$ref": "#/components/schemas/Readonly0x30x100000000000000000000000000000003"},
-					"paymaster_data": {"type": "array", "items": {"type": "string"}},
-					"nonce_data_availability_mode": {"$ref": "#/components/schemas/ReadonlyDA_MODE"},
-					"fee_data_availability_mode": {"$ref": "#/components/schemas/ReadonlyDA_MODE"},
-					"contract_address_salt": {"type": "string"},
-					"constructor_calldata": {"type": "array", "items": {"type": "string"}},
-					"class_hash": {"type": "string"},
-					"resource_bounds": {
-						"type": "object",
-						"properties": {
-							"l1_gas": {
-								"type": "object",
-								"properties": {"max_amount": {"type": "string"}},
-								"required": ["max_amount"]
-							},
-							"l2_gas": {"type": "object", "properties": {"max_amount": {"type": "string"}}, "required": ["max_amount"]}
-						},
-						"required": ["l1_gas", "l2_gas"]
-					}
-				},
-				"required": [
-					"type",
-					"version",
-					"paymaster_data",
-					"nonce_data_availability_mode",
-					"fee_data_availability_mode",
-					"contract_address_salt",
-					"constructor_calldata",
-					"class_hash",
-					"resource_bounds"
+					{"$ref": "#/components/schemas/InvokeTransactionData"},
+					{"$ref": "#/components/schemas/DeployAccountTransactionData"}
 				]
 			},
 			"EthereumTransactionData": {
@@ -1328,29 +1063,25 @@
 				},
 				"required": ["type", "gas"]
 			},
-			"OmitSignedTransactionDataReadonly__type": {
+			"InvokeTransactionData": {
 				"type": "object",
 				"properties": {
 					"type": {"const": "INVOKE"},
-					"calldata": {"type": "array", "items": {"type": "string"}},
-					"max_fee": {"type": "string"},
-					"version": {"$ref": "#/components/schemas/Readonly0x10x100000000000000000000000000000001"}
+					"calldata": {"type": "array", "items": {"$ref": "#/components/schemas/String0x"}},
+					"max_fee": {"$ref": "#/components/schemas/String0x"},
+					"version": {"const": "0x1"}
 				},
 				"required": ["type", "calldata", "max_fee", "version"]
 			},
-			"Readonly0x10x100000000000000000000000000000001": {
-				"oneOf": [{"const": "0x1"}, {"const": "0x100000000000000000000000000000001"}],
-				"description": "Make all properties in T readonly"
-			},
-			"OmitSignedTransactionDataReadonly__type.o1": {
+			"DeployAccountTransactionData": {
 				"type": "object",
 				"properties": {
 					"type": {"const": "DEPLOY_ACCOUNT"},
-					"max_fee": {"type": "string"},
-					"version": {"$ref": "#/components/schemas/Readonly0x10x100000000000000000000000000000001"},
-					"contract_address_salt": {"type": "string"},
-					"constructor_calldata": {"type": "array", "items": {"type": "string"}},
-					"class_hash": {"type": "string"}
+					"max_fee": {"$ref": "#/components/schemas/String0x"},
+					"version": {"const": "0x1"},
+					"contract_address_salt": {"$ref": "#/components/schemas/String0x"},
+					"constructor_calldata": {"type": "array", "items": {"$ref": "#/components/schemas/String0x"}},
+					"class_hash": {"$ref": "#/components/schemas/String0x"}
 				},
 				"required": ["type", "max_fee", "version", "contract_address_salt", "constructor_calldata", "class_hash"]
 			},

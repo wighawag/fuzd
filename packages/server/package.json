@@ -52,7 +52,7 @@
     "prepare": "ts-patch install && typia patch",
     "openapi": "pnpm hto --app-file ./src/index.ts --title fuzd-server --app-type PublicAPI --output ./doc/openapi.json --description API --app-version api --tsconfig ./tsconfig.json",
     "build:ts": "tsc --project tsconfig.json",
-    "build": "pnpm openapi && pnpm sql2ts && pnpm build:ts && cp -R doc dist/doc",
+    "build": "pnpm openapi && pnpm sql2ts && pnpm build:ts && cp -R doc dist/doc && cp doc/openapi.json ../../docs/public/",
     "sql2ts": "node sql2ts.cjs executor scheduler",
     "sql2ts:watch": "pnpm sql2ts && as-soon -w ./src/schema/sql pnpm sql2ts",
     "css2ts": "node css2ts.cjs global",
