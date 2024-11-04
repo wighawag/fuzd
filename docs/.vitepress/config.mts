@@ -1,6 +1,6 @@
 import {defineConfig} from 'vitepress';
 import typedocSidebar from '../packages/typedoc-sidebar.json';
-// import {fileURLToPath, URL} from 'node:url';
+import {pagefindPlugin} from 'vitepress-plugin-pagefind';
 
 import {useSidebar} from 'vitepress-openapi';
 import spec from '../public/openapi.json' assert {type: 'json'};
@@ -66,6 +66,9 @@ function removeDuplicates(arr: any) {
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+	vite: {
+		plugins: [pagefindPlugin()],
+	},
 	title: 'FUZD',
 	head: [
 		[
@@ -157,20 +160,5 @@ export default defineConfig({
 		],
 
 		socialLinks: [{icon: 'github', link: 'https://github.com/wighawag/fuzd'}],
-
-		search: {
-			provider: 'local',
-		},
 	},
-	// base: '/fuzd/',
-	// vite: {
-	// 	resolve: {
-	// 		alias: [
-	// 			{
-	// 				find: /^.*\/VPNavBarTitle\.vue$/,
-	// 				replacement: fileURLToPath(new URL('./theme/components/CustomNavBarTitle.vue', import.meta.url)),
-	// 			},
-	// 		],
-	// 	},
-	// },
 });

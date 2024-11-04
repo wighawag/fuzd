@@ -6,6 +6,7 @@
   "devDependencies": {
     "@changesets/cli": "^2.27.9",
     "ipfs-gateway-emulator": "4.2.1-ipfs.2",
+    "pagefind": "^1.1.1",
     "prettier": "^3.3.3",
     "pwag": "^0.3.0",
     "set-defaults": "^0.0.2",
@@ -16,6 +17,7 @@
     "typescript": "^5.6.3",
     "vitepress": "1.4.2",
     "vitepress-openapi": "0.0.3-alpha.47",
+    "vitepress-plugin-pagefind": "^0.4.10",
     "zellij-launcher": "^0.0.1"
   },
   "scripts": {
