@@ -127,8 +127,8 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1
       tlock-js:
-        specifier: npm:@bug-fix/tlock-js@0.9.0-fix.9
-        version: '@bug-fix/tlock-js@0.9.0-fix.9'
+        specifier: ^0.9.0
+        version: 0.9.0
       viem:
         specifier: ^2.21.37
         version: 2.21.37(typescript@5.6.3)(zod@3.23.8)
@@ -275,8 +275,8 @@ importers:
         specifier: ^0.0.5
         version: 0.0.5
       tlock-js:
-        specifier: npm:@bug-fix/tlock-js@0.9.0-fix.9
-        version: '@bug-fix/tlock-js@0.9.0-fix.9'
+        specifier: ^0.9.0
+        version: 0.9.0
       viem:
         specifier: ^2.21.37
         version: 2.21.37(typescript@5.6.3)(zod@3.23.8)
@@ -312,8 +312,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0
       tlock-js:
-        specifier: npm:@bug-fix/tlock-js@0.9.0-fix.9
-        version: '@bug-fix/tlock-js@0.9.0-fix.9'
+        specifier: ^0.9.0
+        version: 0.9.0
     devDependencies:
       '@types/node':
         specifier: ^22.8.4
@@ -580,8 +580,8 @@ importers:
         specifier: ^0.4.0
         version: 0.4.0
       tlock-js:
-        specifier: npm:@bug-fix/tlock-js@0.9.0-fix.9
-        version: '@bug-fix/tlock-js@0.9.0-fix.9'
+        specifier: ^0.9.0
+        version: 0.9.0
       tsx:
         specifier: ^4.19.2
         version: 4.19.2
@@ -646,8 +646,8 @@ importers:
         specifier: ^0.0.1
         version: 0.0.1
       tlock-js:
-        specifier: npm:@bug-fix/tlock-js@0.9.0-fix.9
-        version: '@bug-fix/tlock-js@0.9.0-fix.9'
+        specifier: ^0.9.0
+        version: 0.9.0
       vitest:
         specifier: ^2.1.4
         version: 2.1.4(@types/node@22.8.6)
@@ -790,14 +790,6 @@ packages:
   '@babel/types@7.26.0':
     resolution: {integrity: sha512-Z/yiTPj+lDVnF7lWeKCIJzaIkI0vYO87dMpZ4bg4TDrFe4XXLFWL1TbXU27gBP3QccxV9mZICCrnjnYlJjXHOA==}
     engines: {node: '>=6.9.0'}
-
-  '@bug-fix/drand-client@1.2.6-fix.9':
-    resolution: {integrity: sha512-sIqV4A1zigfKrJqcNwkUlnoebcwuUR8ZbyM005wZI3pYBIkUIeeF899MpUZRdIop475WPNonRI0ikkq7pHSqCQ==}
-    engines: {node: '>= 10.4.0'}
-
-  '@bug-fix/tlock-js@0.9.0-fix.9':
-    resolution: {integrity: sha512-h8NtAj7jyr2DZOhB1Ym/bo2NGPy4oPWwEPUd8+UL/0fLzLiD/SLQ61f6sFCY5k3fRs++r2Wm06+u3/zimcAhkw==}
-    engines: {node: '>= 16.0.0'}
 
   '@bug-fix/workers-logger@0.2.0-fix.1':
     resolution: {integrity: sha512-LmqK840+H0QGshoJn6ELINH3HotGEZc8PL/wviD50snqCqmzJGWEXjKK2NN7Wo12ghEvAEtmJw+70CG8eIyYbw==}
@@ -3161,6 +3153,10 @@ packages:
     resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
     engines: {node: '>=12'}
 
+  drand-client@1.2.5:
+    resolution: {integrity: sha512-fytRLLH7hIoSzZScrG06jgv0P30+neUGIhHoCcykWaNDFgy9PLqD/V4I0BouyVOCiWc03wTgRacH9xxZfyiWug==}
+    engines: {node: '>= 10.4.0'}
+
   drange@1.1.1:
     resolution: {integrity: sha512-pYxfDYpued//QpnLIm4Avk7rsNtAtQkUES2cwAYSvD/wd2pKD71gN2Ebj3e7klzXwjocvE8c5vx/1fxwpqmSxA==}
     engines: {node: '>=4'}
@@ -4088,7 +4084,6 @@ packages:
 
   libsql@0.4.6:
     resolution: {integrity: sha512-F5M+ltteK6dCcpjMahrkgT96uFJvVI8aQ4r9f2AzHQjC7BkAYtvfMSTWGvRBezRgMUIU2h1Sy0pF9nOGOD5iyA==}
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lines-and-columns@1.2.4:
@@ -5438,6 +5433,10 @@ packages:
     resolution: {integrity: sha512-n1cw8k1k0x4pgA2+9XrOkFydTerNcJ1zWCO5Nn9scWHTD+5tp8dghT2x1uduQePZTZgd3Tupf+x9BxJjeJi77Q==}
     engines: {node: '>=14.0.0'}
 
+  tlock-js@0.9.0:
+    resolution: {integrity: sha512-qxBJQ2mP/opLKjqFbbr64uCYs4Y/wQb8ogFRAhYuHE1AO/sIY0iU0PFV4hqZ0HTorMTpQgbjgdjmTUpigrGp3A==}
+    engines: {node: '>= 16.0.0'}
+
   tmp@0.0.33:
     resolution: {integrity: sha512-jRCJlojKnZ3addtTOjdIqoRuPEKBvNXcGYqzO6zWZX8KfKEpnGY5jfggJQ3EjKuu8D4bJRr0y+cYJFmYbImXGw==}
     engines: {node: '>=0.6.0'}
@@ -6181,24 +6180,6 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.25.9
       '@babel/helper-validator-identifier': 7.25.9
-
-  '@bug-fix/drand-client@1.2.6-fix.9':
-    dependencies:
-      '@babel/traverse': 7.25.9
-      '@noble/curves': 1.6.0
-      buffer: 6.0.3
-    transitivePeerDependencies:
-      - supports-color
-
-  '@bug-fix/tlock-js@0.9.0-fix.9':
-    dependencies:
-      '@noble/curves': 1.6.0
-      '@noble/hashes': 1.5.0
-      '@stablelib/chacha20poly1305': 1.0.1
-      buffer: 6.0.3
-      drand-client: '@bug-fix/drand-client@1.2.6-fix.9'
-    transitivePeerDependencies:
-      - supports-color
 
   '@bug-fix/workers-logger@0.2.0-fix.1':
     dependencies:
@@ -7633,6 +7614,14 @@ snapshots:
       chai: 5.1.2
       tinyrainbow: 1.2.0
 
+  '@vitest/mocker@2.1.4(vite@5.4.10(@types/node@22.8.4))':
+    dependencies:
+      '@vitest/spy': 2.1.4
+      estree-walker: 3.0.3
+      magic-string: 0.30.12
+    optionalDependencies:
+      vite: 5.4.10(@types/node@22.8.4)
+
   '@vitest/mocker@2.1.4(vite@5.4.10(@types/node@22.8.6))':
     dependencies:
       '@vitest/spy': 2.1.4
@@ -8578,6 +8567,14 @@ snapshots:
   dotenv-expand@10.0.0: {}
 
   dotenv@16.4.5: {}
+
+  drand-client@1.2.5:
+    dependencies:
+      '@babel/traverse': 7.25.9
+      '@noble/curves': 1.6.0
+      buffer: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
 
   drange@1.1.1: {}
 
@@ -11313,6 +11310,16 @@ snapshots:
 
   tinyspy@3.0.2: {}
 
+  tlock-js@0.9.0:
+    dependencies:
+      '@noble/curves': 1.6.0
+      '@noble/hashes': 1.5.0
+      '@stablelib/chacha20poly1305': 1.0.1
+      buffer: 6.0.3
+      drand-client: 1.2.5
+    transitivePeerDependencies:
+      - supports-color
+
   tmp@0.0.33:
     dependencies:
       os-tmpdir: 1.0.2
@@ -11689,7 +11696,7 @@ snapshots:
   vitest@2.1.4(@types/node@22.8.4):
     dependencies:
       '@vitest/expect': 2.1.4
-      '@vitest/mocker': 2.1.4(vite@5.4.10(@types/node@22.8.6))
+      '@vitest/mocker': 2.1.4(vite@5.4.10(@types/node@22.8.4))
       '@vitest/pretty-format': 2.1.4
       '@vitest/runner': 2.1.4
       '@vitest/snapshot': 2.1.4
