@@ -1,6 +1,9 @@
 {
-  "name": "fuzd-noejs",
+  "name": "fuzd-nodejs",
   "version": "0.7.1",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "dependencies": {
     "@hono/node-server": "^1.13.3",
