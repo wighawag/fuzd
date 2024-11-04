@@ -63,7 +63,7 @@ export function createServer<Env extends Bindings = Bindings>(options: ServerOpt
 
 	return createAppWithPublicAPIOnly(options)
 		.get('/', (c) => {
-			return c.text('fuzd api');
+			return c.text(`fuzd api : 0.7.0`); // TODO from package.json
 		})
 		.route('/internal', internalAPI)
 		.route('/admin', adminAPI)

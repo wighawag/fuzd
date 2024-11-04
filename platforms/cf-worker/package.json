@@ -34,7 +34,7 @@
   },
   "scripts": {
     "prepare": "set-defaults .",
-    "deploy": "wrangler deploy --minify",
+    "deploy:production": "wrangler -e production deploy --minify",
     "dev": "pnpm init-db && wrangler dev -e production --port 34002",
     "init-db": "ldenv wrangler -e production d1 execute fuzd-db --file=node_modules/fuzd-server/src/schema/sql/scheduler.sql ~~ wrangler -e production d1 execute fuzd-db --file=node_modules/fuzd-server/src/schema/sql/executor.sql ~~",
     "test": "vitest"
