@@ -1,5 +1,20 @@
 # fuzd-server
 
+## 0.7.0
+
+### Minor Changes
+
+- major refactor
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-chain-protocol@0.7.0
+  - fuzd-common@0.7.0
+  - fuzd-executor@0.7.0
+  - fuzd-scheduler@0.7.0
+  - fuzd-tlock-decrypter@0.7.0
+
 ## 0.6.0
 
 ### Minor Changes

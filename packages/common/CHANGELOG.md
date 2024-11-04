@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.7.0
+
+### Minor Changes
+
+- major refactor
+
 ## 0.6.0
 
 ### Minor Changes
