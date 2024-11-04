@@ -1,5 +1,13 @@
 # fuzd-tlock-decrypter
 
+## 0.7.1
+
+### Patch Changes
+
+- tlock-js from drand
+- Updated dependencies
+  - fuzd-scheduler@0.7.1
+
 ## 0.7.0
 
 ### Minor Changes

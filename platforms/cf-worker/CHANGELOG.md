@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.7.1
+
+### Patch Changes
+
+- tlock-js from drand
+
 ## 0.7.0
 
 ### Minor Changes
