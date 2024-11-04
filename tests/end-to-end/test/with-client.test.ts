@@ -34,6 +34,7 @@ describe('with client', () => {
 
 		const executionTime = Math.floor(Date.now() / 1000) + 10;
 		const result = await client.scheduleExecution({
+			slot: 'test',
 			chainId,
 			maxFeePerGasAuthorized: 1n,
 			time: executionTime,

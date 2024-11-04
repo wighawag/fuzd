@@ -6,12 +6,13 @@ import {logs} from 'named-logs';
 import {assert} from 'typia';
 import {createErrorObject} from '../../utils/response.js';
 import {String0x} from 'fuzd-common';
-import {setChainOverride} from '../../setup.js';
+import {setChainOverride, setup} from '../../setup.js';
 
 const logger = logs('fuzd-cf-worker-admin-api');
 
 export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
 	const tmp = new Hono<{Bindings: Env & {}}>()
+		.use(setup({serverOptions: options}))
 		.get('/paymentAccountBroadcaster', async (c) => {
 			try {
 				const config = c.get('config');
@@ -63,15 +64,6 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 				const config = c.get('config');
 				const txs = await config.executorStorage.getAllExecutions({limit: 100});
 				return c.json({success: true as const, transactions: txs}, 200);
-			} catch (err) {
-				return c.json(createErrorObject(err), 500);
-			}
-		})
-		.get('/checkScheduledExecutionStatus', async (c) => {
-			try {
-				const config = c.get('config');
-				const result = await config.scheduler.checkScheduledExecutionStatus();
-				return c.json({success: true as const, result}, 200);
 			} catch (err) {
 				return c.json(createErrorObject(err), 500);
 			}

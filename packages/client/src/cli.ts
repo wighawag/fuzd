@@ -68,6 +68,7 @@ async function main() {
 	});
 
 	await client.scheduleExecution({
+		slot: `${Date.now()}`,
 		chainId: options.chain,
 		transaction: {
 			gas,

@@ -4,7 +4,7 @@
  */
 
 import {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
-import {timelockEncrypt, HttpChainClient, roundAt} from 'tlock-js';
+import {timelockEncrypt, HttpChainClient, roundAt, Buffer} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';
 import {ExecutionSubmission, RemoteAccountInfo, String0x} from 'fuzd-common';
 import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
@@ -12,6 +12,8 @@ import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 import {testnetClient, mainnetClient} from 'tlock-js';
 import {InvokeTransactionData, StarknetTransactionData} from 'fuzd-chain-protocol/starknet';
 export {mainnetClient, testnetClient};
+
+(globalThis as any).Buffer = Buffer;
 
 export type ClientConfig = {
 	drand?: HttpChainClient;
@@ -90,12 +92,19 @@ export function createClient(config: ClientConfig) {
 		return _assignedRemoteAccount;
 	}
 
-	async function scheduleExecution(execution: {
-		chainId: String0x | string;
-		transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
-		maxFeePerGasAuthorized: bigint;
-		time: number;
-	}): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
+	async function scheduleExecution(
+		execution: {
+			slot: string;
+			chainId: String0x | string;
+			transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
+			maxFeePerGasAuthorized: bigint;
+			time: number;
+			expiry?: number;
+			paymentReserve?: bigint;
+			onBehalf?: `0x${string}`;
+		},
+		options?: {fakeEncrypt?: boolean},
+	): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
 		const chainIdAsHex = toChainId(execution.chainId);
 
 		let executionToSend: ScheduledExecution<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>>;
@@ -119,20 +128,23 @@ export function createClient(config: ClientConfig) {
 
 		let round: number;
 
-		const drandChainInfo = await drandClient.chain().info();
-		round = roundAt(execution.time * 1000, drandChainInfo);
-
 		const timestamp = Math.floor(Date.now() / 1000);
+
+		const drandChainInfo = await drandClient.chain().info();
+		round = roundAt(options?.fakeEncrypt ? timestamp * 1000 : execution.time * 1000, drandChainInfo);
 
 		const payload = await timelockEncrypt(round, Buffer.from(payloadAsJSONString, 'utf-8'), drandClient);
 		executionToSend = {
 			chainId: chainIdAsHex,
-			slot: timestamp.toString(),
+			slot: execution.slot,
 			timing: {
 				type: 'fixed-round',
 				expectedTime: execution.time,
 				scheduledRound: round,
+				expiry: execution.expiry,
 			},
+			paymentReserve: execution.paymentReserve ? hex(execution.paymentReserve) : undefined, // TODO 0xstring ?
+			onBehalf: execution.onBehalf,
 			type: 'time-locked',
 			payload,
 		};

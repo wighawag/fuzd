@@ -10,19 +10,19 @@ export const namedLogsReporter: Reporter = async (events: LogEvent[], context: {
 		switch (event.level) {
 			case 'fatal':
 			case 'error':
-				logger.error(event.message, ...event.extra);
+				logger.error(...event.messages);
 				break;
 			case 'warn':
-				logger.warn(event.message, ...event.extra);
+				logger.warn(...event.messages);
 				break;
 			case 'debug':
-				logger.debug(event.message, ...event.extra);
+				logger.debug(...event.messages);
 				break;
 			case 'info':
-				logger.info(event.message, ...event.extra);
+				logger.info(...event.messages);
 				break;
 			case 'log':
-				logger.log(event.message, ...event.extra);
+				logger.log(...event.messages);
 				break;
 		}
 	}
@@ -37,19 +37,19 @@ export const consoleReporter: Reporter = async (events: LogEvent[], context: {re
 		switch (event.level) {
 			case 'fatal':
 			case 'error':
-				console.error(event.message, ...event.extra);
+				console.error(...event.messages);
 				break;
 			case 'warn':
-				console.warn(event.message, ...event.extra);
+				console.warn(...event.messages);
 				break;
 			case 'debug':
-				console.debug(event.message, ...event.extra);
+				console.debug(...event.messages);
 				break;
 			case 'info':
-				console.info(event.message, ...event.extra);
+				console.info(...event.messages);
 				break;
 			case 'log':
-				console.log(event.message, ...event.extra);
+				console.log(...event.messages);
 				break;
 		}
 	}
