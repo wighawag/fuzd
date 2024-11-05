@@ -2,7 +2,7 @@ import {describe, it, expect, assert} from 'vitest';
 
 import {connectToWorker} from './external-worker';
 import {createClient} from 'fuzd-client';
-import {ANVIL_URL, WORKER_URL} from './prool/pool';
+import {ANVIL_URL, FUZD_URL} from './prool/pool';
 
 const worker = connectToWorker();
 
@@ -22,7 +22,7 @@ describe('with client', () => {
 	it('should be able to submit a scheduled transaction', async function () {
 		const client = createClient({
 			privateKey: '0x1111111111111111111111111111111111111111111111111111111111111111',
-			schedulerEndPoint: WORKER_URL,
+			schedulerEndPoint: FUZD_URL,
 		});
 
 		const chainId = `0x7a69`;

@@ -1,13 +1,13 @@
 import {describe, it, expect, assert} from 'vitest';
 
 import {createClient} from 'fuzd-server';
-import {ANVIL_URL, WORKER_URL} from './prool/pool';
+import {ANVIL_URL, FUZD_URL} from './prool/pool';
 import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 import {ExecutionSubmission} from 'fuzd-common';
 import {ScheduledExecution} from 'fuzd-scheduler';
 import {privateKeyToAccount} from 'viem/accounts';
 
-const client = createClient(WORKER_URL);
+const client = createClient(FUZD_URL);
 
 describe('hono client', () => {
 	// --------------------------------------------------------------------------------------------

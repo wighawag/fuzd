@@ -1,4 +1,4 @@
-import {ANVIL_URL, WORKER_URL} from './prool/pool';
+import {ANVIL_URL, FUZD_URL} from './prool/pool';
 
 export function connectToWorker() {
 	return {
@@ -9,9 +9,9 @@ export function connectToWorker() {
 					request = req;
 				} else {
 					if (req.startsWith('/')) {
-						request = `${WORKER_URL}${req}`;
+						request = `${FUZD_URL}${req}`;
 					} else {
-						request = `${WORKER_URL}${req}`;
+						request = `${FUZD_URL}${req}`;
 					}
 				}
 			} else {
