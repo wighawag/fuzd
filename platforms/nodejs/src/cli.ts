@@ -28,15 +28,22 @@ async function main() {
 		.version(pkg.version)
 		.usage(`fuzd-nodejs [--port 34002] [--sql <sql-folder>]`)
 		.description('run fuzd-server as a node process')
-		.option('-p, --port <port>');
+		.option('-p, --port <port>')
+		.option(
+			'-i, --process-interval <interval>',
+			'number of seconds between each processQueue/. set it to zero to cancel it',
+		);
 
 	program.parse(process.argv);
 
 	type Options = {
 		port?: string;
+		processInterval?: string;
 	};
 
-	const {port}: Options = program.opts();
+	const options: Options = program.opts();
+	const port = options.port ? parseInt(options.port) : 3000;
+	const processInterval = options.processInterval ? parseInt(options.processInterval) : 1;
 
 	const env = process.env as Env;
 
@@ -64,13 +71,22 @@ async function main() {
 		);
 	}
 
-	const portToUse = port ? parseInt(port) : 3000;
+	function processQueueAndTransactions() {
+		app.fetch(new Request('http://localhost/internal/processQueue'));
+		app.fetch(new Request('http://localhost/internal/processTransactions'));
+		app.fetch(new Request('http://localhost/internal/checkScheduledExecutionStatus'));
+	}
 
-	console.log(`Server is running on http://localhost:${portToUse}`);
+	let runningInterval;
+	if (processInterval > 0) {
+		runningInterval = setInterval(processQueueAndTransactions, processInterval * 1000);
+	}
+
+	console.log(`Server is running on http://localhost:${port}`);
 
 	serve({
 		fetch: app.fetch,
-		port: portToUse,
+		port,
 	});
 }
 main();

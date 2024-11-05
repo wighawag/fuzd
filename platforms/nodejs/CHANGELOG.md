@@ -1,5 +1,11 @@
 # fuzd-nodejs
 
+## 0.7.6
+
+### Patch Changes
+
+- fuzd-nodejs: add auto internal process
+
 ## 0.7.5
 
 ### Patch Changes
