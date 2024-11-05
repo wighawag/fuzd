@@ -41,24 +41,28 @@ async function main() {
 	const env = process.env as Env;
 
 	const db = env.DB;
+	const TOKEN_ADMIN = (env as any).TOKEN_ADMIN;
 
 	const client = createClient({
 		url: db,
 	});
 	const remoteSQL = new RemoteLibSQL(client);
 
-	if (db === ':memory:') {
-		console.log(`execution sql to initialise database...`);
-		const sql = path.join(`${__dirname}`, '../node_modules/fuzd-server/src/schema/sql');
-		const executorSQL = fs.readFileSync(path.join(sql, 'executor.sql'), 'utf8');
-		const schedulerSQL = fs.readFileSync(path.join(sql, 'scheduler.sql'), 'utf8');
-		await client.executeMultiple(executorSQL + schedulerSQL);
-	}
-
 	const app = createServer<Env>({
 		getDB: (c) => remoteSQL,
 		getEnv: (c) => env,
 	});
+
+	if (db === ':memory:') {
+		console.log(`executing setup...`);
+		await app.fetch(
+			new Request('http://localhost/admin/setup', {
+				headers: {
+					Authorization: `Basic ${btoa(`admin:${TOKEN_ADMIN}`)}`,
+				},
+			}),
+		);
+	}
 
 	const portToUse = port ? parseInt(port) : 3000;
 

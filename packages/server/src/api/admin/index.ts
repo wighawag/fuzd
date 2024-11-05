@@ -11,6 +11,7 @@ import {setChainOverride, setup} from '../../setup.js';
 const logger = logs('fuzd-cf-worker-admin-api');
 
 export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
+	const {getEnv} = options;
 	const tmp = new Hono<{Bindings: Env & {}}>()
 		.use(setup({serverOptions: options}))
 		.get('/paymentAccountBroadcaster', async (c) => {
@@ -92,7 +93,8 @@ export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOpti
 		.use(
 			basicAuth({
 				verifyUser: (username, password, c) => {
-					return username === 'admin' && password === c.env.TOKEN_ADMIN;
+					const env = getEnv(c);
+					return username === 'admin' && password === (env as any).TOKEN_ADMIN; // TODO remove any
 				},
 			}),
 		)
