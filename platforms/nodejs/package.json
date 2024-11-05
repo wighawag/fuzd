@@ -1,6 +1,6 @@
 {
   "name": "fuzd-nodejs",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "publishConfig": {
     "access": "public"
   },
@@ -11,7 +11,8 @@
   "files": [
     "dist",
     "stc",
-    ".env.default"
+    ".env.default",
+    "node_modules/fuzd-server/src/schema/sql"
   ],
   "dependencies": {
     "@hono/node-server": "^1.13.3",
