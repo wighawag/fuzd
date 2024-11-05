@@ -120,6 +120,9 @@ importers:
       fuzd-scheduler:
         specifier: workspace:*
         version: link:../scheduler
+      ldenv:
+        specifier: ^0.3.11
+        version: 0.3.11
       named-logs:
         specifier: ^0.3.0
         version: 0.3.0
@@ -139,9 +142,6 @@ importers:
       as-soon:
         specifier: ^0.0.9
         version: 0.0.9
-      ldenv:
-        specifier: ^0.3.11
-        version: 0.3.11
       prettier:
         specifier: ^3.3.3
         version: 3.3.3
@@ -406,6 +406,9 @@ importers:
       fuzd-server:
         specifier: workspace:*
         version: link:../../packages/server
+      ldenv:
+        specifier: ^0.3.11
+        version: 0.3.11
       named-logs-context:
         specifier: ^0.1.1
         version: 0.1.1
@@ -416,9 +419,6 @@ importers:
       '@types/node':
         specifier: ^22.8.4
         version: 22.8.4
-      ldenv:
-        specifier: ^0.3.11
-        version: 0.3.11
       set-defaults:
         specifier: ^0.0.5
         version: 0.0.5

@@ -1,6 +1,6 @@
 {
   "name": "fuzd-nodejs",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "publishConfig": {
     "access": "public"
   },
@@ -17,13 +17,13 @@
     "@hono/node-server": "^1.13.3",
     "@libsql/client": "^0.14.0",
     "commander": "^12.1.0",
+    "ldenv": "^0.3.11",
     "fuzd-server": "workspace:*",
     "named-logs-context": "^0.1.1",
     "remote-sql-libsql": "^0.0.5"
   },
   "devDependencies": {
     "@types/node": "^22.8.4",
-    "ldenv": "^0.3.11",
     "set-defaults": "^0.0.5",
     "tsx": "^4.19.2"
   },

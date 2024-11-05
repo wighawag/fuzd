@@ -1,5 +1,11 @@
 # fuzd-client
 
+## 0.7.3
+
+### Patch Changes
+
+- fix dependencies for fuzd-client and fuzd-nodejs
+
 ## 0.7.2
 
 ### Patch Changes
