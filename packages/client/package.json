@@ -30,10 +30,10 @@
     "named-logs": "^0.3.0",
     "remote-account": "^0.2.1",
     "tlock-js": "^0.9.0",
-    "viem": "^2.21.37"
+    "viem": "^2.21.40"
   },
   "devDependencies": {
-    "@types/node": "^22.8.4",
+    "@types/node": "^22.9.0",
     "as-soon": "^0.0.9",
     "prettier": "^3.3.3",
     "tsx": "^4.19.2",
