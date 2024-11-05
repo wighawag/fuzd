@@ -11,6 +11,9 @@
 # deps
 node_modules/
 
+#build
+dist/
+
 # env
 .env
 .env.production
@@ -26,3 +29,5 @@ lerna-debug.log*
 
 # misc
 .DS_Store
+
+

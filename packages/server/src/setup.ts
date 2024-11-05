@@ -192,6 +192,12 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			},
 		});
 
+		// auto setup
+		if (c.req.query('_initDB') == 'true') {
+			await executorStorage.setup();
+			await schedulerStorage.setup();
+		}
+
 		return next();
 	};
 }

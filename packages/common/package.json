@@ -1,6 +1,6 @@
 {
   "name": "fuzd-common",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "execute transaction",
   "license": "MIT",
   "publishConfig": {
@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "as-soon": "^0.0.9",
-    "ldenv": "^0.3.10",
+    "ldenv": "^0.3.11",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3",
     "typia": "^6.11.3"

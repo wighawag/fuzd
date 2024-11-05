@@ -1,5 +1,17 @@
 # fuzd-server
 
+## 0.7.2
+
+### Patch Changes
+
+- cli for nodejs + autoSetupDB
+- Updated dependencies
+  - fuzd-tlock-decrypter@0.7.2
+  - fuzd-chain-protocol@0.7.2
+  - fuzd-scheduler@0.7.2
+  - fuzd-executor@0.7.2
+  - fuzd-common@0.7.2
+
 ## 0.7.1
 
 ### Patch Changes

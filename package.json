@@ -9,7 +9,7 @@
     "pagefind": "^1.1.1",
     "prettier": "^3.3.3",
     "pwag": "^0.3.0",
-    "set-defaults": "^0.0.2",
+    "set-defaults": "^0.0.5",
     "syncpack": "^13.0.0",
     "typedoc": "^0.26.10",
     "typedoc-plugin-markdown": "4.2.9",

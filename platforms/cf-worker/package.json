@@ -1,6 +1,6 @@
 {
   "name": "fuzd-cf-worker",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "publishConfig": {
     "access": "public"
   },
@@ -24,9 +24,9 @@
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "fuzd-server": "workspace:*",
-    "ldenv": "^0.3.10",
+    "ldenv": "^0.3.11",
     "remote-account": "^0.2.1",
-    "set-defaults": "^0.0.2",
+    "set-defaults": "^0.0.5",
     "typescript": "^5.6.3",
     "viem": "^2.21.37",
     "vitest": "^2.1.4",

@@ -1,6 +1,6 @@
 {
   "name": "fuzd-chain-protocol",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "protocol used by fuzd to interact with a chain",
   "license": "MIT",
   "publishConfig": {
@@ -39,7 +39,7 @@
     "@starknet-io/types-js": "^0.7.7",
     "as-soon": "^0.0.9",
     "eip-1193": "^0.6.1",
-    "ldenv": "^0.3.10",
+    "ldenv": "^0.3.11",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3"
   },

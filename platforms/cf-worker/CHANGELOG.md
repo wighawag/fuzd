@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.7.2
+
+### Patch Changes
+
+- cli for nodejs + autoSetupDB
+
 ## 0.7.1
 
 ### Patch Changes

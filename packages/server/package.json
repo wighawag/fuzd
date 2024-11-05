@@ -1,6 +1,6 @@
 {
   "name": "fuzd-server",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "fuzd server app",
   "license": "MIT",
   "publishConfig": {
@@ -42,7 +42,7 @@
   "devDependencies": {
     "as-soon": "^0.0.9",
     "hono-typia-openapi": "^0.1.2",
-    "ldenv": "^0.3.10",
+    "ldenv": "^0.3.11",
     "prettier": "^3.3.3",
     "ts-patch": "^3.2.1",
     "typescript": "^5.6.3",

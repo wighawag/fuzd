@@ -1,5 +1,14 @@
 # fuzd-scheduler
 
+## 0.7.2
+
+### Patch Changes
+
+- cli for nodejs + autoSetupDB
+- Updated dependencies
+  - fuzd-chain-protocol@0.7.2
+  - fuzd-common@0.7.2
+
 ## 0.7.1
 
 ### Patch Changes
