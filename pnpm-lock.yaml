@@ -272,8 +272,8 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1
       remote-sql:
-        specifier: ^0.0.5
-        version: 0.0.5
+        specifier: ^0.0.6
+        version: 0.0.6
       tlock-js:
         specifier: ^0.9.0
         version: 0.9.0
@@ -340,8 +340,8 @@ importers:
         specifier: ^0.1.1
         version: 0.1.1
       remote-sql-d1:
-        specifier: ^0.0.5
-        version: 0.0.5(@cloudflare/workers-types@4.20241022.0)
+        specifier: ^0.0.6
+        version: 0.0.6(@cloudflare/workers-types@4.20241022.0)
       workers-logger:
         specifier: npm:@bug-fix/workers-logger@0.2.0-fix.1
         version: '@bug-fix/workers-logger@0.2.0-fix.1'
@@ -413,8 +413,8 @@ importers:
         specifier: ^0.1.1
         version: 0.1.1
       remote-sql-libsql:
-        specifier: ^0.0.5
-        version: 0.0.5(@libsql/core@0.14.0)
+        specifier: ^0.0.6
+        version: 0.0.6(@libsql/core@0.14.0)
     devDependencies:
       '@types/node':
         specifier: ^22.9.0
@@ -565,8 +565,8 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1
       remote-sql-libsql:
-        specifier: ^0.0.5
-        version: 0.0.5(@libsql/core@0.14.0)
+        specifier: ^0.0.6
+        version: 0.0.6(@libsql/core@0.14.0)
       rocketh:
         specifier: ^0.10.14
         version: 0.10.14(typescript@5.6.3)(zod@3.23.8)
@@ -637,8 +637,8 @@ importers:
         specifier: ^0.0.15
         version: 0.0.15(@types/node@22.9.0)
       remote-sql-libsql:
-        specifier: ^0.0.5
-        version: 0.0.5(@libsql/core@0.14.0)
+        specifier: ^0.0.6
+        version: 0.0.6(@libsql/core@0.14.0)
       starknet-core:
         specifier: ^0.0.3
         version: 0.0.3
@@ -4901,18 +4901,18 @@ packages:
   remote-procedure-call@0.0.15:
     resolution: {integrity: sha512-zM95e3m0q/x5hMlbtcolH18rRqx/HtbrUmvrPzW5sswH1FM8sNUHpYlzABLt6h9snZworm9wP6KYEERGAVHMYA==}
 
-  remote-sql-d1@0.0.5:
-    resolution: {integrity: sha512-VdiaZAaQyL2/Z1uar48sLzbCQS5t9mU+CVzMUUc0OGZbXGIKzTLhhq80PxyId1fT0jBrIBvG8ENvUlbkL8dXtQ==}
+  remote-sql-d1@0.0.6:
+    resolution: {integrity: sha512-hAYS+iocQZIMmwZK9f6wlgiLiRHdF3k2sOLFZ1SxLmzNmmae2WJaZbsyA0GWjo7JQi1tmVmDrVv6Ay5bjQJGUA==}
     peerDependencies:
       '@cloudflare/workers-types': ^4.20230814.0
 
-  remote-sql-libsql@0.0.5:
-    resolution: {integrity: sha512-ogTu8ngHq+Nuv2tqMaK5cWeIQRecQ9jSXd4vhIYcVqygua7p83MwoHqMaTzy5vkEyjaNilDq76NNv5QybHBCBQ==}
+  remote-sql-libsql@0.0.6:
+    resolution: {integrity: sha512-qgTCREAwZ/QHMYujH4lABCfqrqR7NIxthSoMnCw9Cv/cZ04R7Ne50wxDhrH/lXb9KGu0OY/cO2Af1JyGOSbwhw==}
     peerDependencies:
-      '@libsql/core': ^0.6.0
+      '@libsql/core': ^0.14.0
 
-  remote-sql@0.0.5:
-    resolution: {integrity: sha512-nT1tW2A/m4foF+/fFEs4pWa9AyetD8S/xgokB8VsKNFVMhHHyz2D+JVHvDJ4OLU0OnqXAkP81i7v6L5CtnuabQ==}
+  remote-sql@0.0.6:
+    resolution: {integrity: sha512-o1NUTFD5LXtjQv4zVPUSov8ik6r7XMAjVoL/GWgKsDRa34/czJVzOYTYGMc2i4H70bfvNsigesxg285kCIf3Fw==}
 
   repeat-string@1.6.1:
     resolution: {integrity: sha512-PV0dzCYDNfRi1jCDbJzpW7jNNDRuCOG/jI5ctQcGKt/clZD+YcPS3yIlWuTJMmESC8aevCFmWJy5wjAFgNqN6w==}
@@ -10606,17 +10606,17 @@ snapshots:
       - supports-color
       - terser
 
-  remote-sql-d1@0.0.5(@cloudflare/workers-types@4.20241022.0):
+  remote-sql-d1@0.0.6(@cloudflare/workers-types@4.20241022.0):
     dependencies:
       '@cloudflare/workers-types': 4.20241022.0
-      remote-sql: 0.0.5
+      remote-sql: 0.0.6
 
-  remote-sql-libsql@0.0.5(@libsql/core@0.14.0):
+  remote-sql-libsql@0.0.6(@libsql/core@0.14.0):
     dependencies:
       '@libsql/core': 0.14.0
-      remote-sql: 0.0.5
+      remote-sql: 0.0.6
 
-  remote-sql@0.0.5: {}
+  remote-sql@0.0.6: {}
 
   repeat-string@1.6.1: {}
 

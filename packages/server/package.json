@@ -35,7 +35,7 @@
     "hono": "^4.6.9",
     "named-logs": "^0.3.0",
     "remote-account": "^0.2.1",
-    "remote-sql": "^0.0.5",
+    "remote-sql": "^0.0.6",
     "tlock-js": "^0.9.0",
     "viem": "^2.21.40"
   },

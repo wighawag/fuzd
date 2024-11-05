@@ -16,7 +16,7 @@
     "prool": "^0.0.16",
     "remote-account": "^0.2.1",
     "remote-procedure-call": "^0.0.15",
-    "remote-sql-libsql": "^0.0.5",
+    "remote-sql-libsql": "^0.0.6",
     "starknet-core": "^0.0.3",
     "strk": "^0.0.15",
     "strk-account": "^0.0.1",
