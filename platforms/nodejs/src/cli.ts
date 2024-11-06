@@ -82,11 +82,11 @@ async function main() {
 		runningInterval = setInterval(processQueueAndTransactions, processInterval * 1000);
 	}
 
-	console.log(`Server is running on http://localhost:${port}`);
-
 	serve({
 		fetch: app.fetch,
 		port,
 	});
+
+	console.log(`Server is running on http://localhost:${port}`);
 }
 main();
