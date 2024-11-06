@@ -1,5 +1,4 @@
 import {Hono} from 'hono';
-import {Bindings} from 'hono/types';
 import {ServerOptions} from '../../types.js';
 import {basicAuth} from 'hono/basic-auth';
 import {logs} from 'named-logs';
@@ -7,12 +6,13 @@ import {assert} from 'typia';
 import {createErrorObject} from '../../utils/response.js';
 import {String0x} from 'fuzd-common';
 import {setChainOverride, setup} from '../../setup.js';
+import {Env} from '../../env.js';
 
 const logger = logs('fuzd-cf-worker-admin-api');
 
-export function getAdminAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
+export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
 	const {getEnv} = options;
-	const tmp = new Hono<{Bindings: Env & {}}>()
+	const tmp = new Hono<{Bindings: Bindings}>()
 		.use(setup({serverOptions: options}))
 		.get('/paymentAccountBroadcaster', async (c) => {
 			try {

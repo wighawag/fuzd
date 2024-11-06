@@ -3,11 +3,10 @@ import {Bindings} from 'hono/types';
 import {ServerOptions} from '../../types.js';
 import {createErrorObject} from '../../utils/response.js';
 import {String0x} from 'fuzd-common';
+import {Env} from '../../env.js';
 
-export function getPublicAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
-	const {getDB} = options;
-
-	const app = new Hono<{Bindings: Env & {}}>()
+export function getPublicAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
+	const app = new Hono<{Bindings: Bindings}>()
 		.get('/publicKey', async (c) => {
 			try {
 				const config = c.get('config');

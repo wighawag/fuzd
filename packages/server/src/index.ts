@@ -1,7 +1,6 @@
 import {Hono} from 'hono';
 import {cors} from 'hono/cors';
-import {Bindings} from 'hono/types';
-import {AddToAllOutputs, ServerOptions} from './types.js';
+import {ServerOptions} from './types.js';
 import {getPublicAPI} from './api/public/index.js';
 import {getAdminAPI} from './api/admin/index.js';
 import {getInternalAPI} from './api/internal/index.js';
@@ -12,14 +11,15 @@ import {getAdminDashboard} from './dashboard/admin/index.js';
 import {swaggerUI} from '@hono/swagger-ui';
 import {hc} from 'hono/client';
 import {HTTPException} from 'hono/http-exception';
+import {Env} from './env.js';
 
 export type {Context} from 'hono';
 
 export * from './storage/RemoteSQLExecutorStorage.js';
 export * from './storage/RemoteSQLSchedulerStorage.js';
 
-function createAppWithPublicAPIOnly<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
-	const app = new Hono<{Bindings: Env & {}}>().use(
+function createAppWithPublicAPIOnly<Bindings extends Env>(options: ServerOptions<Bindings>) {
+	const app = new Hono<{Bindings: Bindings}>().use(
 		cors({
 			origin: '*',
 			allowHeaders: ['X-Custom-Header', 'Upgrade-Insecure-Requests', 'Content-Type', 'SIGNATURE'],
@@ -30,9 +30,9 @@ function createAppWithPublicAPIOnly<Env extends Bindings = Bindings>(options: Se
 		}),
 	);
 
-	const schedulingAPI = getSchedulingAPI<Env>(options);
-	const executionAPI = getExecutionAPI<Env>(options);
-	const publicAPI = getPublicAPI<Env>(options);
+	const schedulingAPI = getSchedulingAPI(options);
+	const executionAPI = getExecutionAPI(options);
+	const publicAPI = getPublicAPI(options);
 
 	const api = new Hono<{Bindings: Env & {}}>()
 		.use(setup({serverOptions: options}))
@@ -52,14 +52,14 @@ export function createDoc() {
 		.get('/ui', swaggerUI({url: '/doc/openapi.json'}));
 }
 
-export function createServer<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
-	const adminDashboard = getAdminDashboard<Env>(options);
+export function createServer<Bindings extends Env>(options: ServerOptions<Bindings>) {
+	const adminDashboard = getAdminDashboard<Bindings>(options);
 	const dashboard = new Hono<{Bindings: Env & {}}>()
 		.use(setup({serverOptions: options}))
 		.route('/admin', adminDashboard);
 
-	const internalAPI = getInternalAPI<Env>(options);
-	const adminAPI = getAdminAPI<Env>(options);
+	const internalAPI = getInternalAPI(options);
+	const adminAPI = getAdminAPI(options);
 
 	return createAppWithPublicAPIOnly(options)
 		.get('/', (c) => {

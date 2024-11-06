@@ -8,11 +8,12 @@ import {typiaValidator} from '@hono/typia-validator';
 import {ExecutionSubmission, String0x} from 'fuzd-common';
 import {MyTransactionData} from '../../setup.js';
 import {createErrorObject} from '../../utils/response.js';
+import {Env} from '../../env.js';
 
 const validate = createValidate<ScheduledExecution<ExecutionSubmission<MyTransactionData>>>();
 
-export function getSchedulingAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
-	const app = new Hono<{Bindings: Env & {}}>()
+export function getSchedulingAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
+	const app = new Hono<{Bindings: Bindings}>()
 
 		.post(
 			'/scheduleExecution',

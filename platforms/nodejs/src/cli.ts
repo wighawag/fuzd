@@ -26,7 +26,7 @@ async function main() {
 	program
 		.name('fuzd-nodejs')
 		.version(pkg.version)
-		.usage(`fuzd-nodejs [--port 34002] [--sql <sql-folder>]`)
+		.usage(`fuzd-nodejs [--port 34002] [--process-interval 1]`)
 		.description('run fuzd-server as a node process')
 		.option('-p, --port <port>')
 		.option(
@@ -47,11 +47,11 @@ async function main() {
 
 	const env = process.env as Env;
 
-	const db = env.DB;
+	const dbURL = env.DB;
 	const TOKEN_ADMIN = (env as any).TOKEN_ADMIN;
 
 	const client = createClient({
-		url: db,
+		url: dbURL,
 	});
 	const remoteSQL = new RemoteLibSQL(client);
 
@@ -60,7 +60,7 @@ async function main() {
 		getEnv: (c) => env,
 	});
 
-	if (db === ':memory:') {
+	if (dbURL === ':memory:') {
 		console.log(`executing setup...`);
 		await app.fetch(
 			new Request('http://localhost/admin/setup', {

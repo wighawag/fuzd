@@ -1,14 +1,14 @@
 import {Hono} from 'hono';
-import {Bindings} from 'hono/types';
 import {ServerOptions} from '../../types.js';
 import {logs} from 'named-logs';
 import {createErrorObject} from '../../utils/response.js';
 import {setup} from '../../setup.js';
+import {Env} from '../../env.js';
 
 const logger = logs('fuzd-server-internal-api');
 
-export function getInternalAPI<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
-	const app = new Hono<{Bindings: Env & {}}>()
+export function getInternalAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
+	const app = new Hono<{Bindings: Bindings}>()
 		.use(setup({serverOptions: options}))
 		.get('/processQueue', async (c) => {
 			try {

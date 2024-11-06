@@ -2,7 +2,6 @@
 /** @jsxImportSource hono/jsx */
 import {jsx} from 'hono/jsx';
 import {Hono} from 'hono';
-import {Bindings} from 'hono/types';
 import {ServerOptions} from '../../types.js';
 import {basicAuth} from 'hono/basic-auth';
 import {logs} from 'named-logs';
@@ -11,11 +10,12 @@ import {Table} from '../components/Table.js';
 import {displayExecutionBroadcasted, displayScheduledExecutionQueued} from '../display/index.js';
 import {assert} from 'typia';
 import {String0x} from 'fuzd-common';
+import {Env} from '../../env.js';
 
 const logger = logs('fuzd-cf-worker-admin-dashboard');
 
-export function getAdminDashboard<Env extends Bindings = Bindings>(options: ServerOptions<Env>) {
-	const tmp = new Hono<{Bindings: Env & {}}>()
+export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<Bindings>) {
+	const tmp = new Hono<{Bindings: Bindings}>()
 		// TODO authentication
 		.get('/queue', async (c) => {
 			const config = c.get('config');
