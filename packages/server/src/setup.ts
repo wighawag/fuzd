@@ -59,6 +59,17 @@ function assignChainProtocols(
 ) {
 	const envKeys = Object.keys(env);
 	for (const envKey of envKeys) {
+		// TODO use DEFAULT_ETHEREUM_NODE?
+		/*
+		{
+			"type": "alchemy",
+			"version": 2,
+			"uri": "https://{chainName}.g.alchemy.com/v2/<api-key>#finality=12&worstCaseBlockTime=15"
+		}
+		*/
+		// would need to consider ethereum as default
+		// then we make a request to see if it works, if not reject request,
+		// should be for most request but at least for writable ones
 		if (envKey.startsWith('CHAIN_0x')) {
 			const chainId = envKey.substring(6) as String0x;
 			const chainString = env[envKey as `CHAIN_0x${string}`] as string;

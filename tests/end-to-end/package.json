@@ -15,9 +15,9 @@
     "prool-any": "^0.0.1",
     "prool-cf-worker": "^0.1.3",
     "typescript": "^5.6.3",
-    "viem": "^2.21.40",
-    "vitest": "^2.1.4",
-    "wrangler": "^3.84.1"
+    "viem": "^2.21.55",
+    "vitest": "^2.1.8",
+    "wrangler": "^3.95.0"
   },
   "scripts": {
     "test": "vitest"

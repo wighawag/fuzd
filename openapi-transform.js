@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 const openapiSTR = fs.readFileSync('./packages/server/doc/openapi.json', 'utf-8');
 const openapi = JSON.parse(openapiSTR);
+openapi.servers = [{url: 'https://api.fuzd.dev'}];
 
 const descriptions = JSON.parse(fs.readFileSync('./openapi-descriptions.json'));
 

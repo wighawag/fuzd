@@ -14,17 +14,17 @@
     ".env.default"
   ],
   "dependencies": {
-    "@hono/node-server": "^1.13.5",
+    "@hono/node-server": "^1.13.7",
     "@libsql/client": "^0.14.0",
     "commander": "^12.1.0",
     "fuzd-server": "workspace:*",
-    "ldenv": "^0.3.11",
+    "ldenv": "^0.3.12",
     "named-logs-context": "^0.1.1",
     "remote-sql-libsql": "^0.0.6"
   },
   "devDependencies": {
-    "@types/node": "^22.9.0",
-    "as-soon": "^0.0.9",
+    "@types/node": "^22.10.2",
+    "as-soon": "^0.0.11",
     "set-defaults": "^0.0.5",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"

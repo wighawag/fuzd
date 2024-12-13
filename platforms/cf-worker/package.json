@@ -16,21 +16,21 @@
     "workers-logger": "npm:@bug-fix/workers-logger@0.2.0-fix.1"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.5.24",
-    "@cloudflare/workers-types": "^4.20241022.0",
-    "@types/node": "^22.9.0",
+    "@cloudflare/vitest-pool-workers": "^0.5.36",
+    "@cloudflare/workers-types": "^4.20241205.0",
+    "@types/node": "^22.10.2",
     "fuzd-chain-protocol": "workspace:*",
     "fuzd-common": "workspace:*",
     "fuzd-executor": "workspace:*",
     "fuzd-scheduler": "workspace:*",
     "fuzd-server": "workspace:*",
-    "ldenv": "^0.3.11",
-    "remote-account": "^0.2.1",
+    "ldenv": "^0.3.12",
+    "remote-account": "^0.2.2",
     "set-defaults": "^0.0.5",
     "typescript": "^5.6.3",
-    "viem": "^2.21.40",
-    "vitest": "^2.1.4",
-    "wrangler": "^3.84.1"
+    "viem": "^2.21.55",
+    "vitest": "^2.1.8",
+    "wrangler": "^3.95.0"
   },
   "scripts": {
     "prepare": "set-defaults .",

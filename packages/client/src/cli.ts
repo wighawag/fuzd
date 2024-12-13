@@ -2,7 +2,7 @@ import {createClient} from './index.js';
 import {loadEnv} from 'ldenv';
 import {parseEther} from 'viem';
 import {Command} from 'commander';
-import pkg from '../package.json';
+import pkg from '../package.json' assert {type: 'json'};
 import {String0x} from 'fuzd-common';
 loadEnv();
 

@@ -25,22 +25,22 @@
     "src"
   ],
   "dependencies": {
-    "@noble/hashes": "^1.5.0",
-    "@scure/bip32": "^1.5.0",
-    "@scure/starknet": "^1.0.0",
-    "eip-1193-signer": "^0.0.5",
+    "@noble/hashes": "^1.6.1",
+    "@scure/bip32": "^1.6.0",
+    "@scure/starknet": "^1.1.0",
+    "eip-1193-signer": "^0.1.0",
     "fuzd-common": "workspace:*",
-    "remote-account": "^0.2.1",
+    "remote-account": "^0.2.2",
     "remote-procedure-call": "^0.0.15",
     "starknet-core": "^0.0.3",
     "strk": "^0.0.15"
   },
   "devDependencies": {
-    "@starknet-io/types-js": "^0.7.7",
-    "as-soon": "^0.0.9",
+    "@starknet-io/types-js": "^0.7.10",
+    "as-soon": "^0.0.11",
     "eip-1193": "^0.6.1",
-    "ldenv": "^0.3.11",
-    "prettier": "^3.3.3",
+    "ldenv": "^0.3.12",
+    "prettier": "^3.4.2",
     "typescript": "^5.6.3"
   },
   "scripts": {
