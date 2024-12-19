@@ -1,5 +1,12 @@
 # fuzd-nodejs
 
+## 0.7.7
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-server@0.7.4
+
 ## 0.7.6
 
 ### Patch Changes

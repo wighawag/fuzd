@@ -329,6 +329,9 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 				],
 			});
 			const value = Number(result);
+			if (isNaN(value)) {
+				throw new Error(`could not get timestamp from contract, ${result}`);
+			}
 			return value;
 		}
 

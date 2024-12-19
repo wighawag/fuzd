@@ -21,7 +21,7 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 			const config = c.get('config');
 			const queue = await config.schedulerStorage.getQueueTopMostExecutions({limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
-			const displayData = queue.map(displayScheduledExecutionQueued(diff));
+			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));
 			return c.html(
 				<Layout>
 					<Table data={displayData} />
@@ -32,7 +32,7 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 			const config = c.get('config');
 			const queue = await config.schedulerStorage.getQueueTopMostExecutions({limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
-			const displayData = queue.map(displayScheduledExecutionQueued(diff, true));
+			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, true, config)));
 			return c.html(
 				<Layout>
 					<Table data={displayData} />
@@ -43,7 +43,7 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 			const config = c.get('config');
 			const queue = await config.schedulerStorage.getAllExecutions({limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
-			const displayData = queue.map(displayScheduledExecutionQueued(diff));
+			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));
 			return c.html(
 				<Layout>
 					<Table data={displayData} />
@@ -55,7 +55,7 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 			const account = assert<String0x>(c.req.param('account'));
 			const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
-			const displayData = queue.map(displayScheduledExecutionQueued(diff));
+			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));
 			return c.html(
 				<Layout>
 					<Table data={displayData} />
@@ -67,7 +67,7 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 			const account = assert<String0x>(c.req.param('account'));
 			const queue = await config.schedulerStorage.getAccountArchivedSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
-			const displayData = queue.map(displayScheduledExecutionQueued(diff));
+			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));
 			return c.html(
 				<Layout>
 					<Table data={displayData} />
@@ -77,7 +77,7 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 		.get('/executions', async (c) => {
 			const config = c.get('config');
 			const txs = await config.executorStorage.getPendingExecutions({limit: 100});
-			const displayData = txs.map(displayExecutionBroadcasted());
+			const displayData = await Promise.all(txs.map(displayExecutionBroadcasted(config)));
 			return c.html(
 				<Layout>
 					<Table data={displayData} />
@@ -87,7 +87,7 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 		.get('/all-executions', async (c) => {
 			const config = c.get('config');
 			const txs = await config.executorStorage.getAllExecutions({limit: 100});
-			const displayData = txs.map(displayExecutionBroadcasted());
+			const displayData = await Promise.all(txs.map(displayExecutionBroadcasted(config)));
 			return c.html(
 				<Layout>
 					<Table data={displayData} />
