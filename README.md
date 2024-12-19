@@ -1,5 +1,7 @@
 # fuzd
 
+FUZD allows users to schedule and execute transactions in the future without the server knowing their content until execution time. It supports encrypted transactions using [Drand](drand.love) and is modular, supporting multiple execution engines and decryption systems. The project currently supports both Starknet and EVM chains.
+
 ## Blindfolded Execution
 
 fuzd allow you to execute transactions in the futire without knowing their content until execution time
