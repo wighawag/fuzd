@@ -149,6 +149,10 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 			}
 		}
 
+		if (maxFeePerGas == 0n) {
+			maxFeePerGas = 1n;
+		}
+
 		return {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate};
 	}
 

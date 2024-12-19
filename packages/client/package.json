@@ -1,6 +1,6 @@
 {
   "name": "fuzd-client",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "description": "default client for fuzd using tlock-js",
   "license": "MIT",
   "publishConfig": {

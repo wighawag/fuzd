@@ -1,5 +1,11 @@
 # fuzd-chain-protocol
 
+## 0.7.4
+
+### Patch Changes
+
+- do not allowe zero gas fee
+
 ## 0.7.3
 
 ### Patch Changes

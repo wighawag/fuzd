@@ -1,5 +1,12 @@
 # fuzd-executor
 
+## 0.7.4
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-chain-protocol@0.7.4
+
 ## 0.7.3
 
 ### Patch Changes
