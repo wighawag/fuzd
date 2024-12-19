@@ -3,15 +3,19 @@
  * @module
  */
 
-import {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
+import type {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
 import {timelockEncrypt, HttpChainClient, roundAt, Buffer} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';
-import {ExecutionSubmission, RemoteAccountInfo, String0x} from 'fuzd-common';
+import type {ExecutionSubmission, RemoteAccountInfo, String0x} from 'fuzd-common';
 import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 
 import {testnetClient, mainnetClient} from 'tlock-js';
 import {InvokeTransactionData, StarknetTransactionData} from 'fuzd-chain-protocol/starknet';
 export {mainnetClient, testnetClient};
+
+export type {ScheduleInfo, ScheduledExecution, DecryptedPayload};
+export type {ExecutionSubmission, RemoteAccountInfo, String0x};
+export type {EthereumTransactionData, StarknetTransactionData, InvokeTransactionData};
 
 (globalThis as any).Buffer = Buffer;
 
@@ -178,3 +182,5 @@ export function createClient(config: ClientConfig) {
 		scheduleExecution,
 	};
 }
+
+export type FuzdClient = ReturnType<typeof createClient>;
