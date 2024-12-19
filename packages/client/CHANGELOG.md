@@ -1,5 +1,11 @@
 # fuzd-client
 
+## 0.7.4
+
+### Patch Changes
+
+- a5a3054: export type for fuzd-client
+
 ## 0.7.3
 
 ### Patch Changes
