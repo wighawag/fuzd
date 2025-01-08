@@ -116,6 +116,7 @@ export function createClient(config: ClientConfig) {
 		if (_assignedRemoteAccount && remoteAccount.address != _assignedRemoteAccount.address) {
 			throw new Error(`remoteAccount derivation changed`);
 		}
+		const serviceParameters = remoteAccount.serviceParameters;
 		const transactionData = fromSimplerTransactionData(execution.transaction);
 		const payloadJSON: DecryptedPayload<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>> = {
 			type: 'clear',
@@ -124,7 +125,7 @@ export function createClient(config: ClientConfig) {
 					chainId: chainIdAsHex,
 					maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as String0x,
 					transaction: transactionData,
-					derivationParameters: remoteAccount.derivationParameters,
+					serviceParameters: serviceParameters,
 				},
 			],
 		};
@@ -147,6 +148,7 @@ export function createClient(config: ClientConfig) {
 				scheduledRound: round,
 				expiry: execution.expiry,
 			},
+			executionServiceParameters: serviceParameters,
 			paymentReserve: execution.paymentReserve ? hex(execution.paymentReserve) : undefined, // TODO 0xstring ?
 			onBehalf: execution.onBehalf,
 			type: 'time-locked',

@@ -3,7 +3,6 @@ import {BroadcasterData} from './types/executor-storage.js';
 import {ExecutorBackend} from './types/external.js';
 import {
 	Executor,
-	ExpectedWorstCaseGasPrice,
 	ExecutionResponse,
 	PendingExecutionStored,
 	ExecutionSubmission,
@@ -12,6 +11,9 @@ import {
 	numToHex,
 	bigintToHex,
 	RemoteAccountInfo,
+	ExecutionServiceParameters,
+	UpdateableParameters,
+	validateParameters,
 } from 'fuzd-common';
 import {ExecutorConfig} from './types/internal.js';
 import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo, TransactionDataTypes} from 'fuzd-chain-protocol';
@@ -32,8 +34,25 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
-	function getExpectedWorstCaseGasPrice(chainId: String0x): Promise<ExpectedWorstCaseGasPrice> {
-		return storage.getExpectedWorstCaseGasPrice(chainId);
+	async function getServiceParameters(chainId: String0x): Promise<UpdateableParameters<ExecutionServiceParameters>> {
+		const chainProtocol = _getChainProtocol(chainId);
+		const derivationParameters = await chainProtocol.getDerivationParameters(config.serverAccount);
+		const expectedWorstCaseGasPrice = await storage.getExpectedWorstCaseGasPrice(chainId);
+		// TODO
+		// const fees = await storage.getFees(chainId);
+		const fees = {
+			current: {
+				fixed: '0',
+				per_1000_000: 0,
+			},
+			updateTimestamp: 0,
+			previous: undefined,
+		};
+		return {
+			derivationParameters: {current: derivationParameters, updateTimestamp: 0, previous: undefined},
+			expectedWorstCaseGasPrice,
+			fees: fees,
+		};
 	}
 
 	async function getExecutionStatus(executionBatch: {
@@ -54,11 +73,19 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	}
 
 	async function getRemoteAccount(chainId: String0x, account: String0x): Promise<RemoteAccountInfo> {
+		const serviceParameters = await getServiceParameters(chainId);
 		const chainProtocol = _getChainProtocol(chainId);
-		const derivationParameters = await chainProtocol.getCurrentDerivationParameters();
-		const broadcaster = await chainProtocol.getBroadcaster(derivationParameters, account);
+		const broadcaster = await chainProtocol.getBroadcaster(
+			config.serverAccount,
+			serviceParameters.derivationParameters.current,
+			account,
+		);
 		return {
-			derivationParameters,
+			serviceParameters: {
+				derivationParameters: serviceParameters.derivationParameters.current,
+				expectedWorstCaseGasPrice: serviceParameters.expectedWorstCaseGasPrice?.current,
+				fees: serviceParameters.fees.current,
+			},
 			address: broadcaster.address,
 		};
 	}
@@ -69,7 +96,6 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		account: String0x,
 		submission: ExecutionSubmission<TransactionDataType>,
 		options?: {
-			expectedWorstCaseGasPrice?: bigint;
 			asPaymentFor?: {
 				chainId: String0x;
 				account: String0x;
@@ -78,21 +104,25 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				upToGasPrice: bigint;
 			};
 		},
+		serviceParametersOverride?: ExecutionServiceParameters,
 	): Promise<ExecutionResponse<TransactionDataType>> {
 		const chainProtocol = _getChainProtocol(submission.chainId);
 
 		const realTimestamp = Math.floor(Date.now() / 1000);
 
-		let expectedWorstCaseGasPrice = options?.expectedWorstCaseGasPrice;
-		if (expectedWorstCaseGasPrice == undefined) {
-			const expectedWorstCaseGasPriceConfig = await storage.getExpectedWorstCaseGasPrice(submission.chainId);
-			const gasPriceTime = expectedWorstCaseGasPriceConfig?.updateTimestamp;
-			if (gasPriceTime && expectedWorstCaseGasPriceConfig.current != undefined) {
-				expectedWorstCaseGasPrice = expectedWorstCaseGasPriceConfig.current;
-				const previous = expectedWorstCaseGasPriceConfig?.previous;
-				if (previous != undefined && previous < expectedWorstCaseGasPrice && realTimestamp < gasPriceTime + 30 * 60) {
-					expectedWorstCaseGasPrice = previous;
-				}
+		let serviceParameters = submission.serviceParameters;
+		if (!serviceParametersOverride) {
+			const allowedParameters = await getServiceParameters(submission.chainId);
+			if (!validateParameters(serviceParameters, allowedParameters, realTimestamp)) {
+				throw new Error(`provided parameters do not match the current or previous parameters`);
+			}
+		} else {
+			serviceParameters = serviceParametersOverride;
+
+			if (JSON.stringify(serviceParametersOverride) !== JSON.stringify(submission.serviceParameters)) {
+				console.error(
+					`user provided an execution with different service parameters than the override provided by the scheduler`,
+				);
 			}
 		}
 
@@ -108,13 +138,17 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 		const timestamp = await chainProtocol.getTimestamp();
 
-		const validation = await chainProtocol.validateDerivationParameters(submission.derivationParameters);
+		const validation = await chainProtocol.validateDerivationParameters(serviceParameters.derivationParameters);
 
 		if (!validation.success) {
 			throw new Error(validation.error);
 		}
 
-		const broadcaster = await chainProtocol.getBroadcaster(submission.derivationParameters, account);
+		const broadcaster = await chainProtocol.getBroadcaster(
+			config.serverAccount,
+			serviceParameters.derivationParameters,
+			account,
+		);
 
 		if (
 			!slot.startsWith(`_INTERNAL_preliminary_`) &&
@@ -132,6 +166,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 					account,
 				);
 				const batchIndex = 0;
+				// TODO : consider cost of this for first execution
 				// console.log(`broadcastExecution...`, preliminaryTransaction);
 				// TODO ensure _INTERNAL_ prefixed slots cannot be used
 				const txInfo = await broadcastExecution(`_INTERNAL_preliminary_${broadcaster.address}`, batchIndex, account, {
@@ -140,7 +175,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 					transaction: preliminaryTransaction,
 					expiryTime: submission.expiryTime,
 					onBehalf: submission.onBehalf,
-					derivationParameters: submission.derivationParameters,
+					serviceParameters,
 				});
 
 				// console.log(`preliminary broadcasted`, txInfo);
@@ -152,14 +187,12 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			account,
 			slot,
 			batchIndex,
-			derivationParameters: submission.derivationParameters,
+			serviceParameters,
 			transaction: submission.transaction as TransactionDataType,
 			maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
 			isVoidTransaction: false,
 			initialTime: timestamp,
 			expiryTime: submission.expiryTime,
-			expectedWorstCaseGasPrice:
-				expectedWorstCaseGasPrice != undefined ? bigintToHex(expectedWorstCaseGasPrice) : undefined,
 			finalized: false,
 		};
 
@@ -225,7 +258,13 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		if (dataFromStorage) {
 			broadcasterData = dataFromStorage;
 		} else {
-			broadcasterData = {chainId: chainId, address: broadcasterAddress, nextNonce: currentNonceAsPerNetwork};
+			broadcasterData = {
+				chainId: chainId,
+				address: broadcasterAddress,
+				nextNonce: currentNonceAsPerNetwork,
+				// debt: 0n,
+				// debtCounter: 0,
+			};
 		}
 
 		const expectedNonce = broadcasterData.nextNonce;
@@ -392,14 +431,13 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			chainId: execution.chainId,
 			transaction: execution.transaction, // we never change it, all data changed are captured by : transactionParametersUsed
 			transactionParametersUsed: transactionParametersUsed,
-			derivationParameters: execution.derivationParameters,
+			serviceParameters: execution.serviceParameters,
 			maxFeePerGasAuthorized: execution.maxFeePerGasAuthorized,
 			initialTime: execution.initialTime,
 			expiryTime: execution.expiryTime,
 			slot: execution.slot,
 			batchIndex: execution.batchIndex,
 			account: execution.account,
-			expectedWorstCaseGasPrice: execution.expectedWorstCaseGasPrice,
 			finalized: execution.finalized,
 			hash: rawTxInfo.hash,
 			broadcastTime: timestamp,
@@ -463,8 +501,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		let {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await chainProtocol.getGasFee(pendingExecution);
 
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGas) {
-			const expectedWorstCaseGasPrice = pendingExecution.expectedWorstCaseGasPrice
-				? BigInt(pendingExecution.expectedWorstCaseGasPrice)
+			const expectedWorstCaseGasPrice = pendingExecution.serviceParameters.expectedWorstCaseGasPrice
+				? BigInt(pendingExecution.serviceParameters.expectedWorstCaseGasPrice)
 				: undefined;
 
 			if (expectedWorstCaseGasPrice != undefined && expectedWorstCaseGasPrice < gasPriceEstimate.maxFeePerGas) {
@@ -485,7 +523,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 					const paymentAccount = config.paymentAccount;
 					if (paymentAccount) {
 						const broadcaster = await chainProtocol.getBroadcaster(
-							pendingExecution.derivationParameters,
+							config.serverAccount,
+							pendingExecution.serviceParameters.derivationParameters,
 							paymentAccount,
 						);
 						const broadcasterBalance = await chainProtocol.getBalance(broadcaster.address);
@@ -501,7 +540,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 								chainId: pendingExecution.chainId,
 								maxFeePerGasAuthorized: `0x38D7EA4C68000`, // 1000 gwei // TODO CONFIGURE per network: max worst worst case
 								transaction: transaction,
-								derivationParameters: pendingExecution.derivationParameters,
+								serviceParameters: pendingExecution.serviceParameters,
 							};
 							await broadcastExecution(
 								`${pendingExecution.account}_${pendingExecution.transactionParametersUsed.from}_${pendingExecution.transactionParametersUsed.nonce}_${gasPriceEstimate.maxFeePerGas.toString()}`,
@@ -515,6 +554,14 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 										slot: pendingExecution.slot,
 										batchIndex: pendingExecution.batchIndex,
 										upToGasPrice: gasPriceEstimate.maxFeePerGas,
+									},
+								},
+								{
+									...pendingExecution.serviceParameters,
+									// we do not pay fees here
+									fees: {
+										fixed: '0',
+										per_1000_000: 0,
 									},
 								},
 							);
@@ -539,7 +586,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			(maxFeePerGasUsed === maxFeePerGas && maxPriorityFeePerGasUsed < maxPriorityFeePerGas)
 		) {
 			const broadcaster = await chainProtocol.getBroadcaster(
-				pendingExecution.derivationParameters,
+				config.serverAccount,
+				pendingExecution.serviceParameters.derivationParameters,
 				pendingExecution.account,
 			);
 			if (!broadcaster) {
@@ -589,7 +637,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		getRemoteAccount,
 		broadcastExecution,
 		getExecutionStatus,
-		getExpectedWorstCaseGasPrice,
+		getServiceParameters,
 		processPendingTransactions,
 	};
 }

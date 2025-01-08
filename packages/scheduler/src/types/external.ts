@@ -1,5 +1,5 @@
 import {ScheduledExecutionQueued} from './scheduler-storage.js';
-import {ExecutionSubmission, String0x} from 'fuzd-common';
+import {ExecutionSubmission, String0x, ExecutionServiceParameters} from 'fuzd-common';
 // ------------------------------------------------------------------------------------------------
 // PriorTransactionInfo
 // ------------------------------------------------------------------------------------------------
@@ -85,31 +85,31 @@ export type DecryptedPayload<ExecutionDataType> =
 	| {type: 'clear'; executions: ExecutionDataType[]};
 // ------------------------------------------------------------------------------------------------
 
-// ------------------------------------------------------------------------------------------------
-// ScheduledTimeLockedExecution
-// ------------------------------------------------------------------------------------------------
-export type ScheduledTimeLockedExecution = {
-	type: 'time-locked';
+export type BaseScheduledExecution = {
 	chainId: String0x;
 	slot: string;
 	onBehalf?: String0x;
+	paymentReserve?: string;
+	executionServiceParameters: ExecutionServiceParameters;
+};
+
+// ------------------------------------------------------------------------------------------------
+// ScheduledTimeLockedExecution
+// ------------------------------------------------------------------------------------------------
+export type ScheduledTimeLockedExecution = BaseScheduledExecution & {
+	type: 'time-locked';
 	payload: string;
 	timing: TimingTypesCompatibleWithTimeLock;
-	paymentReserve?: string;
 };
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
 // ScheduledExecutionInClear
 // ------------------------------------------------------------------------------------------------
-export type ScheduledExecutionInClear<ExecutionDataType> = {
+export type ScheduledExecutionInClear<ExecutionDataType> = BaseScheduledExecution & {
 	type: 'clear';
-	chainId: String0x;
-	slot: string;
-	onBehalf?: String0x;
 	executions: ExecutionDataType[];
 	timing: TimingTypes;
-	paymentReserve?: string;
 };
 // ------------------------------------------------------------------------------------------------
 

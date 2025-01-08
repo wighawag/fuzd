@@ -103,7 +103,6 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			tokenContractAddress: String0x;
 			accountContractClassHash: String0x;
 		},
-		public account: ETHAccount,
 	) {
 		this.rpc = createCurriedJSONRPC<Methods>(url);
 	}
@@ -277,22 +276,26 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 		return {success: true};
 	}
 
-	async getCurrentDerivationParameters(): Promise<DerivationParameters> {
+	async getDerivationParameters(account: ETHAccount): Promise<DerivationParameters> {
 		return {
 			type: 'starknet',
 			data: {
-				publicKey: this.account.publicExtendedKey,
+				publicKey: account.publicExtendedKey,
 				accountClassHash: this.config.accountContractClassHash,
 			},
 		};
 	}
-	async getBroadcaster(parameters: DerivationParameters, forAddress: String0x): Promise<BroadcasterSignerData> {
+	async getBroadcaster(
+		account: ETHAccount,
+		parameters: DerivationParameters,
+		forAddress: String0x,
+	): Promise<BroadcasterSignerData> {
 		const validation = await this.validateDerivationParameters(parameters);
 		if (!validation.success) {
 			throw new Error(validation.error);
 		}
 
-		const {public_key, private_key} = await this._getStarknetSigner(this.account, forAddress);
+		const {public_key, private_key} = await this._getStarknetSigner(account, forAddress);
 		const accountContractAddress = hash.calculateContractAddressFromHash(
 			public_key,
 			this.config.accountContractClassHash,
@@ -500,15 +503,6 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			return {
 				success: false,
 				error: `data.accountClassHash is invalid`,
-			};
-		}
-
-		if (parameters.data.publicKey !== this.account.publicExtendedKey) {
-			// TODO allow multiple by mapping publicExtendedKey to accounts
-			// FOR NOW: throw if different
-			return {
-				success: false,
-				error: `server public key is ${this.account.publicExtendedKey}, the one provided is ${parameters.data.publicKey}`,
 			};
 		}
 

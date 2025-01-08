@@ -1,4 +1,4 @@
-import {describe, it, expect, assert} from 'vitest';
+import {describe, it, expect, assert, beforeAll} from 'vitest';
 
 import {createClient} from 'fuzd-server';
 import {ANVIL_URL, FUZD_URL} from './prool/pool';
@@ -13,17 +13,16 @@ describe('hono client', () => {
 	// --------------------------------------------------------------------------------------------
 	// wakeup worker
 	//   the first time the worker is called, it setups itself and this can take time
-	//   hence we have a dummy test to ensure the other tests have normal timeout
 	//   We also call setChainOverride to ensure the api is talking to the proper eth node
 	// --------------------------------------------------------------------------------------------
-	it('startup', {timeout: 10000}, async () => {
+	beforeAll(async () => {
 		await client.admin.setChainOverride[':chainId'][':chainOverride'].$get({
 			param: {
 				chainId: '0x7a69',
 				chainOverride: encodeURIComponent(`${ANVIL_URL}#finality=2&worstCaseBlockTime=5`),
 			},
 		});
-	});
+	}, 10000);
 	// --------------------------------------------------------------------------------------------
 
 	it(`fetch publicKey`, async () => {
@@ -54,6 +53,8 @@ describe('hono client', () => {
 		expect(remoteAccountResult.success).toBe(true);
 		assert(remoteAccountResult.success);
 
+		const serviceParameters = remoteAccountResult.account.serviceParameters;
+
 		// we build up first the transaction we want to submit in the future (delayed)
 		// this is a ethereum tx without gas pricing
 		// and we wrap in an execution submission where we specify the maxFeePerGas we accept
@@ -66,7 +67,7 @@ describe('hono client', () => {
 				type: '0x2',
 			},
 			maxFeePerGasAuthorized: `0x10`,
-			derivationParameters: remoteAccountResult.account.derivationParameters,
+			serviceParameters,
 		};
 
 		// then we have several option
@@ -90,6 +91,7 @@ describe('hono client', () => {
 			},
 			// finaly we provide the execution we created above
 			executions: [execution],
+			executionServiceParameters: serviceParameters,
 		};
 
 		// we convert the json as a string
@@ -115,6 +117,12 @@ describe('hono client', () => {
 			},
 		);
 
+		if (!resp.ok) {
+			console.log(resp.status, resp.statusText);
+			const text = await resp.clone().text();
+			console.log(text);
+		}
+
 		assert(resp.ok);
 		const json = await resp.json();
 		expect(json.success).toBe(true);
@@ -133,7 +141,10 @@ describe('hono client', () => {
 				executions: [
 					{
 						chainId: '0x1',
-						derivationParameters: {data: '', type: 'ethereum'}, // TODO
+						serviceParameters: {
+							derivationParameters: {data: '', type: 'ethereum'},
+							fees: {fixed: '0', per_1000_000: 0},
+						}, // TODO
 						maxFeePerGasAuthorized: '0x0', // TODO
 						transaction: {
 							type: '0x2',
@@ -146,6 +157,10 @@ describe('hono client', () => {
 					type: 'fixed-time',
 					scheduledTime: 1000,
 				},
+				executionServiceParameters: {
+					derivationParameters: {data: '', type: 'ethereum'},
+					fees: {fixed: '0', per_1000_000: 0},
+				}, // TODO
 			},
 		});
 		expect(response.ok).toBe(false);

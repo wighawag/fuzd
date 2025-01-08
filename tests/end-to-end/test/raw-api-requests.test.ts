@@ -1,4 +1,4 @@
-import {describe, it, expect} from 'vitest';
+import {describe, it, expect, beforeAll} from 'vitest';
 
 import {ExecutionSubmission} from 'fuzd-common';
 import {ScheduledExecution} from 'fuzd-scheduler';
@@ -13,14 +13,13 @@ describe('raw api call', () => {
 	// --------------------------------------------------------------------------------------------
 	// wakeup worker
 	//   the first time the worker is called, it setups itself and this can take time
-	//   hence we have a dummy test to ensure the other tests have normal timeout
 	//   We also call setChainOverride to ensure the api is talking to the proper eth node
 	// --------------------------------------------------------------------------------------------
-	it('startup', {timeout: 10000}, async () => {
+	beforeAll(async () => {
 		await worker.fetch(
 			`/admin/setChainOverride/0x7a69/${encodeURIComponent(`${ANVIL_URL}#finality=2&worstCaseBlockTime=5`)}`,
 		);
-	});
+	}, 10000);
 	// --------------------------------------------------------------------------------------------
 
 	it('should be able to submit a scheduled transaction', async function () {
@@ -36,6 +35,8 @@ describe('raw api call', () => {
 			.then((v) => v.json());
 		expect(remoteAccountResponse.success).toBe(true);
 
+		const serviceParameters = remoteAccountResponse.account.serviceParameters;
+
 		// we build up first the transaction we want to submit in the future (delayed)
 		// this is a ethereum tx without gas pricing
 		// and we wrap in an execution submission where we specify the maxFeePerGas we accept
@@ -48,7 +49,7 @@ describe('raw api call', () => {
 				type: '0x2',
 			},
 			maxFeePerGasAuthorized: `0x10`,
-			derivationParameters: remoteAccountResponse.account.derivationParameters,
+			serviceParameters,
 		};
 
 		// then we have several option
@@ -72,6 +73,7 @@ describe('raw api call', () => {
 			},
 			// finaly we provide the execution we created above
 			executions: [execution],
+			executionServiceParameters: serviceParameters,
 		};
 
 		// we convert the json as a string

@@ -23,16 +23,13 @@ const masterKey = HDKey.fromMasterSeed(seed);
 const accountHDKey = masterKey.derive(defaultPath);
 const account = initAccountFromHD(accountHDKey);
 
-const chainProtocol = new EthereumChainProtocol(
-	provider,
-	{
-		expectedFinality: 1,
-		worstCaseBlockTime: 3,
-	},
-	account,
-);
+const chainProtocol = new EthereumChainProtocol(provider, {
+	expectedFinality: 1,
+	worstCaseBlockTime: 3,
+});
 const chainId = '0x7a69';
 const executorConfig = {
+	serverAccount: account,
 	chainProtocols: {
 		[chainId]: chainProtocol,
 	},
@@ -53,7 +50,7 @@ async function prepareExecution() {
 	const user = env.namedAccounts.deployer;
 
 	const remoteAccountInfo = await executor.getRemoteAccount(chainId, user);
-	const derivationParameters = remoteAccountInfo.derivationParameters;
+	const serviceParameters = remoteAccountInfo.serviceParameters;
 	const remoteAccount = remoteAccountInfo.address;
 
 	const data = encodeFunctionData({
@@ -102,14 +99,14 @@ async function prepareExecution() {
 		scheduler,
 		schedulerStorage,
 		publicExtendedKey,
-		derivationParameters,
+		serviceParameters,
 	};
 }
 
 let counter = 0;
 describe('Executing on the registry', function () {
 	it('Should execute without issues', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, env, scheduler, schedulerStorage, derivationParameters} =
+		const {gas, gasPrice, txData, user, GreetingsRegistry, env, scheduler, schedulerStorage, serviceParameters} =
 			await prepareExecution();
 		const timestamp = await chainProtocol.getTimestamp();
 		const checkinTime = timestamp + 100;
@@ -132,9 +129,10 @@ describe('Executing on the registry', function () {
 						gas: `0x${gas.toString(16)}` as String0x,
 					},
 					maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
-					derivationParameters,
+					serviceParameters,
 				},
 			],
+			executionServiceParameters: serviceParameters,
 		});
 		expect(result.checkinTime).to.equal(checkinTime);
 
@@ -145,7 +143,7 @@ describe('Executing on the registry', function () {
 	});
 
 	it('Should execute encrypted data without issues', async function () {
-		const {gas, gasPrice, env, txData, user, GreetingsRegistry, mockDecrypter, scheduler, derivationParameters} =
+		const {gas, gasPrice, env, txData, user, GreetingsRegistry, mockDecrypter, scheduler, serviceParameters} =
 			await prepareExecution();
 		const timestamp = await chainProtocol.getTimestamp();
 		const checkinTime = timestamp + 100;
@@ -158,7 +156,7 @@ describe('Executing on the registry', function () {
 				gas: `0x${gas.toString(16)}` as String0x,
 			},
 			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
-			derivationParameters,
+			serviceParameters,
 		};
 		const id = (++counter).toString();
 		mockDecrypter.addDecryptedResult(id, transaction);
@@ -171,6 +169,7 @@ describe('Executing on the registry', function () {
 				scheduledTime: checkinTime,
 			},
 			payload: '0xblabla',
+			executionServiceParameters: serviceParameters,
 		});
 		expect(result.checkinTime).to.equal(checkinTime);
 

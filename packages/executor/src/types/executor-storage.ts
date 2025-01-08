@@ -1,9 +1,11 @@
-import {ExpectedWorstCaseGasPrice, PendingExecutionStored, String0x} from 'fuzd-common';
+import {PendingExecutionStored, String0x, UpdateableParameter} from 'fuzd-common';
 
 export type BroadcasterData = {
 	chainId: String0x;
 	nextNonce: number;
 	address: String0x;
+	// debt: bigint;
+	// debtCounter: number;
 };
 
 export interface ExecutorStorage<TransactionDataType> {
@@ -52,10 +54,10 @@ export interface ExecutorStorage<TransactionDataType> {
 	createBroadcaster(broadcaster: BroadcasterData): Promise<void>;
 	clear(): Promise<void>;
 	setup(): Promise<void>;
-	getExpectedWorstCaseGasPrice(chainId: String0x): Promise<ExpectedWorstCaseGasPrice>;
+	getExpectedWorstCaseGasPrice(chainId: String0x): Promise<UpdateableParameter<string>>;
 	updateExpectedWorstCaseGasPrice(
 		chainId: String0x,
 		timestamp: number,
 		newGasPrice: bigint,
-	): Promise<ExpectedWorstCaseGasPrice>;
+	): Promise<UpdateableParameter<string>>;
 }

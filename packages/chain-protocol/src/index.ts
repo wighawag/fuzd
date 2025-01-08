@@ -4,6 +4,7 @@
  */
 
 import {DerivationParameters, String0x, TransactionParametersUsed} from 'fuzd-common';
+import {ETHAccount} from 'remote-account';
 
 export type TransactionStatus =
 	| {
@@ -89,8 +90,12 @@ export interface ExecutorChainProtocol<TransactionDataType> {
 	validateDerivationParameters(
 		parameters: DerivationParameters,
 	): Promise<{success: true} | {success: false; error: string}>;
-	getCurrentDerivationParameters(): Promise<DerivationParameters>;
-	getBroadcaster(parameters: DerivationParameters, forAddress: String0x): Promise<BroadcasterSignerData>;
+	getDerivationParameters(account: ETHAccount): Promise<DerivationParameters>;
+	getBroadcaster(
+		account: ETHAccount,
+		parameters: DerivationParameters,
+		forAddress: String0x,
+	): Promise<BroadcasterSignerData>;
 
 	checkValidity(
 		chainId: String0x,

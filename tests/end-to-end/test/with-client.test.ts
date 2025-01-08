@@ -1,4 +1,4 @@
-import {describe, it, expect, assert} from 'vitest';
+import {describe, it, expect, assert, beforeAll} from 'vitest';
 
 import {connectToWorker} from './external-worker';
 import {createClient} from 'fuzd-client';
@@ -10,14 +10,13 @@ describe('with client', () => {
 	// --------------------------------------------------------------------------------------------
 	// wakeup worker
 	//   the first time the worker is called, it setups itself and this can take time
-	//   hence we have a dummy test to ensure the other tests have normal timeout
 	//   We also call setChainOverride to ensure the api is talking to the proper eth node
 	// --------------------------------------------------------------------------------------------
-	it('startup', {timeout: 10000}, async () => {
+	beforeAll(async () => {
 		await worker.fetch(
 			`/admin/setChainOverride/0x7a69/${encodeURIComponent(`${ANVIL_URL}#finality=2&worstCaseBlockTime=5`)}`,
 		);
-	});
+	}, 10000);
 
 	it('should be able to submit a scheduled transaction', async function () {
 		const client = createClient({

@@ -20,7 +20,7 @@ export function displayScheduledExecutionQueued<TransactionDataType>(
 			broadcasted: v.broadcasted ? (v.finalized ? 'finalized' : 'broadcasted') : 'not broadcasted',
 			checkinTime: new Date((v.checkinTime - timeDiff) * 1000).toUTCString(),
 			timingType: v.timing.type,
-			expectedWorstCaseGasPrice: v.expectedWorstCaseGasPrice || 'none',
+			executionServiceParameters: v.executionServiceParameters,
 			paymentReserve: v.paymentReserve || 'undefined',
 			retries: v.retries || 0,
 			payload: showPayload ? (v.type === 'clear' ? JSON.stringify(v.executions) : v.payload) : undefined,
@@ -60,7 +60,7 @@ export function displayExecutionBroadcasted(config: Config) {
 					? formatEther(BigInt(v.transaction.maxPriorityFeePerGas), 'gwei') + ' gwei'
 					: 'undefined',
 			},
-			derivationParameters: v.derivationParameters,
+			serviceParameters: v.serviceParameters,
 			maxFeePerGasAuthorized: v.maxFeePerGasAuthorized,
 			isVoidTransaction: v.isVoidTransaction ? 'true' : 'false',
 			retries: v.retries || 0,

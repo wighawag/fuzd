@@ -216,18 +216,15 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 	const accountHDKey = masterKey.derive(defaultPath);
 	const account = initAccountFromHD(accountHDKey);
 	const {executor, publicExtendedKey} = await createTestExecutor({
+		serverAccount: account,
 		chainProtocols: {
 			// TODO any
-			[chainId]: new StarknetChainProtocol(
-				RPC_URL,
-				{
-					accountContractClassHash: AccountContract.class_hash,
-					expectedFinality: 1,
-					tokenContractAddress: ETHTokenContract.contract_address as String0x,
-					worstCaseBlockTime: 1,
-				},
-				account,
-			),
+			[chainId]: new StarknetChainProtocol(RPC_URL, {
+				accountContractClassHash: AccountContract.class_hash,
+				expectedFinality: 1,
+				tokenContractAddress: ETHTokenContract.contract_address as String0x,
+				worstCaseBlockTime: 1,
+			}),
 		},
 		paymentAccount,
 		expectedWorstCaseGasPrices: [
@@ -240,7 +237,7 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 
 	const user = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 	const remoteAccountInfo = await executor.getRemoteAccount(chainId, user);
-	const derivationParameters = remoteAccountInfo.derivationParameters;
+	const serviceParameters = remoteAccountInfo.serviceParameters;
 	const remoteAccount = remoteAccountInfo.address;
 	// TODO test payment account on starknet
 	// const paymenetAccountBroadcasterInfo = await executor.getBroadcaster(chainId, paymentAccount);
@@ -315,7 +312,7 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 		chainId,
 		transaction,
 		maxFeePerGasAuthorized: `0xFFFFF` as String0x,
-		derivationParameters,
+		serviceParameters,
 	});
 
 	expect(txInfo.slotAlreadyUsed).to.be.undefined;

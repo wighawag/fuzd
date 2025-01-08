@@ -19,7 +19,7 @@ type ScheduledExecutionInDB = {
 	payload: string; // include the tx in clear or the tx to submit to the executor (string)
 	timing: string;
 	// TODO initialTimeTarget: number;
-	expectedWorstCaseGasPrice: string | null;
+	executionServiceParameters: string;
 	paymentReserve: string | null;
 
 	priorTransactionConfirmation: string | null;
@@ -42,7 +42,7 @@ function fromScheduledExecutionInDB<TransactionDataType>(
 			checkinTime: inDB.nextCheckTime,
 			payload: inDB.payload,
 			timing: JSON.parse(inDB.timing),
-			expectedWorstCaseGasPrice: inDB.expectedWorstCaseGasPrice || undefined,
+			executionServiceParameters: JSON.parse(inDB.executionServiceParameters),
 			paymentReserve: inDB.paymentReserve || undefined,
 
 			retries: inDB.retries || 0,
@@ -61,8 +61,8 @@ function fromScheduledExecutionInDB<TransactionDataType>(
 			finalized: inDB.finalized == 1 ? true : false,
 			checkinTime: inDB.nextCheckTime,
 			timing: JSON.parse(inDB.timing),
-			expectedWorstCaseGasPrice: inDB.expectedWorstCaseGasPrice || undefined,
 			paymentReserve: inDB.paymentReserve || undefined,
+			executionServiceParameters: JSON.parse(inDB.executionServiceParameters),
 
 			retries: inDB.retries || 0,
 			priorTransactionConfirmation: inDB.priorTransactionConfirmation
@@ -90,7 +90,7 @@ function toScheduledExecutionInDB<TransactionDataType>(
 		type: obj.type,
 		payload: obj.type === 'clear' ? JSON.stringify(obj.executions) : obj.payload,
 		timing: JSON.stringify(obj.timing),
-		expectedWorstCaseGasPrice: obj.expectedWorstCaseGasPrice || null,
+		executionServiceParameters: JSON.stringify(obj.executionServiceParameters),
 		paymentReserve: obj.paymentReserve || null,
 
 		priorTransactionConfirmation: obj.priorTransactionConfirmation

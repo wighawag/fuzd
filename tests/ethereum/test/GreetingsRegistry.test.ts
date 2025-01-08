@@ -40,7 +40,7 @@ describe('GreetingsRegistry', function () {
 
 	it('Should not be able to set message for other account', async function () {
 		const {env, GreetingsRegistry, otherAccounts} = await loadFixture(deployAll);
-		expect(
+		await expect(
 			env.execute(GreetingsRegistry, {
 				functionName: 'setMessageFor',
 				args: [otherAccounts[1], 'hello', 1],

@@ -26,7 +26,6 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 			worstCaseBlockTime: number;
 			contractTimestamp?: String0x;
 		},
-		public account: ETHAccount, // TODO remote-account : export this type
 	) {
 		this.rpc = createCurriedJSONRPC<Methods>(url);
 	}
@@ -166,18 +165,22 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 
 		return {success: true};
 	}
-	async getCurrentDerivationParameters(): Promise<DerivationParameters> {
+	async getDerivationParameters(account: ETHAccount): Promise<DerivationParameters> {
 		return {
 			type: 'ethereum',
-			data: this.account.publicExtendedKey,
+			data: account.publicExtendedKey,
 		};
 	}
-	async getBroadcaster(parameters: DerivationParameters, forAddress: String0x): Promise<BroadcasterSignerData> {
+	async getBroadcaster(
+		account: ETHAccount,
+		parameters: DerivationParameters,
+		forAddress: String0x,
+	): Promise<BroadcasterSignerData> {
 		const validation = await this.validateDerivationParameters(parameters);
 		if (!validation.success) {
 			throw new Error(validation.error);
 		}
-		const derivedAccount = this.account.deriveForAddress(forAddress);
+		const derivedAccount = account.deriveForAddress(forAddress);
 		return {
 			signer: `privateKey:${derivedAccount.privateKey}`,
 			address: derivedAccount.address,
@@ -359,14 +362,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		if (parameters.type !== 'ethereum') {
 			return {success: false, error: `invalid type: ${parameters.type}`};
 		}
-		if (parameters.data !== this.account.publicExtendedKey) {
-			// TODO allow multiple by mapping publicExtendedKey to accounts
-			// FOR NOW: throw if different
-			return {
-				success: false,
-				error: `server public key is ${this.account.publicExtendedKey}, the one provided is ${parameters.data}`,
-			};
-		}
+
 		return {success: true};
 	}
 

@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     slot            text       NOT NULL,
     batchIndex      number     NOT NULL,
     -------------------------------------------------------------------------------------------------------------------
-    derivationParameters       text        NOT NULL,
+    serviceParameters          text        NOT NULL,
     onBehalf                   text,
     nextCheckTime              integer     NOT NULL,
     initialTime                integer     NOT NULL,
@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     hash                       text        NOT NULL, -- tx hash
     maxFeePerGasAuthorized     text        NOT NULL,
     helpedForUpToGasPrice      text,
-    expectedWorstCaseGasPrice  text,
     isVoidTransaction          integer     NOT NULL,
     retries                    integer, 
     lastError                  text,
@@ -45,6 +44,11 @@ CREATE TABLE IF NOT EXISTS Broadcasters (
     -------------------------------------------------------------------------------------------------------------------
 
     nextNonce       integer    NOT NULL,
+    --lock            integer,
+    --lock_timestamp  integer,
+    --debt            text       NOT NULL,
+    --debtCounter     integer    NOT NULL,
+    
 
     PRIMARY KEY (address, chainId)
 );
@@ -65,4 +69,9 @@ CREATE TABLE IF NOT EXISTS ChainConfigurations (
     PRIMARY KEY (chainId)
 );
 
-
+-- mechanism to update only if not changed in between (relies on timestamp)
+--UPDATE
+--  ChainConfigurations
+--SET serviceParameters = CASE WHEN lastUpdate == oldUpdate THEN newServiceParameters ELSE oldSericeParameters END, 
+--SET lastUpdate = CASE WHEN lastUpdate == oldUpdate THEN newUpdate ELSE oldUpdate END
+--WHERE ...

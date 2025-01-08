@@ -14,7 +14,6 @@ export type ScheduledExecutionQueued<TransactionDataType> = ScheduledExecution<
 		blockTime: number;
 		startTime?: number;
 	};
-	expectedWorstCaseGasPrice?: string; // TODO Resources object
 };
 
 export interface SchedulerStorage<TransactionDataType> {

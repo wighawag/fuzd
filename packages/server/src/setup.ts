@@ -55,7 +55,6 @@ function assignChainProtocols(
 	env: Record<string, string>,
 	chainProtocols: ChainProtocols<MyChainProtocols>,
 	contractTimestamp: `0x${string}`,
-	account: ETHAccount,
 ) {
 	const envKeys = Object.keys(env);
 	for (const envKey of envKeys) {
@@ -104,26 +103,18 @@ function assignChainProtocols(
 				}
 			}
 			if (protocol === 'ethereum') {
-				chainProtocols[chainId] = new EthereumChainProtocol(
-					nodeURL,
-					{
-						expectedFinality: finality,
-						worstCaseBlockTime,
-						contractTimestamp,
-					},
-					account,
-				);
+				chainProtocols[chainId] = new EthereumChainProtocol(nodeURL, {
+					expectedFinality: finality,
+					worstCaseBlockTime,
+					contractTimestamp,
+				});
 			} else {
-				chainProtocols[chainId] = new StarknetChainProtocol(
-					nodeURL,
-					{
-						expectedFinality: finality,
-						worstCaseBlockTime,
-						accountContractClassHash: '0x', // TODO
-						tokenContractAddress: '0x', // TODO
-					},
-					account,
-				);
+				chainProtocols[chainId] = new StarknetChainProtocol(nodeURL, {
+					expectedFinality: finality,
+					worstCaseBlockTime,
+					accountContractClassHash: '0x', // TODO
+					tokenContractAddress: '0x', // TODO
+				});
 			}
 		}
 	}
@@ -146,14 +137,15 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 
 		const contractTimestamp: String0x = env.CONTRACT_TIMESTAMP as String0x;
 		const chainProtocols: ChainProtocols<MyChainProtocols> = {};
-		assignChainProtocols(env, chainProtocols, contractTimestamp, account);
-		assignChainProtocols(chainOverrides, chainProtocols, contractTimestamp, account);
+		assignChainProtocols(env, chainProtocols, contractTimestamp);
+		assignChainProtocols(chainOverrides, chainProtocols, contractTimestamp);
 
 		const db = getDB(c);
 		const executorStorage = new RemoteSQLExecutorStorage<MyTransactionData>(db);
 		const schedulerStorage = new RemoteSQLSchedulerStorage<MyTransactionData>(db);
 
 		const baseConfig = {
+			serverAccount: account,
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
 			chainProtocols,

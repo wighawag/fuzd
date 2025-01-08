@@ -10,7 +10,7 @@ import {
 	SchedulerBackend,
 } from './types/external.js';
 import {ScheduledExecutionQueued} from './types/scheduler-storage.js';
-import {ExecutionResponse, ExecutionSubmission, String0x, time2text} from 'fuzd-common';
+import {ExecutionResponse, ExecutionSubmission, String0x, time2text, validateParameters} from 'fuzd-common';
 import {SchedulerConfig} from './types/internal.js';
 import {ChainProtocol, TransactionDataTypes} from 'fuzd-chain-protocol';
 
@@ -54,18 +54,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			throw new Error(`cannot proceed. the expected time to execute is already passed.`);
 		}
 
-		const expectedWorstCaseGasPriceConfig = executor.getExpectedWorstCaseGasPrice
-			? await executor.getExpectedWorstCaseGasPrice(execution.chainId)
-			: undefined;
-
-		let expectedWorstCaseGasPrice: bigint | undefined;
-		const gasPriceTime = expectedWorstCaseGasPriceConfig?.updateTimestamp;
-		if (gasPriceTime && expectedWorstCaseGasPriceConfig.current) {
-			expectedWorstCaseGasPrice = expectedWorstCaseGasPriceConfig.current;
-			const previous = expectedWorstCaseGasPriceConfig?.previous;
-			if (previous && previous < expectedWorstCaseGasPrice && realTimestamp < gasPriceTime + 30 * 60) {
-				expectedWorstCaseGasPrice = previous;
-			}
+		const allowedParameters = await executor.getServiceParameters(execution.chainId);
+		if (!validateParameters(execution.executionServiceParameters, allowedParameters, currentTime)) {
+			throw new Error(`provided parameters do not match the current or previous parameters`);
 		}
 
 		const queuedExecution: ScheduledExecutionQueued<TransactionDataType> = {
@@ -75,7 +66,6 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			finalized: false,
 			checkinTime,
 			retries: 0,
-			expectedWorstCaseGasPrice: expectedWorstCaseGasPrice?.toString(),
 		};
 
 		await storage.createOrUpdateQueuedExecution(queuedExecution);
@@ -145,6 +135,8 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				i, // batchIndex
 				scheduledExecutionQueued.account,
 				execution,
+				undefined,
+				scheduledExecutionQueued.executionServiceParameters, // we pass what was there on scheduling time
 			);
 			results.push(executionResult);
 		}

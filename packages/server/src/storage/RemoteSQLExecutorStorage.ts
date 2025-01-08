@@ -3,7 +3,7 @@ import type {ExecutorStorage, BroadcasterData} from 'fuzd-executor';
 import {sqlToStatements, toValues} from './utils.js';
 import {logs} from 'named-logs';
 import setupTables from '../schema/ts/executor.sql.js';
-import {ExpectedWorstCaseGasPrice, PendingExecutionStored, String0x, TransactionParametersUsed} from 'fuzd-common';
+import {PendingExecutionStored, String0x, UpdateableParameter} from 'fuzd-common';
 
 const logger = logs('fuzd-server-executor-storage-sql');
 
@@ -11,6 +11,8 @@ type BroadcasterInDB = {
 	address: String0x;
 	chainId: String0x;
 	nextNonce: number;
+	// debt: string;
+	// debtCounter: number;
 };
 
 function fromBroadcasterInDB(inDB: BroadcasterInDB): BroadcasterData {
@@ -18,6 +20,8 @@ function fromBroadcasterInDB(inDB: BroadcasterInDB): BroadcasterData {
 		address: inDB.address,
 		chainId: inDB.chainId,
 		nextNonce: inDB.nextNonce,
+		// debt: BigInt(inDB.debt),
+		// debtCounter: inDB.debtCounter,
 	};
 }
 
@@ -26,6 +30,8 @@ function toBroadcasterInDB(obj: BroadcasterData): BroadcasterInDB {
 		address: obj.address,
 		chainId: obj.chainId,
 		nextNonce: obj.nextNonce,
+		// debt: obj.debt.toString(),
+		// debtCounter: obj.debtCounter,
 	};
 }
 
@@ -34,7 +40,7 @@ type ExecutionInDB = {
 	chainId: String0x;
 	slot: string;
 	batchIndex: number;
-	derivationParameters: string;
+	serviceParameters: string;
 	onBehalf: String0x | null;
 	nextCheckTime: number;
 	initialTime: number;
@@ -42,7 +48,6 @@ type ExecutionInDB = {
 	hash: String0x;
 	maxFeePerGasAuthorized: String0x;
 	helpedForUpToGasPrice: String0x | null;
-	expectedWorstCaseGasPrice: String0x | null;
 	isVoidTransaction: 0 | 1;
 	finalized: 0 | 1;
 	retries: number | null;
@@ -61,21 +66,12 @@ type ExpectedWorstCaseGasPriceInDB = {
 	expectedGasPriceUpdate: number | null;
 };
 
-function fromExpectedGasPriceInDB(inDb: ExpectedWorstCaseGasPriceInDB): ExpectedWorstCaseGasPrice {
+function fromExpectedGasPriceInDB(inDb: ExpectedWorstCaseGasPriceInDB): UpdateableParameter<string> {
 	return {
-		previous: inDb.previousExpectedGasPrice ? BigInt(inDb.previousExpectedGasPrice) : undefined,
-		current: inDb.currentExpectedGasPrice ? BigInt(inDb.currentExpectedGasPrice) : undefined,
-		updateTimestamp: inDb.expectedGasPriceUpdate || undefined,
-	} as ExpectedWorstCaseGasPrice;
-}
-
-function toExpectedGasPriceInDB(chainId: String0x, obj: ExpectedWorstCaseGasPrice): ExpectedWorstCaseGasPriceInDB {
-	return {
-		chainId,
-		currentExpectedGasPrice: obj.current?.toString() || null,
-		expectedGasPriceUpdate: obj.updateTimestamp || null,
-		previousExpectedGasPrice: obj.previous?.toString() || null,
-	};
+		previous: inDb.previousExpectedGasPrice,
+		current: inDb.currentExpectedGasPrice,
+		updateTimestamp: inDb.expectedGasPriceUpdate,
+	} as UpdateableParameter<string>;
 }
 
 function fromExecutionInDB<TransactionDataType>(inDB: ExecutionInDB): PendingExecutionStored<TransactionDataType> {
@@ -86,14 +82,13 @@ function fromExecutionInDB<TransactionDataType>(inDB: ExecutionInDB): PendingExe
 		slot: inDB.slot,
 		batchIndex: inDB.batchIndex,
 		onBehalf: inDB.onBehalf || undefined,
-		derivationParameters: JSON.parse(inDB.derivationParameters),
+		serviceParameters: JSON.parse(inDB.serviceParameters),
 		initialTime: inDB.initialTime,
 		broadcastTime: inDB.broadcastTime || undefined,
 		nextCheckTime: inDB.nextCheckTime,
 		hash: inDB.hash,
 		maxFeePerGasAuthorized: inDB.maxFeePerGasAuthorized,
 		helpedForUpToGasPrice: inDB.helpedForUpToGasPrice || undefined,
-		expectedWorstCaseGasPrice: inDB.expectedWorstCaseGasPrice || undefined,
 		isVoidTransaction: inDB.isVoidTransaction == 1 ? true : false,
 		retries: inDB.retries || undefined,
 		lastError: inDB.lastError || undefined,
@@ -115,7 +110,7 @@ function toExecutionInDB<TransactionDataType>(obj: PendingExecutionStored<Transa
 		account: obj.account,
 		slot: obj.slot,
 		batchIndex: obj.batchIndex,
-		derivationParameters: JSON.stringify(obj.derivationParameters),
+		serviceParameters: JSON.stringify(obj.serviceParameters),
 		onBehalf: obj.onBehalf || null,
 		initialTime: obj.initialTime,
 		broadcastTime: obj.broadcastTime || null,
@@ -123,7 +118,6 @@ function toExecutionInDB<TransactionDataType>(obj: PendingExecutionStored<Transa
 		hash: obj.hash,
 		maxFeePerGasAuthorized: obj.maxFeePerGasAuthorized,
 		helpedForUpToGasPrice: obj.helpedForUpToGasPrice || null,
-		expectedWorstCaseGasPrice: obj.expectedWorstCaseGasPrice || null,
 		isVoidTransaction: obj.isVoidTransaction ? 1 : 0,
 		retries: typeof obj.retries === 'undefined' ? null : obj.retries,
 		lastError: obj.lastError || null,
@@ -211,6 +205,8 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 			address: executionToStore.transactionParametersUsed.from,
 			chainId: executionToStore.chainId,
 			nextNonce,
+			// debt: 0n,
+			// debtCounter: 0,
 		});
 		const broadcasterTableData = toValues(broadcasterInDB);
 		const sqlUpdateNonceStatement = `INSERT INTO Broadcasters (${broadcasterTableData.columns}) VALUES (${broadcasterTableData.bindings}) ON CONFLICT(address, chainId) DO UPDATE SET nextNonce = MAX(nextNonce, excluded.nextNonce);`;
@@ -298,11 +294,11 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		await this.db.batch(statements.map((v) => this.db.prepare(v)));
 	}
 
-	async getExpectedWorstCaseGasPrice(chainId: String0x): Promise<ExpectedWorstCaseGasPrice> {
+	async getExpectedWorstCaseGasPrice(chainId: String0x): Promise<UpdateableParameter<string>> {
 		const statement = this.db.prepare(`SELECT * FROM ChainConfigurations WHERE chainId = ?1;`);
 		const {results} = await statement.bind(chainId).all<ExpectedWorstCaseGasPriceInDB>();
 		if (results.length === 0) {
-			return {previous: undefined, current: undefined, updateTimestamp: undefined};
+			return {previous: undefined, current: '0', updateTimestamp: 0};
 		} else {
 			return fromExpectedGasPriceInDB(results[0]);
 		}
@@ -312,7 +308,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		chainId: String0x,
 		timestamp: number,
 		newGasPrice: bigint,
-	): Promise<ExpectedWorstCaseGasPrice> {
+	): Promise<UpdateableParameter<string>> {
 		const sqlStatement = `INSERT INTO ChainConfigurations (chainId, currentExpectedGasPrice, expectedGasPriceUpdate) 
 		 VALUES(?1, ?2, ?3) ON CONFLICT(chainId) DO UPDATE SET
 		 previousExpectedGasPrice=currentExpectedGasPrice,
