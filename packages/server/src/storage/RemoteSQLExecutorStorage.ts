@@ -4,6 +4,7 @@ import {sqlToStatements, toValues} from './utils.js';
 import {logs} from 'named-logs';
 import setupTables from '../schema/ts/executor.sql.js';
 import {PendingExecutionStored, String0x, UpdateableParameter} from 'fuzd-common';
+import {wait} from '../utils/time.js';
 
 const logger = logs('fuzd-server-executor-storage-sql');
 
@@ -11,6 +12,8 @@ type BroadcasterInDB = {
 	address: String0x;
 	chainId: String0x;
 	nextNonce: number;
+	lock: string | null;
+	lock_timestamp: number | null;
 	// debt: string;
 	// debtCounter: number;
 };
@@ -20,6 +23,8 @@ function fromBroadcasterInDB(inDB: BroadcasterInDB): BroadcasterData {
 		address: inDB.address,
 		chainId: inDB.chainId,
 		nextNonce: inDB.nextNonce,
+		lock: inDB.lock,
+		lock_timestamp: inDB.lock_timestamp,
 		// debt: BigInt(inDB.debt),
 		// debtCounter: inDB.debtCounter,
 	};
@@ -30,6 +35,8 @@ function toBroadcasterInDB(obj: BroadcasterData): BroadcasterInDB {
 		address: obj.address,
 		chainId: obj.chainId,
 		nextNonce: obj.nextNonce,
+		lock: obj.lock,
+		lock_timestamp: obj.lock_timestamp,
 		// debt: obj.debt.toString(),
 		// debtCounter: obj.debtCounter,
 	};
@@ -177,8 +184,76 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		await statement.bind(account, chainId, slot, batchIndex).all();
 	}
 
-	async createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(
+	async lockBroadcaster(params: {
+		chainId: String0x;
+		address: string;
+		nonceFromNetwork: number;
+	}): Promise<BroadcasterData | undefined> {
+		// Generate 16 random bytes
+		const randomBytes = new Uint8Array(16);
+		crypto.getRandomValues(randomBytes);
+
+		// Convert the bytes to a hexadecimal string
+		const randomLock = Array.from(randomBytes)
+			.map((b) => b.toString(16).padStart(2, '0'))
+			.join('');
+
+		const LOCK_EXPIRY_SECONDS = 30;
+		// note here we only set nextNonce on insert, we do not touch if already exist
+		// this is crucial
+		await this.db
+			.prepare(
+				`INSERT INTO Broadcasters (address, chainId, nextNonce, lock)
+            VALUES (?1, ?2, ?3, ?4)
+            ON CONFLICT(address, chainId) DO UPDATE SET
+            lock = CASE
+                WHEN lock IS NULL OR (UNIXEPOCH() - lock_timestamp) > ${LOCK_EXPIRY_SECONDS} THEN ?4
+                ELSE lock
+            	END,
+			lock_timestamp = CASE
+                WHEN lock IS NULL OR (UNIXEPOCH() - lock_timestamp) > ${LOCK_EXPIRY_SECONDS} THEN UNIXEPOCH()
+                ELSE lock_timestamp
+            	END
+		`,
+			)
+			.bind(params.address, params.chainId, params.nonceFromNetwork, randomLock)
+			.all();
+
+		await wait(0.1); // we wait 100ms to minimize concurency issues;
+		// this should allow any concurent processes to finalize their writes if any
+		const broadcaster = await this.getBroadcaster(params);
+
+		if (!broadcaster) {
+			console.error(`no broadcaster found`);
+			return undefined;
+		} else if (broadcaster.lock !== randomLock) {
+			console.error(`lock not matching: ${randomLock} (Generated) va ${broadcaster.lock} (DB)`);
+			return undefined;
+		} else {
+			// console.error(`broadcaster locked: ${broadcaster.lock}`);
+			return broadcaster;
+		}
+	}
+
+	async unlockBroadcaster(params: {chainId: String0x; address: string}): Promise<void> {
+		// console.error(`unlocking ${params.address}`);
+		const sqlResetLockStatement = `UPDATE Broadcasters SET lock = NULL, lock_timestamp = NULL WHERE address = ?1 AND chainId = ?2;`;
+		const resetLockStatement = this.db.prepare(sqlResetLockStatement);
+		try {
+			await resetLockStatement.bind(params.address, params.chainId).all();
+		} catch (err) {
+			console.error(`Failed to reset lock, retrying...`, err);
+			try {
+				await resetLockStatement.bind(params.address, params.chainId).all();
+			} catch (err) {
+				console.error(`Failed to reset lock again, skip, will expire in 30 seconds`, err);
+			}
+		}
+	}
+
+	async createOrUpdatePendingExecution(
 		executionToStore: PendingExecutionStored<TransactionDataType>,
+		{updateNonceIfNeeded}: {updateNonceIfNeeded: boolean},
 		asPaymentFor?: {
 			chainId: String0x;
 			account: String0x;
@@ -205,33 +280,69 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 			address: executionToStore.transactionParametersUsed.from,
 			chainId: executionToStore.chainId,
 			nextNonce,
+			lock: null,
+			lock_timestamp: null,
 			// debt: 0n,
 			// debtCounter: 0,
 		});
-		const broadcasterTableData = toValues(broadcasterInDB);
-		const sqlUpdateNonceStatement = `INSERT INTO Broadcasters (${broadcasterTableData.columns}) VALUES (${broadcasterTableData.bindings}) ON CONFLICT(address, chainId) DO UPDATE SET nextNonce = MAX(nextNonce, excluded.nextNonce);`;
+		// const broadcasterTableData = toValues(broadcasterInDB);
+
+		// const sqlUpdateNonceStatement = `INSERT INTO Broadcasters (${broadcasterTableData.columns}) VALUES (${broadcasterTableData.bindings}) ON CONFLICT(address, chainId) DO UPDATE SET nextNonce = MAX(nextNonce, excluded.nextNonce);`;
+		const sqlUpdateNonceStatement = `UPDATE Broadcasters SET nextNonce = MAX(nextNonce, ?1), lock = NULL, lock_timestamp = NULL WHERE address = ?2 AND chainId = ?3`;
 		const updateNonceStatement = this.db.prepare(sqlUpdateNonceStatement);
-		if (asPaymentFor) {
-			const asPaymentForStatement = this.db.prepare(
-				`UPDATE BroadcastedExecutions SET helpedForUpToGasPrice = ?1 WHERE chainId = ?2 AND account = ?3 AND slot = ?4 AND batchIndex = ?5;`,
-			);
-			await this.db.batch([
-				updateNonceStatement.bind(...broadcasterTableData.values),
-				executionInsertionStatement.bind(...values),
-				asPaymentForStatement.bind(
-					asPaymentFor.upToGasPrice,
-					asPaymentFor.chainId,
-					asPaymentFor.account,
-					asPaymentFor.slot,
-					asPaymentFor.batchIndex,
-				),
-			]);
-		} else {
-			await this.db.batch([
-				updateNonceStatement.bind(...broadcasterTableData.values),
-				executionInsertionStatement.bind(...values),
-			]);
+
+		// // TODO remove, but for now we need to make sure it exist
+		// const insertBroadcasterStatement = this.db.prepare(`
+		//     INSERT INTO Broadcasters (address, chainId, nextNonce)
+		//     SELECT ?1, ?2, ?3
+		// `);
+
+		try {
+			if (asPaymentFor) {
+				const asPaymentForStatement = this.db.prepare(
+					`UPDATE BroadcastedExecutions SET helpedForUpToGasPrice = ?1 WHERE chainId = ?2 AND account = ?3 AND slot = ?4 AND batchIndex = ?5;`,
+				);
+				if (updateNonceIfNeeded) {
+					await this.db.batch([
+						updateNonceStatement.bind(nextNonce, broadcasterInDB.address, broadcasterInDB.chainId),
+						// insertBroadcasterStatement.bind(broadcasterInDB.address, broadcasterInDB.chainId, nextNonce),
+						// updateNonceStatement.bind(...broadcasterTableData.values),
+						executionInsertionStatement.bind(...values),
+						asPaymentForStatement.bind(
+							asPaymentFor.upToGasPrice,
+							asPaymentFor.chainId,
+							asPaymentFor.account,
+							asPaymentFor.slot,
+							asPaymentFor.batchIndex,
+						),
+					]);
+				} else {
+					await this.db.batch([
+						executionInsertionStatement.bind(...values),
+						asPaymentForStatement.bind(
+							asPaymentFor.upToGasPrice,
+							asPaymentFor.chainId,
+							asPaymentFor.account,
+							asPaymentFor.slot,
+							asPaymentFor.batchIndex,
+						),
+					]);
+				}
+			} else {
+				if (updateNonceIfNeeded) {
+					await this.db.batch([
+						updateNonceStatement.bind(nextNonce, broadcasterInDB.address, broadcasterInDB.chainId),
+						executionInsertionStatement.bind(...values),
+					]);
+				} else {
+					await this.db.batch([executionInsertionStatement.bind(...values)]);
+				}
+			}
+		} catch (err) {
+			console.error(`Failed to update, reset lock...`, err);
+			await this.unlockBroadcaster(broadcasterInDB);
 		}
+
 		return executionToStore;
 	}
 

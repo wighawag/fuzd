@@ -44,8 +44,8 @@ CREATE TABLE IF NOT EXISTS Broadcasters (
     -------------------------------------------------------------------------------------------------------------------
 
     nextNonce       integer    NOT NULL,
-    --lock            integer,
-    --lock_timestamp  integer,
+    lock            text,
+    lock_timestamp  integer,
     --debt            text       NOT NULL,
     --debtCounter     integer    NOT NULL,
     

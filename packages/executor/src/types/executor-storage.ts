@@ -2,8 +2,11 @@ import {PendingExecutionStored, String0x, UpdateableParameter} from 'fuzd-common
 
 export type BroadcasterData = {
 	chainId: String0x;
-	nextNonce: number;
 	address: String0x;
+	nextNonce: number;
+	lock: string | null;
+	lock_timestamp: number | null;
+
 	// debt: bigint;
 	// debtCounter: number;
 };
@@ -28,8 +31,18 @@ export interface ExecutorStorage<TransactionDataType> {
 		slot: string;
 		batchIndex: number;
 	}): Promise<void>;
-	createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(
+
+	lockBroadcaster(params: {
+		chainId: String0x;
+		address: string;
+		nonceFromNetwork: number;
+	}): Promise<BroadcasterData | undefined>;
+
+	unlockBroadcaster(params: {chainId: String0x; address: string}): Promise<void>;
+
+	createOrUpdatePendingExecution(
 		executionToStore: PendingExecutionStored<TransactionDataType>,
+		{updateNonceIfNeeded}: {updateNonceIfNeeded: boolean},
 		asPaymentFor?: {
 			chainId: String0x;
 			account: String0x;

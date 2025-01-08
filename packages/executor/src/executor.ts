@@ -155,11 +155,18 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			'requiredPreliminaryTransaction' in chainProtocol &&
 			chainProtocol.requiredPreliminaryTransaction
 		) {
-			const {expectedNonce, currentNonceAsPerNetwork} = await _getBroadcasterNonce(
-				submission.chainId,
-				broadcaster.address,
-			);
-			if (expectedNonce == 0) {
+			const broadcasterFromStorage = await storage.getBroadcaster({
+				chainId: submission.chainId,
+				address: broadcaster.address,
+			});
+			let initial = false;
+			if (broadcasterFromStorage) {
+				initial = broadcasterFromStorage.nextNonce == 0;
+			} else {
+				const networkNonce = await chainProtocol.getNonce(broadcaster.address);
+				initial = Number(networkNonce) == 0;
+			}
+			if (initial) {
 				const preliminaryTransaction = chainProtocol.requiredPreliminaryTransaction(
 					submission.chainId,
 					broadcaster,
@@ -176,6 +183,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 					expiryTime: submission.expiryTime,
 					onBehalf: submission.onBehalf,
 					serviceParameters,
+					// TODO force nonce or indicate it only make sense if first transaction, as there are potential race condition here
+					// having said that, the initial tx need to be performed anyway so there should not be any other at the same time
 				});
 
 				// console.log(`preliminary broadcasted`, txInfo);
@@ -242,7 +251,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	// INTERNAL
 	// --------------------------------------------------------------------------------------------
 
-	async function _getBroadcasterNonce(chainId: String0x, broadcasterAddress: String0x) {
+	async function _acquireBroadcaster(chainId: String0x, broadcasterAddress: String0x) {
 		const chainProtocol = _getChainProtocol(chainId);
 
 		const nonceAsHex = await chainProtocol.getNonce(broadcasterAddress);
@@ -250,24 +259,18 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		if (isNaN(currentNonceAsPerNetwork)) {
 			throw new Error(`could not parse transaction count while checking for expected nonce`);
 		}
-		let broadcasterData: BroadcasterData;
-		const dataFromStorage = await storage.getBroadcaster({
+		const dataFromStorage = await storage.lockBroadcaster({
 			chainId: chainId,
 			address: broadcasterAddress,
+			nonceFromNetwork: currentNonceAsPerNetwork,
 		});
-		if (dataFromStorage) {
-			broadcasterData = dataFromStorage;
-		} else {
-			broadcasterData = {
-				chainId: chainId,
-				address: broadcasterAddress,
-				nextNonce: currentNonceAsPerNetwork,
-				// debt: 0n,
-				// debtCounter: 0,
-			};
+
+		if (!dataFromStorage) {
+			console.error(`could not lock broadcaster`);
+			throw new Error(`could not lock broadcaster`);
 		}
 
-		const expectedNonce = broadcasterData.nextNonce;
+		const expectedNonce = dataFromStorage.nextNonce;
 		// console.log({expectedNonce, broadcasterAddress});
 		return {currentNonceAsPerNetwork, expectedNonce};
 	}
@@ -300,190 +303,196 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		},
 	): Promise<PendingExecutionStored<TransactionDataType> | undefined> {
 		const chainProtocol = _getChainProtocol(execution.chainId);
-		const {expectedNonce, currentNonceAsPerNetwork} = await _getBroadcasterNonce(
-			execution.chainId,
-			broadcaster.address,
-		);
+		const {expectedNonce, currentNonceAsPerNetwork} = await _acquireBroadcaster(execution.chainId, broadcaster.address);
 
-		// console.log({expectedNonce, forceNonce: options.forceNonce});
+		try {
+			// console.log({expectedNonce, forceNonce: options.forceNonce});
 
-		let nonce = expectedNonce;
-		let noncePassedAlready = false;
-		if (typeof options.forceNonce !== 'undefined') {
-			// This is a resubmit, so we reuse the same nonce and do not use latesty
-			nonce = options.forceNonce;
-		} else {
-			if (nonce !== currentNonceAsPerNetwork) {
-				if (currentNonceAsPerNetwork > nonce) {
-					const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}. this means some tx went through in between`;
-					// logger.error(message);
-					noncePassedAlready = true;
-				} else {
-					const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}, this means some tx has not been included yet and we should still keep using the exepected value.`;
-					logger.error(message);
+			let nonce = expectedNonce;
+			let noncePassedAlready = false;
+			if (typeof options.forceNonce !== 'undefined') {
+				// This is a resubmit, so we reuse the same nonce and do not use latesty
+				nonce = options.forceNonce;
+			} else {
+				if (nonce !== currentNonceAsPerNetwork) {
+					if (currentNonceAsPerNetwork > nonce) {
+						const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}. this means some tx went through in between`;
+						// logger.error(message);
+						noncePassedAlready = true;
+					} else {
+						const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}, this means some tx has not been included yet and we should still keep using the exepected value.`;
+						logger.error(message);
+					}
 				}
 			}
-		}
 
-		// logger.info('checking if tx should still be submitted');
-		const already_resolved = false;
-		// TODO allow execution of logic
-		// To be fair if the tx fails this should be enough
-		// But there might be cases where a tx do not fail and the use would prefer to completely avoid the tx to be published
-		if (options?.forceVoid || already_resolved) {
-			options.forceVoid = true;
-			if (noncePassedAlready) {
-				// return {error: {message: 'nonce increased but fleet already resolved', code: 5502}};
-				if (already_resolved) {
-					throw new Error(`nonce already passed but already resolved. we can skip`);
-					// TODO delete instead of error ?
-				} else {
-					throw new Error(
-						`nonce already passed but not already resolved. this should never happen since forceNonce should have been used here`,
-					);
+			// logger.info('checking if tx should still be submitted');
+			const already_resolved = false;
+			// TODO allow execution of logic
+			// To be fair if the tx fails this should be enough
+			// But there might be cases where a tx do not fail and the use would prefer to completely avoid the tx to be published
+			if (options?.forceVoid || already_resolved) {
+				options.forceVoid = true;
+				if (noncePassedAlready) {
+					// return {error: {message: 'nonce increased but fleet already resolved', code: 5502}};
+					if (already_resolved) {
+						throw new Error(`nonce already passed but already resolved. we can skip`);
+						// TODO delete instead of error ?
+					} else {
+						throw new Error(
+							`nonce already passed but not already resolved. this should never happen since forceNonce should have been used here`,
+						);
+					}
 				}
 			}
-		}
 
-		const maxFeePerGas = options.maxFeePerGas;
+			const maxFeePerGas = options.maxFeePerGas;
 
-		// this fix ancient8 testnet
-		// TODO investigate more robust ways to handle this
-		const maxPriorityFeePerGasTMP = options.maxPriorityFeePerGas == 0n ? 10n : options.maxPriorityFeePerGas;
+			// this fix ancient8 testnet
+			// TODO investigate more robust ways to handle this
+			const maxPriorityFeePerGasTMP = options.maxPriorityFeePerGas == 0n ? 10n : options.maxPriorityFeePerGas;
 
-		// then we ensure maxPriorityFeePerGas do not exceeed maxFeePerGas
-		const maxPriorityFeePerGas = maxPriorityFeePerGasTMP > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTMP;
-		const maxFeePerGasAs0xString = bigintToHex(maxFeePerGas);
-		const maxPriorityFeePerGasAs0xString = bigintToHex(maxPriorityFeePerGas);
+			// then we ensure maxPriorityFeePerGas do not exceeed maxFeePerGas
+			const maxPriorityFeePerGas = maxPriorityFeePerGasTMP > maxFeePerGas ? maxFeePerGas : maxPriorityFeePerGasTMP;
+			const maxFeePerGasAs0xString = bigintToHex(maxFeePerGas);
+			const maxPriorityFeePerGasAs0xString = bigintToHex(maxPriorityFeePerGas);
 
-		const transactionParametersUsed: TransactionParametersUsed = {
-			maxFeePerGas: maxFeePerGasAs0xString,
-			maxPriorityFeePerGas: maxPriorityFeePerGasAs0xString,
-			from: broadcaster.address,
-			nonce: numToHex(nonce),
-		};
+			const transactionParametersUsed: TransactionParametersUsed = {
+				maxFeePerGas: maxFeePerGasAs0xString,
+				maxPriorityFeePerGas: maxPriorityFeePerGasAs0xString,
+				from: broadcaster.address,
+				nonce: numToHex(nonce),
+			};
 
-		const validity = await chainProtocol.checkValidity(
-			execution.chainId,
-			execution.transaction,
-			broadcaster,
-			transactionParametersUsed,
-		);
-
-		if (validity.revert === true) {
-			const errorMessage = `The transaction reverts`;
-			logger.error(errorMessage);
-			execution.lastError = errorMessage;
-			if (options.previouslyStored) {
-				// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
-				// we do that by making a simple void tx
-				options.forceVoid = true;
-			} else {
-				return undefined;
-			}
-		} else if (validity.revert === 'unknown') {
-			// we keep going anyway
-		} else if (validity.notEnoughGas) {
-			const errorMessage = `The transaction requires more gas than provided. Aborting here`;
-			logger.error(errorMessage);
-			execution.lastError = errorMessage;
-			if (options.previouslyStored) {
-				// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
-				// we do that by making a simple void tx
-				options.forceVoid = true;
-			} else {
-				return undefined;
-			}
-		}
-
-		if (options.forceVoid) {
-			// TODO if forceVoid, we can use more gasPrive as long as total do not exceed gas * maxFeePerGasAuthorized
-		}
-
-		// TODO if noncePassedAlready
-		//
-		let rawTxInfo: SignedTransactionInfo;
-		let isVoidTransaction = false;
-		if (options.forceVoid && 'signVoidTransaction' in chainProtocol && chainProtocol.signVoidTransaction) {
-			rawTxInfo = await chainProtocol.signVoidTransaction(execution.chainId, broadcaster, transactionParametersUsed);
-			isVoidTransaction = true;
-		} else {
-			rawTxInfo = await chainProtocol.signTransaction(
+			const validity = await chainProtocol.checkValidity(
 				execution.chainId,
 				execution.transaction,
 				broadcaster,
 				transactionParametersUsed,
 			);
-		}
 
-		const retries = typeof execution.retries === 'undefined' ? 0 : execution.retries + 1;
+			if (validity.revert === true) {
+				const errorMessage = `The transaction reverts`;
+				logger.error(errorMessage);
+				execution.lastError = errorMessage;
+				if (options.previouslyStored) {
+					// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
+					// we do that by making a simple void tx
+					options.forceVoid = true;
+				} else {
+					return undefined;
+				}
+			} else if (validity.revert === 'unknown') {
+				// we keep going anyway
+			} else if (validity.notEnoughGas) {
+				const errorMessage = `The transaction requires more gas than provided. Aborting here`;
+				logger.error(errorMessage);
+				execution.lastError = errorMessage;
+				if (options.previouslyStored) {
+					// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
+					// we do that by making a simple void tx
+					options.forceVoid = true;
+				} else {
+					return undefined;
+				}
+			}
 
-		const timestamp = await chainProtocol.getTimestamp();
-		const nextCheckTime = timestamp + 60; // retry in 60 seconds // TODO config
+			if (options.forceVoid) {
+				// TODO if forceVoid, we can use more gasPrive as long as total do not exceed gas * maxFeePerGasAuthorized
+			}
 
-		let lastError: string | undefined;
+			// TODO if noncePassedAlready
+			//
+			let rawTxInfo: SignedTransactionInfo;
+			let isVoidTransaction = false;
+			if (options.forceVoid && 'signVoidTransaction' in chainProtocol && chainProtocol.signVoidTransaction) {
+				rawTxInfo = await chainProtocol.signVoidTransaction(execution.chainId, broadcaster, transactionParametersUsed);
+				isVoidTransaction = true;
+			} else {
+				rawTxInfo = await chainProtocol.signTransaction(
+					execution.chainId,
+					execution.transaction,
+					broadcaster,
+					transactionParametersUsed,
+				);
+			}
 
-		if (options.gasPriceEstimate && options.gasPriceEstimate.maxFeePerGas > options.maxFeePerGas) {
-			lastError = 'potentially underpriced';
-		}
+			const retries = typeof execution.retries === 'undefined' ? 0 : execution.retries + 1;
 
-		const newExecution: PendingExecutionStored<TransactionDataType> = {
-			chainId: execution.chainId,
-			transaction: execution.transaction, // we never change it, all data changed are captured by : transactionParametersUsed
-			transactionParametersUsed: transactionParametersUsed,
-			serviceParameters: execution.serviceParameters,
-			maxFeePerGasAuthorized: execution.maxFeePerGasAuthorized,
-			initialTime: execution.initialTime,
-			expiryTime: execution.expiryTime,
-			slot: execution.slot,
-			batchIndex: execution.batchIndex,
-			account: execution.account,
-			finalized: execution.finalized,
-			hash: rawTxInfo.hash,
-			broadcastTime: timestamp,
-			nextCheckTime,
-			retries,
-			isVoidTransaction,
-			lastError,
-		};
-		await storage.createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(newExecution, asPaymentFor);
+			const timestamp = await chainProtocol.getTimestamp();
+			const nextCheckTime = timestamp + 60; // retry in 60 seconds // TODO config
 
-		try {
-			await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
-		} catch (err) {
-			logger.error(`The broadcast failed, we attempts one more time`, err);
+			let lastError: string | undefined;
+
+			if (options.gasPriceEstimate && options.gasPriceEstimate.maxFeePerGas > options.maxFeePerGas) {
+				lastError = 'potentially underpriced';
+			}
+
+			const newExecution: PendingExecutionStored<TransactionDataType> = {
+				chainId: execution.chainId,
+				transaction: execution.transaction, // we never change it, all data changed are captured by : transactionParametersUsed
+				transactionParametersUsed: transactionParametersUsed,
+				serviceParameters: execution.serviceParameters,
+				maxFeePerGasAuthorized: execution.maxFeePerGasAuthorized,
+				initialTime: execution.initialTime,
+				expiryTime: execution.expiryTime,
+				slot: execution.slot,
+				batchIndex: execution.batchIndex,
+				account: execution.account,
+				finalized: execution.finalized,
+				hash: rawTxInfo.hash,
+				broadcastTime: timestamp,
+				nextCheckTime,
+				retries,
+				isVoidTransaction,
+				lastError,
+			};
+			await storage.createOrUpdatePendingExecution(newExecution, {updateNonceIfNeeded: true}, asPaymentFor);
+
 			try {
 				await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
 			} catch (err) {
-				// console.error('ERROR', err);
-				let errorString: string;
+				logger.error(`The broadcast failed, we attempts one more time`, err);
 				try {
-					if (err && typeof err === 'object') {
-						if ('message' in err) {
-							errorString = err.message as string;
-						} else if ('toString' in err) {
-							errorString = err.toString();
+					await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
+				} catch (err) {
+					// console.error('ERROR', err);
+					let errorString: string;
+					try {
+						if (err && typeof err === 'object') {
+							if ('message' in err) {
+								errorString = err.message as string;
+							} else if ('toString' in err) {
+								errorString = err.toString();
+							} else {
+								errorString = String(err);
+							}
 						} else {
 							errorString = String(err);
 						}
-					} else {
-						errorString = String(err);
+					} catch {
+						errorString = 'failed to parse error';
 					}
-				} catch {
-					errorString = 'failed to parse error';
+
+					newExecution.lastError = errorString;
+
+					await storage.createOrUpdatePendingExecution(newExecution, {updateNonceIfNeeded: false});
+					logger.error(
+						`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.`,
+						err,
+					);
 				}
-
-				newExecution.lastError = errorString;
-
-				await storage.createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(newExecution);
-				logger.error(
-					`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.`,
-					err,
-				);
 			}
-		}
 
-		return newExecution;
+			return newExecution;
+		} catch (err) {
+			console.error(`failed to execute, removing lock on broadcaster...`);
+			await storage.unlockBroadcaster({
+				chainId: execution.chainId,
+				address: broadcaster.address,
+			});
+			throw err;
+		}
 	}
 
 	async function _resubmitIfNeeded(pendingExecution: PendingExecutionStored<TransactionDataType>): Promise<void> {
@@ -622,7 +631,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		}
 		if (txStatus.finalised) {
 			pendingExecution.finalized = true;
-			storage.createOrUpdatePendingExecutionAndUpdateNonceIfNeeded(pendingExecution);
+			storage.createOrUpdatePendingExecution(pendingExecution, {updateNonceIfNeeded: false});
 		} else if (!txStatus.pending) {
 			await _resubmitIfNeeded(pendingExecution);
 		}
