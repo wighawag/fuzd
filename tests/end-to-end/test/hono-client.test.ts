@@ -3,7 +3,7 @@ import {describe, it, expect, assert, beforeAll} from 'vitest';
 import {createClient} from 'fuzd-server';
 import {ANVIL_URL, FUZD_URL} from './prool/pool';
 import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
-import {ExecutionSubmission} from 'fuzd-common';
+import {ExecutionBroadcast, ExecutionSubmission} from 'fuzd-common';
 import {ScheduledExecution} from 'fuzd-scheduler';
 import {privateKeyToAccount} from 'viem/accounts';
 
@@ -161,5 +161,80 @@ describe('hono client', () => {
 		expect(response.ok).toBe(false);
 		// const json = await response.json();
 		// console.log(JSON.stringify(json));
+	});
+
+	it(`should be able to broadcast a transaction`, async () => {
+		// we use a local account
+		const wallet = privateKeyToAccount('0x1111111111111111111111111111111111111111111111111111111111111111');
+
+		// Note that is need to be lower case
+		const chainId = `0x7a69`;
+
+		// we get the remote address associated with local account signing the execution message sent to the api
+		const remoteAccountResponse = await client.api.execution.remoteAccount[':chainId'][':account'].$get({
+			param: {
+				account: wallet.address,
+				chainId,
+			},
+		});
+		const remoteAccountResult = await remoteAccountResponse.json();
+		expect(remoteAccountResult.success).toBe(true);
+		assert(remoteAccountResult.success);
+
+		const serviceParameters = remoteAccountResult.account.serviceParameters;
+
+		// we build up first the transaction we want to submit in the future (delayed)
+		// this is a ethereum tx without gas pricing
+		// and we wrap in an execution submission where we specify the maxFeePerGas we accept
+		// as well as the derivation parameters we got from the remote-account (above)
+		const execution: ExecutionBroadcast<EthereumTransactionData> = {
+			chainId,
+			// the ethereum tx:
+			transaction: {
+				gas: `0x1000000`,
+				type: '0x2',
+			},
+			maxFeePerGasAuthorized: `0x10`,
+			slot: 'any',
+			serviceParameters,
+		};
+
+		// we convert the json as a string
+		const jsonAsString = JSON.stringify(execution);
+		// we sign it wit our local account above
+		const signature = await wallet.signMessage({message: jsonAsString});
+
+		// finally we perform the network request
+		// the json (as string) is the body
+		// and the signature, computed above is provided via headers
+		const resp = await client.api.execution.broadcastExecution.$post(
+			{json: execution}, // this is not used but we set it for the compiler
+			// We instead use `jsonAsString` as the signature is based on the raw body
+			// And so we want to set it ourselve so the signature match
+			{
+				init: {
+					headers: {
+						'content-type': 'application/json',
+						signature,
+					},
+					body: jsonAsString,
+				},
+			},
+		);
+
+		if (!resp.ok) {
+			console.log(resp.status, resp.statusText);
+			const text = await resp.clone().text();
+			console.log(text);
+		}
+
+		assert(resp.ok);
+		const json = await resp.json();
+		expect(json.success).toBe(true);
+		if (!resp.ok || !json.success) {
+			console.log(json);
+			console.log(resp.status, resp.statusText);
+		}
+		expect(json.info.chainId).to.equal(chainId);
 	});
 });

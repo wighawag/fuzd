@@ -3,18 +3,13 @@ import {Bindings} from 'hono/types';
 import {ServerOptions} from '../../types.js';
 import {assert, createValidate} from 'typia';
 import {createErrorObject} from '../../utils/response.js';
-import {ExecutionServiceParameters, ExecutionSubmission, String0x} from 'fuzd-common';
+import {ExecutionBroadcast, String0x} from 'fuzd-common';
 import {Env} from '../../env.js';
 import {auth} from '../../auth.js';
 import {typiaValidator} from '@hono/typia-validator';
 import {MyTransactionData} from '../../setup.js';
 
-export type ExecutionBroadcast = ExecutionSubmission<MyTransactionData> & {
-	serviceParameters: ExecutionServiceParameters;
-	slot: string;
-};
-
-const validate = createValidate<ExecutionBroadcast>();
+const validate = createValidate<ExecutionBroadcast<MyTransactionData>>();
 
 export function getExecutionAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
 	const app = new Hono<{Bindings: Bindings}>()

@@ -89,6 +89,11 @@ export type ExecutionSubmission<TransactionDataType> = {
 };
 // ------------------------------------------------------------------------------------------------
 
+export type ExecutionBroadcast<T> = ExecutionSubmission<T> & {
+	serviceParameters: ExecutionServiceParameters;
+	slot: string;
+};
+
 // ------------------------------------------------------------------------------------------------
 // Executor
 // ------------------------------------------------------------------------------------------------
