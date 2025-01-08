@@ -135,8 +135,8 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				i, // batchIndex
 				scheduledExecutionQueued.account,
 				execution,
-				undefined,
 				scheduledExecutionQueued.executionServiceParameters, // we pass what was there on scheduling time
+				{trusted: true}, // The scheduler is trusted to have verified the exectuion parameters
 			);
 			results.push(executionResult);
 		}

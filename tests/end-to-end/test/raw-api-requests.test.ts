@@ -49,7 +49,6 @@ describe('raw api call', () => {
 				type: '0x2',
 			},
 			maxFeePerGasAuthorized: `0x10`,
-			serviceParameters,
 		};
 
 		// then we have several option

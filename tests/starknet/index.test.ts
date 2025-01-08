@@ -308,12 +308,17 @@ test('invoke_GreetingsRegistry_via_fuzd', async function () {
 	};
 
 	// account is ethereum account, right ?
-	const txInfo = await executor.broadcastExecution((++counter).toString(), 0, user, {
-		chainId,
-		transaction,
-		maxFeePerGasAuthorized: `0xFFFFF` as String0x,
+	const txInfo = await executor.broadcastExecution(
+		(++counter).toString(),
+		0,
+		user,
+		{
+			chainId,
+			transaction,
+			maxFeePerGasAuthorized: `0xFFFFF` as String0x,
+		},
 		serviceParameters,
-	});
+	);
 
 	expect(txInfo.slotAlreadyUsed).to.be.undefined;
 

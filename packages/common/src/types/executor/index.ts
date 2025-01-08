@@ -68,7 +68,6 @@ export type ExecutionServiceParameters = {
 // ------------------------------------------------------------------------------------------------
 export type ExecutionSubmission<TransactionDataType> = {
 	chainId: String0x;
-	serviceParameters: ExecutionServiceParameters;
 	transaction: TransactionDataType;
 	maxFeePerGasAuthorized: String0x; // 1000 gwei // TODO CONFIGURE per network: max worst worst case
 	expiryTime?: number;
@@ -100,7 +99,9 @@ export type Executor<TransactionDataType> = {
 		batchIndex: number,
 		account: String0x,
 		execution: ExecutionSubmission<TransactionDataType>,
+		serviceParameters: ExecutionServiceParameters,
 		options?: {
+			trusted?: boolean;
 			asPaymentFor?: {
 				chainId: String0x;
 				account: String0x;
@@ -109,7 +110,6 @@ export type Executor<TransactionDataType> = {
 				upToGasPrice: bigint;
 			};
 		},
-		serviceParametersOverride?: ExecutionServiceParameters,
 	): Promise<ExecutionResponse<TransactionDataType>>;
 
 	getExecutionStatus(executionBatch: {

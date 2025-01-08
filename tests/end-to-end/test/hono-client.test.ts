@@ -67,7 +67,6 @@ describe('hono client', () => {
 				type: '0x2',
 			},
 			maxFeePerGasAuthorized: `0x10`,
-			serviceParameters,
 		};
 
 		// then we have several option
@@ -141,10 +140,6 @@ describe('hono client', () => {
 				executions: [
 					{
 						chainId: '0x1',
-						serviceParameters: {
-							derivationParameters: {data: '', type: 'ethereum'},
-							fees: {fixed: '0', per_1000_000: 0},
-						}, // TODO
 						maxFeePerGasAuthorized: '0x0', // TODO
 						transaction: {
 							type: '0x2',

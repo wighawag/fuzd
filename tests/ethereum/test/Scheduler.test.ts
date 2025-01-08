@@ -129,7 +129,6 @@ describe('Executing on the registry', function () {
 						gas: `0x${gas.toString(16)}` as String0x,
 					},
 					maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
-					serviceParameters,
 				},
 			],
 			executionServiceParameters: serviceParameters,
@@ -156,7 +155,6 @@ describe('Executing on the registry', function () {
 				gas: `0x${gas.toString(16)}` as String0x,
 			},
 			maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
-			serviceParameters,
 		};
 		const id = (++counter).toString();
 		mockDecrypter.addDecryptedResult(id, transaction);

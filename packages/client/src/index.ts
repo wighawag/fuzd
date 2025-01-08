@@ -125,7 +125,6 @@ export function createClient(config: ClientConfig) {
 					chainId: chainIdAsHex,
 					maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as String0x,
 					transaction: transactionData,
-					serviceParameters: serviceParameters,
 				},
 			],
 		};

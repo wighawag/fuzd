@@ -95,7 +95,9 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		batchIndex: number,
 		account: String0x,
 		submission: ExecutionSubmission<TransactionDataType>,
+		serviceParameters: ExecutionServiceParameters,
 		options?: {
+			trusted?: boolean;
 			asPaymentFor?: {
 				chainId: String0x;
 				account: String0x;
@@ -104,25 +106,15 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				upToGasPrice: bigint;
 			};
 		},
-		serviceParametersOverride?: ExecutionServiceParameters,
 	): Promise<ExecutionResponse<TransactionDataType>> {
 		const chainProtocol = _getChainProtocol(submission.chainId);
 
 		const realTimestamp = Math.floor(Date.now() / 1000);
 
-		let serviceParameters = submission.serviceParameters;
-		if (!serviceParametersOverride) {
+		if (!options?.trusted) {
 			const allowedParameters = await getServiceParameters(submission.chainId);
 			if (!validateParameters(serviceParameters, allowedParameters, realTimestamp)) {
 				throw new Error(`provided parameters do not match the current or previous parameters`);
-			}
-		} else {
-			serviceParameters = serviceParametersOverride;
-
-			if (JSON.stringify(serviceParametersOverride) !== JSON.stringify(submission.serviceParameters)) {
-				console.error(
-					`user provided an execution with different service parameters than the override provided by the scheduler`,
-				);
 			}
 		}
 
@@ -176,16 +168,22 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				// TODO : consider cost of this for first execution
 				// console.log(`broadcastExecution...`, preliminaryTransaction);
 				// TODO ensure _INTERNAL_ prefixed slots cannot be used
-				const txInfo = await broadcastExecution(`_INTERNAL_preliminary_${broadcaster.address}`, batchIndex, account, {
-					chainId: submission.chainId,
-					maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
-					transaction: preliminaryTransaction,
-					expiryTime: submission.expiryTime,
-					onBehalf: submission.onBehalf,
+				const txInfo = await broadcastExecution(
+					`_INTERNAL_preliminary_${broadcaster.address}`,
+					batchIndex,
+					account,
+					{
+						chainId: submission.chainId,
+						maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
+						transaction: preliminaryTransaction,
+						expiryTime: submission.expiryTime,
+						onBehalf: submission.onBehalf,
+						// TODO force nonce or indicate it only make sense if first transaction, as there are potential race condition here
+						// having said that, the initial tx need to be performed anyway so there should not be any other at the same time
+					},
 					serviceParameters,
-					// TODO force nonce or indicate it only make sense if first transaction, as there are potential race condition here
-					// having said that, the initial tx need to be performed anyway so there should not be any other at the same time
-				});
+					{trusted: true}, // we just validated it
+				);
 
 				// console.log(`preliminary broadcasted`, txInfo);
 			}
@@ -549,7 +547,6 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 								chainId: pendingExecution.chainId,
 								maxFeePerGasAuthorized: `0x38D7EA4C68000`, // 1000 gwei // TODO CONFIGURE per network: max worst worst case
 								transaction: transaction,
-								serviceParameters: pendingExecution.serviceParameters,
 							};
 							await broadcastExecution(
 								`${pendingExecution.account}_${pendingExecution.transactionParametersUsed.from}_${pendingExecution.transactionParametersUsed.nonce}_${gasPriceEstimate.maxFeePerGas.toString()}`,
@@ -557,20 +554,21 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 								paymentAccount,
 								execution,
 								{
+									...pendingExecution.serviceParameters,
+									// we do not pay fees here
+									fees: {
+										fixed: '0',
+										per_1000_000: 0,
+									},
+								},
+								{
+									trusted: true, // this was validated when pendingExecution was submitted
 									asPaymentFor: {
 										chainId: pendingExecution.chainId,
 										account: pendingExecution.account,
 										slot: pendingExecution.slot,
 										batchIndex: pendingExecution.batchIndex,
 										upToGasPrice: gasPriceEstimate.maxFeePerGas,
-									},
-								},
-								{
-									...pendingExecution.serviceParameters,
-									// we do not pay fees here
-									fees: {
-										fixed: '0',
-										per_1000_000: 0,
 									},
 								},
 							);
