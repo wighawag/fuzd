@@ -22,7 +22,8 @@
   "dependencies": {
     "fuzd-chain-protocol": "workspace:*",
     "fuzd-common": "workspace:*",
-    "named-logs": "^0.3.0"
+    "named-logs": "^0.3.0",
+    "remote-account": "^0.2.2"
   },
   "devDependencies": {
     "as-soon": "^0.0.11",
