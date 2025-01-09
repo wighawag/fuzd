@@ -56,7 +56,13 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 
 		const allowedParameters = await executor.getServiceParameters(execution.chainId);
 		if (!validateParameters(execution.executionServiceParameters, allowedParameters, currentTime)) {
-			throw new Error(`provided parameters do not match the current or previous parameters`);
+			console.error(
+				JSON.stringify({serviceParameters: execution.executionServiceParameters, allowedParameters}, null, 2),
+			);
+			throw new Error(
+				`provided parameters do not match the current or previous parameters` +
+					JSON.stringify({serviceParameters: execution.executionServiceParameters, allowedParameters}, null, 2),
+			);
 		}
 
 		const queuedExecution: ScheduledExecutionQueued<TransactionDataType> = {

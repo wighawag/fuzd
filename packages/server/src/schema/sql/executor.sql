@@ -61,17 +61,15 @@ CREATE TABLE IF NOT EXISTS ChainConfigurations (
     chainId                   text       NOT NULL,
     -------------------------------------------------------------------------------------------------------------------
 
-    currentExpectedGasPrice   text,
-    previousExpectedGasPrice  text,
-    expectedGasPriceUpdate    integer,
+    expectedGasPrice_current  text,
+    expectedGasPrice_previous text,
+    expectedGasPrice_update   integer,
+
+    fees_current              text,
+    fees_previous             text,
+    fees_update               integer,
 
 
     PRIMARY KEY (chainId)
 );
 
--- mechanism to update only if not changed in between (relies on timestamp)
---UPDATE
---  ChainConfigurations
---SET serviceParameters = CASE WHEN lastUpdate == oldUpdate THEN newServiceParameters ELSE oldSericeParameters END, 
---SET lastUpdate = CASE WHEN lastUpdate == oldUpdate THEN newUpdate ELSE oldUpdate END
---WHERE ...

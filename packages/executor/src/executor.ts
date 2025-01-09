@@ -37,10 +37,10 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	async function getServiceParameters(chainId: String0x): Promise<UpdateableParameters<ExecutionServiceParameters>> {
 		const chainProtocol = _getChainProtocol(chainId);
 		const derivationParameters = await chainProtocol.getDerivationParameters(config.serverAccount);
-		const expectedWorstCaseGasPrice = await storage.getExpectedWorstCaseGasPrice(chainId);
-		// TODO
-		// const fees = await storage.getFees(chainId);
-		const fees = {
+
+		const chainConfiguration = await storage.getChainConfiguration(chainId);
+
+		const fees = chainConfiguration.fees || {
 			current: {
 				fixed: '0',
 				per_1000_000: 0,
@@ -48,11 +48,14 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			updateTimestamp: 0,
 			previous: undefined,
 		};
-		return {
+		const serviceParameters = {
 			derivationParameters: {current: derivationParameters, updateTimestamp: 0, previous: undefined},
-			expectedWorstCaseGasPrice,
-			fees: fees,
+			fees,
+			expectedWorstCaseGasPrice: chainConfiguration.expectedWorstCaseGasPrice,
 		};
+
+		console.error({serviceParameters});
+		return serviceParameters;
 	}
 
 	async function getExecutionStatus(executionBatch: {
@@ -114,7 +117,11 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		if (!options?.trusted) {
 			const allowedParameters = await getServiceParameters(submission.chainId);
 			if (!validateParameters(serviceParameters, allowedParameters, realTimestamp)) {
-				throw new Error(`provided parameters do not match the current or previous parameters`);
+				console.error(JSON.stringify({serviceParameters, allowedParameters}, null, 2));
+				throw new Error(
+					`provided parameters do not match the current or previous parameters` +
+						JSON.stringify({serviceParameters, allowedParameters}, null, 2),
+				);
 			}
 		}
 

@@ -118,20 +118,18 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json(createErrorObject(err), 500);
 			}
 		})
-		.get('/expectedGasPrice/:chainId', async (c) => {
+		.get('/chainConfiguration/:chainId', async (c) => {
 			try {
 				const config = c.get('config');
 				let chainId = c.req.param('chainId');
 				if (!chainId.startsWith('0x')) {
 					chainId = `0x${Number(chainId).toString(16)}`;
 				}
-				const expectedGasPrice = await config.executorStorage.getExpectedWorstCaseGasPrice(chainId as String0x);
+				const chainConfiguration = await config.executorStorage.getChainConfiguration(chainId as String0x);
 				return c.json(
 					{
 						success: true as const,
-						current: expectedGasPrice.current?.toString(),
-						updateTimestamp: expectedGasPrice.updateTimestamp,
-						previous: expectedGasPrice.previous?.toString(),
+						chainConfiguration,
 					},
 					200,
 				);
@@ -148,7 +146,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				}
 				const value = c.req.param('value');
 				const timestamp = Math.floor(Date.now() / 1000);
-				const expectedGasPrice = await config.executorStorage.updateExpectedWorstCaseGasPrice(
+				const chainConfiguration = await config.executorStorage.updateExpectedWorstCaseGasPrice(
 					chainId as String0x,
 					timestamp,
 					BigInt(value),
@@ -156,9 +154,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json(
 					{
 						success: true as const,
-						current: expectedGasPrice.current?.toString(),
-						updateTimestamp: expectedGasPrice.updateTimestamp,
-						previous: expectedGasPrice.previous?.toString(),
+						chainConfiguration,
 					},
 					200,
 				);

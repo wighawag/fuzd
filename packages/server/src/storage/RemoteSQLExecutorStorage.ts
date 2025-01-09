@@ -1,5 +1,5 @@
 import type {RemoteSQL} from 'remote-sql';
-import type {ExecutorStorage, BroadcasterData} from 'fuzd-executor';
+import type {ExecutorStorage, BroadcasterData, ChainConfiguration} from 'fuzd-executor';
 import {sqlToStatements, toValues} from './utils.js';
 import {logs} from 'named-logs';
 import setupTables from '../schema/ts/executor.sql.js';
@@ -66,19 +66,36 @@ type ExecutionInDB = {
 	transactionData: string;
 };
 
-type ExpectedWorstCaseGasPriceInDB = {
+type ChainConfigurationsInDB = {
 	chainId: String0x;
-	currentExpectedGasPrice: string | null;
-	previousExpectedGasPrice: string | null;
-	expectedGasPriceUpdate: number | null;
+	expectedGasPrice_current: string | null;
+	expectedGasPrice_previous: string | null;
+	expectedGasPrice_update: number | null;
+
+	fees_current: string | null;
+	fees_previous: string | null;
+	fees_update: number | null;
 };
 
-function fromExpectedGasPriceInDB(inDb: ExpectedWorstCaseGasPriceInDB): UpdateableParameter<string> {
+function fromChainConfigurationsInDB(inDb: ChainConfigurationsInDB): ChainConfiguration {
+	const fees_current = inDb.fees_current ? JSON.parse(inDb.fees_current) : null;
+	const fees_previous = inDb.fees_previous ? JSON.parse(inDb.fees_previous) : null;
 	return {
-		previous: inDb.previousExpectedGasPrice,
-		current: inDb.currentExpectedGasPrice,
-		updateTimestamp: inDb.expectedGasPriceUpdate,
-	} as UpdateableParameter<string>;
+		expectedWorstCaseGasPrice: inDb.expectedGasPrice_current
+			? {
+					previous: inDb.expectedGasPrice_previous || undefined,
+					current: inDb.expectedGasPrice_current,
+					updateTimestamp: inDb.expectedGasPrice_update || 0,
+				}
+			: undefined,
+		fees: fees_current
+			? {
+					previous: fees_previous || undefined,
+					current: fees_current,
+					updateTimestamp: inDb.fees_update || 0,
+				}
+			: undefined,
+	};
 }
 
 function fromExecutionInDB<TransactionDataType>(inDB: ExecutionInDB): PendingExecutionStored<TransactionDataType> {
@@ -405,13 +422,13 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		await this.db.batch(statements.map((v) => this.db.prepare(v)));
 	}
 
-	async getExpectedWorstCaseGasPrice(chainId: String0x): Promise<UpdateableParameter<string>> {
+	async getChainConfiguration(chainId: String0x): Promise<ChainConfiguration> {
 		const statement = this.db.prepare(`SELECT * FROM ChainConfigurations WHERE chainId = ?1;`);
-		const {results} = await statement.bind(chainId).all<ExpectedWorstCaseGasPriceInDB>();
+		const {results} = await statement.bind(chainId).all<ChainConfigurationsInDB>();
 		if (results.length === 0) {
-			return {previous: undefined, current: '0', updateTimestamp: 0};
+			return {};
 		} else {
-			return fromExpectedGasPriceInDB(results[0]);
+			return fromChainConfigurationsInDB(results[0]);
 		}
 	}
 
@@ -419,14 +436,29 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		chainId: String0x,
 		timestamp: number,
 		newGasPrice: bigint,
-	): Promise<UpdateableParameter<string>> {
-		const sqlStatement = `INSERT INTO ChainConfigurations (chainId, currentExpectedGasPrice, expectedGasPriceUpdate) 
+	): Promise<ChainConfiguration> {
+		const sqlStatement = `INSERT INTO ChainConfigurations (chainId, expectedGasPrice_current, expectedGasPrice_update) 
 		 VALUES(?1, ?2, ?3) ON CONFLICT(chainId) DO UPDATE SET
-		 previousExpectedGasPrice=currentExpectedGasPrice,
-		 expectedGasPriceUpdate=excluded.expectedGasPriceUpdate,
-		 currentExpectedGasPrice=excluded.currentExpectedGasPrice;`;
+		 expectedGasPrice_previous=expectedGasPrice_current,
+		 expectedGasPrice_update=excluded.expectedGasPrice_update,
+		 expectedGasPrice_current=excluded.expectedGasPrice_current;`;
 		const statement = this.db.prepare(sqlStatement);
 		await statement.bind(chainId, newGasPrice.toString(), timestamp).all();
-		return this.getExpectedWorstCaseGasPrice(chainId);
+		return this.getChainConfiguration(chainId);
+	}
+
+	async updateFees(
+		chainId: String0x,
+		timestamp: number,
+		newFees: {fixed: string; per_1000_1000: number},
+	): Promise<ChainConfiguration> {
+		const sqlStatement = `INSERT INTO ChainConfigurations (chainId, fees_current, fees_update) 
+		 VALUES(?1, ?2, ?3) ON CONFLICT(chainId) DO UPDATE SET
+		 fees_previous=fees_current,
+		 fees_update=excluded.fees_update,
+		 fees_current=excluded.fees_current;`;
+		const statement = this.db.prepare(sqlStatement);
+		await statement.bind(chainId, JSON.stringify(newFees), timestamp).all();
+		return this.getChainConfiguration(chainId);
 	}
 }

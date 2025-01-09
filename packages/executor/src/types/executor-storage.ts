@@ -11,6 +11,30 @@ export type BroadcasterData = {
 	// debtCounter: number;
 };
 
+export type ChainConfiguration = {
+	fees?: UpdateableParameter<{
+		fixed: string;
+		per_1000_000: number;
+	}>;
+	expectedWorstCaseGasPrice?: UpdateableParameter<string>;
+};
+
+// const t: ChainConfiguration = {
+// 	expectedWorstCaseGasPrice: {
+// 		current: '0',
+// 		updateTimestamp: 0,
+// 		previous: undefined,
+// 	},
+// 	fees: {
+// 		current: {
+// 			fixed: '0',
+// 			per_1000_000: 0,
+// 		},
+// 		updateTimestamp: 0,
+// 		previous: undefined,
+// 	},
+// };
+
 export interface ExecutorStorage<TransactionDataType> {
 	getPendingExecution(params: {
 		chainId: String0x;
@@ -67,10 +91,15 @@ export interface ExecutorStorage<TransactionDataType> {
 	createBroadcaster(broadcaster: BroadcasterData): Promise<void>;
 	clear(): Promise<void>;
 	setup(): Promise<void>;
-	getExpectedWorstCaseGasPrice(chainId: String0x): Promise<UpdateableParameter<string>>;
+	getChainConfiguration(chainId: String0x): Promise<ChainConfiguration>;
 	updateExpectedWorstCaseGasPrice(
 		chainId: String0x,
 		timestamp: number,
 		newGasPrice: bigint,
-	): Promise<UpdateableParameter<string>>;
+	): Promise<ChainConfiguration>;
+	updateFees(
+		chainId: String0x,
+		timestamp: number,
+		newFees: {fixed: string; per_1000_1000: number},
+	): Promise<ChainConfiguration>;
 }
