@@ -100,6 +100,6 @@ export interface ExecutorStorage<TransactionDataType> {
 	updateFees(
 		chainId: String0x,
 		timestamp: number,
-		newFees: {fixed: string; per_1000_1000: number},
+		newFees: {fixed: string; per_1000_000: number},
 	): Promise<ChainConfiguration>;
 }

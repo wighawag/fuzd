@@ -103,6 +103,13 @@ export interface ExecutorChainProtocol<TransactionDataType> {
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<TransactionValidity>;
+
+	computeCost(
+		chainId: String0x,
+		transactionData: TransactionDataType,
+		transactionParameters: TransactionParametersUsed,
+		maxFeePerGasAuthorized: String0x,
+	): Promise<{cost: bigint; maxCost: bigint}>;
 	signTransaction(
 		chainId: String0x,
 		data: TransactionDataType,

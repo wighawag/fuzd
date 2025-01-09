@@ -54,7 +54,6 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			expectedWorstCaseGasPrice: chainConfiguration.expectedWorstCaseGasPrice,
 		};
 
-		console.error({serviceParameters});
 		return serviceParameters;
 	}
 
@@ -117,7 +116,6 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		if (!options?.trusted) {
 			const allowedParameters = await getServiceParameters(submission.chainId);
 			if (!validateParameters(serviceParameters, allowedParameters, realTimestamp)) {
-				console.error(JSON.stringify({serviceParameters, allowedParameters}, null, 2));
 				throw new Error(
 					`provided parameters do not match the current or previous parameters` +
 						JSON.stringify({serviceParameters, allowedParameters}, null, 2),
@@ -431,6 +429,35 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 			if (options.gasPriceEstimate && options.gasPriceEstimate.maxFeePerGas > options.maxFeePerGas) {
 				lastError = 'potentially underpriced';
+			}
+
+			const balance = await chainProtocol.getBalance(broadcaster.address);
+			const {maxCost, cost} = await chainProtocol.computeCost(
+				execution.chainId,
+				execution.transaction,
+				transactionParametersUsed,
+				execution.maxFeePerGasAuthorized,
+			);
+
+			if (!asPaymentFor) {
+				// we consider the max cost so that submission of transaction without enough balance fails early, independeing of current network gas pricing.
+				// this ensure that if the transaction pass here, it will be able to spend the balance if needed.
+				const costToConsider = maxCost;
+				if (balance < costToConsider) {
+					console.error(
+						`not emough balance! ${balance} > ${costToConsider} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas})`,
+					);
+					throw new Error(`not enough balance`);
+				} else if (
+					balance <
+					costToConsider +
+						BigInt(execution.serviceParameters.fees.fixed) +
+						(costToConsider * BigInt(execution.serviceParameters.fees.per_1000_000)) / 1000000n
+				) {
+					throw new Error(`not enough balance due to fees`);
+				}
+			} else {
+				// we do not check for cost in the case of a payment tx as we assume the payment fund is always enough
 			}
 
 			const newExecution: PendingExecutionStored<TransactionDataType> = {

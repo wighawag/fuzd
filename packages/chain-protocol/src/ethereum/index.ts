@@ -222,6 +222,18 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		return {notEnoughGas: gasRequired > BigInt(transactionData.gas) ? true : false, revert: false};
 	}
 
+	async computeCost(
+		chainId: String0x,
+		transactionData: EthereumTransactionData,
+		transactionParameters: TransactionParametersUsed,
+		maxFeePerGasAuthorized: String0x,
+	): Promise<{cost: bigint; maxCost: bigint}> {
+		const cost = BigInt(transactionData.gas) * BigInt(transactionParameters.maxFeePerGas);
+		const maxCost = BigInt(transactionData.gas) * BigInt(maxFeePerGasAuthorized);
+
+		return {cost, maxCost};
+	}
+
 	async signTransaction(
 		chainId: String0x,
 		transactionData: EthereumTransactionData,

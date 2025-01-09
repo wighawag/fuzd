@@ -450,7 +450,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	async updateFees(
 		chainId: String0x,
 		timestamp: number,
-		newFees: {fixed: string; per_1000_1000: number},
+		newFees: {fixed: string; per_1000_000: number},
 	): Promise<ChainConfiguration> {
 		const sqlStatement = `INSERT INTO ChainConfigurations (chainId, fees_current, fees_update) 
 		 VALUES(?1, ?2, ?3) ON CONFLICT(chainId) DO UPDATE SET

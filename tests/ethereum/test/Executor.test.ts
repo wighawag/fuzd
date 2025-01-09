@@ -4,7 +4,7 @@ import {network} from 'hardhat';
 import {loadFixture} from '@nomicfoundation/hardhat-network-helpers';
 import {createTestExecutor} from './utils/executor';
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {encodeFunctionData, parseEther} from 'viem';
+import {encodeFunctionData, formatEther, parseEther} from 'viem';
 import {initAccountFromHD} from 'remote-account';
 import {hashRawTx, overrideProvider} from './utils/mock-provider';
 import {deployAll} from './utils';
@@ -16,7 +16,7 @@ import {String0x} from 'fuzd-common';
 
 const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
 
-async function prepareExecution() {
+async function prepareExecution(options?: {fees?: {fixed: string; per_1000_000: number}; gasPrice?: bigint}) {
 	const {env, GreetingsRegistry} = await await loadFixture(deployAll);
 
 	const paymentAccount = '0x0000000000000000000000000000000000000001';
@@ -29,7 +29,7 @@ async function prepareExecution() {
 	const account = initAccountFromHD(accountHDKey);
 	const chainId = '0x7a69';
 
-	const {executor, publicExtendedKey} = await createTestExecutor<EthereumChainProtocol>({
+	const {executor, publicExtendedKey, storage} = await createTestExecutor<EthereumChainProtocol>({
 		serverAccount: account,
 		chainProtocols: {
 			[chainId]: new EthereumChainProtocol(
@@ -50,9 +50,15 @@ async function prepareExecution() {
 		],
 	});
 
+	const timestamp = Math.floor(Date.now() / 1000);
+
+	if (options?.fees) {
+		await storage.updateFees(chainId, timestamp, options.fees);
+	}
+
 	const viemContext = await createViemContext(provider);
 	const {publicClient, walletClient} = viemContext;
-	const gasPrice = await publicClient.getGasPrice();
+	const gasPrice = options?.gasPrice || (await publicClient.getGasPrice());
 
 	const user = env.namedAccounts.deployer;
 	const remoteAccountInfo = await executor.getRemoteAccount(chainId, user);
@@ -118,6 +124,31 @@ describe('Executing on the registry', function () {
 
 		expect(txInfo.isVoidTransaction).to.be.false;
 		expect((await env.read(GreetingsRegistry, {functionName: 'messages', args: [user]})).content).to.equal('hello');
+	});
+
+	it('Should fails if fees are added and the payment sent is not enough', async function () {
+		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, serviceParameters} = await prepareExecution({
+			fees: {fixed: '1', per_1000_000: 0},
+		});
+
+		await expect(
+			executor.broadcastExecution(
+				(++counter).toString(),
+				0,
+				user,
+				{
+					chainId: txData.chainId,
+					transaction: {
+						type: '0x2',
+						to: txData.to,
+						data: txData.data,
+						gas: `0x${gas.toString(16)}` as String0x,
+					},
+					maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
+				},
+				serviceParameters,
+			),
+		).rejects.toThrowError();
 	});
 
 	it('Should execute after processs is called since we allow for the paymentAccount to pay for diff', async function () {

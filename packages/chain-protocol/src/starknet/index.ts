@@ -348,6 +348,19 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 		}
 	}
 
+	async computeCost(
+		chainId: String0x,
+		transactionData: StarknetTransactionData,
+		transactionParameters: TransactionParametersUsed,
+		maxFeePerGasAuthorized: String0x,
+	): Promise<{cost: bigint; maxCost: bigint}> {
+		// TODO for v3: maxFeePerGasAuthorized and transactionParameters
+		const cost = BigInt(transactionData.max_fee);
+		const maxCost = BigInt(transactionData.max_fee);
+
+		return {cost, maxCost};
+	}
+
 	async signTransaction(
 		chainId: String0x,
 		data: StarknetTransactionData,
