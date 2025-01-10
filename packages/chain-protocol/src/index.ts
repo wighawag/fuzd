@@ -12,6 +12,7 @@ export type TransactionStatus =
 			finalised: true;
 			blockTime: number;
 			failed: boolean;
+			cost: bigint;
 	  }
 	| {
 			success: true;

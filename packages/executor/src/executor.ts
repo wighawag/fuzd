@@ -32,7 +32,7 @@ export function computeFees(chainId: IntegerString, serviceParameters: Execution
 		const feesToPay =
 			BigInt(serviceParameters.fees.fixed) + (maxCost * BigInt(serviceParameters.fees.per_1_000_000)) / 1000000n;
 
-		let extraDebtInUnits: bigint = 0n;
+		let debtDueInUnits: bigint = 0n;
 
 		const unit = networks[chainId]?.debtUnit;
 		if (!unit || unit <= 0n) {
@@ -40,17 +40,17 @@ export function computeFees(chainId: IntegerString, serviceParameters: Execution
 			throw new Error(`chain with id: ${chainId} does not support fees (debtUnit is not set)`);
 		}
 
-		extraDebtInUnits = feesToPay / unit;
+		debtDueInUnits = feesToPay / unit;
 
 		return {
 			feesToPay,
-			extraDebtInUnits,
+			debtDueInUnits,
 		};
 	}
 
 	return {
 		feesToPay: 0n,
-		extraDebtInUnits: 0n,
+		debtDueInUnits: 0n,
 	};
 }
 
@@ -469,7 +469,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				execution.maxFeePerGasAuthorized,
 			);
 
-			const {feesToPay, extraDebtInUnits} = computeFees(execution.chainId, execution.serviceParameters, maxCost);
+			const {feesToPay, debtDueInUnits} = computeFees(execution.chainId, execution.serviceParameters, maxCost);
 
 			if (!asPaymentFor) {
 				if (balance < maxCost) {
@@ -515,7 +515,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				newExecution,
 				{
 					updateNonceIfNeeded: true,
-					debtOffset: extraDebtInUnits,
+					debtOffset: debtDueInUnits,
 				},
 				asPaymentFor,
 			);
@@ -702,7 +702,21 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		}
 		if (txStatus.finalised) {
 			pendingExecution.finalized = true;
-			storage.createOrUpdatePendingExecution(pendingExecution, {updateNonceIfNeeded: false});
+			const maxCost = await chainProtocol.computeMaxCost(
+				pendingExecution.chainId,
+				pendingExecution.transaction,
+				pendingExecution.maxFeePerGasAuthorized,
+			);
+			const {debtDueInUnits: previousDebtsRecorded} = computeFees(
+				pendingExecution.chainId,
+				pendingExecution.serviceParameters,
+				maxCost,
+			);
+			const {debtDueInUnits} = computeFees(pendingExecution.chainId, pendingExecution.serviceParameters, txStatus.cost);
+			storage.createOrUpdatePendingExecution(pendingExecution, {
+				updateNonceIfNeeded: false,
+				debtOffset: debtDueInUnits - previousDebtsRecorded,
+			});
 		} else if (!txStatus.pending) {
 			await _resubmitIfNeeded(pendingExecution);
 		}

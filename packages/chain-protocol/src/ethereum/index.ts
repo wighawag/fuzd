@@ -75,17 +75,18 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 			}
 		}
 
-		if (finalised) {
+		if (finalised && receipt) {
 			return {
 				success: true,
-				finalised,
+				finalised: true,
 				blockTime: blockTime as number,
 				failed: failed as boolean,
+				cost: BigInt(receipt.gasUsed) * BigInt(receipt.effectiveGasPrice),
 			};
 		} else {
 			return {
 				success: true,
-				finalised,
+				finalised: false,
 				blockTime,
 				failed,
 				pending: receipt ? true : false,

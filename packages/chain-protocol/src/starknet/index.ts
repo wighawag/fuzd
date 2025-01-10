@@ -162,17 +162,18 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			}
 		}
 
-		if (finalised) {
+		if (finalised && receipt) {
 			return {
 				success: true,
-				finalised,
+				finalised: true,
 				blockTime: blockTime as number,
 				failed: failed as boolean,
+				cost: BigInt(receipt.actual_fee.amount), // TODO unit
 			};
 		} else {
 			return {
 				success: true,
-				finalised,
+				finalised: false,
 				blockTime,
 				failed,
 				pending: receipt ? true : false,

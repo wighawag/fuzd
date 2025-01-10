@@ -11,11 +11,12 @@ const logger = logs('fuzd-server-executor-storage-sql');
 type BroadcasterInDB = {
 	address: String0x;
 	chainId: IntegerString;
+
 	nextNonce: number;
 	lock: string | null;
 	lock_timestamp: number | null;
-	// debt: string;
-	// debtCounter: number;
+
+	debtInUnit: string;
 };
 
 function fromBroadcasterInDB(inDB: BroadcasterInDB): BroadcasterData {
@@ -25,8 +26,8 @@ function fromBroadcasterInDB(inDB: BroadcasterInDB): BroadcasterData {
 		nextNonce: inDB.nextNonce,
 		lock: inDB.lock,
 		lock_timestamp: inDB.lock_timestamp,
-		// debt: BigInt(inDB.debt),
-		// debtCounter: inDB.debtCounter,
+
+		debtInUnit: BigInt(inDB.debtInUnit),
 	};
 }
 
@@ -37,8 +38,8 @@ function toBroadcasterInDB(obj: BroadcasterData): BroadcasterInDB {
 		nextNonce: obj.nextNonce,
 		lock: obj.lock,
 		lock_timestamp: obj.lock_timestamp,
-		// debt: obj.debt.toString(),
-		// debtCounter: obj.debtCounter,
+
+		debtInUnit: obj.debtInUnit.toString(),
 	};
 }
 
@@ -220,8 +221,8 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		// this is crucial
 		await this.db
 			.prepare(
-				`INSERT INTO Broadcasters (address, chainId, nextNonce, lock)
-            VALUES (?1, ?2, ?3, ?4)
+				`INSERT INTO Broadcasters (address, chainId, nextNonce, lock, debtInUnit)
+            VALUES (?1, ?2, ?3, ?4, '0')
             ON CONFLICT(address, chainId) DO UPDATE SET
             lock = CASE
                 WHEN lock IS NULL OR (UNIXEPOCH() - lock_timestamp) > ${LOCK_EXPIRY_SECONDS} THEN ?4
@@ -292,32 +293,34 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 				`could not handle nonce comversion to number: ${executionToStore.transactionParametersUsed.nonce}`,
 			);
 		}
+		const address = executionToStore.transactionParametersUsed.from;
+		const chainId = executionToStore.chainId;
 		const nextNonce = nonceUsed + 1;
-		const broadcasterInDB = toBroadcasterInDB({
-			address: executionToStore.transactionParametersUsed.from,
-			chainId: executionToStore.chainId,
-			nextNonce,
-			lock: null,
-			lock_timestamp: null,
-		});
-		// const broadcasterTableData = toValues(broadcasterInDB);
-
-		// const sqlUpdateNonceStatement = `INSERT INTO Broadcasters (${broadcasterTableData.columns}) VALUES (${broadcasterTableData.bindings}) ON CONFLICT(address, chainId) DO UPDATE SET nextNonce = MAX(nextNonce, excluded.nextNonce);`;
-		const sqlUpdateNonceStatement = `UPDATE Broadcasters 
-			SET 
-				nextNonce = MAX(nextNonce, ?1),
-				lock = NULL,
-				lock_timestamp = NULL
-			WHERE 
-				address = ?2 AND chainId = ?3`;
-
-		const updateNonceStatement = this.db.prepare(sqlUpdateNonceStatement);
 
 		const batchOfTransaction: SQLPreparedStatement[] = [];
 
 		try {
 			if (updateNonceIfNeeded) {
-				batchOfTransaction.push(updateNonceStatement.bind(nextNonce, broadcasterInDB.address, broadcasterInDB.chainId));
+				const sqlUpdateNonceStatement = `UPDATE Broadcasters 
+				SET 
+					nextNonce = MAX(nextNonce, ?1),
+					lock = NULL,
+					lock_timestamp = NULL
+				WHERE 
+					address = ?2 AND chainId = ?3`;
+
+				const updateNonceStatement = this.db.prepare(sqlUpdateNonceStatement);
+				batchOfTransaction.push(updateNonceStatement.bind(nextNonce, address, chainId));
+			}
+			if (debtOffset && debtOffset != 0n) {
+				const sqlupdateDebt = `UPDATE Broadcasters 
+				SET 
+					debtInUnit = debtInUnit + ?1
+				WHERE 
+					address = ?2 AND chainId = ?3`;
+
+				const updateDebt = this.db.prepare(sqlupdateDebt);
+				batchOfTransaction.push(updateDebt.bind(debtOffset.toString(), address, chainId));
 			}
 			batchOfTransaction.push(executionInsertionStatement.bind(...values));
 
@@ -340,7 +343,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 			await this.db.batch(batchOfTransaction);
 		} catch (err) {
 			console.error(`Failed to update, reset lock...`, err);
-			await this.unlockBroadcaster(broadcasterInDB);
+			await this.unlockBroadcaster({address, chainId});
 		}
 
 		return executionToStore;
