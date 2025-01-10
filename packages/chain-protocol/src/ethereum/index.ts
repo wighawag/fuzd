@@ -10,7 +10,7 @@ import type {EIP1193Transaction, EIP1193TransactionReceipt, Methods} from 'eip-1
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC} from 'remote-procedure-call';
 import {getRoughGasPriceEstimate} from './utils.js';
-import {DerivationParameters, fromHex, String0x, toHex, TransactionParametersUsed} from 'fuzd-common';
+import {DerivationParameters, fromHex, IntegerString, String0x, toHex, TransactionParametersUsed} from 'fuzd-common';
 import type {FullEthereumTransactionData, EthereumTransactionData} from './types.js';
 import type {ETHAccount} from 'remote-account';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
@@ -188,7 +188,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 	}
 
 	async checkValidity(
-		chainId: String0x,
+		chainId: IntegerString,
 		transactionData: EthereumTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
@@ -222,20 +222,18 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		return {notEnoughGas: gasRequired > BigInt(transactionData.gas) ? true : false, revert: false};
 	}
 
-	async computeCost(
-		chainId: String0x,
+	async computeMaxCost(
+		chainId: IntegerString,
 		transactionData: EthereumTransactionData,
-		transactionParameters: TransactionParametersUsed,
 		maxFeePerGasAuthorized: String0x,
-	): Promise<{cost: bigint; maxCost: bigint}> {
-		const cost = BigInt(transactionData.gas) * BigInt(transactionParameters.maxFeePerGas);
+	): Promise<bigint> {
 		const maxCost = BigInt(transactionData.gas) * BigInt(maxFeePerGasAuthorized);
 
-		return {cost, maxCost};
+		return maxCost;
 	}
 
 	async signTransaction(
-		chainId: String0x,
+		chainId: IntegerString,
 		transactionData: EthereumTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
@@ -251,7 +249,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		const actualTransactionData: FullEthereumTransactionData = {
 			type: transactionData.type,
 			accessList: transactionData.accessList,
-			chainId: chainId,
+			chainId: `0x${Number(chainId).toString(16)}`,
 			data: transactionData.data,
 			gas: transactionData.gas,
 			to: transactionData.to,
@@ -274,7 +272,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 	}
 
 	async signVoidTransaction(
-		chainId: String0x,
+		chainId: IntegerString,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<SignedTransactionInfo> {
@@ -297,7 +295,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 				nonce: transactionParameters.nonce,
 				maxFeePerGas: transactionParameters.maxFeePerGas,
 				maxPriorityFeePerGas: transactionParameters.maxPriorityFeePerGas,
-				chainId: chainId,
+				chainId: `0x${Number(chainId).toString(16)}`,
 				gas: `0x${(21000).toString(16)}`,
 			};
 			const rawTx = await signer.request({

@@ -6,7 +6,7 @@
 import type {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
 import {timelockEncrypt, HttpChainClient, roundAt, Buffer} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';
-import type {ExecutionSubmission, RemoteAccountInfo, String0x} from 'fuzd-common';
+import type {ExecutionSubmission, IntegerString, RemoteAccountInfo, String0x} from 'fuzd-common';
 import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 
 import {testnetClient, mainnetClient} from 'tlock-js';
@@ -62,20 +62,14 @@ function fromSimplerTransactionData(
 	}
 }
 
-function toChainId(chainId: string | String0x): String0x {
-	return (chainId.startsWith('0x') ? chainId : `0x` + parseInt(chainId).toString(16)) as String0x;
-}
-
 export function createClient(config: ClientConfig) {
 	const wallet = privateKeyToAccount(config.privateKey);
 	const drandClient = config.drand || mainnetClient();
 
 	let _assignedRemoteAccount: RemoteAccountInfo | undefined;
 
-	async function _fetchRemoteAccount(chainId: String0x | string): Promise<RemoteAccountInfo> {
-		const chainIdAsHex = toChainId(chainId);
-
-		const remoteAccountRequestUrl = `${config.schedulerEndPoint}/api/execution/remoteAccount/${chainIdAsHex}/${wallet.address}`;
+	async function _fetchRemoteAccount(chainId: IntegerString): Promise<RemoteAccountInfo> {
+		const remoteAccountRequestUrl = `${config.schedulerEndPoint}/api/execution/remoteAccount/${chainId}/${wallet.address}`;
 		const remoteAccountResponse = await fetch(remoteAccountRequestUrl);
 		let remoteAccountResult;
 		try {
@@ -91,7 +85,7 @@ export function createClient(config: ClientConfig) {
 		}
 		return remoteAccountResult.account;
 	}
-	async function assignRemoteAccount(chainId: String0x | string): Promise<RemoteAccountInfo> {
+	async function assignRemoteAccount(chainId: IntegerString): Promise<RemoteAccountInfo> {
 		_assignedRemoteAccount = await _fetchRemoteAccount(chainId);
 		return _assignedRemoteAccount;
 	}
@@ -99,7 +93,7 @@ export function createClient(config: ClientConfig) {
 	async function scheduleExecution(
 		execution: {
 			slot: string;
-			chainId: String0x | string;
+			chainId: IntegerString;
 			transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
 			maxFeePerGasAuthorized: bigint;
 			time: number;
@@ -109,8 +103,6 @@ export function createClient(config: ClientConfig) {
 		},
 		options?: {fakeEncrypt?: boolean},
 	): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
-		const chainIdAsHex = toChainId(execution.chainId);
-
 		let executionToSend: ScheduledExecution<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>>;
 		const remoteAccount = await _fetchRemoteAccount(execution.chainId);
 		if (_assignedRemoteAccount && remoteAccount.address != _assignedRemoteAccount.address) {
@@ -122,7 +114,7 @@ export function createClient(config: ClientConfig) {
 			type: 'clear',
 			executions: [
 				{
-					chainId: chainIdAsHex,
+					chainId: execution.chainId,
 					maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as String0x,
 					transaction: transactionData,
 				},
@@ -139,7 +131,7 @@ export function createClient(config: ClientConfig) {
 
 		const payload = await timelockEncrypt(round, Buffer.from(payloadAsJSONString, 'utf-8'), drandClient);
 		executionToSend = {
-			chainId: chainIdAsHex,
+			chainId: execution.chainId,
 			slot: execution.slot,
 			timing: {
 				type: 'fixed-round',

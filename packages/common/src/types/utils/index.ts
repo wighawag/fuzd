@@ -6,6 +6,8 @@ import {tags} from 'typia';
 //  but see: https://github.com/samchon/typia/issues/1346
 export type String0x = `0x${string}` & tags.Pattern<'^0x[a-f0-9]+$'>;
 
+export type IntegerString = string & tags.Pattern<'^[1-9][0-9]*$'>;
+
 // TODO more specific validation
 // export type Bytes0x = String0x;
 

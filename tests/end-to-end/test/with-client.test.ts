@@ -14,7 +14,7 @@ describe('with client', () => {
 	// --------------------------------------------------------------------------------------------
 	beforeAll(async () => {
 		await worker.fetch(
-			`/admin/setChainOverride/0x7a69/${encodeURIComponent(`${ANVIL_URL}#finality=2&worstCaseBlockTime=5`)}`,
+			`/admin/setChainOverride/31337/${encodeURIComponent(`${ANVIL_URL}#finality=2&worstCaseBlockTime=5`)}`,
 		);
 	}, 10000);
 
@@ -24,7 +24,7 @@ describe('with client', () => {
 			schedulerEndPoint: FUZD_URL,
 		});
 
-		const chainId = `0x7a69`;
+		const chainId = `31337`;
 
 		const remoteAccount = client.assignRemoteAccount(chainId);
 		// we can now send fund to remoteAccount.address

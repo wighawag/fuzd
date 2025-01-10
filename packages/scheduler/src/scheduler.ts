@@ -10,7 +10,14 @@ import {
 	SchedulerBackend,
 } from './types/external.js';
 import {ScheduledExecutionQueued} from './types/scheduler-storage.js';
-import {ExecutionResponse, ExecutionSubmission, String0x, time2text, validateParameters} from 'fuzd-common';
+import {
+	ExecutionResponse,
+	ExecutionSubmission,
+	IntegerString,
+	String0x,
+	time2text,
+	validateParameters,
+} from 'fuzd-common';
 import {SchedulerConfig} from './types/internal.js';
 import {ChainProtocol, TransactionDataTypes} from 'fuzd-chain-protocol';
 
@@ -160,7 +167,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		};
 	}
 
-	function _getChainProtocol(chainId: String0x): ChainProtocol<any> {
+	function _getChainProtocol(chainId: IntegerString): ChainProtocol<any> {
 		const chainProtocol = chainProtocols[chainId];
 		if (!chainProtocol) {
 			throw new Error(`cannot get protocol for chain with id ${chainId}`);

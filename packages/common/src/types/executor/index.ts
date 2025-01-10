@@ -1,4 +1,4 @@
-import {String0x} from '../utils/index.js';
+import {IntegerString, String0x} from '../utils/index.js';
 
 // export type UpdateableParameter<T> = T extends undefined
 // 	? never
@@ -20,7 +20,7 @@ export type TransactionParametersUsed = {
 };
 
 export type PendingExecutionStored<TransactionDataType> = {
-	chainId: String0x;
+	chainId: IntegerString;
 	account: String0x;
 	slot: string;
 	batchIndex: number;
@@ -47,27 +47,29 @@ export type PendingExecutionStored<TransactionDataType> = {
 // 		current: {data: '', type: 'ethereum'},
 // 		updateTimestamp: 1,
 // 	},
-// 	fees: {current: {fixed: '0', per_1000_000: 1}, updateTimestamp: 0, previous: undefined},
+// 	fees: {current: {fixed: '0', per_1_000_000: 1}, updateTimestamp: 0, previous: undefined},
 // };
 
 export type ExecutionResponse<TransactionDataType> = PendingExecutionStored<TransactionDataType> & {
 	slotAlreadyUsed?: boolean;
 };
 
+export type Fees = {
+	fixed: string;
+	per_1_000_000: number;
+};
+
 export type ExecutionServiceParameters = {
 	derivationParameters: DerivationParameters;
 	expectedWorstCaseGasPrice?: string;
-	fees: {
-		fixed: string;
-		per_1000_000: number;
-	};
+	fees: Fees;
 };
 
 // ------------------------------------------------------------------------------------------------
 // ExecutionSubmission
 // ------------------------------------------------------------------------------------------------
 export type ExecutionSubmission<TransactionDataType> = {
-	chainId: String0x;
+	chainId: IntegerString;
 	transaction: TransactionDataType;
 	maxFeePerGasAuthorized: String0x; // 1000 gwei // TODO CONFIGURE per network: max worst worst case
 	expiryTime?: number;
@@ -98,7 +100,7 @@ export type ExecutionBroadcast<T> = ExecutionSubmission<T> & {
 // Executor
 // ------------------------------------------------------------------------------------------------
 export type Executor<TransactionDataType> = {
-	getRemoteAccount(chainId: String0x, account: String0x): Promise<RemoteAccountInfo>;
+	getRemoteAccount(chainId: IntegerString, account: String0x): Promise<RemoteAccountInfo>;
 	broadcastExecution(
 		slot: string,
 		batchIndex: number,
@@ -108,7 +110,7 @@ export type Executor<TransactionDataType> = {
 		options?: {
 			trusted?: boolean;
 			asPaymentFor?: {
-				chainId: String0x;
+				chainId: IntegerString;
 				account: String0x;
 				slot: string;
 				batchIndex: number;
@@ -118,14 +120,12 @@ export type Executor<TransactionDataType> = {
 	): Promise<ExecutionResponse<TransactionDataType>>;
 
 	getExecutionStatus(executionBatch: {
-		chainId: String0x;
+		chainId: IntegerString;
 		slot: string;
 		account: String0x;
 	}): Promise<'finalized' | 'broadcasted' | undefined>;
 
-	// getExpectedWorstCaseGasPrice?(chainId: String0x): Promise<ExpectedWorstCaseGasPrice>;
-
-	getServiceParameters(chainId: String0x): Promise<UpdateableParameters<ExecutionServiceParameters>>;
+	getServiceParameters(chainId: IntegerString): Promise<UpdateableParameters<ExecutionServiceParameters>>;
 };
 // ------------------------------------------------------------------------------------------------
 
@@ -133,7 +133,7 @@ export type Executor<TransactionDataType> = {
 // TransactionParams
 // ------------------------------------------------------------------------------------------------
 export type TransactionParams = {
-	chainId: String0x;
+	chainId: IntegerString;
 	expectedNonce: number;
 	nonce: number;
 };

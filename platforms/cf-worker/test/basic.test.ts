@@ -7,7 +7,7 @@ import {privateKeyToAccount} from 'viem/accounts';
 import type {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 
 const worker = setupWorker({
-	// CHAIN_0x7a69: `http://localhost:8888#finality=2&worstCaseBlockTime=5`,
+	// CHAIN_31337: `http://localhost:8888#finality=2&worstCaseBlockTime=5`,
 });
 
 describe('fuzd api', () => {
@@ -21,12 +21,12 @@ describe('fuzd api', () => {
 
 		const publicKey = await worker.fetch(`/api/publicKey`).then((v) => v.text());
 
-		const chainIdAsHex = `0x7a69`; // Note that is need to be lower case // TODO
+		const chainId = `31337`; // Note that is need to be lower case // TODO
 
 		// we build up first the transaction we want to submit in the future (delayed)
 		// this is mostly a normal tx object, except for the broadcastSchedule
 		const execution: ExecutionSubmission<EthereumTransactionData> = {
-			chainId: chainIdAsHex,
+			chainId,
 			transaction: {
 				gas: `0x1000000`,
 				type: '0x2',
@@ -37,10 +37,6 @@ describe('fuzd api', () => {
 			// Note though that the api can set its own limit and might not want to keep trying forever
 			// TODO make it simpler for now
 			maxFeePerGasAuthorized: `0x10`,
-			derivationParameters: {
-				type: 'ethereum',
-				data: publicKey, // TODO add getBroadcaster endpoint
-			},
 		};
 
 		// then we have several option
@@ -52,7 +48,7 @@ describe('fuzd api', () => {
 			// note that even tough you specified the chainId in the tx data, you still need to specify here
 			// this is because the scheduler need to know which network it should look for
 			// we could have make it optional but we prefers a bit of verbosity here
-			chainId: chainIdAsHex,
+			chainId,
 			// slot is used an identifier for the scheduled
 			// this could allow you in the future to replace execution if things changed
 			slot: `any`,
@@ -65,6 +61,16 @@ describe('fuzd api', () => {
 			},
 			// finaly we provided the tx in clear
 			executions: [execution],
+			executionServiceParameters: {
+				derivationParameters: {
+					type: 'ethereum',
+					data: publicKey, // TODO add getBroadcaster endpoint
+				},
+				fees: {
+					fixed: '0',
+					per_1_000_000: 0,
+				},
+			},
 		};
 
 		// we convert the json as a string
@@ -87,6 +93,6 @@ describe('fuzd api', () => {
 		// console.log(`TEXT RESPONSE:`, text);
 		const json: any = await resp.json();
 		// console.log(json);
-		expect(json.info.chainId).to.equal(chainIdAsHex);
+		expect(json.info.chainId).to.equal(chainId);
 	});
 });

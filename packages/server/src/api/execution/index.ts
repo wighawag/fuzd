@@ -3,7 +3,7 @@ import {Bindings} from 'hono/types';
 import {ServerOptions} from '../../types.js';
 import {assert, createValidate} from 'typia';
 import {createErrorObject} from '../../utils/response.js';
-import {ExecutionBroadcast, String0x} from 'fuzd-common';
+import {ExecutionBroadcast, IntegerString, String0x} from 'fuzd-common';
 import {Env} from '../../env.js';
 import {auth} from '../../auth.js';
 import {typiaValidator} from '@hono/typia-validator';
@@ -16,7 +16,7 @@ export function getExecutionAPI<Bindings extends Env>(options: ServerOptions<Bin
 		.get('/remoteAccount/:chainId/:account', async (c) => {
 			try {
 				const config = c.get('config');
-				const chainId = assert<String0x>(c.req.param('chainId'));
+				const chainId = assert<IntegerString>(c.req.param('chainId'));
 				const account = assert<String0x>(c.req.param('account'));
 				const broadcasterInfo = await config.executor.getRemoteAccount(chainId, account);
 				return c.json({success: true as const, account: broadcasterInfo}, 200);

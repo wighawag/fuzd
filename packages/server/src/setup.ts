@@ -3,7 +3,7 @@ import {ServerOptions} from './types.js';
 import {ExecutorBackend, ExecutorStorage, createExecutor} from 'fuzd-executor';
 import {Scheduler, SchedulerBackend, SchedulerConfig, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
 import {ETHAccount, initAccountFromHD} from 'remote-account';
-import {ExecutionSubmission, Executor, String0x} from 'fuzd-common';
+import {ExecutionSubmission, Executor, IntegerString, String0x} from 'fuzd-common';
 import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import {initDecrypter, mainnetClient} from 'fuzd-tlock-decrypter';
@@ -36,7 +36,7 @@ export type Config = {
 	paymentAccount?: String0x;
 	chainProtocols: ChainProtocols<MyChainProtocols>;
 	contractTimestampAddress?: String0x & tags.Pattern<'^0[xX][A-Fa-f0-9][A-Fa-f0-9]+$'>;
-	getTimeDiff(chainId: String0x): Promise<number>;
+	getTimeDiff(chainId: IntegerString): Promise<number>;
 };
 
 declare module 'hono' {
@@ -47,7 +47,7 @@ declare module 'hono' {
 
 const chainOverrides: Record<string, string> = {};
 
-export function setChainOverride(chainId: `0x${string}`, override: string) {
+export function setChainOverride(chainId: IntegerString, override: string) {
 	chainOverrides[`CHAIN_${chainId}`] = override;
 }
 
@@ -69,9 +69,9 @@ function assignChainProtocols(
 		// would need to consider ethereum as default
 		// then we make a request to see if it works, if not reject request,
 		// should be for most request but at least for writable ones
-		if (envKey.startsWith('CHAIN_0x')) {
-			const chainId = envKey.substring(6) as String0x;
-			const chainString = env[envKey as `CHAIN_0x${string}`] as string;
+		if (envKey.startsWith('CHAIN_')) {
+			const chainId = envKey.substring(6) as IntegerString;
+			const chainString = env[envKey as `CHAIN_${IntegerString}`] as string;
 			const [nodeURL, paramsString] = chainString.split('#');
 
 			let protocol: 'ethereum' | 'starknet' = 'ethereum';
@@ -181,7 +181,7 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			account,
 			chainProtocols,
 			paymentAccount,
-			async getTimeDiff(chainId: String0x) {
+			async getTimeDiff(chainId: IntegerString) {
 				if (!chainId) {
 					return 0;
 				}

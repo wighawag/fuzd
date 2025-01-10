@@ -1,16 +1,16 @@
-import type {RemoteSQL} from 'remote-sql';
+import type {RemoteSQL, SQLPreparedStatement} from 'remote-sql';
 import type {ExecutorStorage, BroadcasterData, ChainConfiguration} from 'fuzd-executor';
 import {sqlToStatements, toValues} from './utils.js';
 import {logs} from 'named-logs';
 import setupTables from '../schema/ts/executor.sql.js';
-import {PendingExecutionStored, String0x, UpdateableParameter} from 'fuzd-common';
+import {Fees, IntegerString, PendingExecutionStored, String0x, UpdateableParameter} from 'fuzd-common';
 import {wait} from '../utils/time.js';
 
 const logger = logs('fuzd-server-executor-storage-sql');
 
 type BroadcasterInDB = {
 	address: String0x;
-	chainId: String0x;
+	chainId: IntegerString;
 	nextNonce: number;
 	lock: string | null;
 	lock_timestamp: number | null;
@@ -44,7 +44,7 @@ function toBroadcasterInDB(obj: BroadcasterData): BroadcasterInDB {
 
 type ExecutionInDB = {
 	account: String0x;
-	chainId: String0x;
+	chainId: IntegerString;
 	slot: string;
 	batchIndex: number;
 	serviceParameters: string;
@@ -67,7 +67,7 @@ type ExecutionInDB = {
 };
 
 type ChainConfigurationsInDB = {
-	chainId: String0x;
+	chainId: IntegerString;
 	expectedGasPrice_current: string | null;
 	expectedGasPrice_previous: string | null;
 	expectedGasPrice_update: number | null;
@@ -158,7 +158,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	constructor(private db: RemoteSQL) {}
 
 	async getPendingExecution(params: {
-		chainId: String0x;
+		chainId: IntegerString;
 		account: String0x;
 		slot: string;
 		batchIndex: number;
@@ -176,7 +176,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	}
 
 	async getPendingExecutionBatch(params: {
-		chainId: String0x;
+		chainId: IntegerString;
 		account: String0x;
 		slot: string;
 	}): Promise<PendingExecutionStored<TransactionDataType>[] | undefined> {
@@ -189,7 +189,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	}
 
 	async deletePendingExecution(params: {
-		chainId: String0x;
+		chainId: IntegerString;
 		account: String0x;
 		slot: string;
 		batchIndex: number;
@@ -202,7 +202,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	}
 
 	async lockBroadcaster(params: {
-		chainId: String0x;
+		chainId: IntegerString;
 		address: string;
 		nonceFromNetwork: number;
 	}): Promise<BroadcasterData | undefined> {
@@ -252,7 +252,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		}
 	}
 
-	async unlockBroadcaster(params: {chainId: String0x; address: string}): Promise<void> {
+	async unlockBroadcaster(params: {chainId: IntegerString; address: string}): Promise<void> {
 		// console.error(`unlocking ${params.address}`);
 		const sqlResetLockStatement = `UPDATE Broadcasters SET lock = NULL, lock_timestamp = NULL WHERE address = ?1 AND chainId = ?2;`;
 		const resetLockStatement = this.db.prepare(sqlResetLockStatement);
@@ -270,9 +270,9 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 
 	async createOrUpdatePendingExecution(
 		executionToStore: PendingExecutionStored<TransactionDataType>,
-		{updateNonceIfNeeded}: {updateNonceIfNeeded: boolean},
+		{updateNonceIfNeeded, debtOffset}: {updateNonceIfNeeded: boolean; debtOffset?: bigint},
 		asPaymentFor?: {
-			chainId: String0x;
+			chainId: IntegerString;
 			account: String0x;
 			slot: string;
 			batchIndex: number;
@@ -299,62 +299,45 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 			nextNonce,
 			lock: null,
 			lock_timestamp: null,
-			// debt: 0n,
-			// debtCounter: 0,
 		});
 		// const broadcasterTableData = toValues(broadcasterInDB);
 
 		// const sqlUpdateNonceStatement = `INSERT INTO Broadcasters (${broadcasterTableData.columns}) VALUES (${broadcasterTableData.bindings}) ON CONFLICT(address, chainId) DO UPDATE SET nextNonce = MAX(nextNonce, excluded.nextNonce);`;
-		const sqlUpdateNonceStatement = `UPDATE Broadcasters SET nextNonce = MAX(nextNonce, ?1), lock = NULL, lock_timestamp = NULL WHERE address = ?2 AND chainId = ?3`;
+		const sqlUpdateNonceStatement = `UPDATE Broadcasters 
+			SET 
+				nextNonce = MAX(nextNonce, ?1),
+				lock = NULL,
+				lock_timestamp = NULL
+			WHERE 
+				address = ?2 AND chainId = ?3`;
+
 		const updateNonceStatement = this.db.prepare(sqlUpdateNonceStatement);
 
-		// // TODO remove, but for now we need to make sure it exist
-		// const insertBroadcasterStatement = this.db.prepare(`
-		//     INSERT INTO Broadcasters (address, chainId, nextNonce)
-		//     SELECT ?1, ?2, ?3
-		// `);
+		const batchOfTransaction: SQLPreparedStatement[] = [];
 
 		try {
+			if (updateNonceIfNeeded) {
+				batchOfTransaction.push(updateNonceStatement.bind(nextNonce, broadcasterInDB.address, broadcasterInDB.chainId));
+			}
+			batchOfTransaction.push(executionInsertionStatement.bind(...values));
+
 			if (asPaymentFor) {
 				const asPaymentForStatement = this.db.prepare(
 					`UPDATE BroadcastedExecutions SET helpedForUpToGasPrice = ?1 WHERE chainId = ?2 AND account = ?3 AND slot = ?4 AND batchIndex = ?5;`,
 				);
-				if (updateNonceIfNeeded) {
-					await this.db.batch([
-						updateNonceStatement.bind(nextNonce, broadcasterInDB.address, broadcasterInDB.chainId),
-						// insertBroadcasterStatement.bind(broadcasterInDB.address, broadcasterInDB.chainId, nextNonce),
-						// updateNonceStatement.bind(...broadcasterTableData.values),
-						executionInsertionStatement.bind(...values),
-						asPaymentForStatement.bind(
-							asPaymentFor.upToGasPrice,
-							asPaymentFor.chainId,
-							asPaymentFor.account,
-							asPaymentFor.slot,
-							asPaymentFor.batchIndex,
-						),
-					]);
-				} else {
-					await this.db.batch([
-						executionInsertionStatement.bind(...values),
-						asPaymentForStatement.bind(
-							asPaymentFor.upToGasPrice,
-							asPaymentFor.chainId,
-							asPaymentFor.account,
-							asPaymentFor.slot,
-							asPaymentFor.batchIndex,
-						),
-					]);
-				}
-			} else {
-				if (updateNonceIfNeeded) {
-					await this.db.batch([
-						updateNonceStatement.bind(nextNonce, broadcasterInDB.address, broadcasterInDB.chainId),
-						executionInsertionStatement.bind(...values),
-					]);
-				} else {
-					await this.db.batch([executionInsertionStatement.bind(...values)]);
-				}
+
+				batchOfTransaction.push(
+					asPaymentForStatement.bind(
+						asPaymentFor.upToGasPrice,
+						asPaymentFor.chainId,
+						asPaymentFor.account,
+						asPaymentFor.slot,
+						asPaymentFor.batchIndex,
+					),
+				);
 			}
+
+			await this.db.batch(batchOfTransaction);
 		} catch (err) {
 			console.error(`Failed to update, reset lock...`, err);
 			await this.unlockBroadcaster(broadcasterInDB);
@@ -381,7 +364,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	// TODO use this to update teh tx
 	async getPendingExecutionsPerBroadcaster(
 		broadcasterData: {
-			chainId: String0x;
+			chainId: IntegerString;
 			broadcaster: String0x;
 		},
 		params: {limit: number},
@@ -395,7 +378,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		return results.map(fromExecutionInDB<TransactionDataType>);
 	}
 
-	async getBroadcaster(params: {chainId: String0x; address: string}): Promise<BroadcasterData | undefined> {
+	async getBroadcaster(params: {chainId: IntegerString; address: string}): Promise<BroadcasterData | undefined> {
 		const statement = this.db.prepare(`SELECT * FROM Broadcasters WHERE address = ?1 AND chainId = ?2;`);
 		const {results} = await statement.bind(params.address, params.chainId).all<BroadcasterInDB>();
 		if (results.length === 0) {
@@ -422,7 +405,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		await this.db.batch(statements.map((v) => this.db.prepare(v)));
 	}
 
-	async getChainConfiguration(chainId: String0x): Promise<ChainConfiguration> {
+	async getChainConfiguration(chainId: IntegerString): Promise<ChainConfiguration> {
 		const statement = this.db.prepare(`SELECT * FROM ChainConfigurations WHERE chainId = ?1;`);
 		const {results} = await statement.bind(chainId).all<ChainConfigurationsInDB>();
 		if (results.length === 0) {
@@ -433,7 +416,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	}
 
 	async updateExpectedWorstCaseGasPrice(
-		chainId: String0x,
+		chainId: IntegerString,
 		timestamp: number,
 		newGasPrice: bigint,
 	): Promise<ChainConfiguration> {
@@ -447,11 +430,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		return this.getChainConfiguration(chainId);
 	}
 
-	async updateFees(
-		chainId: String0x,
-		timestamp: number,
-		newFees: {fixed: string; per_1000_000: number},
-	): Promise<ChainConfiguration> {
+	async updateFees(chainId: IntegerString, timestamp: number, newFees: Fees): Promise<ChainConfiguration> {
 		const sqlStatement = `INSERT INTO ChainConfigurations (chainId, fees_current, fees_update) 
 		 VALUES(?1, ?2, ?3) ON CONFLICT(chainId) DO UPDATE SET
 		 fees_previous=fees_current,

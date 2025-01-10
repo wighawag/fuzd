@@ -17,7 +17,7 @@ describe('raw api call', () => {
 	// --------------------------------------------------------------------------------------------
 	beforeAll(async () => {
 		await worker.fetch(
-			`/admin/setChainOverride/0x7a69/${encodeURIComponent(`${ANVIL_URL}#finality=2&worstCaseBlockTime=5`)}`,
+			`/admin/setChainOverride/31337/${encodeURIComponent(`${ANVIL_URL}#finality=2&worstCaseBlockTime=5`)}`,
 		);
 	}, 10000);
 	// --------------------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ describe('raw api call', () => {
 		const wallet = privateKeyToAccount('0x1111111111111111111111111111111111111111111111111111111111111111');
 
 		// Note that is need to be lower case
-		const chainId = `0x7a69`;
+		const chainId = `31337`;
 
 		// we get the remote address associated with local account signing the execution message sent to the api
 		const remoteAccountResponse = await worker

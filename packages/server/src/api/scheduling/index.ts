@@ -5,7 +5,7 @@ import {auth} from '../../auth.js';
 import {createValidate} from 'typia';
 import {ScheduledExecution} from 'fuzd-scheduler';
 import {typiaValidator} from '@hono/typia-validator';
-import {ExecutionSubmission, String0x} from 'fuzd-common';
+import {ExecutionSubmission, IntegerString, String0x} from 'fuzd-common';
 import {MyTransactionData} from '../../setup.js';
 import {createErrorObject} from '../../utils/response.js';
 import {Env} from '../../env.js';
@@ -41,10 +41,12 @@ export function getSchedulingAPI<Bindings extends Env>(options: ServerOptions<Bi
 			try {
 				const config = c.get('config');
 				const slot = c.req.param('slot');
+				const chainId = c.req.param('chainId') as IntegerString;
+				const account = c.req.param('account').toLowerCase() as String0x;
 
 				const executions = await config.schedulerStorage.getUnFinalizedScheduledExecutionsPerAccount({
-					chainId: c.req.param('chainId') as String0x,
-					account: c.req.param('account').toLowerCase() as String0x,
+					chainId,
+					account,
 					limit: 100,
 				});
 				const executionsToCount = executions.filter((v) => v.slot != slot);
@@ -61,10 +63,12 @@ export function getSchedulingAPI<Bindings extends Env>(options: ServerOptions<Bi
 		.get('/scheduledExecution/:chainId/:account/:slot', async (c) => {
 			try {
 				const config = c.get('config');
+				const chainId = c.req.param('chainId') as IntegerString;
+				const account = c.req.param('account').toLowerCase() as String0x;
 
 				const execution = await config.schedulerStorage.getQueuedExecution({
-					chainId: c.req.param('chainId') as String0x,
-					account: c.req.param('account').toLowerCase() as String0x,
+					chainId,
+					account,
 					slot: c.req.param('slot'),
 				});
 				return c.json({success: true as const, execution}, 200);
@@ -76,10 +80,12 @@ export function getSchedulingAPI<Bindings extends Env>(options: ServerOptions<Bi
 		.get('/scheduledExecutions/:chainId/:account', async (c) => {
 			try {
 				const config = c.get('config');
+				const chainId = c.req.param('chainId') as IntegerString;
+				const account = c.req.param('account').toLowerCase() as String0x;
 
 				const executions = await config.schedulerStorage.getQueuedExecutionsForAccount({
-					chainId: c.req.param('chainId') as String0x,
-					account: c.req.param('account').toLowerCase() as String0x,
+					chainId,
+					account,
 				});
 				return c.json({success: true as const, executions}, 200); // TODO pagination data
 			} catch (err) {

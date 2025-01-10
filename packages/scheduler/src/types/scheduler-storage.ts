@@ -1,4 +1,4 @@
-import {ExecutionSubmission, String0x} from 'fuzd-common';
+import {ExecutionSubmission, IntegerString, String0x} from 'fuzd-common';
 import {ScheduledExecution} from './external.js';
 
 export type ScheduledExecutionQueued<TransactionDataType> = ScheduledExecution<
@@ -18,15 +18,15 @@ export type ScheduledExecutionQueued<TransactionDataType> = ScheduledExecution<
 
 export interface SchedulerStorage<TransactionDataType> {
 	getQueuedExecution(params: {
-		chainId: String0x;
+		chainId: IntegerString;
 		account: String0x;
 		slot: string;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType> | undefined>;
 	getQueuedExecutionsForAccount(params: {
-		chainId: String0x;
+		chainId: IntegerString;
 		account: String0x;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
-	deleteExecution(params: {chainId: String0x; account: String0x; slot: string}): Promise<void>;
+	deleteExecution(params: {chainId: IntegerString; account: String0x; slot: string}): Promise<void>;
 	archiveExecution(executionToStore: ScheduledExecutionQueued<TransactionDataType>): Promise<void>;
 	createOrUpdateQueuedExecution(
 		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
@@ -36,7 +36,7 @@ export interface SchedulerStorage<TransactionDataType> {
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	getUnFinalizedScheduledExecutionsPerAccount(params: {
-		chainId: String0x;
+		chainId: IntegerString;
 		account: String0x;
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;

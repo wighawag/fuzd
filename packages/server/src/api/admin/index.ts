@@ -4,7 +4,7 @@ import {basicAuth} from 'hono/basic-auth';
 import {logs} from 'named-logs';
 import {assert} from 'typia';
 import {createErrorObject} from '../../utils/response.js';
-import {String0x} from 'fuzd-common';
+import {IntegerString, String0x} from 'fuzd-common';
 import {setChainOverride, setup} from '../../setup.js';
 import {Env} from '../../env.js';
 
@@ -71,7 +71,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 		})
 		.get('/setChainOverride/:chainId/:chainOverride', async (c) => {
 			if ((c.env as any).DEV === 'true') {
-				const chainId = c.req.param('chainId') as `0x${string}`;
+				const chainId = c.req.param('chainId') as IntegerString;
 				const chainOverride = c.req.param('chainOverride');
 				setChainOverride(chainId, chainOverride);
 				return c.json({success: true as const}, 200);
@@ -121,11 +121,9 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 		.get('/chainConfiguration/:chainId', async (c) => {
 			try {
 				const config = c.get('config');
-				let chainId = c.req.param('chainId');
-				if (!chainId.startsWith('0x')) {
-					chainId = `0x${Number(chainId).toString(16)}`;
-				}
-				const chainConfiguration = await config.executorStorage.getChainConfiguration(chainId as String0x);
+				const chainId = c.req.param('chainId') as IntegerString;
+
+				const chainConfiguration = await config.executorStorage.getChainConfiguration(chainId);
 				return c.json(
 					{
 						success: true as const,
@@ -140,14 +138,11 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 		.get('/updateExpectedGasPrice/:chainId/:value', async (c) => {
 			try {
 				const config = c.get('config');
-				let chainId = c.req.param('chainId');
-				if (!chainId.startsWith('0x')) {
-					chainId = `0x${Number(chainId).toString(16)}`;
-				}
+				const chainId = c.req.param('chainId') as IntegerString;
 				const value = c.req.param('value');
 				const timestamp = Math.floor(Date.now() / 1000);
 				const chainConfiguration = await config.executorStorage.updateExpectedWorstCaseGasPrice(
-					chainId as String0x,
+					chainId,
 					timestamp,
 					BigInt(value),
 				);

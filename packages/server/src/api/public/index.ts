@@ -1,8 +1,7 @@
 import {Hono} from 'hono';
-import {Bindings} from 'hono/types';
 import {ServerOptions} from '../../types.js';
 import {createErrorObject} from '../../utils/response.js';
-import {String0x} from 'fuzd-common';
+import {IntegerString} from 'fuzd-common';
 import {Env} from '../../env.js';
 
 export function getPublicAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
@@ -19,11 +18,9 @@ export function getPublicAPI<Bindings extends Env>(options: ServerOptions<Bindin
 		.get('/time/:chainId', async (c) => {
 			try {
 				const config = c.get('config');
-				const chainId = c.req.param('chainId');
-				const chainProtocol =
-					config.chainProtocols[
-						(chainId.startsWith('0x') ? chainId : `0x${parseInt(chainId).toString(16)}`) as String0x
-					];
+				const chainId = c.req.param('chainId') as IntegerString;
+
+				const chainProtocol = config.chainProtocols[chainId];
 				if (!chainProtocol) {
 					throw new Error(`cannot get protocol for chain with id ${chainId}`);
 				}

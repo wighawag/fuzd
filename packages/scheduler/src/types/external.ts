@@ -1,5 +1,5 @@
 import {ScheduledExecutionQueued} from './scheduler-storage.js';
-import {ExecutionSubmission, String0x, ExecutionServiceParameters} from 'fuzd-common';
+import {ExecutionSubmission, String0x, ExecutionServiceParameters, IntegerString} from 'fuzd-common';
 // ------------------------------------------------------------------------------------------------
 // PriorTransactionInfo
 // ------------------------------------------------------------------------------------------------
@@ -86,7 +86,7 @@ export type DecryptedPayload<ExecutionDataType> =
 // ------------------------------------------------------------------------------------------------
 
 export type BaseScheduledExecution = {
-	chainId: String0x;
+	chainId: IntegerString;
 	slot: string;
 	onBehalf?: String0x;
 	paymentReserve?: string;
@@ -126,7 +126,7 @@ export type ScheduledExecution<ExecutionDataType> =
 // ------------------------------------------------------------------------------------------------
 export type ScheduleInfo = {
 	checkinTime: number;
-	chainId: String0x;
+	chainId: IntegerString;
 	account: String0x;
 	slot: string;
 };

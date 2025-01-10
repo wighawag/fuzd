@@ -2,7 +2,7 @@ import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, Transact
 import type {Methods} from '@starknet-io/types-js';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC, type RPCErrors} from 'remote-procedure-call';
-import {DerivationParameters, String0x, TransactionParametersUsed} from 'fuzd-common';
+import {DerivationParameters, IntegerString, String0x, TransactionParametersUsed} from 'fuzd-common';
 import type {
 	DEPLOY_ACCOUNT_TXN_V1,
 	DEPLOY_ACCOUNT_TXN_V3,
@@ -309,7 +309,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 	}
 
 	async checkValidity(
-		chainId: String0x,
+		chainId: IntegerString,
 		transactionData: StarknetTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
@@ -348,21 +348,19 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 		}
 	}
 
-	async computeCost(
-		chainId: String0x,
+	async computeMaxCost(
+		chainId: IntegerString,
 		transactionData: StarknetTransactionData,
-		transactionParameters: TransactionParametersUsed,
 		maxFeePerGasAuthorized: String0x,
-	): Promise<{cost: bigint; maxCost: bigint}> {
+	): Promise<bigint> {
 		// TODO for v3: maxFeePerGasAuthorized and transactionParameters
-		const cost = BigInt(transactionData.max_fee);
 		const maxCost = BigInt(transactionData.max_fee);
 
-		return {cost, maxCost};
+		return maxCost;
 	}
 
 	async signTransaction(
-		chainId: String0x,
+		chainId: IntegerString,
 		data: StarknetTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
@@ -381,7 +379,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 	}
 
 	// async signVoidTransaction(
-	// 	chainId: String0x,
+	// 	chainId: IntegerString,
 	// 	broadcaster: BroadcasterSignerData,
 	// 	transactionParameters: TransactionParametersUsed,
 	// ): Promise<{
@@ -398,6 +396,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 		broadcaster: BroadcasterSignerData,
 		account: String0x,
 	): StarknetTransactionData {
+		const chainId0x = `0x${Number(chainId).toString(16)}`;
 		const [protocol, protocolData] = broadcaster.signer.split(':');
 		let privateKey: String0x;
 		if (protocol === 'privateKey') {
@@ -408,7 +407,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 		const publicKey = getStarkKey(privateKey);
 
 		const {data} = create_deploy_account_transaction_intent_v1({
-			chain_id: chainId,
+			chain_id: chainId0x,
 			class_hash: this.config.accountContractClassHash,
 			constructor_calldata: [publicKey],
 			contract_address_salt: publicKey,
@@ -544,11 +543,12 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 	}
 
 	_createFullTransaction(
-		chainId: String0x,
+		chainId: IntegerString,
 		transactionData: StarknetTransactionData,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): {rawTx: FullStarknetTransactionData; transactionData: StarknetTransactionData; hash: String0x} {
+		const chainId0x = `0x${Number(chainId).toString(16)}`;
 		const [protocol, protocolData] = broadcaster.signer.split(':');
 		let privateKey: String0x;
 		if (protocol === 'privateKey') {
@@ -564,7 +564,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			if (transactionData.type === 'INVOKE') {
 				const intent = create_invoke_transaction_intent_v1({
 					...transactionData,
-					chain_id: chainId,
+					chain_id: chainId0x,
 					nonce: transactionParameters.nonce,
 					sender_address: broadcaster.address,
 				});
@@ -581,7 +581,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			} else if (transactionData.type === 'DEPLOY_ACCOUNT') {
 				const intent = create_deploy_account_transaction_intent_v1({
 					...transactionData,
-					chain_id: chainId,
+					chain_id: chainId0x,
 					nonce: transactionParameters.nonce,
 				});
 				const signature = formatSignature(sign(intent.hash, privateKey));

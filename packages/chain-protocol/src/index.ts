@@ -3,7 +3,7 @@
  * @module
  */
 
-import {DerivationParameters, String0x, TransactionParametersUsed} from 'fuzd-common';
+import {DerivationParameters, IntegerString, String0x, TransactionParametersUsed} from 'fuzd-common';
 import {ETHAccount} from 'remote-account';
 
 export type TransactionStatus =
@@ -82,7 +82,7 @@ export interface ExecutorChainProtocol<TransactionDataType> {
 	getGasFee(executionData: {maxFeePerGasAuthorized: String0x}): Promise<GasEstimate>;
 
 	requiredPreliminaryTransaction?(
-		chainId: string,
+		chainId: IntegerString,
 		broadcaster: BroadcasterSignerData,
 		account: String0x,
 	): TransactionDataType;
@@ -98,26 +98,25 @@ export interface ExecutorChainProtocol<TransactionDataType> {
 	): Promise<BroadcasterSignerData>;
 
 	checkValidity(
-		chainId: String0x,
+		chainId: IntegerString,
 		data: TransactionDataType,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<TransactionValidity>;
 
-	computeCost(
-		chainId: String0x,
+	computeMaxCost(
+		chainId: IntegerString,
 		transactionData: TransactionDataType,
-		transactionParameters: TransactionParametersUsed,
 		maxFeePerGasAuthorized: String0x,
-	): Promise<{cost: bigint; maxCost: bigint}>;
+	): Promise<bigint>;
 	signTransaction(
-		chainId: String0x,
+		chainId: IntegerString,
 		data: TransactionDataType,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<SignedTransactionInfo>;
 	signVoidTransaction?(
-		chainId: String0x,
+		chainId: IntegerString,
 		broadcaster: BroadcasterSignerData,
 		transactionParameters: TransactionParametersUsed,
 	): Promise<SignedTransactionInfo>;
@@ -141,7 +140,7 @@ export type TransactionDataTypes<ChainProtocolTypes extends ChainProtocol<any>> 
 	ExtractTransactionDataType<ChainProtocolTypes>;
 
 export type ChainProtocols<ChainProtocolTypes extends ChainProtocol<any>> = {
-	[chainId: String0x]: ChainProtocol<TransactionDataTypes<ChainProtocolTypes>>;
+	[chainId: IntegerString]: ChainProtocol<TransactionDataTypes<ChainProtocolTypes>>;
 };
 // ------------------------------------------------------------------------------------------------
 

@@ -14,9 +14,11 @@ import {
 	ExecutionServiceParameters,
 	UpdateableParameters,
 	validateParameters,
+	IntegerString,
 } from 'fuzd-common';
 import {ExecutorConfig} from './types/internal.js';
 import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo, TransactionDataTypes} from 'fuzd-chain-protocol';
+import {networks} from './data/networks.js';
 
 const logger = logs('fuzd-executor');
 
@@ -24,6 +26,33 @@ type ExecutionToStore<T> = Omit<
 	PendingExecutionStored<T>,
 	'hash' | 'broadcastTime' | 'nextCheckTime' | 'transactionParametersUsed'
 >;
+
+export function computeFees(chainId: IntegerString, serviceParameters: ExecutionServiceParameters, maxCost: bigint) {
+	if (serviceParameters.fees.fixed !== '0' || serviceParameters.fees.per_1_000_000 > 0) {
+		const feesToPay =
+			BigInt(serviceParameters.fees.fixed) + (maxCost * BigInt(serviceParameters.fees.per_1_000_000)) / 1000000n;
+
+		let extraDebtInUnits: bigint = 0n;
+
+		const unit = networks[chainId]?.debtUnit;
+		if (!unit || unit <= 0n) {
+			// TODO check that in `updateFees`
+			throw new Error(`chain with id: ${chainId} does not support fees (debtUnit is not set)`);
+		}
+
+		extraDebtInUnits = feesToPay / unit;
+
+		return {
+			feesToPay,
+			extraDebtInUnits,
+		};
+	}
+
+	return {
+		feesToPay: 0n,
+		extraDebtInUnits: 0n,
+	};
+}
 
 export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	config: ExecutorConfig<ChainProtocolTypes>,
@@ -34,7 +63,9 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
-	async function getServiceParameters(chainId: String0x): Promise<UpdateableParameters<ExecutionServiceParameters>> {
+	async function getServiceParameters(
+		chainId: IntegerString,
+	): Promise<UpdateableParameters<ExecutionServiceParameters>> {
 		const chainProtocol = _getChainProtocol(chainId);
 		const derivationParameters = await chainProtocol.getDerivationParameters(config.serverAccount);
 
@@ -43,7 +74,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		const fees = chainConfiguration.fees || {
 			current: {
 				fixed: '0',
-				per_1000_000: 0,
+				per_1_000_000: 0,
 			},
 			updateTimestamp: 0,
 			previous: undefined,
@@ -58,7 +89,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	}
 
 	async function getExecutionStatus(executionBatch: {
-		chainId: String0x;
+		chainId: IntegerString;
 		slot: string;
 		account: String0x;
 	}): Promise<'finalized' | 'broadcasted' | undefined> {
@@ -74,7 +105,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		return 'finalized';
 	}
 
-	async function getRemoteAccount(chainId: String0x, account: String0x): Promise<RemoteAccountInfo> {
+	async function getRemoteAccount(chainId: IntegerString, account: String0x): Promise<RemoteAccountInfo> {
 		const serviceParameters = await getServiceParameters(chainId);
 		const chainProtocol = _getChainProtocol(chainId);
 		const broadcaster = await chainProtocol.getBroadcaster(
@@ -101,7 +132,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		options?: {
 			trusted?: boolean;
 			asPaymentFor?: {
-				chainId: String0x;
+				chainId: IntegerString;
 				account: String0x;
 				slot: string;
 				batchIndex: number;
@@ -254,7 +285,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	// INTERNAL
 	// --------------------------------------------------------------------------------------------
 
-	async function _acquireBroadcaster(chainId: String0x, broadcasterAddress: String0x) {
+	async function _acquireBroadcaster(chainId: IntegerString, broadcasterAddress: String0x) {
 		const chainProtocol = _getChainProtocol(chainId);
 
 		const nonceAsHex = await chainProtocol.getNonce(broadcasterAddress);
@@ -278,7 +309,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		return {currentNonceAsPerNetwork, expectedNonce};
 	}
 
-	function _getChainProtocol(chainId: String0x): ChainProtocol<any> {
+	function _getChainProtocol(chainId: IntegerString): ChainProtocol<any> {
 		const chainProtocol = chainProtocols[chainId];
 		if (!chainProtocol) {
 			throw new Error(`cannot get protocol for chain with id ${chainId}`);
@@ -298,7 +329,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			previouslyStored?: PendingExecutionStored<TransactionDataType>;
 		},
 		asPaymentFor?: {
-			chainId: String0x;
+			chainId: IntegerString;
 			account: String0x;
 			slot: string;
 			batchIndex: number;
@@ -432,32 +463,33 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			}
 
 			const balance = await chainProtocol.getBalance(broadcaster.address);
-			const {maxCost, cost} = await chainProtocol.computeCost(
+			const maxCost = await chainProtocol.computeMaxCost(
 				execution.chainId,
 				execution.transaction,
-				transactionParametersUsed,
 				execution.maxFeePerGasAuthorized,
 			);
 
+			const {feesToPay, extraDebtInUnits} = computeFees(execution.chainId, execution.serviceParameters, maxCost);
+
 			if (!asPaymentFor) {
-				// we consider the max cost so that submission of transaction without enough balance fails early, independeing of current network gas pricing.
-				// this ensure that if the transaction pass here, it will be able to spend the balance if needed.
-				const costToConsider = maxCost;
-				if (balance < costToConsider) {
-					console.error(
-						`not emough balance! ${balance} > ${costToConsider} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas})`,
-					);
-					throw new Error(`not enough balance`);
-				} else if (
-					balance <
-					costToConsider +
-						BigInt(execution.serviceParameters.fees.fixed) +
-						(costToConsider * BigInt(execution.serviceParameters.fees.per_1000_000)) / 1000000n
-				) {
-					throw new Error(`not enough balance due to fees`);
+				if (balance < maxCost) {
+					const message = `not emough balance! ${balance} > ${maxCost} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas})`;
+					console.error(message);
+					throw new Error(message);
+				} else if (feesToPay > 0n && balance < maxCost + feesToPay) {
+					const message = `not enough balance due to fees  ${balance} > ${maxCost} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas}) + ${feesToPay}`;
+					console.error(message);
+					throw new Error(message);
 				}
 			} else {
 				// we do not check for cost in the case of a payment tx as we assume the payment fund is always enough
+				// plus there should be no fees:
+				// we enforce it here in case:
+				if (feesToPay > 0n) {
+					const message = `payment tx should have zero fees`;
+					console.error(message);
+					throw new Error(message);
+				}
 			}
 
 			const newExecution: PendingExecutionStored<TransactionDataType> = {
@@ -479,7 +511,14 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				isVoidTransaction,
 				lastError,
 			};
-			await storage.createOrUpdatePendingExecution(newExecution, {updateNonceIfNeeded: true}, asPaymentFor);
+			await storage.createOrUpdatePendingExecution(
+				newExecution,
+				{
+					updateNonceIfNeeded: true,
+					debtOffset: extraDebtInUnits,
+				},
+				asPaymentFor,
+			);
 
 			try {
 				await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
@@ -592,7 +631,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 									// we do not pay fees here
 									fees: {
 										fixed: '0',
-										per_1000_000: 0,
+										per_1_000_000: 0,
 									},
 								},
 								{

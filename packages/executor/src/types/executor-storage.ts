@@ -1,7 +1,7 @@
-import {PendingExecutionStored, String0x, UpdateableParameter} from 'fuzd-common';
+import {Fees, IntegerString, PendingExecutionStored, String0x, UpdateableParameter} from 'fuzd-common';
 
 export type BroadcasterData = {
-	chainId: String0x;
+	chainId: IntegerString;
 	address: String0x;
 	nextNonce: number;
 	lock: string | null;
@@ -12,10 +12,7 @@ export type BroadcasterData = {
 };
 
 export type ChainConfiguration = {
-	fees?: UpdateableParameter<{
-		fixed: string;
-		per_1000_000: number;
-	}>;
+	fees?: UpdateableParameter<Fees>;
 	expectedWorstCaseGasPrice?: UpdateableParameter<string>;
 };
 
@@ -28,7 +25,7 @@ export type ChainConfiguration = {
 // 	fees: {
 // 		current: {
 // 			fixed: '0',
-// 			per_1000_000: 0,
+// 			per_1_000_000: 0,
 // 		},
 // 		updateTimestamp: 0,
 // 		previous: undefined,
@@ -37,38 +34,38 @@ export type ChainConfiguration = {
 
 export interface ExecutorStorage<TransactionDataType> {
 	getPendingExecution(params: {
-		chainId: String0x;
+		chainId: IntegerString;
 		account: String0x;
 		slot: string;
 		batchIndex: number;
 	}): Promise<PendingExecutionStored<TransactionDataType> | undefined>;
 
 	getPendingExecutionBatch(params: {
-		chainId: String0x;
+		chainId: IntegerString;
 		account: String0x;
 		slot: string;
 	}): Promise<PendingExecutionStored<TransactionDataType>[] | undefined>;
 
 	deletePendingExecution(params: {
-		chainId: String0x;
+		chainId: IntegerString;
 		account: String0x;
 		slot: string;
 		batchIndex: number;
 	}): Promise<void>;
 
 	lockBroadcaster(params: {
-		chainId: String0x;
+		chainId: IntegerString;
 		address: string;
 		nonceFromNetwork: number;
 	}): Promise<BroadcasterData | undefined>;
 
-	unlockBroadcaster(params: {chainId: String0x; address: string}): Promise<void>;
+	unlockBroadcaster(params: {chainId: IntegerString; address: string}): Promise<void>;
 
 	createOrUpdatePendingExecution(
 		executionToStore: PendingExecutionStored<TransactionDataType>,
-		{updateNonceIfNeeded}: {updateNonceIfNeeded: boolean},
+		{updateNonceIfNeeded}: {updateNonceIfNeeded: boolean; debtOffset?: bigint},
 		asPaymentFor?: {
-			chainId: String0x;
+			chainId: IntegerString;
 			account: String0x;
 			slot: string;
 			batchIndex: number;
@@ -78,7 +75,7 @@ export interface ExecutorStorage<TransactionDataType> {
 	getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored<TransactionDataType>[]>;
 	getPendingExecutionsPerBroadcaster(
 		broadcasterData: {
-			chainId: String0x;
+			chainId: IntegerString;
 			broadcaster: String0x;
 		},
 		params: {limit: number},
@@ -87,19 +84,15 @@ export interface ExecutorStorage<TransactionDataType> {
 	getAllExecutions(params: {limit: number}): Promise<PendingExecutionStored<TransactionDataType>[]>;
 
 	// TODO remove: createBroadcaster is not used, and if used we should use updateBroadcaster too
-	getBroadcaster(params: {chainId: String0x; address: string}): Promise<BroadcasterData | undefined>;
+	getBroadcaster(params: {chainId: IntegerString; address: string}): Promise<BroadcasterData | undefined>;
 	createBroadcaster(broadcaster: BroadcasterData): Promise<void>;
 	clear(): Promise<void>;
 	setup(): Promise<void>;
-	getChainConfiguration(chainId: String0x): Promise<ChainConfiguration>;
+	getChainConfiguration(chainId: IntegerString): Promise<ChainConfiguration>;
 	updateExpectedWorstCaseGasPrice(
-		chainId: String0x,
+		chainId: IntegerString,
 		timestamp: number,
 		newGasPrice: bigint,
 	): Promise<ChainConfiguration>;
-	updateFees(
-		chainId: String0x,
-		timestamp: number,
-		newFees: {fixed: string; per_1000_000: number},
-	): Promise<ChainConfiguration>;
+	updateFees(chainId: IntegerString, timestamp: number, newFees: Fees): Promise<ChainConfiguration>;
 }

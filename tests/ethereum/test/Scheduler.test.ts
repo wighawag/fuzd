@@ -27,7 +27,7 @@ const chainProtocol = new EthereumChainProtocol(provider, {
 	expectedFinality: 1,
 	worstCaseBlockTime: 3,
 });
-const chainId = '0x7a69';
+const chainId = '31337';
 const executorConfig = {
 	serverAccount: account,
 	chainProtocols: {
@@ -61,7 +61,6 @@ async function prepareExecution() {
 
 	const txData = {
 		type: 'eip1559',
-		chainId: '0x7a69',
 		to: GreetingsRegistry.address,
 		data,
 	} as const;
@@ -113,7 +112,7 @@ describe('Executing on the registry', function () {
 		console.log({user});
 		const result = await scheduler.scheduleExecution(user, {
 			slot: (++counter).toString(),
-			chainId: '0x7a69',
+			chainId,
 			type: 'clear',
 			timing: {
 				type: 'fixed-time',
@@ -121,7 +120,7 @@ describe('Executing on the registry', function () {
 			},
 			executions: [
 				{
-					chainId: txData.chainId,
+					chainId,
 					transaction: {
 						type: '0x2',
 						to: txData.to,
@@ -147,7 +146,7 @@ describe('Executing on the registry', function () {
 		const timestamp = await chainProtocol.getTimestamp();
 		const checkinTime = timestamp + 100;
 		const transaction: ExecutionSubmission<EthereumTransactionData> = {
-			chainId: txData.chainId,
+			chainId,
 			transaction: {
 				type: '0x2',
 				to: txData.to,
@@ -160,7 +159,7 @@ describe('Executing on the registry', function () {
 		mockDecrypter.addDecryptedResult(id, transaction);
 		const result = await scheduler.scheduleExecution(user, {
 			slot: id,
-			chainId: '0x7a69',
+			chainId: '31337',
 			type: 'time-locked',
 			timing: {
 				type: 'fixed-time',

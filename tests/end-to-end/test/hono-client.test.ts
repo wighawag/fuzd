@@ -18,7 +18,7 @@ describe('hono client', () => {
 	beforeAll(async () => {
 		await client.admin.setChainOverride[':chainId'][':chainOverride'].$get({
 			param: {
-				chainId: '0x7a69',
+				chainId: '31337',
 				chainOverride: encodeURIComponent(`${ANVIL_URL}#finality=2&worstCaseBlockTime=5`),
 			},
 		});
@@ -40,7 +40,7 @@ describe('hono client', () => {
 		const wallet = privateKeyToAccount('0x1111111111111111111111111111111111111111111111111111111111111111');
 
 		// Note that is need to be lower case
-		const chainId = `0x7a69`;
+		const chainId = `31337`;
 
 		// we get the remote address associated with local account signing the execution message sent to the api
 		const remoteAccountResponse = await client.api.execution.remoteAccount[':chainId'][':account'].$get({
@@ -50,6 +50,7 @@ describe('hono client', () => {
 			},
 		});
 		const remoteAccountResult = await remoteAccountResponse.json();
+		console.log(remoteAccountResult);
 		expect(remoteAccountResult.success).toBe(true);
 		assert(remoteAccountResult.success);
 
@@ -122,8 +123,10 @@ describe('hono client', () => {
 			console.log(text);
 		}
 
+		console.log(resp);
 		assert(resp.ok);
 		const json = await resp.json();
+		console.log(json);
 		expect(json.success).toBe(true);
 		if (!resp.ok || !json.success) {
 			console.log(json);
@@ -154,7 +157,7 @@ describe('hono client', () => {
 				},
 				executionServiceParameters: {
 					derivationParameters: {data: '', type: 'ethereum'},
-					fees: {fixed: '0', per_1000_000: 0},
+					fees: {fixed: '0', per_1_000_000: 0},
 				}, // TODO
 			},
 		});
@@ -168,7 +171,7 @@ describe('hono client', () => {
 		const wallet = privateKeyToAccount('0x1111111111111111111111111111111111111111111111111111111111111111');
 
 		// Note that is need to be lower case
-		const chainId = `0x7a69`;
+		const chainId = `31337`;
 
 		// we get the remote address associated with local account signing the execution message sent to the api
 		const remoteAccountResponse = await client.api.execution.remoteAccount[':chainId'][':account'].$get({

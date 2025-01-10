@@ -12,11 +12,11 @@ import {createViemContext} from '../utils/viem';
 import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
 import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
-import {String0x} from 'fuzd-common';
+import {Fees, String0x} from 'fuzd-common';
 
 const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
 
-async function prepareExecution(options?: {fees?: {fixed: string; per_1000_000: number}; gasPrice?: bigint}) {
+async function prepareExecution(options?: {fees?: Fees; gasPrice?: bigint}) {
 	const {env, GreetingsRegistry} = await await loadFixture(deployAll);
 
 	const paymentAccount = '0x0000000000000000000000000000000000000001';
@@ -27,7 +27,7 @@ async function prepareExecution(options?: {fees?: {fixed: string; per_1000_000: 
 	const masterKey = HDKey.fromMasterSeed(seed);
 	const accountHDKey = masterKey.derive(defaultPath);
 	const account = initAccountFromHD(accountHDKey);
-	const chainId = '0x7a69';
+	const chainId = '31337';
 
 	const {executor, publicExtendedKey, storage} = await createTestExecutor<EthereumChainProtocol>({
 		serverAccount: account,
@@ -128,7 +128,7 @@ describe('Executing on the registry', function () {
 
 	it('Should fails if fees are added and the payment sent is not enough', async function () {
 		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, serviceParameters} = await prepareExecution({
-			fees: {fixed: '1', per_1000_000: 0},
+			fees: {fixed: '1', per_1_000_000: 0},
 		});
 
 		await expect(

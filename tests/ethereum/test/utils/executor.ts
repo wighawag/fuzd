@@ -7,7 +7,7 @@ import {RemoteSQLExecutorStorage, RemoteSQLSchedulerStorage} from 'fuzd-server';
 import {RemoteLibSQL} from 'remote-sql-libsql';
 import {createClient} from '@libsql/client';
 import {ChainProtocol, TransactionDataTypes} from 'fuzd-chain-protocol';
-import {String0x} from 'fuzd-common';
+import {IntegerString, String0x} from 'fuzd-common';
 
 const defaultPath = "m/44'/60'/0'/0/0";
 const seed = mnemonicToSeedSync('test test test test test test test test test test test junk');
@@ -35,7 +35,7 @@ export type TestExecutorConfig<ChainProtocolTypes extends ChainProtocol<any>> = 
 	ExecutorConfig<ChainProtocolTypes>,
 	'storage' | 'maxExpiry' | 'maxNumTransactionsToProcessInOneGo'
 > & {
-	expectedWorstCaseGasPrices?: {chainId: String0x; value: bigint}[];
+	expectedWorstCaseGasPrices?: {chainId: IntegerString; value: bigint}[];
 };
 
 export async function createTestExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
