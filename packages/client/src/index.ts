@@ -90,6 +90,51 @@ export function createClient(config: ClientConfig) {
 		return _assignedRemoteAccount;
 	}
 
+	function computeTotalMaxCost(params: {maxFeePerGasAuthorized: bigint; gas: bigint; value?: bigint}): bigint {
+		const txCost = params.maxFeePerGasAuthorized * params.gas;
+		const value = params.value ? params.value : 0n;
+		if (!_assignedRemoteAccount) {
+			throw new Error(`need to assign a account first`);
+		}
+		const serviceParameters = _assignedRemoteAccount.serviceParameters;
+		const fees = serviceParameters.fees;
+		if (fees.fixed != '0' || fees.per_1_000_000 > 0) {
+			const feeToPay = BigInt(fees.fixed) + (BigInt(fees.per_1_000_000) * txCost) / 1_000_000n;
+			return txCost + feeToPay + value;
+		}
+		return txCost + value;
+	}
+
+	async function computeBalanceRequired(params: {
+		slot: string;
+		chainId: IntegerString;
+		maxFeePerGasAuthorized: bigint;
+		gas: bigint;
+		value?: bigint;
+	}): Promise<bigint> {
+		const totalMaxCost = computeTotalMaxCost(params);
+		if (!_assignedRemoteAccount) {
+			throw new Error(`need to assign a account first`);
+		}
+
+		const reservedRequestUrl = `${config.schedulerEndPoint}/api/scheduling/reserved/${params.chainId}/${_assignedRemoteAccount.address}/${params.slot}`;
+		const reservedResponse = await fetch(reservedRequestUrl);
+		let reservedResult;
+		try {
+			reservedResult = await reservedResponse.clone().json();
+		} catch (err) {
+			throw new Error(`failed to parse response: ${reservedRequestUrl}: ${err} ${await reservedResponse.text()}`);
+		}
+
+		if (!reservedResult.success) {
+			throw new Error(reservedResult.errors);
+		}
+
+		const amountReserved = BigInt(reservedResult.total);
+
+		return amountReserved + totalMaxCost;
+	}
+
 	async function scheduleExecution(
 		execution: {
 			slot: string;
@@ -173,6 +218,8 @@ export function createClient(config: ClientConfig) {
 	return {
 		assignRemoteAccount,
 		scheduleExecution,
+		computeTotalMaxCost,
+		computeBalanceRequired,
 	};
 }
 

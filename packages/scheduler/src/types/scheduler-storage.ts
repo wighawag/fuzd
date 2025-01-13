@@ -35,9 +35,9 @@ export interface SchedulerStorage<TransactionDataType> {
 	getUnFinalizedBroadcastedScheduledExecutions(params: {
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
-	getUnFinalizedScheduledExecutionsPerAccount(params: {
+	getUnFinalizedScheduledExecutionsPerBroadcaster(params: {
 		chainId: IntegerString;
-		account: String0x;
+		broadcaster: String0x;
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	getAllExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;

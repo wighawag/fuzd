@@ -93,18 +93,51 @@ async function prepareExecution(options?: {fees?: Fees; gasPrice?: bigint}) {
 	}
 
 	const gas = await publicClient.estimateGas({...txData, account: remoteAccount});
-	const balance = await publicClient.getBalance({address: remoteAccount});
-	if (balance < gasPrice * gas) {
-		await walletClient.sendTransaction({account: user, to: remoteAccount, value: gas * gasPrice});
+	const remoteAccountBalance = await publicClient.getBalance({address: remoteAccount});
+
+	async function ensureBalanceForRemoteAccount(newBalance: bigint) {
+		const currentBalance = await publicClient.getBalance({address: remoteAccount});
+		await walletClient.sendTransaction({
+			account: user,
+			to: remoteAccount,
+			value: newBalance - currentBalance,
+		});
 	}
 
-	return {gas, gasPrice, txData, user, GreetingsRegistry, env, executor, publicExtendedKey, serviceParameters};
+	return {
+		gas,
+		maxFeePerGasAuthorized: gasPrice,
+		txData,
+		user,
+		GreetingsRegistry,
+		env,
+		executor,
+		publicExtendedKey,
+		serviceParameters,
+		remoteAccountAddress: remoteAccount,
+		remoteAccountBalance,
+		mainWalletClient: walletClient,
+		ensureBalanceForRemoteAccount,
+	};
 }
 
 let counter = 0;
 describe('Executing on the registry', function () {
 	it('Should execute without issues', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, serviceParameters} = await prepareExecution();
+		const {
+			gas,
+			maxFeePerGasAuthorized,
+			txData,
+			user,
+			GreetingsRegistry,
+			executor,
+			env,
+			serviceParameters,
+			ensureBalanceForRemoteAccount,
+		} = await prepareExecution();
+
+		await ensureBalanceForRemoteAccount(gas * maxFeePerGasAuthorized);
+
 		const txInfo = await executor.broadcastExecution(
 			(++counter).toString(),
 			0,
@@ -117,7 +150,7 @@ describe('Executing on the registry', function () {
 					data: txData.data,
 					gas: `0x${gas.toString(16)}` as String0x,
 				},
-				maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
+				maxFeePerGasAuthorized: `0x${maxFeePerGasAuthorized.toString(16)}` as String0x,
 			},
 			serviceParameters,
 		);
@@ -127,9 +160,21 @@ describe('Executing on the registry', function () {
 	});
 
 	it('Should fails if fees are added and the payment sent is not enough', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, serviceParameters} = await prepareExecution({
+		const {
+			gas,
+			maxFeePerGasAuthorized,
+			txData,
+			user,
+			GreetingsRegistry,
+			executor,
+			env,
+			serviceParameters,
+			ensureBalanceForRemoteAccount,
+		} = await prepareExecution({
 			fees: {fixed: '1', per_1_000_000: 0},
 		});
+
+		await ensureBalanceForRemoteAccount(gas * maxFeePerGasAuthorized);
 
 		await expect(
 			executor.broadcastExecution(
@@ -144,15 +189,83 @@ describe('Executing on the registry', function () {
 						data: txData.data,
 						gas: `0x${gas.toString(16)}` as String0x,
 					},
-					maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
+					maxFeePerGasAuthorized: `0x${maxFeePerGasAuthorized.toString(16)}` as String0x,
 				},
 				serviceParameters,
 			),
-		).rejects.toThrowError();
+		).rejects.toThrowError(/not enough balance due to fees! .*/);
+	});
+
+	it('Should fails if debt', async function () {
+		const {
+			gas,
+			maxFeePerGasAuthorized,
+			txData,
+			user,
+			GreetingsRegistry,
+			executor,
+			env,
+			serviceParameters,
+			ensureBalanceForRemoteAccount,
+		} = await prepareExecution({
+			fees: {fixed: '1000000000', per_1_000_000: 0},
+		});
+
+		await ensureBalanceForRemoteAccount(gas * maxFeePerGasAuthorized + 1000000000n);
+
+		await executor.broadcastExecution(
+			(++counter).toString(),
+			0,
+			user,
+			{
+				chainId: txData.chainId,
+				transaction: {
+					type: '0x2',
+					to: txData.to,
+					data: txData.data,
+					gas: `0x${gas.toString(16)}` as String0x,
+				},
+				maxFeePerGasAuthorized: `0x${maxFeePerGasAuthorized.toString(16)}` as String0x,
+			},
+			serviceParameters,
+		);
+
+		await ensureBalanceForRemoteAccount(gas * maxFeePerGasAuthorized + 1000000000n);
+		await expect(
+			executor.broadcastExecution(
+				(++counter).toString(),
+				0,
+				user,
+				{
+					chainId: txData.chainId,
+					transaction: {
+						type: '0x2',
+						to: txData.to,
+						data: txData.data,
+						gas: `0x${gas.toString(16)}` as String0x,
+					},
+					maxFeePerGasAuthorized: `0x${maxFeePerGasAuthorized.toString(16)}` as String0x,
+				},
+				serviceParameters,
+			),
+		).rejects.toThrowError(/not enough balance due to fees and debts! .*/);
 	});
 
 	it('Should execute after processs is called since we allow for the paymentAccount to pay for diff', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, serviceParameters} = await prepareExecution();
+		const {
+			gas,
+			maxFeePerGasAuthorized,
+			txData,
+			user,
+			GreetingsRegistry,
+			executor,
+			env,
+			serviceParameters,
+			ensureBalanceForRemoteAccount,
+		} = await prepareExecution();
+
+		await ensureBalanceForRemoteAccount(gas * maxFeePerGasAuthorized);
+
 		const txInfo = await executor.broadcastExecution(
 			(++counter).toString(),
 			0,
@@ -176,7 +289,20 @@ describe('Executing on the registry', function () {
 	});
 
 	it('Should fails to execute right away if tx is not broadcasted, it still pass', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, serviceParameters} = await prepareExecution();
+		const {
+			gas,
+			maxFeePerGasAuthorized,
+			txData,
+			user,
+			GreetingsRegistry,
+			executor,
+			env,
+			serviceParameters,
+			ensureBalanceForRemoteAccount,
+		} = await prepareExecution();
+
+		await ensureBalanceForRemoteAccount(gas * maxFeePerGasAuthorized);
+
 		provider.override({
 			eth_sendRawTransaction: async (provider, params) => {
 				const rawTx = params[0];
@@ -196,7 +322,7 @@ describe('Executing on the registry', function () {
 					data: txData.data,
 					gas: `0x${gas.toString(16)}` as String0x,
 				},
-				maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
+				maxFeePerGasAuthorized: `0x${maxFeePerGasAuthorized.toString(16)}` as String0x,
 			},
 			serviceParameters,
 		);
@@ -206,7 +332,20 @@ describe('Executing on the registry', function () {
 	});
 
 	it('Should fails to execute right away if tx is not broadcasted, but succeed on checks', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, serviceParameters} = await prepareExecution();
+		const {
+			gas,
+			maxFeePerGasAuthorized,
+			txData,
+			user,
+			GreetingsRegistry,
+			executor,
+			env,
+			serviceParameters,
+			ensureBalanceForRemoteAccount,
+		} = await prepareExecution();
+
+		await ensureBalanceForRemoteAccount(gas * maxFeePerGasAuthorized);
+
 		provider.override({
 			eth_sendRawTransaction: async (provider, params) => {
 				const rawTx = params[0];
@@ -226,7 +365,7 @@ describe('Executing on the registry', function () {
 					data: txData.data,
 					gas: `0x${gas.toString(16)}` as String0x,
 				},
-				maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
+				maxFeePerGasAuthorized: `0x${maxFeePerGasAuthorized.toString(16)}` as String0x,
 			},
 			serviceParameters,
 		);
@@ -242,7 +381,20 @@ describe('Executing on the registry', function () {
 	});
 
 	it('test reorg', async function () {
-		const {gas, gasPrice, txData, user, GreetingsRegistry, executor, env, serviceParameters} = await prepareExecution();
+		const {
+			gas,
+			maxFeePerGasAuthorized,
+			txData,
+			user,
+			GreetingsRegistry,
+			executor,
+			env,
+			serviceParameters,
+			ensureBalanceForRemoteAccount,
+		} = await prepareExecution();
+
+		await ensureBalanceForRemoteAccount(gas * maxFeePerGasAuthorized);
+
 		provider.override({
 			// we do not broadcast
 			eth_sendRawTransaction: async (provider, params) => {
@@ -272,7 +424,7 @@ describe('Executing on the registry', function () {
 					data: txData.data,
 					gas: `0x${gas.toString(16)}` as String0x,
 				},
-				maxFeePerGasAuthorized: `0x${gasPrice.toString(16)}` as String0x,
+				maxFeePerGasAuthorized: `0x${maxFeePerGasAuthorized.toString(16)}` as String0x,
 			},
 			serviceParameters,
 		);

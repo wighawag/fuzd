@@ -37,16 +37,17 @@ export function getSchedulingAPI<Bindings extends Env>(options: ServerOptions<Bi
 			},
 		)
 
-		.get('/reserved/:chainId/:account/:slot', async (c) => {
+		// give the total reserved amount across all pending exevution, except for slot specified
+		.get('/reserved/:chainId/:broadcaster/:slot', async (c) => {
 			try {
 				const config = c.get('config');
 				const slot = c.req.param('slot');
 				const chainId = c.req.param('chainId') as IntegerString;
-				const account = c.req.param('account').toLowerCase() as String0x;
+				const broadcaster = c.req.param('broadcaster').toLowerCase() as String0x;
 
-				const executions = await config.schedulerStorage.getUnFinalizedScheduledExecutionsPerAccount({
+				const executions = await config.schedulerStorage.getUnFinalizedScheduledExecutionsPerBroadcaster({
 					chainId,
-					account,
+					broadcaster,
 					limit: 100,
 				});
 				const executionsToCount = executions.filter((v) => v.slot != slot);

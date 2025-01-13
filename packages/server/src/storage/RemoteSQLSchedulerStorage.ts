@@ -79,6 +79,8 @@ function toScheduledExecutionInDB<TransactionDataType>(
 	return {
 		account: obj.account,
 		chainId: obj.chainId,
+
+		// TODO broadcaster expected / or we use the executionServiceParameters ?
 		slot: obj.slot,
 
 		onBehalf: obj.onBehalf || null,
@@ -183,14 +185,16 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 
-	async getUnFinalizedScheduledExecutionsPerAccount(params: {
+	async getUnFinalizedScheduledExecutionsPerBroadcaster(params: {
 		chainId: IntegerString;
-		account: String0x;
+		broadcaster: String0x;
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
-		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE chainId = ?1 AND account = ?2 AND finalized = FALSE ORDER BY nextCheckTime ASC LIMIT ?3;`;
+		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE chainId = ?1 AND broadcaster = ?2 AND finalized = FALSE ORDER BY nextCheckTime ASC LIMIT ?3;`;
 		const statement = this.db.prepare(sqlStatement);
-		const {results} = await statement.bind(params.chainId, params.account, params.limit).all<ScheduledExecutionInDB>();
+		const {results} = await statement
+			.bind(params.chainId, params.broadcaster, params.limit)
+			.all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 

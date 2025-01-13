@@ -54,6 +54,19 @@ export function computeFees(chainId: IntegerString, serviceParameters: Execution
 	};
 }
 
+export function computeDebt(chainId: IntegerString, debtInUnit: bigint): bigint {
+	let debt = 0n;
+	if (debtInUnit > 0n) {
+		const unit = networks[chainId]?.debtUnit;
+		if (unit && unit > 0n) {
+			debt = debtInUnit * unit;
+		} else {
+			throw new Error(`debtUnit not configured for network with chainid = ${chainId}. Should not happen`);
+		}
+	}
+	return debt;
+}
+
 export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	config: ExecutorConfig<ChainProtocolTypes>,
 ): Executor<TransactionDataTypes<ChainProtocolTypes>> & ExecutorBackend {
@@ -107,12 +120,16 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 	async function getRemoteAccount(chainId: IntegerString, account: String0x): Promise<RemoteAccountInfo> {
 		const serviceParameters = await getServiceParameters(chainId);
+
 		const chainProtocol = _getChainProtocol(chainId);
 		const broadcaster = await chainProtocol.getBroadcaster(
 			config.serverAccount,
 			serviceParameters.derivationParameters.current,
 			account,
 		);
+		const broadcasterData = await storage.getBroadcaster({chainId, address: broadcaster.address});
+		const debt = computeDebt(chainId, broadcasterData?.debtInUnit || 0n);
+
 		return {
 			serviceParameters: {
 				derivationParameters: serviceParameters.derivationParameters.current,
@@ -120,6 +137,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				fees: serviceParameters.fees.current,
 			},
 			address: broadcaster.address,
+			debt,
 		};
 	}
 
@@ -304,9 +322,11 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			throw new Error(`could not lock broadcaster`);
 		}
 
+		const debtInUnit = dataFromStorage.debtInUnit;
+
 		const expectedNonce = dataFromStorage.nextNonce;
 		// console.log({expectedNonce, broadcasterAddress});
-		return {currentNonceAsPerNetwork, expectedNonce};
+		return {currentNonceAsPerNetwork, expectedNonce, debtInUnit};
 	}
 
 	function _getChainProtocol(chainId: IntegerString): ChainProtocol<any> {
@@ -337,7 +357,11 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		},
 	): Promise<PendingExecutionStored<TransactionDataType> | undefined> {
 		const chainProtocol = _getChainProtocol(execution.chainId);
-		const {expectedNonce, currentNonceAsPerNetwork} = await _acquireBroadcaster(execution.chainId, broadcaster.address);
+		const {
+			expectedNonce,
+			currentNonceAsPerNetwork,
+			debtInUnit: currentDebtInUnit,
+		} = await _acquireBroadcaster(execution.chainId, broadcaster.address);
 
 		try {
 			// console.log({expectedNonce, forceNonce: options.forceNonce});
@@ -471,13 +495,19 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 			const {feesToPay, debtDueInUnits} = computeFees(execution.chainId, execution.serviceParameters, maxCost);
 
+			const debt = computeDebt(execution.chainId, currentDebtInUnit);
+
 			if (!asPaymentFor) {
 				if (balance < maxCost) {
-					const message = `not emough balance! ${balance} > ${maxCost} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas})`;
+					const message = `not emough balance! ${balance} < ${maxCost} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas})`;
 					console.error(message);
 					throw new Error(message);
-				} else if (feesToPay > 0n && balance < maxCost + feesToPay) {
-					const message = `not enough balance due to fees  ${balance} > ${maxCost} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas}) + ${feesToPay}`;
+				} else if (balance < maxCost + feesToPay) {
+					const message = `not enough balance due to fees! ${balance} < ${maxCost + feesToPay} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas}) + ${feesToPay}`;
+					console.error(message);
+					throw new Error(message);
+				} else if (feesToPay > 0n && balance < maxCost + debt + feesToPay) {
+					const message = `not enough balance due to fees and debts! ${balance} < ${maxCost + feesToPay + debt} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas}) + ${feesToPay} + ${debt}`;
 					console.error(message);
 					throw new Error(message);
 				}
