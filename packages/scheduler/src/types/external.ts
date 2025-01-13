@@ -89,7 +89,7 @@ export type BaseScheduledExecution = {
 	chainId: IntegerString;
 	slot: string;
 	onBehalf?: String0x;
-	paymentReserve?: string;
+	paymentReserve?: {amount: string; broadcaster: String0x};
 	executionServiceParameters: ExecutionServiceParameters;
 };
 

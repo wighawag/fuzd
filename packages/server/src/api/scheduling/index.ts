@@ -53,7 +53,7 @@ export function getSchedulingAPI<Bindings extends Env>(options: ServerOptions<Bi
 				const executionsToCount = executions.filter((v) => v.slot != slot);
 				let total: bigint = 0n;
 				for (const execution of executionsToCount) {
-					total += execution.paymentReserve ? BigInt(execution.paymentReserve) : 0n;
+					total += execution.paymentReserve ? BigInt(execution.paymentReserve.amount) : 0n;
 				}
 				return c.json({success: true as const, total: total.toString()}, 200);
 			} catch (err) {

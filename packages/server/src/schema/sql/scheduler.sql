@@ -15,7 +15,10 @@ CREATE TABLE IF NOT EXISTS ScheduledExecutions (
 	payload                       text       NOT_NULL,
 	timing                        text       NOT_NULL,
     executionServiceParameters    text       NOT_NULL,
+    
+    
     paymentReserve                text,
+    broadcaster                   text,
 
 	-- initialTimeTarget                    integer     NOT_NULL,
     priorTransactionConfirmation  text,
@@ -26,7 +29,7 @@ CREATE TABLE IF NOT EXISTS ScheduledExecutions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_broadcasted_nextCheckTime ON ScheduledExecutions (broadcasted, nextCheckTime);
-CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_chainId_account_finalized_nextCheckTime ON ScheduledExecutions (chainId, account, finalized, nextCheckTime);
+CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_chainId_broadcaster_finalized_nextCheckTime ON ScheduledExecutions (chainId, broadcaster, finalized, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_broadcasted_finalized_nextCheckTime ON ScheduledExecutions (broadcasted, finalized, nextCheckTime);
 
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_account_nextCheckTime ON ScheduledExecutions (account, nextCheckTime);

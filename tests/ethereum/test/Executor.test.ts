@@ -118,6 +118,7 @@ async function prepareExecution(options?: {fees?: Fees; gasPrice?: bigint}) {
 		remoteAccountBalance,
 		mainWalletClient: walletClient,
 		ensureBalanceForRemoteAccount,
+		storage,
 	};
 }
 
@@ -207,6 +208,7 @@ describe('Executing on the registry', function () {
 			env,
 			serviceParameters,
 			ensureBalanceForRemoteAccount,
+			storage,
 		} = await prepareExecution({
 			fees: {fixed: '1000000000', per_1_000_000: 0},
 		});
@@ -249,6 +251,27 @@ describe('Executing on the registry', function () {
 				serviceParameters,
 			),
 		).rejects.toThrowError(/not enough balance due to fees and debts! .*/);
+
+		const remoteAccountInfo = await executor.getRemoteAccount(txData.chainId, user);
+
+		await ensureBalanceForRemoteAccount(gas * maxFeePerGasAuthorized + 1000000000n + remoteAccountInfo.debt);
+
+		await executor.broadcastExecution(
+			(++counter).toString(),
+			0,
+			user,
+			{
+				chainId: txData.chainId,
+				transaction: {
+					type: '0x2',
+					to: txData.to,
+					data: txData.data,
+					gas: `0x${gas.toString(16)}` as String0x,
+				},
+				maxFeePerGasAuthorized: `0x${maxFeePerGasAuthorized.toString(16)}` as String0x,
+			},
+			serviceParameters,
+		);
 	});
 
 	it('Should execute after processs is called since we allow for the paymentAccount to pay for diff', async function () {

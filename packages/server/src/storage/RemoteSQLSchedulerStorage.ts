@@ -21,6 +21,7 @@ type ScheduledExecutionInDB = {
 	// TODO initialTimeTarget: number;
 	executionServiceParameters: string;
 	paymentReserve: string | null;
+	broadcaster: String0x | null;
 
 	priorTransactionConfirmation: string | null;
 	retries: number | null;
@@ -43,7 +44,10 @@ function fromScheduledExecutionInDB<TransactionDataType>(
 			payload: inDB.payload,
 			timing: JSON.parse(inDB.timing),
 			executionServiceParameters: JSON.parse(inDB.executionServiceParameters),
-			paymentReserve: inDB.paymentReserve || undefined,
+			paymentReserve:
+				inDB.paymentReserve && inDB.broadcaster
+					? {amount: inDB.paymentReserve, broadcaster: inDB.broadcaster}
+					: undefined,
 
 			retries: inDB.retries || 0,
 			priorTransactionConfirmation: inDB.priorTransactionConfirmation
@@ -61,7 +65,10 @@ function fromScheduledExecutionInDB<TransactionDataType>(
 			finalized: inDB.finalized == 1 ? true : false,
 			checkinTime: inDB.nextCheckTime,
 			timing: JSON.parse(inDB.timing),
-			paymentReserve: inDB.paymentReserve || undefined,
+			paymentReserve:
+				inDB.paymentReserve && inDB.broadcaster
+					? {amount: inDB.paymentReserve, broadcaster: inDB.broadcaster}
+					: undefined,
 			executionServiceParameters: JSON.parse(inDB.executionServiceParameters),
 
 			retries: inDB.retries || 0,
@@ -93,7 +100,8 @@ function toScheduledExecutionInDB<TransactionDataType>(
 		payload: obj.type === 'clear' ? JSON.stringify(obj.executions) : obj.payload,
 		timing: JSON.stringify(obj.timing),
 		executionServiceParameters: JSON.stringify(obj.executionServiceParameters),
-		paymentReserve: obj.paymentReserve || null,
+		paymentReserve: obj.paymentReserve ? obj.paymentReserve.amount : null,
+		broadcaster: obj.paymentReserve ? obj.paymentReserve.broadcaster : null,
 
 		priorTransactionConfirmation: obj.priorTransactionConfirmation
 			? JSON.stringify(obj.priorTransactionConfirmation)

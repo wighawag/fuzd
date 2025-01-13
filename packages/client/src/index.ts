@@ -143,7 +143,7 @@ export function createClient(config: ClientConfig) {
 			maxFeePerGasAuthorized: bigint;
 			time: number;
 			expiry?: number;
-			paymentReserve?: bigint;
+			paymentReserve?: {amount: bigint; broadcaster: String0x};
 			onBehalf?: `0x${string}`;
 		},
 		options?: {fakeEncrypt?: boolean},
@@ -185,7 +185,9 @@ export function createClient(config: ClientConfig) {
 				expiry: execution.expiry,
 			},
 			executionServiceParameters: serviceParameters,
-			paymentReserve: execution.paymentReserve ? hex(execution.paymentReserve) : undefined, // TODO 0xstring ?
+			paymentReserve: execution.paymentReserve
+				? {amount: execution.paymentReserve.amount.toString(), broadcaster: execution.paymentReserve.broadcaster}
+				: undefined, // TODO 0xstring ?
 			onBehalf: execution.onBehalf,
 			type: 'time-locked',
 			payload,
