@@ -26,6 +26,8 @@ type ScheduledExecutionInDB = {
 	priorTransactionConfirmation: string | null;
 	retries: number | null;
 	expiry: number | null;
+
+	lastError: string | null;
 };
 
 function fromScheduledExecutionInDB<TransactionDataType>(
@@ -53,6 +55,8 @@ function fromScheduledExecutionInDB<TransactionDataType>(
 			priorTransactionConfirmation: inDB.priorTransactionConfirmation
 				? JSON.parse(inDB.priorTransactionConfirmation)
 				: undefined,
+
+			lastError: inDB.lastError || undefined,
 		};
 	} else {
 		return {
@@ -76,6 +80,7 @@ function fromScheduledExecutionInDB<TransactionDataType>(
 				? JSON.parse(inDB.priorTransactionConfirmation)
 				: undefined,
 			executions: JSON.parse(inDB.payload),
+			lastError: inDB.lastError || undefined,
 		};
 	}
 }
@@ -109,6 +114,7 @@ function toScheduledExecutionInDB<TransactionDataType>(
 		// TODO initialTimeTarget: 0, // TODO obj.initialTimeTarget.
 		retries: obj.retries,
 		expiry: 0, // TODO obj.expiry,
+		lastError: obj.lastError || null,
 	};
 }
 

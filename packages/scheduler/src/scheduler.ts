@@ -137,34 +137,41 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		// for encrypted payload we will attempt to decrypt
 		// if it fails, we will push it accoridng to time schedule
 
-		const results: ExecutionResponse<TransactionDataType>[] = [];
-		for (let i = 0; i < executions.length; i++) {
-			const execution = executions[i];
-			const executionResult = await executor.broadcastExecution(
-				scheduledExecutionQueued.slot,
-				i, // batchIndex
-				scheduledExecutionQueued.account,
-				execution,
-				scheduledExecutionQueued.executionServiceParameters, // we pass what was there on scheduling time
-				{trusted: true}, // The scheduler is trusted to have verified the exectuion parameters
-			);
-			results.push(executionResult);
+		try {
+			const results: ExecutionResponse<TransactionDataType>[] = [];
+			for (let i = 0; i < executions.length; i++) {
+				const execution = executions[i];
+				const executionResult = await executor.broadcastExecution(
+					scheduledExecutionQueued.slot,
+					i, // batchIndex
+					scheduledExecutionQueued.account,
+					execution,
+					scheduledExecutionQueued.executionServiceParameters, // we pass what was there on scheduling time
+					{trusted: true}, // The scheduler is trusted to have verified the exectuion parameters
+				);
+				results.push(executionResult);
+			}
+
+			// TODO if trying to execute different data when previous tx is already broadcasted: we should throw here
+			// because now the executor skip it
+
+			// if we reaches there, the execution is now handled by the executor
+			// the schedule has done its job
+			// if for some reason `executor.broadcastExecution(...)` fails to return but has actually broadcasted the tx
+			// the scheduler will attempt again. the id tell the executor to not reexecute
+			scheduledExecutionQueued.broadcasted = true;
+			await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
+
+			return {
+				type: 'broadcasted',
+				reason: `broadcasted via txs ${results && results.map((v) => (v as any).hash).join(',')}`,
+			};
+		} catch (err: any) {
+			scheduledExecutionQueued.lastError = err.message || err.toString();
+
+			await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
+			throw err;
 		}
-
-		// TODO if trying to execute different data when previous tx is already broadcasted: we should throw here
-		// because now the executor skip it
-
-		// if we reaches there, the execution is now handled by the executor
-		// the schedule has done its job
-		// if for some reason `executor.broadcastExecution(...)` fails to return but has actually broadcasted the tx
-		// the scheduler will attempt again. the id tell the executor to not reexecute
-		scheduledExecutionQueued.broadcasted = true;
-		await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
-
-		return {
-			type: 'broadcasted',
-			reason: `broadcasted via txs ${results && results.map((v) => (v as any).hash).join(',')}`,
-		};
 	}
 
 	function _getChainProtocol(chainId: IntegerString): ChainProtocol<any> {

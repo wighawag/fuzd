@@ -254,7 +254,7 @@ describe('Executing on the registry', function () {
 
 		const remoteAccountInfo = await executor.getRemoteAccount(txData.chainId, user);
 
-		await ensureBalanceForRemoteAccount(gas * maxFeePerGasAuthorized + 1000000000n + remoteAccountInfo.debt);
+		await ensureBalanceForRemoteAccount(gas * maxFeePerGasAuthorized + 1000000000n + BigInt(remoteAccountInfo.debt));
 
 		await executor.broadcastExecution(
 			(++counter).toString(),

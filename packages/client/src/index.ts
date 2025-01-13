@@ -217,7 +217,12 @@ export function createClient(config: ClientConfig) {
 		}
 	}
 
+	function getRemoteAccount() {
+		return _assignedRemoteAccount?.address;
+	}
+
 	return {
+		getRemoteAccount,
 		assignRemoteAccount,
 		scheduleExecution,
 		computeTotalMaxCost,

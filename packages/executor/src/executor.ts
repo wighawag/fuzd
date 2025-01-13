@@ -130,15 +130,22 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		const broadcasterData = await storage.getBroadcaster({chainId, address: broadcaster.address});
 		const debt = computeDebt(chainId, broadcasterData?.debtInUnit || 0n);
 
-		return {
+		const info: RemoteAccountInfo = {
 			serviceParameters: {
 				derivationParameters: serviceParameters.derivationParameters.current,
 				expectedWorstCaseGasPrice: serviceParameters.expectedWorstCaseGasPrice?.current,
 				fees: serviceParameters.fees.current,
 			},
 			address: broadcaster.address,
-			debt,
+			debt: debt.toString(),
 		};
+
+		return {
+			...info,
+			lock: broadcasterData?.lock,
+			lock_timestamp: broadcasterData?.lock_timestamp,
+			nextNonce: broadcasterData?.nextNonce,
+		} as RemoteAccountInfo;
 	}
 
 	async function broadcastExecution(
@@ -587,12 +594,13 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 			return newExecution;
 		} catch (err) {
-			console.error(`failed to execute, removing lock on broadcaster...`);
+			console.error(`failed to execute, will remove lock in finally clause`);
+			throw err;
+		} finally {
 			await storage.unlockBroadcaster({
 				chainId: execution.chainId,
 				address: broadcaster.address,
 			});
-			throw err;
 		}
 	}
 

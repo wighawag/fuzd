@@ -147,5 +147,5 @@ export type DerivationParameters = {
 export type RemoteAccountInfo = {
 	serviceParameters: ExecutionServiceParameters;
 	address: String0x;
-	debt: bigint;
+	debt: string;
 };

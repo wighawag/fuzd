@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS ScheduledExecutions (
     priorTransactionConfirmation  text,
 	expiry                        integer,
     retries                       integer, 
+
+    lastError                     text,
     
     PRIMARY KEY (account, chainId, slot)
 );
@@ -62,6 +64,8 @@ CREATE TABLE IF NOT EXISTS ArchivedScheduledExecutions (
     priorTransactionConfirmation  text,
 	expiry                        integer,
     retries                       integer, 
+
+    lastError                     text,
     
     PRIMARY KEY (account, chainId, slot)
 );

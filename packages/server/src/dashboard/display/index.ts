@@ -18,6 +18,7 @@ export function displayScheduledExecutionQueued<TransactionDataType>(
 			slot: v.slot,
 			type: v.type,
 			broadcasted: v.broadcasted ? (v.finalized ? 'finalized' : 'broadcasted') : 'not broadcasted',
+			lastError: v.lastError,
 			checkinTime: new Date((v.checkinTime - timeDiff) * 1000).toUTCString(),
 			timingType: v.timing.type,
 			executionServiceParameters: v.executionServiceParameters,

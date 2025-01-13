@@ -14,6 +14,7 @@ export type ScheduledExecutionQueued<TransactionDataType> = ScheduledExecution<
 		blockTime: number;
 		startTime?: number;
 	};
+	lastError?: string;
 };
 
 export interface SchedulerStorage<TransactionDataType> {

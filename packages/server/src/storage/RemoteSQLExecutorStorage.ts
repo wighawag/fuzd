@@ -229,7 +229,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
                 ELSE lock
             	END,
 			lock_timestamp = CASE
-                WHEN lock IS NULL OR (UNIXEPOCH() - lock_timestamp) > ${LOCK_EXPIRY_SECONDS} THEN UNIXEPOCH()
+                WHEN lock_timestamp IS NULL OR (UNIXEPOCH() - lock_timestamp) > ${LOCK_EXPIRY_SECONDS} THEN UNIXEPOCH()
                 ELSE lock_timestamp
             	END
 		`,
