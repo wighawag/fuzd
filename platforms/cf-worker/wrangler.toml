@@ -4,6 +4,10 @@ compatibility_date = "2023-08-14"
 
 compatibility_flags = [ "nodejs_compat" ] # for node:async_hooks
 
+[observability]
+enabled = true
+head_sampling_rate = 1 # optional. default = 1.
+
 [env.production]
 
 d1_databases = [
