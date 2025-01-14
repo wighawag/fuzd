@@ -77,11 +77,11 @@ const fetch = async (request: Request, env: Env, ctx: ExecutionContext) => {
 const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
 	return wrapWithLogger(new Request(`https://scheduler.fuzd.dev/${event.cron}`), env, ctx, async () => {
 		if (event.cron === '* * * * *') {
-			return app.fetch(new Request('http://localhost/api/internal/processQueue'), env, ctx);
+			return app.fetch(new Request('http://localhost/internal/processQueue'), env, ctx);
 		} else if (event.cron === '*/1 * * * *') {
-			return app.fetch(new Request('http://localhost/api/internal/processTransactions'), env, ctx);
+			return app.fetch(new Request('http://localhost/internal/processTransactions'), env, ctx);
 		} else if (event.cron === '*/2 * * * *') {
-			return app.fetch(new Request('http://localhost/api/internal/checkScheduledExecutionStatus'), env, ctx);
+			return app.fetch(new Request('http://localhost/internal/checkScheduledExecutionStatus'), env, ctx);
 		} else {
 			return new Response(`invalid CRON`, {
 				status: 500,
