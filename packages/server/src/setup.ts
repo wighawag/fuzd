@@ -74,8 +74,6 @@ function assignChainProtocols(
 			const chainString = env[envKey as `CHAIN_${IntegerString}`] as string;
 			const [nodeURL, paramsString] = chainString.split('#');
 
-			console.log({chainId, nodeURL, paramsString, chainString});
-
 			let protocol: 'ethereum' | 'starknet' = 'ethereum';
 			let finality = 12;
 			let worstCaseBlockTime = 15;
