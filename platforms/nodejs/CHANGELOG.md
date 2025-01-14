@@ -1,5 +1,16 @@
 # fuzd-nodejs
 
+## 0.8.0
+
+### Minor Changes
+
+- refactor
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-server@0.8.0
+
 ## 0.7.8
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "fuzd-tlock-decrypter",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "description": "decrypt scheduled execution using drand's tlock-js",
   "license": "MIT",
   "publishConfig": {
