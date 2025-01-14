@@ -240,13 +240,13 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		const broadcaster = await this.getBroadcaster(params);
 
 		if (!broadcaster) {
-			console.error(`no broadcaster found`);
+			console.error(`instant check: no broadcaster found`);
 			return undefined;
 		} else if (!broadcaster.lock || !broadcaster.lock_timestamp) {
-			console.error(`no lock found`);
+			console.error(`instant check: no lock found`);
 			return undefined;
 		} else if (broadcaster.lock !== randomLock) {
-			console.error(`lock not matching: ${randomLock} (Generated) va ${broadcaster.lock} (DB)`);
+			console.error(`instant check: lock not matching: ${randomLock} (Generated) va ${broadcaster.lock} (DB)`);
 			return undefined;
 		} else {
 			// console.error(`broadcaster locked: ${broadcaster.lock}`);
