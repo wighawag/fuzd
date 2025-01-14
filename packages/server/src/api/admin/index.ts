@@ -156,6 +156,23 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 			} catch (err) {
 				return c.json(createErrorObject(err), 500);
 			}
+		})
+		.post('/updateFees/:chainId', async (c) => {
+			try {
+				const config = c.get('config');
+				const chainId = c.req.param('chainId') as IntegerString;
+				const timestamp = Math.floor(Date.now() / 1000);
+				const chainConfiguration = await config.executorStorage.updateFees(chainId, timestamp, await c.req.json());
+				return c.json(
+					{
+						success: true as const,
+						chainConfiguration,
+					},
+					200,
+				);
+			} catch (err) {
+				return c.json(createErrorObject(err), 500);
+			}
 		});
 
 	const app = new Hono<{Bindings: Env & {}}>().route('/', tmp).route('/', authenticated);
