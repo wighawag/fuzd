@@ -329,11 +329,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			throw new Error(`could not lock broadcaster`);
 		}
 
-		const debtInUnit = dataFromStorage.debtInUnit;
-
-		const expectedNonce = dataFromStorage.nextNonce;
-		// console.log({expectedNonce, broadcasterAddress});
-		return {currentNonceAsPerNetwork, expectedNonce, debtInUnit};
+		return {currentNonceAsPerNetwork, broadcasterData: dataFromStorage};
 	}
 
 	function _getChainProtocol(chainId: IntegerString): ChainProtocol<any> {
@@ -364,12 +360,12 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		},
 	): Promise<PendingExecutionStored<TransactionDataType> | undefined> {
 		const chainProtocol = _getChainProtocol(execution.chainId);
-		const {
-			expectedNonce,
-			currentNonceAsPerNetwork,
-			debtInUnit: currentDebtInUnit,
-		} = await _acquireBroadcaster(execution.chainId, broadcaster.address);
+		const {currentNonceAsPerNetwork, broadcasterData} = await _acquireBroadcaster(
+			execution.chainId,
+			broadcaster.address,
+		);
 
+		const {nextNonce: expectedNonce, debtInUnit: currentDebtInUnit} = broadcasterData;
 		try {
 			// console.log({expectedNonce, forceNonce: options.forceNonce});
 
@@ -551,7 +547,10 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			await storage.createOrUpdatePendingExecution(
 				newExecution,
 				{
-					updateNonceIfNeeded: true,
+					updateNonceIfNeeded: {
+						broadcaster: broadcasterData.address,
+						lock: broadcasterData.lock,
+					},
 					debtOffset: debtDueInUnits,
 				},
 				asPaymentFor,
@@ -584,7 +583,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 					newExecution.lastError = errorString;
 
-					await storage.createOrUpdatePendingExecution(newExecution, {updateNonceIfNeeded: false});
+					await storage.createOrUpdatePendingExecution(newExecution, {updateNonceIfNeeded: undefined});
 					logger.error(
 						`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.`,
 						err,
@@ -752,7 +751,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			);
 			const {debtDueInUnits} = computeFees(pendingExecution.chainId, pendingExecution.serviceParameters, txStatus.cost);
 			storage.createOrUpdatePendingExecution(pendingExecution, {
-				updateNonceIfNeeded: false,
+				updateNonceIfNeeded: undefined,
 				debtOffset: debtDueInUnits - previousDebtsRecorded,
 			});
 		} else if (!txStatus.pending) {

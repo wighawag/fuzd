@@ -10,6 +10,8 @@ export type BroadcasterData = {
 	debtInUnit: bigint;
 };
 
+export type BroadcasterDataWithLock = BroadcasterData & {lock: string; lock_timestamp: number};
+
 export type ChainConfiguration = {
 	fees?: UpdateableParameter<Fees>;
 	expectedWorstCaseGasPrice?: UpdateableParameter<string>;
@@ -56,13 +58,13 @@ export interface ExecutorStorage<TransactionDataType> {
 		chainId: IntegerString;
 		address: string;
 		nonceFromNetwork: number;
-	}): Promise<BroadcasterData | undefined>;
+	}): Promise<BroadcasterDataWithLock | undefined>;
 
 	unlockBroadcaster(params: {chainId: IntegerString; address: string}): Promise<void>;
 
 	createOrUpdatePendingExecution(
 		executionToStore: PendingExecutionStored<TransactionDataType>,
-		{updateNonceIfNeeded}: {updateNonceIfNeeded: boolean; debtOffset?: bigint},
+		options: {updateNonceIfNeeded?: {broadcaster: String0x; lock: string}; debtOffset?: bigint},
 		asPaymentFor?: {
 			chainId: IntegerString;
 			account: String0x;

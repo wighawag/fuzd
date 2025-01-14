@@ -1,5 +1,5 @@
 import type {RemoteSQL, SQLPreparedStatement} from 'remote-sql';
-import type {ExecutorStorage, BroadcasterData, ChainConfiguration} from 'fuzd-executor';
+import type {ExecutorStorage, BroadcasterData, ChainConfiguration, BroadcasterDataWithLock} from 'fuzd-executor';
 import {sqlToStatements, toValues} from './utils.js';
 import {logs} from 'named-logs';
 import setupTables from '../schema/ts/executor.sql.js';
@@ -206,7 +206,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		chainId: IntegerString;
 		address: string;
 		nonceFromNetwork: number;
-	}): Promise<BroadcasterData | undefined> {
+	}): Promise<BroadcasterDataWithLock | undefined> {
 		// Generate 16 random bytes
 		const randomBytes = new Uint8Array(16);
 		crypto.getRandomValues(randomBytes);
@@ -237,19 +237,20 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 			.bind(params.address, params.chainId, params.nonceFromNetwork, randomLock)
 			.all();
 
-		await wait(0.1); // we wait 100ms to minimize concurency issues;
-		// this should allow any concurent processes to finalize their writes if any
 		const broadcaster = await this.getBroadcaster(params);
 
 		if (!broadcaster) {
 			console.error(`no broadcaster found`);
+			return undefined;
+		} else if (!broadcaster.lock || !broadcaster.lock_timestamp) {
+			console.error(`no lock found`);
 			return undefined;
 		} else if (broadcaster.lock !== randomLock) {
 			console.error(`lock not matching: ${randomLock} (Generated) va ${broadcaster.lock} (DB)`);
 			return undefined;
 		} else {
 			// console.error(`broadcaster locked: ${broadcaster.lock}`);
-			return broadcaster;
+			return broadcaster as BroadcasterDataWithLock;
 		}
 	}
 
@@ -271,7 +272,10 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 
 	async createOrUpdatePendingExecution(
 		executionToStore: PendingExecutionStored<TransactionDataType>,
-		{updateNonceIfNeeded, debtOffset}: {updateNonceIfNeeded: boolean; debtOffset?: bigint},
+		{
+			updateNonceIfNeeded,
+			debtOffset,
+		}: {updateNonceIfNeeded?: {broadcaster: String0x; lock: string}; debtOffset?: bigint},
 		asPaymentFor?: {
 			chainId: IntegerString;
 			account: String0x;
@@ -301,6 +305,17 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 
 		try {
 			if (updateNonceIfNeeded) {
+				const broadcaster = await this.getBroadcaster({
+					chainId: executionToStore.chainId,
+					address: updateNonceIfNeeded.broadcaster,
+				});
+
+				if (!broadcaster) {
+					throw new Error(`no broadcaster found`);
+				} else if (broadcaster.lock !== updateNonceIfNeeded.lock) {
+					throw new Error(`lock not matching: ${updateNonceIfNeeded.lock} (Generated) va ${broadcaster.lock} (DB)`);
+				}
+
 				const sqlUpdateNonceStatement = `UPDATE Broadcasters 
 				SET 
 					nextNonce = MAX(nextNonce, ?1),

@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.8.1
+
+### Patch Changes
+
+- check for lock at the point of update
+
 ## 0.8.0
 
 ### Minor Changes

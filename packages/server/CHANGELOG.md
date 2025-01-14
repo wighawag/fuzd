@@ -1,5 +1,13 @@
 # fuzd-server
 
+## 0.8.1
+
+### Patch Changes
+
+- check for lock at the point of update
+- Updated dependencies
+  - fuzd-executor@0.8.1
+
 ## 0.8.0
 
 ### Minor Changes
