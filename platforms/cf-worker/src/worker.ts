@@ -71,7 +71,9 @@ export const app = createServer<Env>({
 });
 
 const fetch = async (request: Request, env: Env, ctx: ExecutionContext) => {
-	return wrapWithLogger(request, env, ctx, async () => app.fetch(request, env, ctx));
+	return wrapWithLogger(request, env, ctx, async () => {
+		return app.fetch(request, env, ctx);
+	});
 };
 
 const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {

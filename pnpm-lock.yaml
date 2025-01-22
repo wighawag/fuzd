@@ -346,8 +346,8 @@ importers:
         specifier: ^0.0.6
         version: 0.0.6(@cloudflare/workers-types@4.20241205.0)
       workers-logger:
-        specifier: npm:@bug-fix/workers-logger@0.2.0-fix.1
-        version: '@bug-fix/workers-logger@0.2.0-fix.1'
+        specifier: 0.2.1
+        version: 0.2.1
     devDependencies:
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.5.36
@@ -824,9 +824,6 @@ packages:
   '@babel/types@7.26.3':
     resolution: {integrity: sha512-vN5p+1kl59GVKMvTHt55NzzmYVxprfJD+ql7U9NFIfKCBkYE55LYtS+WtPlaYOyzydrKI8Nezd+aZextrd+FMA==}
     engines: {node: '>=6.9.0'}
-
-  '@bug-fix/workers-logger@0.2.0-fix.1':
-    resolution: {integrity: sha512-LmqK840+H0QGshoJn6ELINH3HotGEZc8PL/wviD50snqCqmzJGWEXjKK2NN7Wo12ghEvAEtmJw+70CG8eIyYbw==}
 
   '@changesets/apply-release-plan@7.0.6':
     resolution: {integrity: sha512-TKhVLtiwtQOgMAC0fCJfmv93faiViKSDqr8oMEqrnNs99gtSC1sZh/aEMS9a+dseU1ESZRCK+ofLgGY7o0fw/Q==}
@@ -6117,6 +6114,9 @@ packages:
   workerpool@6.5.1:
     resolution: {integrity: sha512-Fs4dNYcsdpYSAfVxhnl1L5zTksjvOJxtC5hzMNl+1t9B8hTJTdKDyZ5ju7ztgPy+ft9tBFXoOlDNiOT9WUXZlA==}
 
+  workers-logger@0.2.1:
+    resolution: {integrity: sha512-muEwweXQPWpVNF0k5OQ0/yKRLu4oRyoD3JNX8U3RUHiQx9sd4Cv1kCppYWESiS4DmStGjydaKmGrolK8CR1+Lg==}
+
   wrangler@3.95.0:
     resolution: {integrity: sha512-3w5852i3FNyDz421K2Qk4v5L8jjwegO5O8E1+VAQmjnm82HFNxpIRUBq0bmM7CTLvOPI/Jjcmj/eAWjQBL7QYg==}
     engines: {node: '>=16.17.0'}
@@ -6464,10 +6464,6 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.25.9
       '@babel/helper-validator-identifier': 7.25.9
-
-  '@bug-fix/workers-logger@0.2.0-fix.1':
-    dependencies:
-      diary: 0.4.5
 
   '@changesets/apply-release-plan@7.0.6':
     dependencies:
@@ -12280,6 +12276,10 @@ snapshots:
       '@cloudflare/workerd-windows-64': 1.20241205.0
 
   workerpool@6.5.1: {}
+
+  workers-logger@0.2.1:
+    dependencies:
+      diary: 0.4.5
 
   wrangler@3.95.0(@cloudflare/workers-types@4.20241205.0):
     dependencies:

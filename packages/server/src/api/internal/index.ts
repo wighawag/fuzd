@@ -44,10 +44,6 @@ export function getInternalAPI<Bindings extends Env>(options: ServerOptions<Bind
 			}
 		})
 		.get('/error', async (c) => {
-			logger.log('log:will throw an error in 20 seconds');
-			logger.warn('warn:will throw an error in 20 seconds');
-			logger.error('error:will throw an error in 20 seconds');
-			await wait(20);
 			throw new Error('Test error');
 		});
 
