@@ -7,6 +7,12 @@ import {Env} from '../../env.js';
 
 const logger = logs('fuzd-server-internal-api');
 
+function wait(seconds: number) {
+	return new Promise((resolve) => {
+		setTimeout(resolve, seconds * 1000);
+	});
+}
+
 export function getInternalAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
 	const app = new Hono<{Bindings: Bindings}>()
 		.use(setup({serverOptions: options}))
@@ -36,6 +42,13 @@ export function getInternalAPI<Bindings extends Env>(options: ServerOptions<Bind
 			} catch (err) {
 				return c.json(createErrorObject(err), 500);
 			}
+		})
+		.get('/error', async (c) => {
+			logger.log('log:will throw an error in 20 seconds');
+			logger.warn('warn:will throw an error in 20 seconds');
+			logger.error('error:will throw an error in 20 seconds');
+			await wait(20);
+			throw new Error('Test error');
 		});
 
 	return app;

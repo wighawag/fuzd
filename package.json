@@ -23,6 +23,7 @@
   "scripts": {
     "prepare": "set-defaults .vscode && pnpm build",
     "build": "pnpm -r build",
+    "deploy:cf-worker": "pnpm build && pnpm --filter fuzd-cf-worker deploy:production",
     "sync-deps": "syncpack fix-mismatches",
     "start": "pnpm zellij-launcher --layout zellij.kdl a $npm_package_name|| zellij --layout zellij.kdl -s $npm_package_name",
     "publish-typedoc": "typedoc --options typedoc.json --excludeExternals --mergeReadme",
