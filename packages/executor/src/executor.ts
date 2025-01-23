@@ -775,7 +775,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				maxCost,
 			);
 			const {debtDueInUnits} = computeFees(pendingExecution.chainId, pendingExecution.serviceParameters, txStatus.cost);
-			storage.createOrUpdatePendingExecution(pendingExecution, {
+			await storage.createOrUpdatePendingExecution(pendingExecution, {
 				updateNonceIfNeeded: undefined,
 				debtOffset: debtDueInUnits - previousDebtsRecorded,
 			});
