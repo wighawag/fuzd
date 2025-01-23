@@ -24,6 +24,22 @@ export function getExecutionAPI<Bindings extends Env>(options: ServerOptions<Bin
 				return c.json(createErrorObject(err), 500);
 			}
 		})
+		.get('/paymentRemoteAccount/:chainId', async (c) => {
+			try {
+				const chainId = assert<IntegerString>(c.req.param('chainId'));
+				const config = c.get('config');
+
+				const paymentAccount = config.paymentAccount;
+				if (paymentAccount) {
+					const broadcasterInfo = await config.executor.getRemoteAccount(chainId, paymentAccount);
+					return c.json({success: true as const, account: broadcasterInfo}, 200);
+				} else {
+					return c.json({success: true as const, account: undefined}, 200);
+				}
+			} catch (err) {
+				return c.json(createErrorObject(err), 500);
+			}
+		})
 
 		.post(
 			'/broadcastExecution',
