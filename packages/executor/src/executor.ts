@@ -618,6 +618,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		let {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await chainProtocol.getGasFee(pendingExecution);
 
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGas) {
+			logger.warn(`network gas fee greater than maxFeePerGas`);
 			let expectedWorstCaseGasPrice = pendingExecution.serviceParameters.expectedWorstCaseGasPrice
 				? BigInt(pendingExecution.serviceParameters.expectedWorstCaseGasPrice)
 				: undefined;
@@ -629,10 +630,12 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				const currentExpectedWorstCaseGasPrice = BigInt(serviceParameters.expectedWorstCaseGasPrice.current);
 				if (expectedWorstCaseGasPrice === undefined || currentExpectedWorstCaseGasPrice < expectedWorstCaseGasPrice) {
 					expectedWorstCaseGasPrice = currentExpectedWorstCaseGasPrice;
+					logger.warn(`we are using current expectedWorstCaseGasPrice`);
 				}
 			}
 
 			if (expectedWorstCaseGasPrice != undefined && expectedWorstCaseGasPrice < gasPriceEstimate.maxFeePerGas) {
+				logger.warn(`network fee greater than expectedWorstCaseGasPrice`);
 				let diffToCover = gasPriceEstimate.maxFeePerGas - expectedWorstCaseGasPrice;
 				// this only cover all if user has send that expectedWorstCaseGasPrice value on
 				if (maxFeePerGas < expectedWorstCaseGasPrice) {
@@ -647,6 +650,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				}
 
 				if (diffToCover > 0n) {
+					logger.warn(`we cover for ${diffToCover}...`);
 					const paymentAccount = config.paymentAccount;
 					if (paymentAccount) {
 						const broadcaster = await chainProtocol.getBroadcaster(
@@ -698,6 +702,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 							logger.error(`paymentAccount broadcaster balance to low! (${broadcaster.address})`);
 						}
 					}
+				} else {
+					logger.warn(`nothing to cover...`);
 				}
 			}
 		}
