@@ -459,7 +459,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			let statusToReport: 'broadcasted' | 'unknown' | 'finalized' = status ? 'broadcasted' : 'unknown';
 			if (status === 'finalized') {
 				execution.finalized = true;
-				storage.createOrUpdateQueuedExecution(execution);
+				await storage.createOrUpdateQueuedExecution(execution);
 				statusToReport = 'finalized';
 			}
 

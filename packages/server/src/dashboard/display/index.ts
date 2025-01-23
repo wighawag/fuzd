@@ -67,6 +67,7 @@ export function displayExecutionBroadcasted(config: Config) {
 			retries: v.retries || 0,
 			lastError: v.lastError || 'no error',
 			expiryTime: v.expiryTime ? new Date(v.expiryTime * 1000).toUTCString() : 'no expiry',
+			finalized: v.finalized ? 'true' : 'false',
 		};
 	};
 }

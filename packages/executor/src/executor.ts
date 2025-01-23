@@ -760,6 +760,9 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			throw txStatus.error;
 		}
 		if (txStatus.finalised) {
+			if (txStatus.failed) {
+				logger.error(`transaction failed and finalized: ${pendingExecution.hash}`);
+			}
 			pendingExecution.finalized = true;
 			const maxCost = await chainProtocol.computeMaxCost(
 				pendingExecution.chainId,
