@@ -14,23 +14,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 	const {getEnv} = options;
 	const tmp = new Hono<{Bindings: Bindings}>()
 		.use(setup({serverOptions: options}))
-		.get('/paymentAccountBroadcaster', async (c) => {
-			try {
-				const config = c.get('config');
 
-				return c.json(
-					{
-						success: true as const,
-						paymentAccountBroadcaster: config.paymentAccount
-							? config.account.deriveForAddress(config.paymentAccount)
-							: null,
-					},
-					200,
-				);
-			} catch (err) {
-				return c.json(createErrorObject(err), 500);
-			}
-		})
 		// TODO authentication
 		.get('/queue', async (c) => {
 			try {
@@ -67,16 +51,6 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json({success: true as const, transactions: txs}, 200);
 			} catch (err) {
 				return c.json(createErrorObject(err), 500);
-			}
-		})
-		.get('/setChainOverride/:chainId/:chainOverride', async (c) => {
-			if ((c.env as any).DEV === 'true') {
-				const chainId = c.req.param('chainId') as IntegerString;
-				const chainOverride = c.req.param('chainOverride');
-				setChainOverride(chainId, chainOverride);
-				return c.json({success: true as const}, 200);
-			} else {
-				return c.json({success: false as const}, 500);
 			}
 		})
 		.get('/test/:message', async (c) => {
@@ -167,6 +141,33 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 					{
 						success: true as const,
 						chainConfiguration,
+					},
+					200,
+				);
+			} catch (err) {
+				return c.json(createErrorObject(err), 500);
+			}
+		})
+		.get('/setChainOverride/:chainId/:chainOverride', async (c) => {
+			if ((c.env as any).DEV === 'true') {
+				const chainId = c.req.param('chainId') as IntegerString;
+				const chainOverride = c.req.param('chainOverride');
+				setChainOverride(chainId, chainOverride);
+				return c.json({success: true as const}, 200);
+			} else {
+				return c.json({success: false as const}, 500);
+			}
+		})
+		.get('/paymentAccountBroadcaster', async (c) => {
+			try {
+				const config = c.get('config');
+
+				return c.json(
+					{
+						success: true as const,
+						paymentAccountBroadcaster: config.paymentAccount
+							? config.account.deriveForAddress(config.paymentAccount)
+							: null,
 					},
 					200,
 				);
