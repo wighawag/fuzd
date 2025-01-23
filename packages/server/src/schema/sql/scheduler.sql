@@ -54,9 +54,9 @@ CREATE TABLE IF NOT EXISTS ArchivedScheduledExecutions (
 	type                          text       NOT_NULL, -- 'time-locked' | 'clear';
 	payload                       text       NOT_NULL,
 	timing                        text       NOT_NULL,
+    executionServiceParameters    text       NOT_NULL,
     
-    expectedWorstCaseGasPrice     text,
-
+    
     paymentReserve                text,
     broadcaster                   text,
 

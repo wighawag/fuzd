@@ -88,7 +88,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 	): Promise<ScheduledExecutionQueued<TransactionDataType>> {
 		execution.retries++;
 		if (execution.retries >= 100) {
-			logger.info(
+			logger.warn(
 				`deleting execution (chainid: ${execution.chainId}, account: ${execution.slot}, slot: ${execution.slot}) after ${execution.retries} retries ...`,
 			);
 			// TODO hook await this._reduceSpending(reveal);
@@ -124,7 +124,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					// failed to decrypt and no retry, this means the decryption is failing
 					// TODO
 					// await storage.archiveExecution(execution);
-					logger.info(decryptionResult);
+					logger.warn('failed to decrypt', decryptionResult);
 					return {type: 'archived', reason: 'failed to decrypt'};
 				}
 			}
@@ -336,7 +336,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				expectedFinality * worstCaseBlockTime
 		) {
 			// delete if execution expired
-			logger.info(`too late, archiving ${displayExecution(execution)}...`);
+			logger.warn(`too late, archiving ${displayExecution(execution)}...`);
 			await storage.archiveExecution(execution);
 			result.executions.push({
 				chainId: execution.chainId,
@@ -371,7 +371,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				});
 			} else {
 				// For now as we do not limit result to a certain time, we will reach there often
-				logger.info(`not yet time: ${time2text(newCheckinTime - currentTimestamp)} to wait...`);
+				logger.debug(`not yet time: ${time2text(newCheckinTime - currentTimestamp)} to wait...`);
 				result.executions.push({
 					chainId: execution.chainId,
 					account: execution.account,

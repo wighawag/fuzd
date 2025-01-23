@@ -174,6 +174,33 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 			} catch (err) {
 				return c.json(createErrorObject(err), 500);
 			}
+		})
+		.get('/archiveSubmission/:chainId/:account/:slot', async (c) => {
+			try {
+				const config = c.get('config');
+				const chainId = c.req.param('chainId') as IntegerString;
+				const account = c.req.param('account') as String0x;
+				const slot = c.req.param('slot') as string;
+				const execution = await config.schedulerStorage.getQueuedExecution({chainId, account, slot});
+				if (execution) {
+					await config.schedulerStorage.archiveExecution(execution);
+					return c.json(
+						{
+							success: true as const,
+						},
+						200,
+					);
+				} else {
+					return c.json(
+						{
+							success: false as const,
+						},
+						200,
+					);
+				}
+			} catch (err) {
+				return c.json(createErrorObject(err), 500);
+			}
 		});
 
 	const app = new Hono<{Bindings: Env & {}}>().route('/', tmp).route('/', authenticated);

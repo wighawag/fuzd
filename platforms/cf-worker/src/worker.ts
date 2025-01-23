@@ -17,7 +17,7 @@ async function wrapWithLogger(
 	callback: (request: Request, env: Env, ctx: ExecutionContext) => Promise<Response>,
 ): Promise<Response> {
 	const namespaces = env.NAMED_LOGS || '*';
-	let logLevel = 6;
+	let logLevel = 3;
 	if (env.NAMED_LOGS_LEVEL) {
 		const level = parseInt(env.NAMED_LOGS_LEVEL);
 		if (!isNaN(level)) {
