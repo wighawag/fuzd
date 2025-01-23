@@ -36,6 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_broadcasted_finalized_nextChe
 
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_account_nextCheckTime ON ScheduledExecutions (account, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_onBehalf_broadcasted ON ScheduledExecutions (onBehalf, broadcasted);
+CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_onBehalf_nextCheckTime ON ScheduledExecutions (onBehalf, nextCheckTime);
 
 
 CREATE TABLE IF NOT EXISTS ArchivedScheduledExecutions (

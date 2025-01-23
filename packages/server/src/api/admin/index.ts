@@ -47,7 +47,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 		.get('/all-executions', async (c) => {
 			try {
 				const config = c.get('config');
-				const txs = await config.executorStorage.getAllExecutions({limit: 100});
+				const txs = await config.executorStorage.getAllExecutions({limit: 100, order: 'DESC'});
 				return c.json({success: true as const, transactions: txs}, 200);
 			} catch (err) {
 				return c.json(createErrorObject(err), 500);

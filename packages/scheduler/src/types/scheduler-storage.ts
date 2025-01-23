@@ -41,7 +41,10 @@ export interface SchedulerStorage<TransactionDataType> {
 		broadcaster: String0x;
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
-	getAllExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
+	getAllExecutions(params: {
+		limit: number;
+		order: 'ASC' | 'DESC';
+	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	getAccountSubmissions(
 		account: String0x,
 		params: {limit: number},

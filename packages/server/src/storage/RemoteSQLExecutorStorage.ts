@@ -372,8 +372,16 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		return results.map(fromExecutionInDB<TransactionDataType>);
 	}
 
-	async getAllExecutions(params: {limit: number}): Promise<PendingExecutionStored<TransactionDataType>[]> {
-		const sqlStatement = `SELECT * FROM BroadcastedExecutions ORDER BY nextCheckTime ASC LIMIT ?1;`;
+	async getAllExecutions(params: {
+		limit: number;
+		order: 'ASC' | 'DESC';
+		// TODO cursor: string //  <nextCheckTime>:<account>:<batchIndex>:<chainId>:<slot>
+		//  Uses nextCheckTime as from
+		//  then filter out anything before the matching element: <account>:<batchIndex>:<chainId>:<slot>
+		//  this assumes the rows are always in the same order, hmmm
+		//  also use limit+1 and remove the last element + return the next cursor with that element
+	}): Promise<PendingExecutionStored<TransactionDataType>[]> {
+		const sqlStatement = `SELECT * FROM BroadcastedExecutions ORDER BY nextCheckTime ${params.order} LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ExecutionInDB>();
 		return results.map(fromExecutionInDB<TransactionDataType>);

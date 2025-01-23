@@ -212,8 +212,11 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 
-	async getAllExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
-		const sqlStatement = `SELECT * FROM ScheduledExecutions ORDER BY nextCheckTime ASC LIMIT ?1;`;
+	async getAllExecutions(params: {
+		limit: number;
+		order: 'ASC' | 'DESC';
+	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
+		const sqlStatement = `SELECT * FROM ScheduledExecutions ORDER BY nextCheckTime ${params.order} LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);

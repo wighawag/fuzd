@@ -82,7 +82,10 @@ export interface ExecutorStorage<TransactionDataType> {
 		params: {limit: number},
 	): Promise<PendingExecutionStored<TransactionDataType>[]>;
 
-	getAllExecutions(params: {limit: number}): Promise<PendingExecutionStored<TransactionDataType>[]>;
+	getAllExecutions(params: {
+		limit: number;
+		order: 'ASC' | 'DESC';
+	}): Promise<PendingExecutionStored<TransactionDataType>[]>;
 
 	// TODO remove: createBroadcaster is not used, and if used we should use updateBroadcaster too
 	getBroadcaster(params: {chainId: IntegerString; address: string}): Promise<BroadcasterData | undefined>;
