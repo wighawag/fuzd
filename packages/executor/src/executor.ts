@@ -618,9 +618,19 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		let {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await chainProtocol.getGasFee(pendingExecution);
 
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGas) {
-			const expectedWorstCaseGasPrice = pendingExecution.serviceParameters.expectedWorstCaseGasPrice
+			let expectedWorstCaseGasPrice = pendingExecution.serviceParameters.expectedWorstCaseGasPrice
 				? BigInt(pendingExecution.serviceParameters.expectedWorstCaseGasPrice)
 				: undefined;
+
+			const serviceParameters = await getServiceParameters(pendingExecution.chainId);
+			if (serviceParameters.expectedWorstCaseGasPrice?.current) {
+				// we retroactively consider expectedWorstGasPrice if we reduce. we do not affect if we increase
+				// TODO config for this behavio ?
+				const currentExpectedWorstCaseGasPrice = BigInt(serviceParameters.expectedWorstCaseGasPrice.current);
+				if (expectedWorstCaseGasPrice === undefined || currentExpectedWorstCaseGasPrice < expectedWorstCaseGasPrice) {
+					expectedWorstCaseGasPrice = currentExpectedWorstCaseGasPrice;
+				}
+			}
 
 			if (expectedWorstCaseGasPrice != undefined && expectedWorstCaseGasPrice < gasPriceEstimate.maxFeePerGas) {
 				let diffToCover = gasPriceEstimate.maxFeePerGas - expectedWorstCaseGasPrice;
