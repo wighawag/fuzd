@@ -163,6 +163,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				batchIndex: number;
 				upToGasPrice: bigint;
 			};
+			onBehalf?: String0x;
+			expiryTime?: number;
 		},
 	): Promise<ExecutionResponse<TransactionDataType>> {
 		const chainProtocol = _getChainProtocol(submission.chainId);
@@ -237,13 +239,12 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 						chainId: submission.chainId,
 						maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
 						transaction: preliminaryTransaction,
-						expiryTime: submission.expiryTime,
-						onBehalf: submission.onBehalf,
+
 						// TODO force nonce or indicate it only make sense if first transaction, as there are potential race condition here
 						// having said that, the initial tx need to be performed anyway so there should not be any other at the same time
 					},
 					serviceParameters,
-					{trusted: true}, // we just validated it
+					{trusted: true, onBehalf: options?.onBehalf, expiryTime: options?.expiryTime}, // we just validated it
 				);
 
 				// console.log(`preliminary broadcasted`, txInfo);
@@ -260,7 +261,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
 			isVoidTransaction: false,
 			initialTime: timestamp,
-			expiryTime: submission.expiryTime,
+			expiryTime: options?.expiryTime,
+			onBehalf: options?.onBehalf,
 			finalized: false,
 		};
 

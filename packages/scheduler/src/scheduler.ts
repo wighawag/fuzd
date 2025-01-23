@@ -147,7 +147,11 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					scheduledExecutionQueued.account,
 					execution,
 					scheduledExecutionQueued.executionServiceParameters, // we pass what was there on scheduling time
-					{trusted: true}, // The scheduler is trusted to have verified the exectuion parameters
+					{
+						trusted: true,
+						onBehalf: scheduledExecutionQueued.onBehalf,
+						expiryTime: scheduledExecutionQueued.timing.expiry,
+					}, // The scheduler is trusted to have verified the exectuion parameters
 				);
 				results.push(executionResult);
 			}

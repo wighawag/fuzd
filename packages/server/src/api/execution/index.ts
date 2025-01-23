@@ -55,8 +55,11 @@ export function getExecutionAPI<Bindings extends Env>(options: ServerOptions<Bin
 						throw new Error(`no reception signature set`);
 					}
 
-					const {slot, serviceParameters, ...execution} = data;
-					const result = await config.executor.broadcastExecution(slot, 0, account, execution, serviceParameters);
+					const {slot, serviceParameters, onBehalf, expiryTime, ...execution} = data;
+					const result = await config.executor.broadcastExecution(slot, 0, account, execution, serviceParameters, {
+						onBehalf,
+						expiryTime,
+					});
 					return c.json({success: true as const, info: result, signature: receptionSignature}, 200);
 				} catch (err) {
 					return c.json(createErrorObject(err), 500);

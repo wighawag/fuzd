@@ -72,8 +72,6 @@ export type ExecutionSubmission<TransactionDataType> = {
 	chainId: IntegerString;
 	transaction: TransactionDataType;
 	maxFeePerGasAuthorized: String0x; // 1000 gwei // TODO CONFIGURE per network: max worst worst case
-	expiryTime?: number;
-	onBehalf?: String0x;
 	// TODO add payment tx
 	// cannot be verified as we don' want to track eth changes
 	// but this can help client count how much has been unspent
@@ -94,6 +92,8 @@ export type ExecutionSubmission<TransactionDataType> = {
 export type ExecutionBroadcast<T> = ExecutionSubmission<T> & {
 	serviceParameters: ExecutionServiceParameters;
 	slot: string;
+	onBehalf?: String0x;
+	expiryTime?: number;
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -116,6 +116,8 @@ export type Executor<TransactionDataType> = {
 				batchIndex: number;
 				upToGasPrice: bigint;
 			};
+			onBehalf?: String0x;
+			expiryTime?: number;
 		},
 	): Promise<ExecutionResponse<TransactionDataType>>;
 
