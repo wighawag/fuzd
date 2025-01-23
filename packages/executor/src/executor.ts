@@ -437,23 +437,29 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				logger.error(errorMessage);
 				execution.lastError = errorMessage;
 				if (options.previouslyStored) {
+					logger.warn(`revert, but was previously stored, so we keep going, but we force void`);
 					// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
 					// we do that by making a simple void tx
 					options.forceVoid = true;
 				} else {
+					logger.warn(`revert, we stop here`);
 					return undefined;
 				}
 			} else if (validity.revert === 'unknown') {
 				// we keep going anyway
+				logger.warn(`unknown error, we stop here`);
 			} else if (validity.notEnoughGas) {
+				// TODO consider adding gas, as long as maxFeePerGasAuthorized is considered in the calculation
 				const errorMessage = `The transaction requires more gas than provided. Aborting here`;
 				logger.error(errorMessage);
 				execution.lastError = errorMessage;
 				if (options.previouslyStored) {
+					logger.warn(`not enough gas, was previously stored, so we keep going, but we force void`);
 					// since tx has already been broadcasted, we need to replace it with a successful tx so that further tx can proceed
 					// we do that by making a simple void tx
 					options.forceVoid = true;
 				} else {
+					logger.warn(`not enough gas, we stop here`);
 					return undefined;
 				}
 			}
