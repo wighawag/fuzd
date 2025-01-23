@@ -703,7 +703,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		}
 
 		const maxFeePerGasUsed = BigInt(pendingExecution.transactionParametersUsed.maxFeePerGas);
-		const maxPriorityFeePerGasUsed = BigInt(pendingExecution.transactionParametersUsed.maxFeePerGas);
+		const maxPriorityFeePerGasUsed = BigInt(pendingExecution.transactionParametersUsed.maxPriorityFeePerGas);
 
 		let transactionIsPending = await chainProtocol.isTransactionPending(pendingExecution.hash);
 

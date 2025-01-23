@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.8.2
+
+### Patch Changes
+
+- fix
+
 ## 0.8.1
 
 ### Patch Changes

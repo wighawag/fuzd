@@ -1,5 +1,12 @@
 # fuzd-client
 
+## 0.8.3
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-executor@0.8.2
+
 ## 0.8.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # fuzd-nodejs
 
+## 0.8.2
+
+### Patch Changes
+
+- fuzd-server@0.8.2
+
 ## 0.8.1
 
 ### Patch Changes
