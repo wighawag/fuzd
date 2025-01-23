@@ -1,3 +1,4 @@
+import {logs} from 'named-logs';
 import {
 	BroadcasterSignerData,
 	ChainProtocol,
@@ -16,6 +17,8 @@ import type {ETHAccount} from 'remote-account';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {keccak_256} from '@noble/hashes/sha3';
 export type * from './types.js';
+
+const logger = logs('fuzd-chain-protocol-ethereum');
 
 export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionData> {
 	private rpc: CurriedRPC<Methods>;
@@ -140,9 +143,9 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		let maxFeePerGas = gasPriceEstimate.maxFeePerGas;
 		let maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGasAuthorized) {
-			// logger.warn(
-			// 	`fast.maxFeePerGas (${gasPriceEstimate.maxFeePerGas}) > maxFeePerGasChosen (${maxFeePerGasAuthorized}), tx might not be included`,
-			// );
+			logger.warn(
+				`estimate maxFeePerGas (${gasPriceEstimate.maxFeePerGas}) > maxFeePerGasAuthorized (${maxFeePerGasAuthorized}), tx might not be included. we keep the estimated priorityFee (${maxPriorityFeePerGas}) if it still under`,
+			);
 			maxFeePerGas = maxFeePerGasAuthorized;
 			if (maxPriorityFeePerGas > maxFeePerGas) {
 				maxPriorityFeePerGas = maxFeePerGas;
