@@ -21,10 +21,16 @@ export function displayScheduledExecutionQueued<TransactionDataType>(
 			lastError: v.lastError ? v.lastError : 'no error',
 			checkinTime: new Date((v.checkinTime - timeDiff) * 1000).toUTCString(),
 			timing: JSON.stringify(v.timing),
-			executionServiceParameters: JSON.stringify(v.executionServiceParameters),
+
+			// executionServiceParameters: JSON.stringify(v.executionServiceParameters),
+			expectedWorstCaseGasPrice: v.executionServiceParameters.expectedWorstCaseGasPrice
+				? formatEther(BigInt(v.executionServiceParameters.expectedWorstCaseGasPrice), 'gwei') + ' gwei'
+				: 'none',
+			fees: v.executionServiceParameters.fees ? JSON.stringify(v.executionServiceParameters.fees) : 'none',
+
 			paymentReserve: v.paymentReserve ? v.paymentReserve.amount : 'undefined',
 			retries: v.retries || 0,
-			payload: showPayload ? (v.type === 'clear' ? JSON.stringify(v.executions) : v.payload) : undefined,
+			// payload: showPayload ? (v.type === 'clear' ? JSON.stringify(v.executions) : v.payload) : undefined,
 			priorTransactionConfirmation: v.priorTransactionConfirmation
 				? JSON.stringify(v.priorTransactionConfirmation)
 				: 'none',
@@ -40,34 +46,49 @@ export function displayExecutionBroadcasted(config: Config) {
 		return {
 			account: v.account,
 			remoteAccount,
+			onBehalf: v.onBehalf,
 			chainId: v.chainId,
 			slot: v.slot,
 			nextCheckTime: new Date(v.nextCheckTime * 1000).toUTCString(),
 			initialTime: new Date(v.initialTime * 1000).toUTCString(),
 			broadcastTime: v.broadcastTime ? new Date(v.broadcastTime * 1000).toUTCString() : 'not broadcasted yet',
 			hash: v.hash,
-			transaction: {
-				// TODO show different starknet/ethereum
-				from: v.transaction.from,
-				to: v.transaction.to,
-				gas: v.transaction.gas,
-				value: v.transaction.value ? formatEther(BigInt(v.transaction.value)) : '0',
-				nonce: v.transaction.nonce,
-				// data: v.data || 'None',
-				maxFeePerGas: v.transaction.maxFeePerGas
-					? formatEther(BigInt(v.transaction.maxFeePerGas), 'gwei') + ' gwei'
-					: 'undefined',
-				maxPriorityFeePerGas: v.transaction.maxPriorityFeePerGas
-					? formatEther(BigInt(v.transaction.maxPriorityFeePerGas), 'gwei') + ' gwei'
-					: 'undefined',
-			},
-			serviceParameters: v.serviceParameters,
-			maxFeePerGasAuthorized: v.maxFeePerGasAuthorized,
-			isVoidTransaction: v.isVoidTransaction ? 'true' : 'false',
+			maxFeePerGasUsed: formatEther(BigInt(v.transactionParametersUsed.maxFeePerGas), 'gwei') + ' gwei',
+			maxPriotityFeePerGasUsed: formatEther(BigInt(v.transactionParametersUsed.maxPriorityFeePerGas), 'gwei') + ' gwei',
+			to: v.transaction.to,
+			nonce: v.transaction.nonce ? Number(v.transaction.nonce).toString() : 'undefined',
+			helpedForUpToGasPrice: v.helpedForUpToGasPrice
+				? formatEther(BigInt(v.helpedForUpToGasPrice), 'gwei') + ' gwei'
+				: 'undefined',
+			// transaction: {
+			// 	// TODO show different starknet/ethereum
+			// 	from: v.transaction.from,
+			// 	to: v.transaction.to,
+			// 	gas: v.transaction.gas,
+			// 	value: v.transaction.value ? formatEther(BigInt(v.transaction.value)) : '0',
+			// 	nonce: v.transaction.nonce,
+			// 	// data: v.data || 'None',
+			// 	maxFeePerGas: v.transaction.maxFeePerGas
+			// 		? formatEther(BigInt(v.transaction.maxFeePerGas), 'gwei') + ' gwei'
+			// 		: 'undefined',
+			// 	maxPriorityFeePerGas: v.transaction.maxPriorityFeePerGas
+			// 		? formatEther(BigInt(v.transaction.maxPriorityFeePerGas), 'gwei') + ' gwei'
+			// 		: 'undefined',
+			// },
+
+			// serviceParameters: v.serviceParameters,
+			expectedWorstCaseGasPrice: v.serviceParameters.expectedWorstCaseGasPrice
+				? formatEther(BigInt(v.serviceParameters.expectedWorstCaseGasPrice), 'gwei') + ' gwei'
+				: 'none',
+			fees: v.serviceParameters.fees ? JSON.stringify(v.serviceParameters.fees) : 'none',
+
+			maxFeePerGasAuthorized: formatEther(BigInt(v.maxFeePerGasAuthorized), 'gwei') + ' gwei',
+			isVoidTransaction: v.isVoidTransaction ? 'void' : 'as ordered',
 			retries: v.retries || 0,
 			lastError: v.lastError || 'no error',
 			expiryTime: v.expiryTime ? new Date(v.expiryTime * 1000).toUTCString() : 'no expiry',
-			finalized: v.finalized ? 'true' : 'false',
+			finalized: v.finalized ? 'finalized' : 'broadcasted',
+			batchIndex: v.batchIndex.toString(),
 		};
 	};
 }

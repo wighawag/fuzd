@@ -349,7 +349,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 		}
 	}
 
-	async computeMaxCost(
+	async computeMaxCostAuthorized(
 		chainId: IntegerString,
 		transactionData: StarknetTransactionData,
 		maxFeePerGasAuthorized: String0x,
@@ -431,7 +431,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 		maxFeePerGas: bigint,
 		from: String0x,
 		diffToCover: bigint,
-	): {transaction: StarknetTransactionData; cost: bigint} {
+	): {transaction: StarknetTransactionData; cost: bigint; valueSent: bigint} {
 		const gas = BigInt(30000);
 		const cost = gas * maxFeePerGas; // TODO handle extra Fee like Optimism
 
@@ -457,7 +457,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			version: '0x1',
 			max_fee: `0x${gas.toString(16)}` as String0x,
 		};
-		return {transaction: transactionToBroadcast, cost};
+		return {transaction: transactionToBroadcast, cost, valueSent: valueToSend};
 	}
 
 	// TODO FOR TEST ONLY

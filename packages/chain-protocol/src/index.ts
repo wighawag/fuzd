@@ -105,7 +105,7 @@ export interface ExecutorChainProtocol<TransactionDataType> {
 		transactionParameters: TransactionParametersUsed,
 	): Promise<TransactionValidity>;
 
-	computeMaxCost(
+	computeMaxCostAuthorized(
 		chainId: IntegerString,
 		transactionData: TransactionDataType,
 		maxFeePerGasAuthorized: String0x,
@@ -127,7 +127,7 @@ export interface ExecutorChainProtocol<TransactionDataType> {
 		maxFeePerGas: bigint,
 		from: String0x,
 		diffToCover: bigint,
-	): {transaction: TransactionDataType; cost: bigint};
+	): {transaction: TransactionDataType; cost: bigint; valueSent: bigint};
 }
 
 export type ChainProtocol<TransactionDataType> = SchedulerChainProtocol & ExecutorChainProtocol<TransactionDataType>;

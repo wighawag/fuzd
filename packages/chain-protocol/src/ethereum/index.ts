@@ -228,7 +228,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		return {notEnoughGas: gasRequired > BigInt(transactionData.gas) ? true : false, revert: false};
 	}
 
-	async computeMaxCost(
+	async computeMaxCostAuthorized(
 		chainId: IntegerString,
 		transactionData: EthereumTransactionData,
 		maxFeePerGasAuthorized: String0x,
@@ -325,7 +325,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		maxFeePerGas: bigint,
 		from: String0x,
 		diffToCover: bigint,
-	): {transaction: EthereumTransactionData; cost: bigint} {
+	): {transaction: EthereumTransactionData; cost: bigint; valueSent: bigint} {
 		const gas = BigInt(30000);
 		const cost = gas * maxFeePerGas; // TODO handle extra Fee like Optimism
 		const valueToSend = diffToCover * BigInt(transactionData.gas);
@@ -335,7 +335,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 			type: '0x2',
 			value: `0x${valueToSend.toString(16)}` as String0x,
 		};
-		return {transaction: transactionToBroadcast as EthereumTransactionData, cost};
+		return {transaction: transactionToBroadcast as EthereumTransactionData, cost, valueSent: valueToSend};
 	}
 
 	// TODO FOR TEST ONLY
