@@ -28,8 +28,8 @@ export function getInternalAPI<Bindings extends Env>(options: ServerOptions<Bind
 		.get('/processTransactions', async (c) => {
 			try {
 				const config = c.get('config');
-				await config.executor.processPendingTransactions();
-				return c.json({success: true}); // TODO return processed transactons ?
+				const transactions = await config.executor.processPendingTransactions();
+				return c.json({success: true, transactions}); // TODO return processed transactons ?
 			} catch (err) {
 				return c.json(createErrorObject(err), 500);
 			}
