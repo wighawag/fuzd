@@ -55,6 +55,8 @@ export function displayExecutionBroadcasted(config: Config) {
 			hash: v.hash,
 			maxFeePerGasUsed: formatEther(BigInt(v.transactionParametersUsed.maxFeePerGas), 'gwei') + ' gwei',
 			maxPriotityFeePerGasUsed: formatEther(BigInt(v.transactionParametersUsed.maxPriorityFeePerGas), 'gwei') + ' gwei',
+			broadcasterUsed: formatEther(BigInt(v.transactionParametersUsed.from), 'gwei') + ' gwei',
+			nonceUsed: Number(v.transactionParametersUsed.nonce).toString(),
 			to: v.transaction.to,
 			nonce: v.transaction.nonce ? Number(v.transaction.nonce).toString() : 'undefined',
 			helpedForUpToGasPrice: v.helpedForUpToGasPrice
