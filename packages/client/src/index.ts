@@ -111,7 +111,7 @@ export function createClient(config: ClientConfig) {
 		maxFeePerGasAuthorized: bigint;
 		gas: bigint;
 		value?: bigint;
-	}): Promise<bigint> {
+	}): Promise<{amountReserved: bigint; totalMaxCost: bigint; balanceRequired: bigint}> {
 		const totalMaxCost = computeTotalMaxCost(params);
 		if (!_assignedRemoteAccount) {
 			throw new Error(`need to assign a account first`);
@@ -132,7 +132,7 @@ export function createClient(config: ClientConfig) {
 
 		const amountReserved = BigInt(reservedResult.total);
 
-		return amountReserved + totalMaxCost;
+		return {amountReserved, totalMaxCost, balanceRequired: amountReserved + totalMaxCost};
 	}
 
 	async function scheduleExecution(

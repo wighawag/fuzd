@@ -1,5 +1,11 @@
 # fuzd-client
 
+## 0.8.2
+
+### Patch Changes
+
+- break down the required balance computation
+
 ## 0.8.1
 
 ### Patch Changes
