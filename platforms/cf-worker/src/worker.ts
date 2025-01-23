@@ -81,21 +81,16 @@ const cronInternalActions: Record<string, string> = {
 };
 
 const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
-	return wrapWithLogger(
-		new Request(`https://scheduler.fuzd.dev/${cronInternalActions[event.cron] || event.cron}`),
-		env,
-		ctx,
-		async () => {
-			const action = cronInternalActions[event.cron];
-			if (action) {
-				return app.fetch(new Request(`http://localhost/internal/${action}`), env, ctx);
-			} else {
-				return new Response(`invalid CRON`, {
-					status: 500,
-				});
-			}
-		},
-	);
+	const action = cronInternalActions[event.cron];
+	return wrapWithLogger(new Request(`https://scheduler.fuzd.dev/${action || event.cron}`), env, ctx, async () => {
+		if (action) {
+			return app.fetch(new Request(`http://localhost/internal/${action}`), env, ctx);
+		} else {
+			return new Response(`invalid CRON`, {
+				status: 500,
+			});
+		}
+	});
 };
 
 export default {
