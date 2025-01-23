@@ -58,7 +58,6 @@ export function displayExecutionBroadcasted(config: Config) {
 			broadcasterUsed: formatEther(BigInt(v.transactionParametersUsed.from), 'gwei') + ' gwei',
 			nonceUsed: Number(v.transactionParametersUsed.nonce).toString(),
 			to: v.transaction.to,
-			nonce: v.transaction.nonce ? Number(v.transaction.nonce).toString() : 'undefined',
 			helpedForUpToGasPrice: v.helpedForUpToGasPrice
 				? formatEther(BigInt(v.helpedForUpToGasPrice), 'gwei') + ' gwei'
 				: 'undefined',
