@@ -579,11 +579,11 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 			try {
 				await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
-			} catch (err) {
-				logger.error(`The broadcast failed, we attempts one more time`, err);
+			} catch (err: any) {
+				logger.error(`The broadcast failed, we attempts one more time: ${err.message || err}`);
 				try {
 					await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
-				} catch (err) {
+				} catch (err: any) {
 					// console.error('ERROR', err);
 					let errorString: string;
 					try {
@@ -606,8 +606,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 					await storage.createOrUpdatePendingExecution(newExecution, {updateNonceIfNeeded: undefined});
 					logger.error(
-						`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.`,
-						err,
+						`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.: ${err.message || err}`,
 					);
 				}
 			}
