@@ -18,17 +18,17 @@ export function displayScheduledExecutionQueued<TransactionDataType>(
 			slot: v.slot,
 			type: v.type,
 			broadcasted: v.broadcasted ? (v.finalized ? 'finalized' : 'broadcasted') : 'not broadcasted',
-			lastError: v.lastError,
+			lastError: v.lastError ? v.lastError : 'no error',
 			checkinTime: new Date((v.checkinTime - timeDiff) * 1000).toUTCString(),
-			timingType: v.timing.type,
-			executionServiceParameters: v.executionServiceParameters,
-			paymentReserve: v.paymentReserve || 'undefined',
+			timing: JSON.stringify(v.timing),
+			executionServiceParameters: JSON.stringify(v.executionServiceParameters),
+			paymentReserve: v.paymentReserve ? v.paymentReserve.amount : 'undefined',
 			retries: v.retries || 0,
 			payload: showPayload ? (v.type === 'clear' ? JSON.stringify(v.executions) : v.payload) : undefined,
 			priorTransactionConfirmation: v.priorTransactionConfirmation
 				? JSON.stringify(v.priorTransactionConfirmation)
 				: 'none',
-			finalized: v.finalized,
+			// finalized: v.finalized,
 		};
 	};
 }
