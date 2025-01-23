@@ -136,6 +136,8 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 	}
 
 	async getGasFee(executionData: {maxFeePerGasAuthorized: String0x}): Promise<GasEstimate> {
+		// TODO it should be the executor handling maxFeePerGasAuthorized ?
+		// unless we want to handle multideimensional gas supported on some network (starknet) and not others (evm)
 		const maxFeePerGasAuthorized = BigInt(executionData.maxFeePerGasAuthorized);
 
 		const estimates = await getRoughGasPriceEstimate(this.rpc);
