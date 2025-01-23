@@ -279,7 +279,9 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			options?.asPaymentFor,
 		);
 		if (!result) {
-			throw new Error(`could not submit transaction, failed`);
+			const errorMessage = `could not submit transaction, failed`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 		return result;
 	}
@@ -318,7 +320,9 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		const nonceAsHex = await chainProtocol.getNonce(broadcasterAddress);
 		const currentNonceAsPerNetwork = Number(nonceAsHex);
 		if (isNaN(currentNonceAsPerNetwork)) {
-			throw new Error(`could not parse transaction count while checking for expected nonce`);
+			const errorMessage = `could not parse transaction count while checking for expected nonce`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 		const dataFromStorage = await storage.lockBroadcaster({
 			chainId: chainId,
@@ -327,8 +331,9 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		});
 
 		if (!dataFromStorage) {
-			console.error(`could not lock broadcaster`);
-			throw new Error(`could not lock broadcaster`);
+			const errorMessage = `could not lock broadcaster`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 
 		return {currentNonceAsPerNetwork, broadcasterData: dataFromStorage};
@@ -337,7 +342,9 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	function _getChainProtocol(chainId: IntegerString): ChainProtocol<any> {
 		const chainProtocol = chainProtocols[chainId];
 		if (!chainProtocol) {
-			throw new Error(`cannot get protocol for chain with id ${chainId}`);
+			const errorMessage = `cannot get protocol for chain with id ${chainId}`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 		return chainProtocol;
 	}
@@ -399,12 +406,14 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				if (noncePassedAlready) {
 					// return {error: {message: 'nonce increased but fleet already resolved', code: 5502}};
 					if (already_resolved) {
-						throw new Error(`nonce already passed but already resolved. we can skip`);
+						const errorMessage = `nonce already passed but already resolved. we can skip`;
+						logger.error(errorMessage);
+						throw new Error(errorMessage);
 						// TODO delete instead of error ?
 					} else {
-						throw new Error(
-							`nonce already passed but not already resolved. this should never happen since forceNonce should have been used here`,
-						);
+						const errorMessage = `nonce already passed but not already resolved. this should never happen since forceNonce should have been used here`;
+						logger.error(errorMessage);
+						throw new Error(errorMessage);
 					}
 				}
 			}
@@ -515,15 +524,15 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			if (!asPaymentFor) {
 				if (balance < maxCostAuthorized) {
 					const message = `not emough balance! ${balance} < ${maxCostAuthorized} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas})`;
-					console.error(message);
+					logger.error(message);
 					throw new Error(message);
 				} else if (balance < maxCostAuthorized + feesToPay) {
 					const message = `not enough balance due to fees! ${balance} < ${maxCostAuthorized + feesToPay} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas}) + ${feesToPay}`;
-					console.error(message);
+					logger.error(message);
 					throw new Error(message);
 				} else if (feesToPay > 0n && balance < maxCostAuthorized + debt + feesToPay) {
 					const message = `not enough balance due to fees and debts! ${balance} < ${maxCostAuthorized + feesToPay + debt} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas}) + ${feesToPay} + ${debt}`;
-					console.error(message);
+					logger.error(message);
 					throw new Error(message);
 				}
 			} else {
@@ -532,7 +541,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				// we enforce it here in case:
 				if (feesToPay > 0n) {
 					const message = `payment tx should have zero fees`;
-					console.error(message);
+					logger.error(message);
 					throw new Error(message);
 				}
 			}
@@ -604,8 +613,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			}
 
 			return newExecution;
-		} catch (err) {
-			console.error(`failed to execute, will remove lock in finally clause`);
+		} catch (err: any) {
+			logger.error(`failed to execute, will remove lock in finally clause: ${err.message || err}`);
 			throw err;
 		} finally {
 			await storage.unlockBroadcaster({

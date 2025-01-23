@@ -1,5 +1,8 @@
+import {logs} from 'named-logs';
 import type {EIP1193BlockTag, EIP1193ProviderWithoutEvents, EIP1193QUANTITY, EIP1193TransactionReceipt} from 'eip-1193';
 import {String0x} from 'fuzd-common';
+
+const logger = logs('fuzd-chain-protocol-ethereum-utils');
 
 export async function getTransactionStatus(
 	provider: EIP1193ProviderWithoutEvents,
@@ -22,9 +25,9 @@ export async function getTransactionStatus(
 		const receiptBlocknumber = Number(receipt.blockNumber);
 
 		if (isNaN(latestBlockNumber) || isNaN(receiptBlocknumber)) {
-			throw new Error(
-				`could not parse blocknumbers, latest: ${latestBlocknumberAshex}, receipt: ${receipt.blockNumber}`,
-			);
+			const errorMessage = `could not parse blocknumbers, latest: ${latestBlocknumberAshex}, receipt: ${receipt.blockNumber}`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 
 		const block = await provider.request({
@@ -44,7 +47,9 @@ export async function getTransactionStatus(
 		} else if (receipt.status === '0x1') {
 			failed = false;
 		} else {
-			throw new Error(`Could not get the tx status for ${receipt.transactionHash} (status: ${receipt.status})`);
+			const errorMessage = `Could not get the tx status for ${receipt.transactionHash} (status: ${receipt.status})`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 	}
 
@@ -164,7 +169,9 @@ export async function getRoughGasPriceEstimate(
 	const optionsResolved = options ? {...defaultOptions, ...options} : defaultOptions;
 
 	if (optionsResolved.rewardPercentiles.length !== 3) {
-		throw new Error(`rough gas estimate require 3 percentile, it defaults to [10,50,80]`);
+		const errorMessage = `rough gas estimate require 3 percentile, it defaults to [10,50,80]`;
+		logger.error(errorMessage);
+		throw new Error(errorMessage);
 	}
 
 	const result = await getGasPriceEstimate(provider, optionsResolved);

@@ -43,13 +43,16 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		execution: ScheduledExecution<ExecutionSubmission<TransactionDataType>>,
 	): Promise<ScheduleInfo> {
 		if (!execution.slot) {
-			console.error(execution);
-			throw new Error(`cannot proceed. missing slot`);
+			const errorMessage = `cannot proceed. missing slot`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 
 		const chainProtocol = chainProtocols[execution.chainId];
 		if (!chainProtocol) {
-			throw new Error(`cannot proceed, this scheduler is not configured to support chain with id ${execution.chainId}`);
+			const errorMessage = `cannot proceed, this scheduler is not configured to support chain with id ${execution.chainId}`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 
 		const realTimestamp = Math.floor(Date.now() / 1000);
@@ -58,7 +61,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		const checkinTime = computeInitialExecutionTimeFromSubmission(execution);
 
 		if (checkinTime < currentTime) {
-			throw new Error(`cannot proceed. the expected time to execute is already passed.`);
+			const errorMessage = `cannot proceed. the expected time to execute is already passed.`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 
 		const allowedParameters = await executor.getServiceParameters(execution.chainId);
@@ -107,9 +112,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		let executions: ExecutionSubmission<TransactionDataType>[];
 		if (scheduledExecutionQueued.type === 'time-locked') {
 			if (!config.decrypter) {
-				throw new Error(
-					`the scheduler has not been configured with a decrypter. As such it cannot support "time-locked" execution`,
-				);
+				const errorMessage = `the scheduler has not been configured with a decrypter. As such it cannot support "time-locked" execution`;
+				logger.error(errorMessage);
+				throw new Error(errorMessage);
 			}
 
 			const decryptionResult = await config.decrypter.decrypt(scheduledExecutionQueued);
@@ -174,6 +179,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			scheduledExecutionQueued.lastError = err.message || err.toString();
 
 			await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
+			logger.error(`failed to broadcast: ${scheduledExecutionQueued.lastError}`);
 			throw err;
 		}
 	}
@@ -181,7 +187,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 	function _getChainProtocol(chainId: IntegerString): ChainProtocol<any> {
 		const chainProtocol = chainProtocols[chainId];
 		if (!chainProtocol) {
-			throw new Error(`cannot get protocol for chain with id ${chainId}`);
+			const errorMessage = `cannot get protocol for chain with id ${chainId}`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 		return chainProtocol;
 	}
@@ -207,10 +215,11 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				if (timing.assumedTransaction && !execution.priorTransactionConfirmation) {
 					const txStatus = await chainProtocol.getTransactionStatus(timing.assumedTransaction);
 					if (!txStatus.success) {
+						logger.error(`could not get the assumed transaction status: ${txStatus.error.message || txStatus.error}`);
 						throw txStatus.error;
 					}
 					if (!txStatus.finalised) {
-						logger.debug(`the tx the execution depends on has not finalised and the timestamp has already passed`);
+						logger.warn(`the tx the execution depends on has not finalised and the timestamp has already passed`);
 						// TODO should we delete ?
 						// or retry later ?
 						// TODO archive in any case
@@ -218,7 +227,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						return {status: 'archived'};
 					} else {
 						if (txStatus.failed) {
-							logger.debug(`deleting the execution as the tx it depends on failed...`);
+							logger.warn(`deleting the execution as the tx it depends on failed...`);
 							// TODO archive
 							await storage.archiveExecution(execution);
 							return {status: 'archived'};
@@ -237,9 +246,11 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				if (!execution.priorTransactionConfirmation) {
 					const txStatus = await chainProtocol.getTransactionStatus(timing.startTransaction);
 					if (!txStatus.success) {
+						logger.error(`could not get the prior transaction status: ${txStatus.error.message || txStatus.error}`);
 						throw txStatus.error;
 					}
 					if (!txStatus.finalised) {
+						logger.warn(`prior tx not yet finalized, will retry later...`);
 						const newCheckinTime = computePotentialExecutionTime(execution, {
 							startTimeToCountFrom: txStatus.blockTime || currentTimestamp,
 						});
@@ -247,7 +258,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						return {status: 'willRetry', execution: executionToRetry};
 					} else {
 						if (txStatus.failed) {
-							logger.debug(`deleting the execution as the tx it depends on failed...`);
+							logger.warn(`deleting the execution as the tx it depends on failed...`);
 							// TODO archive
 							await storage.archiveExecution(execution);
 							return {status: 'archived'};
@@ -413,10 +424,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		for (const execution of executions) {
 			try {
 				await processExecution(execution, result);
-			} catch (processExecutionError) {
+			} catch (processExecutionError: any) {
 				logger.error(
-					`Processing of execution "${execution.chainId}_${execution.account}_${execution.slot}" thrown an exception`,
-					processExecutionError,
+					`Processing of execution "${execution.chainId}_${execution.account}_${execution.slot}" thrown an exception: ${processExecutionError.message || processExecutionError}`,
 				);
 
 				// TODO ?

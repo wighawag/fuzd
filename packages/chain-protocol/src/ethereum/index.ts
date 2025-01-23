@@ -52,9 +52,9 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 			const receiptBlocknumber = Number(receipt.blockNumber);
 
 			if (isNaN(latestBlockNumber) || isNaN(receiptBlocknumber)) {
-				throw new Error(
-					`could not parse blocknumbers, latest: ${latestBlocknumberAshex}, receipt: ${receipt.blockNumber}`,
-				);
+				const errorMessage = `could not parse blocknumbers, latest: ${latestBlocknumberAshex}, receipt: ${receipt.blockNumber}`;
+				logger.error(errorMessage);
+				throw new Error(errorMessage);
 			}
 
 			const block = await this.rpc.request({
@@ -74,7 +74,9 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 			} else if (receipt.status === '0x1') {
 				failed = false;
 			} else {
-				throw new Error(`Could not get the tx status for ${receipt.transactionHash} (status: ${receipt.status})`);
+				const errorMessage = `Could not get the tx status for ${receipt.transactionHash} (status: ${receipt.status})`;
+				logger.error(errorMessage);
+				throw new Error(errorMessage);
 			}
 		}
 
@@ -184,6 +186,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 	): Promise<BroadcasterSignerData> {
 		const validation = await this.validateDerivationParameters(parameters);
 		if (!validation.success) {
+			logger.error(validation.error);
 			throw new Error(validation.error);
 		}
 		const derivedAccount = account.deriveForAddress(forAddress);
@@ -200,7 +203,9 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		transactionParameters: TransactionParametersUsed,
 	): Promise<{revert: 'unknown'} | {revert: boolean; notEnoughGas: boolean}> {
 		if (!transactionData.gas) {
-			throw new Error(`invalid transaction data, no gas parameter`);
+			const errorMessage = `invalid transaction data, no gas parameter`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 		let gasRequired: bigint;
 		try {
@@ -249,7 +254,9 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		if (protocol === 'privateKey') {
 			signer = new EIP1193LocalSigner(protocolData as String0x);
 		} else {
-			throw new Error(`protocol ${protocol} not supported`);
+			const errorMessage = `protocol ${protocol} not supported`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 
 		const actualTransactionData: FullEthereumTransactionData = {
@@ -287,7 +294,9 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		if (protocol === 'privateKey') {
 			signer = new EIP1193LocalSigner(protocolData as String0x);
 		} else {
-			throw new Error(`protocol ${protocol} not supported`);
+			const errorMessage = `protocol ${protocol} not supported`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
 		}
 
 		// logger.error('already done, sending dummy transaction');
@@ -313,9 +322,9 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 				rawTx,
 				hash,
 			};
-		} catch (e) {
-			// logger.error(`FAILED TO SEND DUMMY TX`, e);
-			// TODO do something
+		} catch (e: any) {
+			const errorMessage = `failed to send void tx: ${e.message || e}`;
+			logger.error(errorMessage);
 			throw e;
 		}
 	}
@@ -353,14 +362,18 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 			});
 			const value = Number(result);
 			if (isNaN(value)) {
-				throw new Error(`could not get timestamp from contract, ${result}`);
+				const errorMessage = `could not get timestamp from contract, ${result}`;
+				logger.error(errorMessage);
+				throw new Error(errorMessage);
 			}
 			return value;
 		}
 
 		const block = await this.rpc.request({method: 'eth_getBlockByNumber', params: ['latest', false]});
 		if (!block) {
-			throw new Error(`cannot get latest block`);
+			const errorMessage = `cannot get latest block`;
+			logger.error(errorMessage);
+			throw new Error();
 		}
 		return Number(block.timestamp) + this.offset;
 	}
