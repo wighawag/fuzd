@@ -395,15 +395,15 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		const executions = await storage.getQueueTopMostExecutions({limit});
 
 		if (executions.length === 0) {
-			logger.info(`found zero executions to process`);
+			// logger.info(`found zero executions to process`);
 		} else if (executions.length === 1) {
-			logger.info(`found 1 queued execution for ${executions[0].checkinTime}`);
+			// logger.info(`found 1 queued execution for ${executions[0].checkinTime}`);
 		} else {
-			logger.info(
-				`found ${executions.length} queued execution from ${executions[0].checkinTime} to ${
-					executions[executions.length - 1].checkinTime
-				}`,
-			);
+			// logger.info(
+			// 	`found ${executions.length} queued execution from ${executions[0].checkinTime} to ${
+			// 		executions[executions.length - 1].checkinTime
+			// 	}`,
+			// );
 		}
 
 		for (const execution of executions) {
@@ -443,15 +443,15 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		const executions = await storage.getUnFinalizedBroadcastedScheduledExecutions({limit});
 
 		if (executions.length === 0) {
-			logger.info(`found zero executions to process`);
+			// logger.info(`found zero executions to process`);
 		} else if (executions.length === 1) {
-			logger.info(`found 1 queued execution for ${executions[0].checkinTime}`);
+			// logger.info(`found 1 queued execution for ${executions[0].checkinTime}`);
 		} else {
-			logger.info(
-				`found ${executions.length} queued execution from ${executions[0].checkinTime} to ${
-					executions[executions.length - 1].checkinTime
-				}`,
-			);
+			// logger.info(
+			// 	`found ${executions.length} queued execution from ${executions[0].checkinTime} to ${
+			// 		executions[executions.length - 1].checkinTime
+			// 	}`,
+			// );
 		}
 
 		for (const execution of executions) {
