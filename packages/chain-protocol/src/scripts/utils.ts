@@ -1,6 +1,6 @@
-import {EstimateGasPriceResult, RoughEstimateGasPriceResult} from '../ethereum/utils.js';
 import {formatEther} from 'viem';
 import {GasEstimate, GasPrice} from '../index.js';
+import {EstimateGasPriceResult, RoughEstimateGasPriceResult} from 'fuzd-common';
 
 export function formatRoughEstimates(roughEstimate: RoughEstimateGasPriceResult) {
 	return {

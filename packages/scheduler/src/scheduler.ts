@@ -142,6 +142,21 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		// for encrypted payload we will attempt to decrypt
 		// if it fails, we will push it accoridng to time schedule
 
+		let initialTime: number;
+		if (scheduledExecutionQueued.timing.type === 'delta-time') {
+			initialTime =
+				(scheduledExecutionQueued.priorTransactionConfirmation?.blockTime ||
+					scheduledExecutionQueued.timing.startTransaction.broadcastTime) + scheduledExecutionQueued.timing.delta;
+		} else if (scheduledExecutionQueued.timing.type === 'fixed-round') {
+			initialTime = scheduledExecutionQueued.timing.expectedTime;
+		} else if (scheduledExecutionQueued.timing.type === 'fixed-time') {
+			initialTime = scheduledExecutionQueued.timing.scheduledTime;
+		} else {
+			const errorMessage = `unknown timing type: ${(scheduledExecutionQueued.timing as any).type}`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
+		}
+
 		try {
 			const results: ExecutionResponse<TransactionDataType>[] = [];
 			for (let i = 0; i < executions.length; i++) {
@@ -156,6 +171,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						trusted: true,
 						onBehalf: scheduledExecutionQueued.onBehalf,
 						expiryTime: scheduledExecutionQueued.timing.expiry,
+						initialTime,
 					}, // The scheduler is trusted to have verified the exectuion parameters
 				);
 				results.push(executionResult);

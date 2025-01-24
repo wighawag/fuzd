@@ -67,6 +67,27 @@ export function computeDebt(chainId: IntegerString, debtInUnit: bigint): bigint 
 	return debt;
 }
 
+function computeImportanceRatio(data: {
+	timestamp: number;
+	initialTime: number;
+	expiryTime?: number;
+	bestTime?: number;
+	maxExpiry: number;
+}): number {
+	const deadline = data.bestTime || data.expiryTime || data.initialTime + data.maxExpiry;
+	const totalRange = deadline - data.initialTime;
+	if (totalRange <= 0) {
+		return 1;
+	}
+	const timePassed = data.timestamp - data.initialTime;
+
+	if (timePassed <= 0) {
+		return 0;
+	}
+
+	return timePassed / totalRange;
+}
+
 export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	config: ExecutorConfig<ChainProtocolTypes>,
 ): Executor<TransactionDataTypes<ChainProtocolTypes>> & ExecutorBackend {
@@ -165,6 +186,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			};
 			onBehalf?: String0x;
 			expiryTime?: number;
+			initialTime?: number;
 		},
 	): Promise<ExecutionResponse<TransactionDataType>> {
 		const chainProtocol = _getChainProtocol(submission.chainId);
@@ -260,13 +282,24 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			transaction: submission.transaction as TransactionDataType,
 			maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
 			isVoidTransaction: false,
-			initialTime: timestamp,
+			initialTime: options?.initialTime || timestamp,
+			bestTime: submission.bestTime,
 			expiryTime: options?.expiryTime,
 			onBehalf: options?.onBehalf,
 			finalized: false,
 		};
 
-		const {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await chainProtocol.getGasFee(submission);
+		const importanceRatio = computeImportanceRatio({
+			timestamp,
+			initialTime: pendingExecutionToStore.initialTime,
+			expiryTime: pendingExecutionToStore.expiryTime,
+			maxExpiry,
+			bestTime: pendingExecutionToStore.bestTime,
+		});
+		const {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await chainProtocol.getGasFee(
+			submission,
+			importanceRatio,
+		);
 
 		const result = await _submitTransaction(
 			broadcaster,
@@ -635,7 +668,17 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			forceVoid = true;
 		}
 
-		let {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await chainProtocol.getGasFee(pendingExecution);
+		const importanceRatio = computeImportanceRatio({
+			timestamp,
+			initialTime: pendingExecution.initialTime,
+			expiryTime: pendingExecution.expiryTime,
+			maxExpiry,
+			bestTime: pendingExecution.bestTime,
+		});
+		let {maxFeePerGas, maxPriorityFeePerGas, gasPriceEstimate} = await chainProtocol.getGasFee(
+			pendingExecution,
+			importanceRatio,
+		);
 
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGas) {
 			logger.warn(`network gas fee greater than maxFeePerGas`);
@@ -719,18 +762,13 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 							maxFeePerGas = upToGasPrice;
 							maxPriorityFeePerGas = maxFeePerGas;
 
-							// we are not doing it here, we are doing in the finalized phase where we compute again what the player was supposed to use
-							// and we consider debt only the left over, we cover the cost but don't want to give extra
-							// // ----------------------------------------------------------------------------------------------
-							// // could fail here
-							// // ----------------------------------------------------------------------------------------------
-							// // TODO atomic update of the submission
-							// pendingExecution.helpedForUpToGasPrice = `0x${upToGasPrice.toString(16)}` as String0x;
-							// await storage.createOrUpdatePendingExecution(pendingExecution, {
-							// 	updateNonceIfNeeded: undefined,
-							// 	debtOffset: valueSent,
-							// });
-							// // ----------------------------------------------------------------------------------------------
+							// ----------------------------------------------------------------------------------------------
+							// could fail here
+							// ----------------------------------------------------------------------------------------------
+							// TODO atomic update of the submission
+							pendingExecution.helpedForUpToGasPrice = `0x${upToGasPrice.toString(16)}` as String0x;
+							await storage.createOrUpdatePendingExecution(pendingExecution, {updateNonceIfNeeded: undefined});
+							// ----------------------------------------------------------------------------------------------
 						} else {
 							logger.error(`paymentAccount broadcaster balance to low! (${broadcaster.address})`);
 						}

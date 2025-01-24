@@ -1,13 +1,8 @@
 import {createCurriedJSONRPC} from 'remote-procedure-call';
 import {EthereumChainProtocol} from '../ethereum/index.js';
-import {
-	getRoughGasPriceEstimate,
-	getGasPriceEstimate,
-	EstimateGasPriceOptions,
-	getBestGasEstimate,
-} from '../ethereum/utils.js';
 import {formatEstimates, formatGasEstimate, formatGasPrice, formatRoughEstimates} from './utils.js';
 import {Methods} from 'eip-1193';
+import {EstimateGasPriceOptions, getBestGasEstimate, getGasPriceEstimate, getRoughGasPriceEstimate} from 'fuzd-common';
 
 const args = process.argv.slice(2);
 const nodeURL = process.env.ETH_NODE_URL as string;
@@ -20,9 +15,12 @@ async function main() {
 	});
 
 	console.log(`--------------------- getGasFee --------------------------------`);
-	const gasFee = await protocol.getGasFee({
-		maxFeePerGasAuthorized: '0x100',
-	});
+	const gasFee = await protocol.getGasFee(
+		{
+			maxFeePerGasAuthorized: '0x100',
+		},
+		0.5,
+	);
 	console.log(formatGasEstimate(gasFee));
 	console.log(`----------------------------------------------------------------`);
 

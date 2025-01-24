@@ -52,6 +52,7 @@ type ExecutionInDB = {
 	onBehalf: String0x | null;
 	nextCheckTime: number;
 	initialTime: number;
+	bestTime: number | null;
 	broadcastTime: number | null;
 	hash: String0x;
 	maxFeePerGasAuthorized: String0x;
@@ -109,6 +110,7 @@ function fromExecutionInDB<TransactionDataType>(inDB: ExecutionInDB): PendingExe
 		onBehalf: inDB.onBehalf || undefined,
 		serviceParameters: JSON.parse(inDB.serviceParameters),
 		initialTime: inDB.initialTime,
+		bestTime: inDB.bestTime || undefined,
 		broadcastTime: inDB.broadcastTime || undefined,
 		nextCheckTime: inDB.nextCheckTime,
 		hash: inDB.hash,
@@ -138,6 +140,7 @@ function toExecutionInDB<TransactionDataType>(obj: PendingExecutionStored<Transa
 		serviceParameters: JSON.stringify(obj.serviceParameters),
 		onBehalf: obj.onBehalf || null,
 		initialTime: obj.initialTime,
+		bestTime: obj.bestTime || null,
 		broadcastTime: obj.broadcastTime || null,
 		nextCheckTime: obj.nextCheckTime,
 		hash: obj.hash,
@@ -221,8 +224,8 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		// this is crucial
 		await this.db
 			.prepare(
-				`INSERT INTO Broadcasters (address, chainId, nextNonce, lock, debtInUnit)
-            VALUES (?1, ?2, ?3, ?4, '0')
+				`INSERT INTO Broadcasters (address, chainId, nextNonce, lock, lock_timestamp, debtInUnit)
+            VALUES (?1, ?2, ?3, ?4, UNIXEPOCH(), '0')
             ON CONFLICT(address, chainId) DO UPDATE SET
             lock = CASE
                 WHEN lock IS NULL OR (UNIXEPOCH() - lock_timestamp) > ${LOCK_EXPIRY_SECONDS} THEN ?4
@@ -241,12 +244,15 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 
 		if (!broadcaster) {
 			logger.error(`instant check: no broadcaster found`);
+			// throw new Error(`instant check: no broadcaster found`);
 			return undefined;
 		} else if (!broadcaster.lock || !broadcaster.lock_timestamp) {
 			logger.error(`instant check: no lock found`);
+			// throw new Error(`instant check: no lock found`);
 			return undefined;
 		} else if (broadcaster.lock !== randomLock) {
 			logger.error(`instant check: lock not matching: ${randomLock} (Generated) va ${broadcaster.lock} (DB)`);
+			// throw new Error(`instant check: lock not matching: ${randomLock} (Generated) va ${broadcaster.lock} (DB)`);
 			return undefined;
 		} else {
 			// console.error(`broadcaster locked: ${broadcaster.lock}`);

@@ -80,7 +80,7 @@ export interface ExecutorChainProtocol<TransactionDataType> {
 	getBalance(account: String0x): Promise<bigint>;
 	broadcastSignedTransaction(tx: any): Promise<String0x>;
 	getNonce(account: String0x): Promise<String0x>;
-	getGasFee(executionData: {maxFeePerGasAuthorized: String0x}): Promise<GasEstimate>;
+	getGasFee(executionData: {maxFeePerGasAuthorized: String0x}, importanceRatio: number): Promise<GasEstimate>;
 
 	requiredPreliminaryTransaction?(
 		chainId: IntegerString,

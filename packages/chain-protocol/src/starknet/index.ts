@@ -244,7 +244,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 		return nonceReponse.value as String0x;
 	}
 
-	async getGasFee(executionData: {maxFeePerGasAuthorized: String0x}): Promise<GasEstimate> {
+	async getGasFee(executionData: {maxFeePerGasAuthorized: String0x}, importanceRatio: number): Promise<GasEstimate> {
 		const blockResponse = await this.rpc.call('starknet_getBlockWithTxHashes')({block_id: 'latest'});
 		if (!blockResponse.success) {
 			throw new Error(`could not fetch block: ${blockResponse.error.message} (${blockResponse.error.code})`, {
@@ -252,6 +252,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			});
 		}
 
+		// TODO use importanceRatio
 		const gas_l1_price = blockResponse.value.l1_gas_price.price_in_wei;
 		// TODO
 		const gas_l1_data_price = blockResponse.value.l1_data_gas_price.price_in_wei;

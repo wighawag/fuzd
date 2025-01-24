@@ -1,5 +1,13 @@
 # fuzd-chain-protocol
 
+## 0.9.1
+
+### Patch Changes
+
+- fixes + bestTime
+- Updated dependencies
+  - fuzd-common@0.9.1
+
 ## 0.9.0
 
 ### Minor Changes

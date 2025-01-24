@@ -29,6 +29,7 @@ export type PendingExecutionStored<TransactionDataType> = {
 	transaction: TransactionDataType;
 	transactionParametersUsed: TransactionParametersUsed;
 	initialTime: number;
+	bestTime?: number;
 	broadcastTime?: number;
 	nextCheckTime: number;
 	hash: String0x;
@@ -72,6 +73,7 @@ export type ExecutionSubmission<TransactionDataType> = {
 	chainId: IntegerString;
 	transaction: TransactionDataType;
 	maxFeePerGasAuthorized: String0x; // 1000 gwei // TODO CONFIGURE per network: max worst worst case
+	bestTime?: number;
 	// TODO add payment tx
 	// cannot be verified as we don' want to track eth changes
 	// but this can help client count how much has been unspent
@@ -118,6 +120,7 @@ export type Executor<TransactionDataType> = {
 			};
 			onBehalf?: String0x;
 			expiryTime?: number;
+			initialTime?: number;
 		},
 	): Promise<ExecutionResponse<TransactionDataType>>;
 

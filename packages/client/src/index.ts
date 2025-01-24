@@ -3,10 +3,17 @@
  * @module
  */
 
+import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import type {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
 import {timelockEncrypt, HttpChainClient, roundAt, Buffer} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';
-import type {ExecutionSubmission, IntegerString, RemoteAccountInfo, String0x} from 'fuzd-common';
+import {
+	getBestGasEstimate,
+	type ExecutionSubmission,
+	type IntegerString,
+	type RemoteAccountInfo,
+	type String0x,
+} from 'fuzd-common';
 import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
 
 import {testnetClient, mainnetClient} from 'tlock-js';
@@ -90,10 +97,9 @@ export function createClient(config: ClientConfig) {
 		return _assignedRemoteAccount;
 	}
 
-	// TODO
-	// async function estimateBestGasPrice(importanceRatio: number) {
-	// 	getBestGasEstimate;
-	// }
+	async function estimateBestGasPrice(provider: EIP1193ProviderWithoutEvents, importanceRatio: number) {
+		return getBestGasEstimate(provider, importanceRatio);
+	}
 
 	function computeTotalMaxCost(params: {maxFeePerGasAuthorized: bigint; gas: bigint; value?: bigint}): bigint {
 		const txCost = params.maxFeePerGasAuthorized * params.gas;
@@ -146,6 +152,7 @@ export function createClient(config: ClientConfig) {
 			chainId: IntegerString;
 			transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
 			maxFeePerGasAuthorized: bigint;
+			bestTime?: number;
 			time: number;
 			expiry?: number;
 			paymentReserve?: {amount: bigint; broadcaster: String0x};
@@ -153,6 +160,9 @@ export function createClient(config: ClientConfig) {
 		},
 		options?: {fakeEncrypt?: boolean},
 	): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
+		if (execution.bestTime && execution.bestTime > execution.time) {
+			throw new Error(`invalid bestTime, need to be smaller than time, it used to prioritize its execution`);
+		}
 		let executionToSend: ScheduledExecution<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>>;
 		const remoteAccount = await _fetchRemoteAccount(execution.chainId);
 		if (_assignedRemoteAccount && remoteAccount.address != _assignedRemoteAccount.address) {
@@ -167,6 +177,7 @@ export function createClient(config: ClientConfig) {
 					chainId: execution.chainId,
 					maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as String0x,
 					transaction: transactionData,
+					bestTime: execution.bestTime,
 				},
 			],
 		};

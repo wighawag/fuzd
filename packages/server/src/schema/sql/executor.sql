@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     onBehalf                   text,
     nextCheckTime              integer     NOT NULL,
     initialTime                integer     NOT NULL,
+    bestTime                   integer,
     broadcastTime              integer,
     hash                       text        NOT NULL, -- tx hash
     maxFeePerGasAuthorized     text        NOT NULL,

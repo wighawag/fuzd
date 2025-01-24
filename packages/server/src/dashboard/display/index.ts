@@ -51,6 +51,7 @@ export function displayExecutionBroadcasted(config: Config) {
 			slot: v.slot,
 			nextCheckTime: new Date(v.nextCheckTime * 1000).toUTCString(),
 			initialTime: new Date(v.initialTime * 1000).toUTCString(),
+			bestTime: v.bestTime ? new Date(v.bestTime * 1000).toUTCString() : 'no best time',
 			broadcastTime: v.broadcastTime ? new Date(v.broadcastTime * 1000).toUTCString() : 'not broadcasted yet',
 			hash: v.hash,
 			maxFeePerGasUsed: formatEther(BigInt(v.transactionParametersUsed.maxFeePerGas), 'gwei') + ' gwei',

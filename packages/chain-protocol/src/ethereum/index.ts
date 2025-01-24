@@ -10,8 +10,15 @@ import {
 import type {EIP1193Transaction, EIP1193TransactionReceipt, Methods} from 'eip-1193';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC} from 'remote-procedure-call';
-import {getRoughGasPriceEstimate} from './utils.js';
-import {DerivationParameters, fromHex, IntegerString, String0x, toHex, TransactionParametersUsed} from 'fuzd-common';
+import {
+	DerivationParameters,
+	fromHex,
+	getBestGasEstimate,
+	IntegerString,
+	String0x,
+	toHex,
+	TransactionParametersUsed,
+} from 'fuzd-common';
 import type {FullEthereumTransactionData, EthereumTransactionData} from './types.js';
 import type {ETHAccount} from 'remote-account';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
@@ -137,13 +144,13 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		return nonceAsHex;
 	}
 
-	async getGasFee(executionData: {maxFeePerGasAuthorized: String0x}): Promise<GasEstimate> {
+	async getGasFee(executionData: {maxFeePerGasAuthorized: String0x}, importanceRatio: number): Promise<GasEstimate> {
 		// TODO it should be the executor handling maxFeePerGasAuthorized ?
 		// unless we want to handle multideimensional gas supported on some network (starknet) and not others (evm)
 		const maxFeePerGasAuthorized = BigInt(executionData.maxFeePerGasAuthorized);
 
-		const estimates = await getRoughGasPriceEstimate(this.rpc);
-		const gasPriceEstimate = estimates.average;
+		// TODO
+		const gasPriceEstimate = await getBestGasEstimate(this.rpc, importanceRatio);
 		let maxFeePerGas = gasPriceEstimate.maxFeePerGas;
 		let maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGasAuthorized) {

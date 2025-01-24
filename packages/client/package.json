@@ -1,6 +1,6 @@
 {
   "name": "fuzd-client",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "default client for fuzd using tlock-js",
   "license": "MIT",
   "publishConfig": {
@@ -35,6 +35,7 @@
   "devDependencies": {
     "@types/node": "^22.10.2",
     "as-soon": "^0.0.11",
+    "eip-1193": "^0.6.1",
     "prettier": "^3.4.2",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"
