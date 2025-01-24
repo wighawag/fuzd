@@ -753,6 +753,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 										batchIndex: pendingExecution.batchIndex,
 										upToGasPrice: upToGasPrice,
 									},
+									initialTime: timestamp,
+									expiryTime: timestamp + 3 * 60, // 3minutes
 								},
 							);
 							// TODO
@@ -861,16 +863,13 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 					pendingExecution.maxFeePerGasAuthorized,
 				);
 
-				const costPaid = actualCost > maxCostAuthorized ? actualCost : maxCostAuthorized;
-
 				// now from that we compute the amount given in excess
-				const excessGiven = costConsideringUptoGasPriceHelpProvided - costPaid;
+				const excessGiven = costConsideringUptoGasPriceHelpProvided - actualCost;
 
 				logger.error(
 					`actualCost: ${formatInGwei(actualCost)},
 excessGiven: ${formatInGwei(excessGiven)},
 maxCostAuthorized: ${formatInGwei(maxCostAuthorized)},
-costPaid: ${formatInGwei(costPaid)},
 costConsideringUptoGasPriceHelpProvided: ${formatInGwei(costConsideringUptoGasPriceHelpProvided)},
 helpedUpToGasPrice:  ${formatInGwei(helpedUpToGasPrice)}
 debtOffset: ${formatInGwei(debtOffset)}
