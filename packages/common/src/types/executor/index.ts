@@ -40,6 +40,7 @@ export type PendingExecutionStored<TransactionDataType> = {
 	retries?: number;
 	lastError?: string;
 	expiryTime?: number;
+	debtInUnitsAssigned: string;
 };
 
 // export const t: UpdateableParameters<ExecutionServiceParameters> = {

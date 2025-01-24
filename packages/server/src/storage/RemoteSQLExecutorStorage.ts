@@ -66,6 +66,7 @@ type ExecutionInDB = {
 	nonce: String0x;
 	transactionParametersUsed: string;
 	transactionData: string;
+	debtInUnitsAssigned: string;
 };
 
 type ChainConfigurationsInDB = {
@@ -128,6 +129,7 @@ function fromExecutionInDB<TransactionDataType>(inDB: ExecutionInDB): PendingExe
 			maxFeePerGas: extraTransactionParametersUsed.maxFeePerGas,
 			maxPriorityFeePerGas: extraTransactionParametersUsed.maxPriorityFeePerGas,
 		},
+		debtInUnitsAssigned: inDB.debtInUnitsAssigned,
 	};
 }
 
@@ -155,6 +157,7 @@ function toExecutionInDB<TransactionDataType>(obj: PendingExecutionStored<Transa
 		transactionParametersUsed: JSON.stringify(obj.transactionParametersUsed),
 		transactionData: JSON.stringify(obj.transaction),
 		finalized: obj.finalized ? 1 : 0,
+		debtInUnitsAssigned: obj.debtInUnitsAssigned,
 	};
 }
 
@@ -292,8 +295,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	): Promise<PendingExecutionStored<TransactionDataType>> {
 		const inDB = toExecutionInDB(executionToStore);
 		const {values, columns, bindings, overwrites} = toValues(inDB);
-		const sqlExecutionInsertionStatement = `INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot, batchIndex) DO UPDATE SET ${overwrites};`;
-		logger.debug(sqlExecutionInsertionStatement);
+		const sqlExecutionInsertionStatement = `INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot, batchIndex) DO UPDATE SET ${overwrites} WHERE (finalized = FALSE);`;
 		const executionInsertionStatement = this.db.prepare(sqlExecutionInsertionStatement);
 
 		// TODO use number of string ?
@@ -334,9 +336,11 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 				batchOfTransaction.push(updateNonceStatement.bind(nextNonce, address, chainId));
 			}
 			if (debtOffset && debtOffset != 0n) {
+				// TODO Max is used here to ensure we never go negative debts
+				// but this should not be possible in the first place
 				const sqlupdateDebt = `UPDATE Broadcasters 
 				SET 
-					debtInUnit = debtInUnit + ?1
+					debtInUnit = MAX(0, debtInUnit + ?1)
 				WHERE 
 					address = ?2 AND chainId = ?3`;
 

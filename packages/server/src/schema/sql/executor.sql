@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     hash                       text        NOT NULL, -- tx hash
     maxFeePerGasAuthorized     text        NOT NULL,
     helpedForUpToGasPrice      text,
+    debtInUnitsAssigned        text        NOT NULL,
     isVoidTransaction          integer     NOT NULL,
     retries                    integer, 
     lastError                  text,

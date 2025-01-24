@@ -67,6 +67,19 @@ export function computeDebt(chainId: IntegerString, debtInUnit: bigint): bigint 
 	return debt;
 }
 
+export function computeDebtInUnits(chainId: IntegerString, debt: bigint): bigint {
+	let debtUnit = 0n;
+	if (debt > 0n) {
+		const unit = networks[chainId]?.debtUnit;
+		if (unit && unit > 0n) {
+			debtUnit = debt / unit;
+		} else {
+			throw new Error(`debtUnit not configured for network with chainid = ${chainId}. Should not happen`);
+		}
+	}
+	return debtUnit;
+}
+
 function computeImportanceRatio(data: {
 	timestamp: number;
 	initialTime: number;
@@ -287,6 +300,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			expiryTime: options?.expiryTime,
 			onBehalf: options?.onBehalf,
 			finalized: false,
+			debtInUnitsAssigned: '0', // Will be assigned
 		};
 
 		const importanceRatio = computeImportanceRatio({
@@ -597,6 +611,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				retries,
 				isVoidTransaction,
 				lastError,
+				debtInUnitsAssigned: debtDueInUnits.toString(),
 			};
 			await storage.createOrUpdatePendingExecution(
 				newExecution,
@@ -833,32 +848,14 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			// the cost of the transaction
 			const actualCost = txStatus.cost;
 
-			// we compute the maxCost authorized by the account
-			const maxCostAuthorized = await chainProtocol.computeMaxCostAuthorized(
-				pendingExecution.chainId,
-				pendingExecution.transaction,
-				pendingExecution.maxFeePerGasAuthorized,
-			);
+			const debtInUnitsAssigned = BigInt(pendingExecution.debtInUnitsAssigned);
+			const debtAssigned = computeDebt(pendingExecution.chainId, debtInUnitsAssigned);
 
-			// from that we compute the debt recorded when sending
-			// this works because we use the same computation then
-			const {debtDueInUnits: previousDebtsRecorded} = computeFees(
-				pendingExecution.chainId,
-				pendingExecution.serviceParameters,
-				maxCostAuthorized,
-			);
+			let debtOffsetInUnits = 0n;
 
-			let debtOffset = 0n;
-			// we only consider debt refund if the actual cost is less than the maxCostAuthorized
-			// otherwise we would reduce the debt without bound
-			// and the scenario where actual cost is greater than maxAuthorized is when the user has been helped by paymentAccount
-			if (actualCost < maxCostAuthorized) {
-				const {debtDueInUnits} = computeFees(
-					pendingExecution.chainId,
-					pendingExecution.serviceParameters,
-					txStatus.cost,
-				);
-				debtOffset = debtDueInUnits - previousDebtsRecorded;
+			const {debtDueInUnits} = computeFees(pendingExecution.chainId, pendingExecution.serviceParameters, txStatus.cost);
+			if (debtDueInUnits < debtAssigned) {
+				debtOffsetInUnits = debtDueInUnits - debtAssigned;
 			}
 
 			// now we get the help given in term of gasPrice ceiling the paymentAccount has given
@@ -867,22 +864,33 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				: 0n;
 
 			// we compute the total cost of this including the cost with the help provided
-			const costConsideringUptOGasPriceHelpProvided = await chainProtocol.computeMaxCostAuthorized(
+			const costConsideringUptoGasPriceHelpProvided = await chainProtocol.computeMaxCostAuthorized(
 				pendingExecution.chainId,
 				pendingExecution.transaction,
 				`0x${helpedUpToGasPrice.toString(16)}` as String0x,
 			);
 
+			// we compute the maxCost authorized by the account
+			const maxCostAuthorized = await chainProtocol.computeMaxCostAuthorized(
+				pendingExecution.chainId,
+				pendingExecution.transaction,
+				pendingExecution.maxFeePerGasAuthorized,
+			);
+
 			const costPaid = actualCost > maxCostAuthorized ? actualCost : maxCostAuthorized;
 
 			// now from that we compute the amount given in excess
-			const excessGiven = costConsideringUptOGasPriceHelpProvided - costPaid;
+			const excessGiven = costConsideringUptoGasPriceHelpProvided - costPaid;
 
-			debtOffset += excessGiven;
+			if (excessGiven >= 0) {
+				debtOffsetInUnits += computeDebtInUnits(pendingExecution.chainId, excessGiven);
+			} else {
+				logger.error(`excess given is negative`);
+			}
 
 			await storage.createOrUpdatePendingExecution(pendingExecution, {
 				updateNonceIfNeeded: undefined,
-				debtOffset,
+				debtOffset: debtOffsetInUnits,
 			});
 		} else if (!txStatus.pending) {
 			await _resubmitIfNeeded(pendingExecution);
