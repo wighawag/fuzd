@@ -1,5 +1,17 @@
 # fuzd-server
 
+## 0.9.4
+
+### Patch Changes
+
+- use debt_18,debt_0
+- Updated dependencies
+  - fuzd-executor@0.9.4
+  - fuzd-common@0.9.3
+  - fuzd-chain-protocol@0.9.4
+  - fuzd-scheduler@0.9.4
+  - fuzd-tlock-decrypter@0.9.4
+
 ## 0.9.3
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "fuzd-chain-protocol",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "protocol used by fuzd to interact with a chain",
   "license": "MIT",
   "publishConfig": {

@@ -1,5 +1,15 @@
 # fuzd-client
 
+## 0.9.4
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-executor@0.9.4
+  - fuzd-common@0.9.3
+  - fuzd-chain-protocol@0.9.4
+  - fuzd-scheduler@0.9.4
+
 ## 0.9.3
 
 ### Patch Changes

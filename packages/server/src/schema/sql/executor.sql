@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     hash                       text        NOT NULL, -- tx hash
     maxFeePerGasAuthorized     text        NOT NULL,
     helpedForUpToGasPrice      text,
-    debtInUnitsAssigned        text        NOT NULL,
+    debtAssigned               text        NOT NULL,
     isVoidTransaction          integer     NOT NULL,
     retries                    integer, 
     lastError                  text,
@@ -49,7 +49,8 @@ CREATE TABLE IF NOT EXISTS Broadcasters (
     lock            text,
     lock_timestamp  integer,
 
-    debtInUnit      text       NOT NULL,
+    debt_18         text       NOT NULL,
+    debt_0          text       NOT NULL,
 
     PRIMARY KEY (address, chainId)
 );

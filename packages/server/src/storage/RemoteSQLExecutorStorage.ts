@@ -16,7 +16,8 @@ type BroadcasterInDB = {
 	lock: string | null;
 	lock_timestamp: number | null;
 
-	debtInUnit: string;
+	debt_18: string;
+	debt_0: string;
 };
 
 function fromBroadcasterInDB(inDB: BroadcasterInDB): BroadcasterData {
@@ -27,7 +28,7 @@ function fromBroadcasterInDB(inDB: BroadcasterInDB): BroadcasterData {
 		lock: inDB.lock,
 		lock_timestamp: inDB.lock_timestamp,
 
-		debtInUnit: BigInt(inDB.debtInUnit),
+		debt: BigInt(inDB.debt_18) * 1000000000000000000n + BigInt(inDB.debt_0),
 	};
 }
 
@@ -39,7 +40,8 @@ function toBroadcasterInDB(obj: BroadcasterData): BroadcasterInDB {
 		lock: obj.lock,
 		lock_timestamp: obj.lock_timestamp,
 
-		debtInUnit: obj.debtInUnit.toString(),
+		debt_18: (obj.debt / 1000000000000000000n).toString(),
+		debt_0: (obj.debt % 1000000000000000000n).toString(),
 	};
 }
 
@@ -66,7 +68,7 @@ type ExecutionInDB = {
 	nonce: String0x;
 	transactionParametersUsed: string;
 	transactionData: string;
-	debtInUnitsAssigned: string;
+	debtAssigned: string;
 };
 
 type ChainConfigurationsInDB = {
@@ -129,7 +131,7 @@ function fromExecutionInDB<TransactionDataType>(inDB: ExecutionInDB): PendingExe
 			maxFeePerGas: extraTransactionParametersUsed.maxFeePerGas,
 			maxPriorityFeePerGas: extraTransactionParametersUsed.maxPriorityFeePerGas,
 		},
-		debtInUnitsAssigned: inDB.debtInUnitsAssigned,
+		debtAssigned: inDB.debtAssigned,
 	};
 }
 
@@ -157,7 +159,7 @@ function toExecutionInDB<TransactionDataType>(obj: PendingExecutionStored<Transa
 		transactionParametersUsed: JSON.stringify(obj.transactionParametersUsed),
 		transactionData: JSON.stringify(obj.transaction),
 		finalized: obj.finalized ? 1 : 0,
-		debtInUnitsAssigned: obj.debtInUnitsAssigned,
+		debtAssigned: obj.debtAssigned,
 	};
 }
 
@@ -227,8 +229,8 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		// this is crucial
 		await this.db
 			.prepare(
-				`INSERT INTO Broadcasters (address, chainId, nextNonce, lock, lock_timestamp, debtInUnit)
-            VALUES (?1, ?2, ?3, ?4, UNIXEPOCH(), '0')
+				`INSERT INTO Broadcasters (address, chainId, nextNonce, lock, lock_timestamp, debt_18, debt_0)
+            VALUES (?1, ?2, ?3, ?4, UNIXEPOCH(), '0', '0')
             ON CONFLICT(address, chainId) DO UPDATE SET
             lock = CASE
                 WHEN lock IS NULL OR (UNIXEPOCH() - lock_timestamp) > ${LOCK_EXPIRY_SECONDS} THEN ?4
@@ -337,16 +339,18 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 				batchOfTransaction.push(updateNonceStatement.bind(nextNonce, address, chainId));
 			}
 			if (debtOffset && debtOffset != 0n) {
+				const debt_18_offset = debtOffset / 1000000000000000000n;
+				const debt_0_offset = debtOffset % 1000000000000000000n;
 				// TODO Max is used here to ensure we never go negative debts
 				// but this should not be possible in the first place
 				const sqlupdateDebt = `UPDATE Broadcasters 
 				SET 
-					debtInUnit = MAX(0, debtInUnit + ?1)
+					debt_18 = MAX(0, debt_18 + ?1),debt_0 = MAX(0, debt_0 + ?2)
 				WHERE 
-					address = ?2 AND chainId = ?3`;
+					address = ?3 AND chainId = ?4`;
 
 				const updateDebt = this.db.prepare(sqlupdateDebt);
-				batchOfTransaction.push(updateDebt.bind(debtOffset.toString(), address, chainId));
+				batchOfTransaction.push(updateDebt.bind(debt_18_offset.toString(), debt_0_offset.toString(), address, chainId));
 			}
 			batchOfTransaction.push(executionInsertionStatement.bind(...values));
 

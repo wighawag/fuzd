@@ -1,5 +1,14 @@
 # fuzd-executor
 
+## 0.9.4
+
+### Patch Changes
+
+- use debt_18,debt_0
+- Updated dependencies
+  - fuzd-common@0.9.3
+  - fuzd-chain-protocol@0.9.4
+
 ## 0.9.3
 
 ### Patch Changes

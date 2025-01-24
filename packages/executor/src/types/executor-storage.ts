@@ -7,7 +7,7 @@ export type BroadcasterData = {
 	lock: string | null;
 	lock_timestamp: number | null;
 
-	debtInUnit: bigint;
+	debt: bigint;
 };
 
 export type BroadcasterDataWithLock = BroadcasterData & {lock: string; lock_timestamp: number};
