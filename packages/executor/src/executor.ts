@@ -774,6 +774,10 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 									},
 								},
 							);
+							// TODO
+							// right now the broadcast can fail with low nonce
+							// and in that case, the execution will be deleted
+							// TODO throw on low nonce // see submiTtransaction
 							maxFeePerGas = upToGasPrice;
 							maxPriorityFeePerGas = maxFeePerGas;
 						} else {
