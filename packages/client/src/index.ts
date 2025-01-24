@@ -160,7 +160,7 @@ export function createClient(config: ClientConfig) {
 		},
 		options?: {fakeEncrypt?: boolean},
 	): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
-		if (execution.bestTime && execution.bestTime < execution.tine) {
+		if (execution.bestTime && execution.bestTime < execution.time) {
 			throw new Error(
 				`invalid bestTime, need to be greater than time, else set it to time itself for highest priority`,
 			);
