@@ -102,6 +102,7 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 			});
 			const transactionCountNumber = Number(transactionCount);
 			if (transactionCountNumber > Number(transaction.nonce)) {
+				finalised = true;
 				status = 'replaced';
 			} else {
 				status = 'unknown';
