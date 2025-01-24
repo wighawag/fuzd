@@ -346,6 +346,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 			batchOfTransaction.push(executionInsertionStatement.bind(...values));
 
 			if (asPaymentFor) {
+				logger.warn(`batching helpedForUpToGasPrice: ${asPaymentFor.upToGasPrice}...`);
 				const asPaymentForStatement = this.db.prepare(
 					`UPDATE BroadcastedExecutions SET helpedForUpToGasPrice = ?1 WHERE chainId = ?2 AND account = ?3 AND slot = ?4 AND batchIndex = ?5;`,
 				);
@@ -363,7 +364,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 
 			await this.db.batch(batchOfTransaction);
 		} catch (err) {
-			console.error(`Failed to update, reset lock...`, err);
+			logger.error(`Failed to update, reset lock...`, err);
 			await this.unlockBroadcaster({address, chainId});
 		}
 

@@ -149,12 +149,12 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 			}
 		}
 
-		let failed: boolean | undefined;
+		let status: 'failed' | 'success' | undefined; // TODO: | 'replaced' | 'unknown' | undefined;
 		if (receipt) {
 			if (receipt.execution_status === 'REVERTED') {
-				failed = true;
+				status = 'failed';
 			} else if (receipt.execution_status === 'SUCCEEDED') {
-				failed = false;
+				status = 'success';
 			} else {
 				throw new Error(
 					`Could not get the tx status for ${(receipt as any).transaction_hash} (status: ${(receipt as any).execution_status})`,
@@ -167,7 +167,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 				success: true,
 				finalised: true,
 				blockTime: blockTime as number,
-				failed: failed as boolean,
+				status: status!,
 				cost: BigInt(receipt.actual_fee.amount), // TODO unit
 			};
 		} else {
@@ -175,7 +175,7 @@ export class StarknetChainProtocol implements ChainProtocol<StarknetTransactionD
 				success: true,
 				finalised: false,
 				blockTime,
-				failed,
+				status,
 				pending: receipt ? true : false,
 			};
 		}

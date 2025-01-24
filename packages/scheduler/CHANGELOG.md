@@ -1,5 +1,13 @@
 # fuzd-scheduler
 
+## 0.9.2
+
+### Patch Changes
+
+- replaced tx status
+- Updated dependencies
+  - fuzd-chain-protocol@0.9.2
+
 ## 0.9.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # fuzd-chain-protocol
 
+## 0.9.2
+
+### Patch Changes
+
+- replaced tx status
+
 ## 0.9.1
 
 ### Patch Changes

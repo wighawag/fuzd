@@ -11,14 +11,14 @@ export type TransactionStatus =
 			success: true;
 			finalised: true;
 			blockTime: number;
-			failed: boolean;
+			status: 'failed' | 'success' | 'replaced' | 'unknown';
 			cost: bigint;
 	  }
 	| {
 			success: true;
 			finalised: false;
 			blockTime?: number;
-			failed?: boolean;
+			status?: 'failed' | 'success' | 'unknown';
 			pending: boolean;
 	  }
 	| {
@@ -27,6 +27,7 @@ export type TransactionStatus =
 	  };
 
 export type Transaction = {
+	from: String0x;
 	hash: String0x;
 	nonce: String0x;
 };

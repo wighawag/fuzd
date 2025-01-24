@@ -1,5 +1,16 @@
 # fuzd-server
 
+## 0.9.2
+
+### Patch Changes
+
+- replaced tx status
+- Updated dependencies
+  - fuzd-chain-protocol@0.9.2
+  - fuzd-scheduler@0.9.2
+  - fuzd-executor@0.9.2
+  - fuzd-tlock-decrypter@0.9.2
+
 ## 0.9.1
 
 ### Patch Changes

@@ -613,7 +613,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			try {
 				await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
 			} catch (err: any) {
-				logger.error(`The broadcast failed, we attempts one more time: ${err.message || err}`);
+				logger.error(`The broadcast (${newExecution.slot}) failed, we attempts one more time: ${err.message || err}`);
 				try {
 					await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
 				} catch (err: any) {
@@ -639,7 +639,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 					await storage.createOrUpdatePendingExecution(newExecution, {updateNonceIfNeeded: undefined});
 					logger.error(
-						`The broadcast failed again but we ignore it as we are going to handle it when processing recorded transactions.: ${err.message || err}`,
+						`The broadcast (${newExecution.slot}) failed again but we ignore it as we are going to handle it when processing recorded transactions.: ${err.message || err}`,
 					);
 				}
 			}
@@ -724,7 +724,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 						const broadcasterBalance = await chainProtocol.getBalance(broadcaster.address);
 						const {transaction, cost, valueSent} = chainProtocol.generatePaymentTransaction(
 							pendingExecution.transaction,
-							gasPriceEstimate.maxFeePerGas,
+							gasPriceEstimate.maxFeePerGas, // todo should use maxFeePerGasAuthorized below : 0x38D7EA4C68000
 							pendingExecution.transactionParametersUsed.from,
 							diffToCover,
 						);
@@ -755,20 +755,12 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 										account: pendingExecution.account,
 										slot: pendingExecution.slot,
 										batchIndex: pendingExecution.batchIndex,
-										upToGasPrice: gasPriceEstimate.maxFeePerGas,
+										upToGasPrice: upToGasPrice,
 									},
 								},
 							);
 							maxFeePerGas = upToGasPrice;
 							maxPriorityFeePerGas = maxFeePerGas;
-
-							// ----------------------------------------------------------------------------------------------
-							// could fail here
-							// ----------------------------------------------------------------------------------------------
-							// TODO atomic update of the submission
-							pendingExecution.helpedForUpToGasPrice = `0x${upToGasPrice.toString(16)}` as String0x;
-							await storage.createOrUpdatePendingExecution(pendingExecution, {updateNonceIfNeeded: undefined});
-							// ----------------------------------------------------------------------------------------------
 						} else {
 							logger.error(`paymentAccount broadcaster balance to low! (${broadcaster.address})`);
 						}
@@ -818,6 +810,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		const chainProtocol = _getChainProtocol(pendingExecution.chainId);
 
 		const txStatus = await chainProtocol.getTransactionStatus({
+			from: pendingExecution.transactionParametersUsed.from,
 			hash: pendingExecution.hash,
 			nonce: pendingExecution.transactionParametersUsed.nonce,
 		});
@@ -825,8 +818,14 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			throw txStatus.error;
 		}
 		if (txStatus.finalised) {
-			if (txStatus.failed) {
+			if (txStatus.status === 'failed') {
 				logger.error(`transaction failed and finalized: ${pendingExecution.hash}`);
+			}
+
+			if (txStatus.status === 'replaced') {
+				logger.error(
+					`transaction replaced and finalized: ${pendingExecution.hash}, from:${pendingExecution.transactionParametersUsed.from}, nonce:${pendingExecution.transactionParametersUsed.nonce}`,
+				);
 			}
 
 			pendingExecution.finalized = true;

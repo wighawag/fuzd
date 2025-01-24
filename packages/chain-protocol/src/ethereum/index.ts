@@ -74,33 +74,64 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 			}
 		}
 
-		let failed: boolean | undefined;
+		let status: 'failed' | 'success' | 'replaced' | 'unknown' | undefined;
+
 		if (receipt) {
 			if (receipt.status === '0x0') {
-				failed = true;
+				status = 'failed';
 			} else if (receipt.status === '0x1') {
-				failed = false;
+				status = 'success';
 			} else {
 				const errorMessage = `Could not get the tx status for ${receipt.transactionHash} (status: ${receipt.status})`;
 				logger.error(errorMessage);
 				throw new Error(errorMessage);
 			}
+		} else {
+			const latestBlocknumberAshex = await this.rpc.request({method: 'eth_blockNumber'});
+			const latestBlockNumber = Number(latestBlocknumberAshex);
+
+			if (isNaN(latestBlockNumber)) {
+				const errorMessage = `could not parse blocknumbers, latest: ${latestBlocknumberAshex}`;
+				logger.error(errorMessage);
+				throw new Error(errorMessage);
+			}
+
+			const transactionCount = await this.rpc.request({
+				method: 'eth_getTransactionCount',
+				params: [transaction.from, `0x${(latestBlockNumber - this.config.expectedFinality).toString(16)}`],
+			});
+			const transactionCountNumber = Number(transactionCount);
+			if (transactionCountNumber > Number(transaction.nonce)) {
+				status = 'replaced';
+			} else {
+				status = 'unknown';
+			}
 		}
 
 		if (finalised && receipt) {
-			return {
-				success: true,
-				finalised: true,
-				blockTime: blockTime as number,
-				failed: failed as boolean,
-				cost: BigInt(receipt.gasUsed) * BigInt(receipt.effectiveGasPrice),
-			};
+			if (status === 'replaced') {
+				return {
+					success: true,
+					finalised: true,
+					blockTime: blockTime as number, // TODO remove
+					status: status!,
+					cost: 0n,
+				};
+			} else {
+				return {
+					success: true,
+					finalised: true,
+					blockTime: blockTime as number,
+					status: status!,
+					cost: BigInt(receipt.gasUsed) * BigInt(receipt.effectiveGasPrice),
+				};
+			}
 		} else {
 			return {
 				success: true,
 				finalised: false,
 				blockTime,
-				failed,
+				status: status as any,
 				pending: receipt ? true : false,
 			};
 		}

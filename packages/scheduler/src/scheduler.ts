@@ -242,8 +242,10 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						await storage.archiveExecution(execution);
 						return {status: 'archived'};
 					} else {
-						if (txStatus.failed) {
-							logger.warn(`deleting the execution as the tx it depends on failed...`);
+						if (txStatus.status == 'failed' || txStatus.status == 'replaced') {
+							logger.warn(
+								`deleting the execution as the tx it depends on  ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
+							);
 							// TODO archive
 							await storage.archiveExecution(execution);
 							return {status: 'archived'};
@@ -273,8 +275,10 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						const executionToRetry = await retryLater(execution, newCheckinTime);
 						return {status: 'willRetry', execution: executionToRetry};
 					} else {
-						if (txStatus.failed) {
-							logger.warn(`deleting the execution as the tx it depends on failed...`);
+						if (txStatus.status == 'failed' || txStatus.status == 'replaced') {
+							logger.warn(
+								`deleting the execution as the tx it depends on ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
+							);
 							// TODO archive
 							await storage.archiveExecution(execution);
 							return {status: 'archived'};

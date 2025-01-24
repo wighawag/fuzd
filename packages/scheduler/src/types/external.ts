@@ -4,6 +4,7 @@ import {ExecutionSubmission, String0x, ExecutionServiceParameters, IntegerString
 // PriorTransactionInfo
 // ------------------------------------------------------------------------------------------------
 export type PriorTransactionInfo = {
+	from: String0x;
 	hash: String0x;
 	nonce: String0x;
 	broadcastTime: number;
