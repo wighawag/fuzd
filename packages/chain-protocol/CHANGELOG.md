@@ -1,5 +1,13 @@
 # fuzd-chain-protocol
 
+## 0.9.3
+
+### Patch Changes
+
+- 5279cf2: fix replaced detection
+- Updated dependencies [1e8f8b0]
+  - fuzd-common@0.9.2
+
 ## 0.9.2
 
 ### Patch Changes

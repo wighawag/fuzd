@@ -1,5 +1,18 @@
 # fuzd-server
 
+## 0.9.3
+
+### Patch Changes
+
+- 1e8f8b0: assign debt on execution creation + fixes + prevent update on "finalized"
+- Updated dependencies [1e8f8b0]
+- Updated dependencies [5279cf2]
+  - fuzd-executor@0.9.3
+  - fuzd-common@0.9.2
+  - fuzd-chain-protocol@0.9.3
+  - fuzd-scheduler@0.9.3
+  - fuzd-tlock-decrypter@0.9.3
+
 ## 0.9.2
 
 ### Patch Changes

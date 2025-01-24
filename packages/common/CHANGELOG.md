@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.9.2
+
+### Patch Changes
+
+- 1e8f8b0: assign debt on execution creation + fixes + prevent update on "finalized"
+
 ## 0.9.1
 
 ### Patch Changes
