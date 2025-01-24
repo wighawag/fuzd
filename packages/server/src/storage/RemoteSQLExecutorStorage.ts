@@ -350,7 +350,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 			batchOfTransaction.push(executionInsertionStatement.bind(...values));
 
 			if (asPaymentFor) {
-				logger.warn(`batching helpedForUpToGasPrice: ${asPaymentFor.upToGasPrice}...`);
+				logger.warn(`batching helpedForUpToGasPrice: ${asPaymentFor.upToGasPrice.toString()}...`);
 				const asPaymentForStatement = this.db.prepare(
 					`UPDATE BroadcastedExecutions SET helpedForUpToGasPrice = ?1 WHERE chainId = ?2 AND account = ?3 AND slot = ?4 AND batchIndex = ?5;`,
 				);
