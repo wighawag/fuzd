@@ -294,7 +294,8 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		},
 	): Promise<PendingExecutionStored<TransactionDataType>> {
 		const inDB = toExecutionInDB(executionToStore);
-		const {values, columns, bindings, overwrites} = toValues(inDB);
+		const {helpedForUpToGasPrice, ...valuesToConsider} = inDB;
+		const {values, columns, bindings, overwrites} = toValues(valuesToConsider);
 		const sqlExecutionInsertionStatement = `INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot, batchIndex) DO UPDATE SET ${overwrites} WHERE (finalized = FALSE);`;
 		const executionInsertionStatement = this.db.prepare(sqlExecutionInsertionStatement);
 
@@ -351,7 +352,9 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 
 			if (asPaymentFor) {
 				const helpedForUpToGasPrice = asPaymentFor.upToGasPrice.toString();
-				logger.warn(`batching helpedForUpToGasPrice: ${helpedForUpToGasPrice}...`);
+				logger.warn(
+					`batching helpedForUpToGasPrice: ${helpedForUpToGasPrice} for ${asPaymentFor.chainId},${asPaymentFor.account},${asPaymentFor.slot},${asPaymentFor.batchIndex},...`,
+				);
 				const asPaymentForStatement = this.db.prepare(
 					`UPDATE BroadcastedExecutions SET helpedForUpToGasPrice = ?1 WHERE chainId = ?2 AND account = ?3 AND slot = ?4 AND batchIndex = ?5;`,
 				);
@@ -368,6 +371,21 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 			}
 
 			await this.db.batch(batchOfTransaction);
+
+			// TODO remove
+			if (asPaymentFor) {
+				const statement = this.db.prepare(
+					`SELECT * FROM BroadcastedExecutions WHERE chainId = ?1 AND account = ?2 AND slot = ?3 AND batchIndex = ?4;`,
+				);
+				const {results} = await statement
+					.bind(asPaymentFor.chainId, asPaymentFor.account, asPaymentFor.slot, asPaymentFor.batchIndex)
+					.all<ExecutionInDB>();
+				if (results.length === 0) {
+					logger.error(`did not updated any`);
+				} else {
+					logger.error(`updated: ${results[0].helpedForUpToGasPrice}`);
+				}
+			}
 		} catch (err: any) {
 			logger.error(`Failed to update, reset lock...: ${err.message || err}`);
 			await this.unlockBroadcaster({address, chainId});

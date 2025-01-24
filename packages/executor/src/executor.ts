@@ -365,8 +365,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			for (const pendingExecution of pendingExecutions) {
 				try {
 					await __processPendingTransaction(pendingExecution);
-				} catch (err) {
-					logger.error(`failed to process pending tx`, pendingExecution, err);
+				} catch (err: any) {
+					logger.error(`failed to process pending tx: ${err.message || err}`);
 				}
 			}
 		}
@@ -745,7 +745,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				}
 
 				if (diffToCover > 0n) {
-					logger.warn(`we cover for ${diffToCover}...`);
+					logger.warn(`we cover for ${diffToCover} with upToGasPrice: ${formatInGwei(upToGasPrice)}...`);
 					const paymentAccount = config.paymentAccount;
 					if (paymentAccount) {
 						const broadcaster = await chainProtocol.getBroadcaster(
@@ -754,9 +754,12 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 							paymentAccount,
 						);
 						const broadcasterBalance = await chainProtocol.getBalance(broadcaster.address);
+
+						// 1000 gwei // TODO CONFIGURE per network: max worst worst case
+						const maxCostAuthorizedForPaymentTx = 1000000000000n;
 						const {transaction, cost, valueSent} = chainProtocol.generatePaymentTransaction(
 							pendingExecution.transaction,
-							gasPriceEstimate.maxFeePerGas, // todo should use maxFeePerGasAuthorized below : 0x38D7EA4C68000
+							maxCostAuthorizedForPaymentTx, // todo should use maxFeePerGasAuthorized below : 0x38D7EA4C68000
 							pendingExecution.transactionParametersUsed.from,
 							diffToCover,
 						);
@@ -764,7 +767,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 						if (cost <= broadcasterBalance) {
 							const execution: ExecutionSubmission<TransactionDataType> = {
 								chainId: pendingExecution.chainId,
-								maxFeePerGasAuthorized: `0x38D7EA4C68000`, // 1000 gwei // TODO CONFIGURE per network: max worst worst case
+								maxFeePerGasAuthorized: `0x${maxCostAuthorizedForPaymentTx.toString(16)}` as String0x,
 								transaction: transaction,
 							};
 							await broadcastExecution(
@@ -866,54 +869,64 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 			pendingExecution.finalized = true;
 
-			// the cost of the transaction
-			const actualCost = txStatus.cost;
-
-			const debtInUnitsAssigned = BigInt(pendingExecution.debtInUnitsAssigned);
-			const debtAssigned = computeDebt(pendingExecution.chainId, debtInUnitsAssigned);
-
 			let debtOffsetInUnits = 0n;
+			if (networks[pendingExecution.chainId]?.debtUnit) {
+				// the cost of the transaction
+				const actualCost = txStatus.cost;
 
-			const {debtDueInUnits} = computeFees(pendingExecution.chainId, pendingExecution.serviceParameters, txStatus.cost);
-			if (debtDueInUnits < debtAssigned) {
-				debtOffsetInUnits = debtDueInUnits - debtAssigned;
-			}
+				const debtInUnitsAssigned = BigInt(pendingExecution.debtInUnitsAssigned);
+				const debtAssigned = computeDebt(pendingExecution.chainId, debtInUnitsAssigned);
 
-			// now we get the help given in term of gasPrice ceiling the paymentAccount has given
-			const helpedUpToGasPrice = pendingExecution.helpedForUpToGasPrice
-				? BigInt(pendingExecution.helpedForUpToGasPrice)
-				: 0n;
+				const {debtDueInUnits} = computeFees(
+					pendingExecution.chainId,
+					pendingExecution.serviceParameters,
+					txStatus.cost,
+				);
+				if (debtDueInUnits < debtAssigned) {
+					debtOffsetInUnits = debtDueInUnits - debtAssigned;
+				}
 
-			// we compute the total cost of this including the cost with the help provided
-			const costConsideringUptoGasPriceHelpProvided = await chainProtocol.computeMaxCostAuthorized(
-				pendingExecution.chainId,
-				pendingExecution.transaction,
-				`0x${helpedUpToGasPrice.toString(16)}` as String0x,
-			);
+				// now we get the help given in term of gasPrice ceiling the paymentAccount has given
+				const helpedUpToGasPrice = pendingExecution.helpedForUpToGasPrice
+					? BigInt(pendingExecution.helpedForUpToGasPrice)
+					: 0n;
 
-			// we compute the maxCost authorized by the account
-			const maxCostAuthorized = await chainProtocol.computeMaxCostAuthorized(
-				pendingExecution.chainId,
-				pendingExecution.transaction,
-				pendingExecution.maxFeePerGasAuthorized,
-			);
+				if (helpedUpToGasPrice > 0n) {
+					// we compute the total cost of this including the cost with the help provided
+					const costConsideringUptoGasPriceHelpProvided = await chainProtocol.computeMaxCostAuthorized(
+						pendingExecution.chainId,
+						pendingExecution.transaction,
+						`0x${helpedUpToGasPrice.toString(16)}` as String0x,
+					);
 
-			const costPaid = actualCost > maxCostAuthorized ? actualCost : maxCostAuthorized;
+					// we compute the maxCost authorized by the account
+					const maxCostAuthorized = await chainProtocol.computeMaxCostAuthorized(
+						pendingExecution.chainId,
+						pendingExecution.transaction,
+						pendingExecution.maxFeePerGasAuthorized,
+					);
 
-			// now from that we compute the amount given in excess
-			const excessGiven = costConsideringUptoGasPriceHelpProvided - costPaid;
+					const costPaid = actualCost > maxCostAuthorized ? actualCost : maxCostAuthorized;
 
-			if (excessGiven >= 0) {
-				debtOffsetInUnits += computeDebtInUnits(pendingExecution.chainId, excessGiven);
-			} else {
-				logger.error(`excess given is negative, 
-					actualCost: ${formatInGwei(actualCost)}
-					excessGiven: ${formatInGwei(excessGiven)}
-					maxCostAuthorized: ${formatInGwei(maxCostAuthorized)}
-					costPaid: ${formatInGwei(costPaid)}
-					costConsideringUptoGasPriceHelpProvided: ${formatInGwei(costConsideringUptoGasPriceHelpProvided)}
-					helpedUpToGasPrice:  ${formatInGwei(helpedUpToGasPrice)}
-				`);
+					// now from that we compute the amount given in excess
+					const excessGiven = costConsideringUptoGasPriceHelpProvided - costPaid;
+
+					logger.error(
+						`actualCost: ${formatInGwei(actualCost)},
+excessGiven: ${formatInGwei(excessGiven)},
+maxCostAuthorized: ${formatInGwei(maxCostAuthorized)},
+costPaid: ${formatInGwei(costPaid)},
+costConsideringUptoGasPriceHelpProvided: ${formatInGwei(costConsideringUptoGasPriceHelpProvided)},
+helpedUpToGasPrice:  ${formatInGwei(helpedUpToGasPrice)}
+debtOffsetInUnits: ${debtOffsetInUnits.toString()}
+`,
+					);
+
+					if (excessGiven >= 0) {
+						debtOffsetInUnits += computeDebtInUnits(pendingExecution.chainId, excessGiven);
+					} else {
+					}
+				}
 			}
 
 			await storage.createOrUpdatePendingExecution(pendingExecution, {
