@@ -1,5 +1,11 @@
 # fuzd-client
 
+## 0.9.5
+
+### Patch Changes
+
+- fix client bestTime
+
 ## 0.9.4
 
 ### Patch Changes
