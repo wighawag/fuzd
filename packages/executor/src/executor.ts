@@ -27,6 +27,23 @@ type ExecutionToStore<T> = Omit<
 	'hash' | 'broadcastTime' | 'nextCheckTime' | 'transactionParametersUsed'
 >;
 
+// taken from viem
+function formatInGwei(v: bigint | string) {
+	const decimals = 9;
+	const value = typeof v === 'bigint' ? v : BigInt(v);
+
+	let display = value.toString();
+
+	const negative = display.startsWith('-');
+	if (negative) display = display.slice(1);
+
+	display = display.padStart(decimals, '0');
+
+	let [integer, fraction] = [display.slice(0, display.length - decimals), display.slice(display.length - decimals)];
+	fraction = fraction.replace(/(0+)$/, '');
+	return `${negative ? '-' : ''}${integer || '0'}${fraction ? `.${fraction}` : ''} gwei`;
+}
+
 export function computeFees(chainId: IntegerString, serviceParameters: ExecutionServiceParameters, maxCost: bigint) {
 	if (serviceParameters.fees.fixed !== '0' || serviceParameters.fees.per_1_000_000 > 0) {
 		const feesToPay =
@@ -889,7 +906,14 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			if (excessGiven >= 0) {
 				debtOffsetInUnits += computeDebtInUnits(pendingExecution.chainId, excessGiven);
 			} else {
-				logger.error(`excess given is negative`);
+				logger.error(`excess given is negative, 
+					actualCost: ${formatInGwei(actualCost)}
+					excessGiven: ${formatInGwei(excessGiven)}
+					maxCostAuthorized: ${formatInGwei(maxCostAuthorized)}
+					costPaid: ${formatInGwei(costPaid)}
+					costConsideringUptoGasPriceHelpProvided: ${formatInGwei(costConsideringUptoGasPriceHelpProvided)}
+					helpedUpToGasPrice:  ${formatInGwei(helpedUpToGasPrice)}
+				`);
 			}
 
 			await storage.createOrUpdatePendingExecution(pendingExecution, {
