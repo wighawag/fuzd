@@ -90,6 +90,11 @@ export function createClient(config: ClientConfig) {
 		return _assignedRemoteAccount;
 	}
 
+	// TODO
+	// async function estimateBestGasPrice(importanceRatio: number) {
+	// 	getBestGasEstimate;
+	// }
+
 	function computeTotalMaxCost(params: {maxFeePerGasAuthorized: bigint; gas: bigint; value?: bigint}): bigint {
 		const txCost = params.maxFeePerGasAuthorized * params.gas;
 		const value = params.value ? params.value : 0n;

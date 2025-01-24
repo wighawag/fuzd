@@ -90,6 +90,9 @@ importers:
       '@starknet-io/types-js':
         specifier: ^0.7.10
         version: 0.7.10
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.10.2
       as-soon:
         specifier: ^0.0.11
         version: 0.0.11
@@ -102,9 +105,15 @@ importers:
       prettier:
         specifier: ^3.4.2
         version: 3.4.2
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.2
       typescript:
         specifier: ^5.6.3
         version: 5.6.3
+      viem:
+        specifier: ^2.21.55
+        version: 2.21.55(typescript@5.6.3)(zod@3.24.1)
 
   packages/client:
     dependencies:
@@ -4298,6 +4307,7 @@ packages:
 
   libsql@0.4.6:
     resolution: {integrity: sha512-F5M+ltteK6dCcpjMahrkgT96uFJvVI8aQ4r9f2AzHQjC7BkAYtvfMSTWGvRBezRgMUIU2h1Sy0pF9nOGOD5iyA==}
+    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lines-and-columns@1.2.4:

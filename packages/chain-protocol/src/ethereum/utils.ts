@@ -1,5 +1,11 @@
 import {logs} from 'named-logs';
-import type {EIP1193BlockTag, EIP1193ProviderWithoutEvents, EIP1193QUANTITY, EIP1193TransactionReceipt} from 'eip-1193';
+import type {
+	EIP1193Block,
+	EIP1193BlockTag,
+	EIP1193ProviderWithoutEvents,
+	EIP1193QUANTITY,
+	EIP1193TransactionReceipt,
+} from 'eip-1193';
 import {String0x} from 'fuzd-common';
 
 const logger = logs('fuzd-chain-protocol-ethereum-utils');
@@ -70,9 +76,16 @@ export async function getTransactionStatus(
 	}
 }
 
+function max(a: bigint, b: bigint): bigint {
+	return a > b ? a : b;
+}
 function avg(arr: bigint[]) {
 	const sum = arr.reduce((a: bigint, v: bigint) => a + v);
 	return sum / BigInt(arr.length);
+}
+function avgNumber(arr: number[]) {
+	const sum = arr.reduce((a: number, v: number) => a + v);
+	return sum / arr.length;
 }
 export type EIP1193FeeHistory = {
 	oldestBlock: string;
@@ -94,14 +107,39 @@ export type RoughEstimateGasPriceOptions = {
 };
 
 export type GasPrice = {maxFeePerGas: bigint; maxPriorityFeePerGas: bigint};
-export type EstimateGasPriceResult = GasPrice[];
+export type EstimateGasPriceResult = {
+	averageGasPricesOnEachPercentiles: GasPrice[];
+	gasUsedRatio: {
+		average: number;
+		last: number;
+		all: number[];
+	};
+	baseFeePerGas: {
+		average: bigint;
+		last: bigint;
+		all: bigint[];
+	};
+};
 export type RoughEstimateGasPriceResult = {slow: GasPrice; average: GasPrice; fast: GasPrice};
+
+const TARGET_RATIO = 0.5;
 
 // TODO use a library for these ?
 export async function getGasPriceEstimate(
 	provider: EIP1193ProviderWithoutEvents,
 	options?: Partial<EstimateGasPriceOptions>,
 ): Promise<EstimateGasPriceResult> {
+	// const latestBlock = (await provider.request({
+	// 	method: 'eth_getBlockByNumber',
+	// 	params: [`latest`, false],
+	// })) as EIP1193Block | undefined;
+
+	// if (!latestBlock) {
+	// 	const errorMessage = `failed to fetch latest block`;
+	// 	logger.error(errorMessage);
+	// 	throw new Error(errorMessage);
+	// }
+
 	const defaultOptions: EstimateGasPriceOptions = {
 		blockCount: 20,
 		newestBlock: 'pending',
@@ -147,14 +185,118 @@ export async function getGasPriceEstimate(
 
 	const baseFeePerGas = BigInt(rawFeeHistory.baseFeePerGas[rawFeeHistory.baseFeePerGas.length - 1]);
 
-	const result: EstimateGasPriceResult = [];
+	const result: GasPrice[] = [];
 	for (let i = 0; i < optionsResolved.rewardPercentiles.length; i++) {
 		result.push({
 			maxFeePerGas: percentilePriorityFeeAverages[i] + baseFeePerGas,
 			maxPriorityFeePerGas: percentilePriorityFeeAverages[i],
 		});
 	}
-	return result;
+	return {
+		averageGasPricesOnEachPercentiles: result,
+		gasUsedRatio: {
+			average: avgNumber(blocksHistory.map((b) => b.gasUsedRatio)),
+			last: blocksHistory[blocksHistory.length - 1].gasUsedRatio,
+			all: blocksHistory.map((b) => b.gasUsedRatio),
+		},
+		baseFeePerGas: {
+			average: avg(blocksHistory.map((b) => b.baseFeePerGas)),
+			last: baseFeePerGas,
+			all: blocksHistory.map((b) => b.baseFeePerGas),
+		},
+	};
+}
+
+export async function getBestGasEstimate(
+	provider: EIP1193ProviderWithoutEvents,
+	importanceRatio: number,
+): Promise<GasPrice> {
+	const defaultOptions: EstimateGasPriceOptions = {
+		blockCount: 20,
+		newestBlock: 'pending',
+		rewardPercentiles: [10, 50, 80],
+	};
+
+	const result = await getGasPriceEstimate(provider, defaultOptions);
+
+	let almostFullBlocks = false;
+	let fullBlocks = false;
+	const ratioConsideredAlmostFull = (TARGET_RATIO * 20) / 100;
+	if (result.gasUsedRatio.average > ratioConsideredAlmostFull && result.gasUsedRatio.last > ratioConsideredAlmostFull) {
+		almostFullBlocks = true;
+	}
+	if (result.gasUsedRatio.average > TARGET_RATIO && result.gasUsedRatio.last > TARGET_RATIO) {
+		fullBlocks = true;
+	}
+
+	let maxFeePerGas: bigint;
+	let maxPriorityFeePerGas: bigint;
+	maxFeePerGas = max(result.baseFeePerGas.average, result.baseFeePerGas.last);
+	const growing = result.baseFeePerGas.last > result.baseFeePerGas.all[0];
+
+	if (fullBlocks) {
+		if (importanceRatio > 0.9) {
+			maxFeePerGas *= 2n;
+		} else {
+			maxFeePerGas += maxFeePerGas / 5n;
+		}
+		if (growing) {
+			maxFeePerGas += maxFeePerGas / 5n;
+		}
+	} else if (almostFullBlocks) {
+		if (importanceRatio > 0.9) {
+			maxFeePerGas += maxFeePerGas / 5n;
+		}
+		if (growing) {
+			maxFeePerGas += maxFeePerGas / 5n;
+		}
+	}
+
+	if (maxFeePerGas == 0n) {
+		maxFeePerGas = 1n;
+	}
+
+	// -------------------------------------------------
+	// maxPriorityFeePerGas
+	// -------------------------------------------------
+
+	if (importanceRatio > 0.9) {
+		if (fullBlocks) {
+			maxPriorityFeePerGas = result.averageGasPricesOnEachPercentiles[3].maxPriorityFeePerGas;
+		} else if (almostFullBlocks) {
+			maxPriorityFeePerGas = result.averageGasPricesOnEachPercentiles[2].maxPriorityFeePerGas;
+		} else {
+			maxPriorityFeePerGas = result.averageGasPricesOnEachPercentiles[1].maxPriorityFeePerGas;
+		}
+	} else {
+		if (fullBlocks) {
+			maxPriorityFeePerGas = result.averageGasPricesOnEachPercentiles[2].maxPriorityFeePerGas;
+		} else if (almostFullBlocks) {
+			maxPriorityFeePerGas = maxFeePerGas / 10n;
+		} else {
+			maxPriorityFeePerGas = maxFeePerGas / 5n;
+		}
+	}
+
+	// TODO form 0.8 to 0.9 increase
+
+	// TODO add 0 and 0.5 too
+	//  and then increase linerarly from each point to the next
+
+	if (maxPriorityFeePerGas == 0n) {
+		maxPriorityFeePerGas = 1n;
+	}
+
+	if (maxPriorityFeePerGas > maxFeePerGas) {
+		maxFeePerGas = maxPriorityFeePerGas;
+	} else {
+		maxFeePerGas += maxPriorityFeePerGas;
+	}
+
+	return {
+		maxFeePerGas,
+		maxPriorityFeePerGas,
+	};
 }
 
 export async function getRoughGasPriceEstimate(
@@ -175,9 +317,11 @@ export async function getRoughGasPriceEstimate(
 	}
 
 	const result = await getGasPriceEstimate(provider, optionsResolved);
+	if (result.gasUsedRatio.average < TARGET_RATIO) {
+	}
 	return {
-		slow: result[0],
-		average: result[1],
-		fast: result[2],
+		slow: result.averageGasPricesOnEachPercentiles[0],
+		average: result.averageGasPricesOnEachPercentiles[1],
+		fast: result.averageGasPricesOnEachPercentiles[2],
 	};
 }
