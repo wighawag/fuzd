@@ -363,8 +363,8 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 			}
 
 			await this.db.batch(batchOfTransaction);
-		} catch (err) {
-			logger.error(`Failed to update, reset lock...`, err);
+		} catch (err: any) {
+			logger.error(`Failed to update, reset lock...: ${err.message || err}`);
 			await this.unlockBroadcaster({address, chainId});
 		}
 
