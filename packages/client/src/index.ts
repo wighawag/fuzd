@@ -160,8 +160,13 @@ export function createClient(config: ClientConfig) {
 		},
 		options?: {fakeEncrypt?: boolean},
 	): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
-		if (execution.bestTime && execution.bestTime > execution.time) {
-			throw new Error(`invalid bestTime, need to be smaller than time, it used to prioritize its execution`);
+		if (execution.bestTime && execution.bestTime < execution.tine) {
+			throw new Error(
+				`invalid bestTime, need to be greater than time, else set it to time itself for highest priority`,
+			);
+		}
+		if (execution.expiry && execution.bestTime && execution.bestTime > execution.expiry) {
+			throw new Error(`invalid bestTime, need to be smaller than expiry, it used to prioritize its execution`);
 		}
 		let executionToSend: ScheduledExecution<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>>;
 		const remoteAccount = await _fetchRemoteAccount(execution.chainId);
