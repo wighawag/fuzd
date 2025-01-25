@@ -1,6 +1,6 @@
 import {createCurriedJSONRPC} from 'remote-procedure-call';
 import {EthereumChainProtocol} from '../ethereum/index.js';
-import {formatEstimates, formatGasEstimate, formatGasPrice, formatRoughEstimates} from './utils.js';
+import {formatEstimates, formatGasEstimate, formatGasPrice, formatRoughEstimates, formatValue} from './utils.js';
 import {Methods} from 'eip-1193';
 import {EstimateGasPriceOptions, getBestGasEstimate, getGasPriceEstimate, getRoughGasPriceEstimate} from 'fuzd-common';
 
@@ -48,8 +48,16 @@ async function main() {
 		console.log(`----------------------------------------------------------------`);
 	}
 
-	bestGasEstimates(0.5);
-	bestGasEstimates(1);
+	await bestGasEstimates(0.5);
+	await bestGasEstimates(1);
+
+	console.log(`------------- eth_gasPrice -------------------------`);
+	const gasPriceResponse = await rpc.call('eth_gasPrice')();
+	if (gasPriceResponse.success) {
+		console.log(formatValue(BigInt(gasPriceResponse.value)));
+	}
+
+	console.log(`----------------------------------------------------------------`);
 }
 
 main();

@@ -34,7 +34,7 @@ export type PendingExecutionStored<TransactionDataType> = {
 	nextCheckTime: number;
 	hash: String0x;
 	maxFeePerGasAuthorized: String0x;
-	helpedForUpToGasPrice?: String0x;
+	helpedForUpToGasPrice?: {upToGasPrice: String0x; valueSent: String0x};
 	isVoidTransaction: boolean;
 	finalized: boolean;
 	retries?: number;
@@ -117,7 +117,7 @@ export type Executor<TransactionDataType> = {
 				account: String0x;
 				slot: string;
 				batchIndex: number;
-				upToGasPrice: bigint;
+				helpedForUpToGasPrice: {upToGasPrice: bigint; valueSent: bigint};
 			};
 			onBehalf?: String0x;
 			expiryTime?: number;

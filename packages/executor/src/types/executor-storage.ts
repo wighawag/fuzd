@@ -72,7 +72,7 @@ export interface ExecutorStorage<TransactionDataType> {
 			account: String0x;
 			slot: string;
 			batchIndex: number;
-			upToGasPrice: bigint;
+			helpedForUpToGasPrice: {upToGasPrice: bigint; valueSent: bigint};
 		},
 	): Promise<PendingExecutionStored<TransactionDataType>>;
 	getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored<TransactionDataType>[]>;

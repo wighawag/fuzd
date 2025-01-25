@@ -65,7 +65,8 @@ export function displayExecutionBroadcasted(config: Config) {
 				nonceUsed: Number(v.transactionParametersUsed.nonce).toString(),
 				to: v.transaction.to,
 				helpedForUpToGasPrice: v.helpedForUpToGasPrice
-					? formatEther(BigInt(v.helpedForUpToGasPrice), 'gwei') + ' gwei'
+					? `upToGasPrice: ${formatEther(BigInt(v.helpedForUpToGasPrice.upToGasPrice), 'gwei') + ' gwei'},
+				valueSent: ${formatEther(BigInt(v.helpedForUpToGasPrice.valueSent), 'gwei') + ' gwei'}`
 					: 'undefined',
 				// transaction: {
 				// 	// TODO show different starknet/ethereum

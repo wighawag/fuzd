@@ -58,7 +58,7 @@ type ExecutionInDB = {
 	broadcastTime: number | null;
 	hash: String0x;
 	maxFeePerGasAuthorized: String0x;
-	helpedForUpToGasPrice: String0x | null;
+	helpedForUpToGasPrice: string | null;
 	isVoidTransaction: 0 | 1;
 	finalized: 0 | 1;
 	retries: number | null;
@@ -104,6 +104,14 @@ function fromChainConfigurationsInDB(inDb: ChainConfigurationsInDB): ChainConfig
 }
 
 function fromExecutionInDB<TransactionDataType>(inDB: ExecutionInDB): PendingExecutionStored<TransactionDataType> {
+	// TODO remove once clean
+	if (inDB.helpedForUpToGasPrice) {
+		const value = JSON.parse(inDB.helpedForUpToGasPrice);
+		if (typeof value == 'number') {
+			inDB.helpedForUpToGasPrice = null;
+		}
+	}
+
 	const extraTransactionParametersUsed = JSON.parse(inDB.transactionParametersUsed);
 	return {
 		chainId: inDB.chainId,
@@ -118,7 +126,7 @@ function fromExecutionInDB<TransactionDataType>(inDB: ExecutionInDB): PendingExe
 		nextCheckTime: inDB.nextCheckTime,
 		hash: inDB.hash,
 		maxFeePerGasAuthorized: inDB.maxFeePerGasAuthorized,
-		helpedForUpToGasPrice: inDB.helpedForUpToGasPrice || undefined,
+		helpedForUpToGasPrice: inDB.helpedForUpToGasPrice ? JSON.parse(inDB.helpedForUpToGasPrice) : undefined,
 		isVoidTransaction: inDB.isVoidTransaction == 1 ? true : false,
 		retries: inDB.retries || undefined,
 		lastError: inDB.lastError || undefined,
@@ -149,7 +157,7 @@ function toExecutionInDB<TransactionDataType>(obj: PendingExecutionStored<Transa
 		nextCheckTime: obj.nextCheckTime,
 		hash: obj.hash,
 		maxFeePerGasAuthorized: obj.maxFeePerGasAuthorized,
-		helpedForUpToGasPrice: obj.helpedForUpToGasPrice || null,
+		helpedForUpToGasPrice: obj.helpedForUpToGasPrice ? JSON.stringify(obj.helpedForUpToGasPrice) : null,
 		isVoidTransaction: obj.isVoidTransaction ? 1 : 0,
 		retries: typeof obj.retries === 'undefined' ? null : obj.retries,
 		lastError: obj.lastError || null,
@@ -292,7 +300,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 			account: String0x;
 			slot: string;
 			batchIndex: number;
-			upToGasPrice: bigint;
+			helpedForUpToGasPrice: {upToGasPrice: bigint; valueSent: bigint};
 		},
 	): Promise<PendingExecutionStored<TransactionDataType>> {
 		const inDB = toExecutionInDB(executionToStore);
@@ -355,7 +363,10 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 			batchOfTransaction.push(executionInsertionStatement.bind(...values));
 
 			if (asPaymentFor) {
-				const helpedForUpToGasPrice = asPaymentFor.upToGasPrice.toString();
+				const helpedForUpToGasPrice = JSON.stringify({
+					upToGasPrice: asPaymentFor.helpedForUpToGasPrice.upToGasPrice.toString(),
+					valueSent: asPaymentFor.helpedForUpToGasPrice.valueSent.toString(),
+				});
 				logger.warn(
 					`batching helpedForUpToGasPrice: ${helpedForUpToGasPrice} for ${asPaymentFor.chainId},${asPaymentFor.account},${asPaymentFor.slot},${asPaymentFor.batchIndex},...`,
 				);

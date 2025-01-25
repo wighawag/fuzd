@@ -179,7 +179,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				account: String0x;
 				slot: string;
 				batchIndex: number;
-				upToGasPrice: bigint;
+				helpedForUpToGasPrice: {upToGasPrice: bigint; valueSent: bigint};
 			};
 			onBehalf?: String0x;
 			expiryTime?: number;
@@ -396,7 +396,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			account: String0x;
 			slot: string;
 			batchIndex: number;
-			upToGasPrice: bigint;
+			helpedForUpToGasPrice: {upToGasPrice: bigint; valueSent: bigint};
 		},
 	): Promise<PendingExecutionStored<TransactionDataType> | undefined> {
 		const chainProtocol = _getChainProtocol(execution.chainId);
@@ -418,8 +418,10 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				if (nonce !== currentNonceAsPerNetwork) {
 					if (currentNonceAsPerNetwork > nonce) {
 						const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}. this means some tx went through in between`;
-						// logger.error(message);
+						logger.error(message);
 						noncePassedAlready = true;
+						// TODO test this scenario, but feel safer
+						throw new Error(message);
 					} else {
 						const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}, this means some tx has not been included yet and we should still keep using the exepected value.`;
 						logger.error(message);
@@ -607,6 +609,14 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
 			} catch (err: any) {
 				logger.error(`The broadcast (${newExecution.slot}) failed, we attempts one more time: ${err.message || err}`);
+
+				const errorDueToFeeTooLow = ((err.message || err.toString()) as string).indexOf('feetoolow') != -1;
+
+				// TODO
+				if (errorDueToFeeTooLow) {
+					logger.warn(`feetoolow detected`);
+				}
+
 				try {
 					await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
 				} catch (err: any) {
@@ -701,8 +711,10 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 				const upToGasPrice = maxFeePerGas + diffToCover;
 
+				let totalValueSent = 0n;
 				if (pendingExecution.helpedForUpToGasPrice) {
-					diffToCover -= BigInt(pendingExecution.helpedForUpToGasPrice) - maxFeePerGas;
+					totalValueSent = BigInt(pendingExecution.helpedForUpToGasPrice.valueSent);
+					diffToCover -= BigInt(pendingExecution.helpedForUpToGasPrice.upToGasPrice) - maxFeePerGas;
 				}
 
 				if (diffToCover > 0n) {
@@ -724,6 +736,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 							pendingExecution.transactionParametersUsed.from,
 							diffToCover,
 						);
+						totalValueSent += valueSent;
 
 						if (cost <= broadcasterBalance) {
 							const execution: ExecutionSubmission<TransactionDataType> = {
@@ -732,7 +745,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 								transaction: transaction,
 							};
 							await broadcastExecution(
-								`payment_${pendingExecution.account}_${pendingExecution.transactionParametersUsed.from}_${pendingExecution.transactionParametersUsed.nonce}_${gasPriceEstimate.maxFeePerGas.toString()}`,
+								`payment_${pendingExecution.transactionParametersUsed.from}_${pendingExecution.transactionParametersUsed.nonce}_${gasPriceEstimate.maxFeePerGas.toString()}`,
 								0,
 								paymentAccount,
 								execution,
@@ -745,13 +758,14 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 									},
 								},
 								{
+									onBehalf: pendingExecution.transactionParametersUsed.from,
 									trusted: true, // this was validated when pendingExecution was submitted
 									asPaymentFor: {
 										chainId: pendingExecution.chainId,
 										account: pendingExecution.account,
 										slot: pendingExecution.slot,
 										batchIndex: pendingExecution.batchIndex,
-										upToGasPrice: upToGasPrice,
+										helpedForUpToGasPrice: {upToGasPrice, valueSent: totalValueSent},
 									},
 									initialTime: timestamp,
 									expiryTime: timestamp + 3 * 60, // 3minutes
@@ -844,42 +858,26 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			}
 
 			// now we get the help given in term of gasPrice ceiling the paymentAccount has given
-			const helpedUpToGasPrice = pendingExecution.helpedForUpToGasPrice
-				? BigInt(pendingExecution.helpedForUpToGasPrice)
+			const valueSent = pendingExecution.helpedForUpToGasPrice
+				? BigInt(pendingExecution.helpedForUpToGasPrice.valueSent)
 				: 0n;
 
-			if (helpedUpToGasPrice > 0n) {
-				// we compute the total cost of this including the cost with the help provided
-				const costConsideringUptoGasPriceHelpProvided = await chainProtocol.computeMaxCostAuthorized(
-					pendingExecution.chainId,
-					pendingExecution.transaction,
-					`0x${helpedUpToGasPrice.toString(16)}` as String0x,
-				);
-
-				// we compute the maxCost authorized by the account
-				const maxCostAuthorized = await chainProtocol.computeMaxCostAuthorized(
-					pendingExecution.chainId,
-					pendingExecution.transaction,
-					pendingExecution.maxFeePerGasAuthorized,
-				);
-
+			if (valueSent > 0n) {
 				// now from that we compute the amount given in excess
-				const excessGiven = costConsideringUptoGasPriceHelpProvided - actualCost;
-
-				logger.error(
-					`actualCost: ${formatInGwei(actualCost)},
-excessGiven: ${formatInGwei(excessGiven)},
-maxCostAuthorized: ${formatInGwei(maxCostAuthorized)},
-costConsideringUptoGasPriceHelpProvided: ${formatInGwei(costConsideringUptoGasPriceHelpProvided)},
-helpedUpToGasPrice:  ${formatInGwei(helpedUpToGasPrice)}
-debtOffset: ${formatInGwei(debtOffset)}
-`,
-				);
+				const excessGiven = valueSent - actualCost;
 
 				if (excessGiven >= 0) {
 					debtOffset += excessGiven;
 				} else {
 				}
+
+				logger.error(
+					`actualCost: ${formatInGwei(actualCost)},
+excessGiven: ${formatInGwei(excessGiven)},
+valueSent: ${formatInGwei(valueSent)},
+debtOffset: ${formatInGwei(debtOffset)}
+`,
+				);
 			}
 
 			await storage.createOrUpdatePendingExecution(pendingExecution, {
