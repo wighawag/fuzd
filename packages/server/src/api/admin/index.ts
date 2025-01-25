@@ -2,11 +2,12 @@ import {Hono} from 'hono';
 import {ServerOptions} from '../../types.js';
 import {basicAuth} from 'hono/basic-auth';
 import {logs} from 'named-logs';
-import {assert} from 'typia';
+import {assert, createValidate} from 'typia';
 import {createErrorObject} from '../../utils/response.js';
 import {IntegerString, String0x} from 'fuzd-common';
 import {setChainOverride, setup} from '../../setup.js';
 import {Env} from '../../env.js';
+import {typiaValidator} from '@hono/typia-validator';
 
 const logger = logs('fuzd-cf-worker-admin-api');
 
@@ -109,12 +110,37 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json(createErrorObject(err), 500);
 			}
 		})
-		.get('/updateExpectedGasPrice/:chainId/:value', async (c) => {
+		.post('/updateExpectedGasPrice/:chainId', typiaValidator('json', createValidate<{value: string}>()), async (c) => {
 			try {
 				const config = c.get('config');
 				const chainId = c.req.param('chainId') as IntegerString;
-				const value = c.req.param('value');
 				const timestamp = Math.floor(Date.now() / 1000);
+
+				const {value} = await c.req.json();
+
+				if (BigInt(value) > 0n) {
+					const paymentAccount = config.paymentAccount;
+					if (!paymentAccount) {
+						return c.json(
+							{
+								success: false as const,
+								errors: ['Payment account not configured'],
+							},
+							200,
+						);
+					}
+
+					const broadcasterInfo = await config.executor.getRemoteAccount(chainId, paymentAccount);
+					const balance = await config.chainProtocols[chainId].getBalance(broadcasterInfo.address);
+					if (balance < BigInt('1000000000000000000')) {
+						return c.json({
+							success: false as const,
+							// TODO config minimum balance per chain
+							errors: [`paymentAccount's remote account (${broadcasterInfo.address}) below 1 Native token`],
+						});
+					}
+				}
+
 				const chainConfiguration = await config.executorStorage.updateExpectedWorstCaseGasPrice(
 					chainId,
 					timestamp,
