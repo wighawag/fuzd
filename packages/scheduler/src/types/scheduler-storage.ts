@@ -53,6 +53,7 @@ export interface SchedulerStorage<TransactionDataType> {
 		account: String0x,
 		params: {limit: number},
 	): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
+	deleteFinalizedScheduledExecutions(params: {chainId?: IntegerString; upTo?: number}): Promise<void>;
 	clear(): Promise<void>;
 	setup(): Promise<void>;
 }

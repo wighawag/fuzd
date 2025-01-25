@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS ScheduledExecutions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_broadcasted_nextCheckTime ON ScheduledExecutions (broadcasted, nextCheckTime);
+CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_finalized_nextCheckTime ON ScheduledExecutions (finalized, nextCheckTime);
+CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_chainId_finalized_nextCheckTime ON ScheduledExecutions (chainId, finalized, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_chainId_broadcaster_finalized_nextCheckTime ON ScheduledExecutions (chainId, broadcaster, finalized, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_broadcasted_finalized_nextCheckTime ON ScheduledExecutions (broadcasted, finalized, nextCheckTime);
 

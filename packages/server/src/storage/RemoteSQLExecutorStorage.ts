@@ -454,6 +454,19 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		await statement.bind(...values).all();
 	}
 
+	async deleteFinalizedPendingExecutions(params: {chainId?: IntegerString; upTo?: number}): Promise<void> {
+		let execution = this.db
+			.prepare(`DELETE FROM BroadcastedExecutions WHERE finalized = 1 AND nextCheckTime <= ?1`)
+			.bind(params.upTo || Number.MAX_SAFE_INTEGER);
+		if (params.chainId) {
+			execution = this.db
+				.prepare(`DELETE FROM BroadcastedExecutions WHERE finalized = 1 AND nextCheckTime <= ?1 AND chainId = ?2`)
+				.bind(params.upTo || Number.MAX_SAFE_INTEGER, params.chainId);
+		}
+
+		await execution.all();
+	}
+
 	async clear(): Promise<void> {
 		const deleteBroadcasters = this.db.prepare(`DELETE FROM Broadcasters;`);
 		const delteBroadcastedExecutions = this.db.prepare(`DELETE FROM BroadcastedExecutions`);

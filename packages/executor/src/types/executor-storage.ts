@@ -54,6 +54,8 @@ export interface ExecutorStorage<TransactionDataType> {
 		batchIndex: number;
 	}): Promise<void>;
 
+	deleteFinalizedPendingExecutions(params: {chainId?: IntegerString; upTo?: number}): Promise<void>;
+
 	lockBroadcaster(params: {
 		chainId: IntegerString;
 		address: string;

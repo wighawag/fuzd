@@ -157,6 +157,45 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json(createErrorObject(err), 500);
 			}
 		})
+
+		.post('/deleteFinalizedPendingExecutions/:chainId?', async (c) => {
+			try {
+				const config = c.get('config');
+				const chainId = c.req.param('chainId') as IntegerString | undefined;
+
+				const timestamp = Math.floor(Date.now() / 1000);
+
+				await config.executorStorage.deleteFinalizedPendingExecutions({chainId, upTo: timestamp - 24 * 3600});
+
+				return c.json(
+					{
+						success: true as const,
+					},
+					200,
+				);
+			} catch (err) {
+				return c.json(createErrorObject(err), 500);
+			}
+		})
+		.post('/deleteFinalizedScheduledExecutions/:chainId?', async (c) => {
+			try {
+				const config = c.get('config');
+				const chainId = c.req.param('chainId') as IntegerString | undefined;
+
+				const timestamp = Math.floor(Date.now() / 1000);
+
+				await config.schedulerStorage.deleteFinalizedScheduledExecutions({chainId, upTo: timestamp - 24 * 3600});
+
+				return c.json(
+					{
+						success: true as const,
+					},
+					200,
+				);
+			} catch (err) {
+				return c.json(createErrorObject(err), 500);
+			}
+		})
 		.post('/updateFees/:chainId', async (c) => {
 			try {
 				const config = c.get('config');

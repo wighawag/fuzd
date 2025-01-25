@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
 );
 	
 CREATE INDEX IF NOT EXISTS idx_BroadcastedExecutions_finalized_nextCheckTime ON BroadcastedExecutions (finalized, nextCheckTime);
+CREATE INDEX IF NOT EXISTS idx_BroadcastedExecutions_chainId_finalized_nextCheckTime ON BroadcastedExecutions (chainId, finalized, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_BroadcastedExecutions_tx ON BroadcastedExecutions (broadcaster, chainId, nonce);
 CREATE INDEX IF NOT EXISTS idx_BroadcastedExecutions_onBehalf_chainId_nonce ON BroadcastedExecutions (onBehalf, chainId, nonce);
 
