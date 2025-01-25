@@ -81,6 +81,11 @@ const cronInternalActions: Record<string, string> = {
 };
 
 const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+	if (env.DISABLE_CRON) {
+		return new Response(`CRON ARE DISABLED`, {
+			status: 200,
+		});
+	}
 	const action = cronInternalActions[event.cron];
 	return wrapWithLogger(new Request(`https://scheduler.fuzd.dev/${action || event.cron}`), env, ctx, async () => {
 		if (action) {

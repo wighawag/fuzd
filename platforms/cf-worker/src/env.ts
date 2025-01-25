@@ -12,4 +12,5 @@ export type Env = {
 	NAMED_LOGS?: string;
 	NAMED_LOGS_LEVEL?: string;
 	DEV?: string;
+	DISABLE_CRON?: string;
 };
