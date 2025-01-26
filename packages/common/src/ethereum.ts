@@ -190,15 +190,15 @@ export async function getBestGasEstimate(
 
 	if (importanceRatio > 0.9) {
 		if (fullBlocks) {
-			maxPriorityFeePerGas = result.averageGasPricesOnEachPercentiles[3].maxPriorityFeePerGas;
-		} else if (almostFullBlocks) {
 			maxPriorityFeePerGas = result.averageGasPricesOnEachPercentiles[2].maxPriorityFeePerGas;
-		} else {
+		} else if (almostFullBlocks) {
 			maxPriorityFeePerGas = result.averageGasPricesOnEachPercentiles[1].maxPriorityFeePerGas;
+		} else {
+			maxPriorityFeePerGas = result.averageGasPricesOnEachPercentiles[0].maxPriorityFeePerGas;
 		}
 	} else {
 		if (fullBlocks) {
-			maxPriorityFeePerGas = result.averageGasPricesOnEachPercentiles[2].maxPriorityFeePerGas;
+			maxPriorityFeePerGas = result.averageGasPricesOnEachPercentiles[1].maxPriorityFeePerGas;
 		} else if (almostFullBlocks) {
 			maxPriorityFeePerGas = maxFeePerGas / 10n;
 		} else {
