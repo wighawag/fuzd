@@ -300,6 +300,12 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			importanceRatio,
 		);
 
+		if (gasPriceEstimate.maxFeePerGas > maxFeePerGas) {
+			logger.warn(
+				`estimated maxFeePerGas (${formatInGwei(gasPriceEstimate.maxFeePerGas)}) > maxFeePerGas provided (${formatInGwei(maxFeePerGas)}), tx (${submission.chainId}/${account}/${slot}/${batchIndex}) might not be included. we keep the estimated priorityFee (${formatInGwei(maxPriorityFeePerGas)}) if it still under`,
+			);
+		}
+
 		const result = await _submitTransaction(
 			broadcaster,
 			pendingExecutionToStore,
@@ -710,7 +716,10 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			}
 
 			if (expectedWorstCaseGasPrice != undefined && expectedWorstCaseGasPrice < gasPriceEstimate.maxFeePerGas) {
-				// logger.warn(`network fee greater than expectedWorstCaseGasPrice`);
+				logger.warn(
+					`network fee (${formatInGwei(gasPriceEstimate.maxFeePerGas)}) greater than expectedWorstCaseGasPrice (${formatInGwei(expectedWorstCaseGasPrice)})`,
+				);
+
 				let diffToCover = gasPriceEstimate.maxFeePerGas - expectedWorstCaseGasPrice;
 				// this only cover all if user has send that expectedWorstCaseGasPrice value on
 				if (maxFeePerGas < expectedWorstCaseGasPrice) {

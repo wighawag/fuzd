@@ -187,9 +187,6 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 		let maxFeePerGas = gasPriceEstimate.maxFeePerGas;
 		let maxPriorityFeePerGas = gasPriceEstimate.maxPriorityFeePerGas;
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGasAuthorized) {
-			logger.warn(
-				`estimate maxFeePerGas (${gasPriceEstimate.maxFeePerGas}) > maxFeePerGasAuthorized (${maxFeePerGasAuthorized}), tx might not be included. we keep the estimated priorityFee (${maxPriorityFeePerGas}) if it still under`,
-			);
 			maxFeePerGas = maxFeePerGasAuthorized;
 			if (maxPriorityFeePerGas > maxFeePerGas) {
 				maxPriorityFeePerGas = maxFeePerGas;
