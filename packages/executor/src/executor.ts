@@ -334,7 +334,15 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				try {
 					await __processPendingTransaction(pendingExecution);
 				} catch (err: any) {
-					logger.error(`failed to process pending tx: ${err.message || err}`);
+					logger.error(`failed to process pending tx`, {
+						error: {
+							name: err.name,
+							code: err.code,
+							status: err.status,
+							stack: err.stack,
+							cause: err,
+						},
+					});
 				}
 			}
 		}
@@ -352,7 +360,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		const nonceAsHex = await chainProtocol.getNonce(broadcasterAddress);
 		const currentNonceAsPerNetwork = Number(nonceAsHex);
 		if (isNaN(currentNonceAsPerNetwork)) {
-			const errorMessage = `could not parse transaction count while checking for expected nonce`;
+			const errorMessage = `could not parse transaction count (${nonceAsHex}) while checking for expected nonce`;
 			logger.error(errorMessage);
 			throw new Error(errorMessage);
 		}
@@ -685,7 +693,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		);
 
 		if (gasPriceEstimate.maxFeePerGas > maxFeePerGas) {
-			logger.warn(`network gas fee greater than maxFeePerGas`);
+			// logger.warn(`network gas fee greater than maxFeePerGas`);
 			let expectedWorstCaseGasPrice = pendingExecution.serviceParameters.expectedWorstCaseGasPrice
 				? BigInt(pendingExecution.serviceParameters.expectedWorstCaseGasPrice)
 				: undefined;
@@ -697,12 +705,12 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				const currentExpectedWorstCaseGasPrice = BigInt(serviceParameters.expectedWorstCaseGasPrice.current);
 				if (expectedWorstCaseGasPrice === undefined || currentExpectedWorstCaseGasPrice < expectedWorstCaseGasPrice) {
 					expectedWorstCaseGasPrice = currentExpectedWorstCaseGasPrice;
-					logger.warn(`we are using current expectedWorstCaseGasPrice`);
+					// logger.warn(`we are using current expectedWorstCaseGasPrice`);
 				}
 			}
 
 			if (expectedWorstCaseGasPrice != undefined && expectedWorstCaseGasPrice < gasPriceEstimate.maxFeePerGas) {
-				logger.warn(`network fee greater than expectedWorstCaseGasPrice`);
+				// logger.warn(`network fee greater than expectedWorstCaseGasPrice`);
 				let diffToCover = gasPriceEstimate.maxFeePerGas - expectedWorstCaseGasPrice;
 				// this only cover all if user has send that expectedWorstCaseGasPrice value on
 				if (maxFeePerGas < expectedWorstCaseGasPrice) {
@@ -719,7 +727,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				}
 
 				if (diffToCover > 0n) {
-					logger.warn(`we cover for ${diffToCover} with upToGasPrice: ${formatInGwei(upToGasPrice)}...`);
+					// logger.warn(`we cover for ${diffToCover} with upToGasPrice: ${formatInGwei(upToGasPrice)}...`);
 					const paymentAccount = config.paymentAccount;
 					if (paymentAccount) {
 						const broadcaster = await chainProtocol.getBroadcaster(
@@ -779,11 +787,11 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 							maxFeePerGas = upToGasPrice;
 							maxPriorityFeePerGas = maxFeePerGas;
 						} else {
-							logger.error(`paymentAccount broadcaster balance to low! (${broadcaster.address})`);
+							logger.error(`paymentAccount broadcaster balance too low! (${broadcaster.address})`);
 						}
 					}
 				} else {
-					logger.warn(`nothing to cover...`);
+					// logger.warn(`nothing to cover...`);
 				}
 			}
 		}
@@ -869,17 +877,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 				if (excessGiven >= 0) {
 					debtOffset += excessGiven;
-				} else {
 				}
-
-				logger.info('report', {
-					info: {
-						actualCost: formatInGwei(actualCost),
-						excessGiven: formatInGwei(excessGiven),
-						valueSent: formatInGwei(valueSent),
-						debtOffset: formatInGwei(debtOffset),
-					},
-				});
 			}
 
 			await storage.createOrUpdatePendingExecution(pendingExecution, {

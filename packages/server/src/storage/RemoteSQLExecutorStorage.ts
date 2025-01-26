@@ -367,9 +367,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 					upToGasPrice: asPaymentFor.helpedForUpToGasPrice.upToGasPrice.toString(),
 					valueSent: asPaymentFor.helpedForUpToGasPrice.valueSent.toString(),
 				});
-				logger.warn(
-					`batching helpedForUpToGasPrice: ${helpedForUpToGasPrice} for ${asPaymentFor.chainId},${asPaymentFor.account},${asPaymentFor.slot},${asPaymentFor.batchIndex},...`,
-				);
+
 				const asPaymentForStatement = this.db.prepare(
 					`UPDATE BroadcastedExecutions SET helpedForUpToGasPrice = ?1 WHERE chainId = ?2 AND account = ?3 AND slot = ?4 AND batchIndex = ?5;`,
 				);
@@ -395,11 +393,6 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 				const {results} = await statement
 					.bind(asPaymentFor.chainId, asPaymentFor.account, asPaymentFor.slot, asPaymentFor.batchIndex)
 					.all<ExecutionInDB>();
-				if (results.length === 0) {
-					logger.error(`did not updated any`);
-				} else {
-					logger.error(`updated: ${results[0].helpedForUpToGasPrice}`);
-				}
 			}
 		} catch (err: any) {
 			logger.error(`Failed to update, reset lock...: ${err.message || err}`);
