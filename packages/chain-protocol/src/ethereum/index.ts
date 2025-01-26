@@ -251,6 +251,12 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 				from: broadcaster.address,
 			});
 		} catch (err: any) {
+			logger.error('estimation fails', {
+				error: {
+					name: err.name,
+					cause: err,
+				},
+			});
 			if (err.isInvalidError) {
 				return {revert: 'unknown'}; // TODO add error message
 			} else if (err.message?.indexOf('revert')) {
