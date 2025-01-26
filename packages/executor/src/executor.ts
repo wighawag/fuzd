@@ -15,11 +15,12 @@ import {
 	UpdateableParameters,
 	validateParameters,
 	IntegerString,
+	FUZDLogger,
 } from 'fuzd-common';
 import {ExecutorConfig} from './types/internal.js';
 import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo, TransactionDataTypes} from 'fuzd-chain-protocol';
 
-const logger = logs('fuzd-executor');
+const logger = <FUZDLogger>logs('fuzd-executor');
 
 type ExecutionToStore<T> = Omit<
 	PendingExecutionStored<T>,
@@ -871,13 +872,14 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				} else {
 				}
 
-				logger.error(
-					`actualCost: ${formatInGwei(actualCost)},
-excessGiven: ${formatInGwei(excessGiven)},
-valueSent: ${formatInGwei(valueSent)},
-debtOffset: ${formatInGwei(debtOffset)}
-`,
-				);
+				logger.info('report', {
+					info: {
+						actualCost: formatInGwei(actualCost),
+						excessGiven: formatInGwei(excessGiven),
+						valueSent: formatInGwei(valueSent),
+						debtOffset: formatInGwei(debtOffset),
+					},
+				});
 			}
 
 			await storage.createOrUpdatePendingExecution(pendingExecution, {

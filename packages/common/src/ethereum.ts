@@ -1,8 +1,8 @@
 import {logs} from 'named-logs';
 import type {EIP1193BlockTag, EIP1193ProviderWithoutEvents, EIP1193QUANTITY} from 'eip-1193';
-import {String0x} from './types/index.js';
+import {FUZDLogger, String0x} from './types/index.js';
 
-const logger = logs('fuzd-common-ethereum');
+const logger = <FUZDLogger>logs('fuzd-common-ethereum');
 
 function max(a: bigint, b: bigint): bigint {
 	return a > b ? a : b;

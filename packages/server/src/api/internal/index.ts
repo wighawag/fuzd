@@ -4,8 +4,9 @@ import {logs} from 'named-logs';
 import {createErrorObject} from '../../utils/response.js';
 import {setup} from '../../setup.js';
 import {Env} from '../../env.js';
+import {FUZDLogger} from 'fuzd-common';
 
-const logger = logs('fuzd-server-internal-api');
+const logger = <FUZDLogger>logs('fuzd-server-internal-api');
 
 function wait(seconds: number) {
 	return new Promise((resolve) => {
@@ -44,7 +45,25 @@ export function getInternalAPI<Bindings extends Env>(options: ServerOptions<Bind
 			}
 		})
 		.get('/error', async (c) => {
-			throw new Error('Test error');
+			throw new Error('Test error', {
+				cause: {
+					code: 'TEST_ERROR',
+					details: {
+						foo: 'bar2',
+					},
+				},
+			});
+		})
+		.get('/logger-error', async (c) => {
+			logger.log('will error', {
+				log: {},
+			});
+			logger.error('error out', {
+				error: {
+					name: 'test',
+				},
+			});
+			return c.json({success: true as const}, 200);
 		});
 
 	return app;

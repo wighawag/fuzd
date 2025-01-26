@@ -4,12 +4,12 @@ import {basicAuth} from 'hono/basic-auth';
 import {logs} from 'named-logs';
 import {assert, createValidate} from 'typia';
 import {createErrorObject} from '../../utils/response.js';
-import {IntegerString, String0x} from 'fuzd-common';
+import {FUZDLogger, IntegerString, String0x} from 'fuzd-common';
 import {setChainOverride, setup} from '../../setup.js';
 import {Env} from '../../env.js';
 import {typiaValidator} from '@hono/typia-validator';
 
-const logger = logs('fuzd-cf-worker-admin-api');
+const logger = <FUZDLogger>logs('fuzd-cf-worker-admin-api');
 
 export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
 	const {getEnv} = options;

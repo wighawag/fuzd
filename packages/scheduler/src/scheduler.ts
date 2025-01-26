@@ -13,6 +13,7 @@ import {ScheduledExecutionQueued} from './types/scheduler-storage.js';
 import {
 	ExecutionResponse,
 	ExecutionSubmission,
+	FUZDLogger,
 	IntegerString,
 	String0x,
 	time2text,
@@ -21,7 +22,7 @@ import {
 import {SchedulerConfig} from './types/internal.js';
 import {ChainProtocol, TransactionDataTypes} from 'fuzd-chain-protocol';
 
-const logger = logs('fuzd-scheduler');
+const logger = <FUZDLogger>logs('fuzd-scheduler');
 
 /**
  * Create a scheduler instance for a specific TransactionData format
@@ -129,7 +130,11 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					// failed to decrypt and no retry, this means the decryption is failing
 					// TODO
 					// await storage.archiveExecution(execution);
-					logger.warn('failed to decrypt', decryptionResult);
+					logger.warn('failed to decrypt', {
+						warning: {
+							data: decryptionResult,
+						},
+					});
 					return {type: 'archived', reason: 'failed to decrypt'};
 				}
 			}

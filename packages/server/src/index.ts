@@ -13,13 +13,14 @@ import {swaggerUI} from '@hono/swagger-ui';
 import {hc} from 'hono/client';
 import {HTTPException} from 'hono/http-exception';
 import {Env} from './env.js';
+import {FUZDLogger} from 'fuzd-common';
 
 export type {Context} from 'hono';
 
 export * from './storage/RemoteSQLExecutorStorage.js';
 export * from './storage/RemoteSQLSchedulerStorage.js';
 
-const logger = logs('fuzd-server');
+const logger = <FUZDLogger>logs('fuzd-server');
 
 function createAppWithPublicAPIOnly<Bindings extends Env>(options: ServerOptions<Bindings>) {
 	const app = new Hono<{Bindings: Bindings}>().use(
@@ -75,14 +76,22 @@ export function createServer<Bindings extends Env>(options: ServerOptions<Bindin
 		.onError((err, c) => {
 			const errorObject = {
 				name: 'name' in err ? err.name : undefined,
-				code: 'code' in err ? err.code : 5000,
+				code: 'code' in err ? (err.code as number) : 5000,
 				status: 'status' in err ? err.status : undefined,
 				message: err.message,
 				// cause: err.cause,
 				// stack: err.stack
 			};
 
-			logger.error(errorObject.message, errorObject);
+			logger.error(errorObject.message, {
+				error: {
+					name: errorObject.name,
+					cause: err.cause,
+					stack: err.stack,
+					code: errorObject.code,
+					status: errorObject.status,
+				},
+			});
 			if (err instanceof HTTPException) {
 				if (err.res) {
 					return err.getResponse();

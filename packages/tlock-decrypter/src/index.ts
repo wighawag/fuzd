@@ -1,12 +1,13 @@
+import {logs} from 'named-logs';
+import {FUZDLogger} from 'fuzd-common';
 import {ScheduledExecutionQueued, Decrypter, DecryptionResult, DecryptedPayload} from 'fuzd-scheduler';
 import {timelockDecrypt, HttpChainClient, roundTime, roundAt, Buffer} from 'tlock-js';
 
 export {testnetClient, mainnetClient} from 'tlock-js';
 
 globalThis.Buffer = Buffer; // required
-import {logs} from 'named-logs';
 
-const logger = logs('fuzd-tlock-decrypter');
+const logger = <FUZDLogger>logs('fuzd-tlock-decrypter');
 
 export type DecrypterConfig = {
 	client: HttpChainClient;
@@ -26,8 +27,14 @@ export function initDecrypter<ExecutionDataType>(config: DecrypterConfig): Decry
 		let decrypted: Buffer;
 		try {
 			decrypted = await timelockDecrypt(execution.payload, config.client);
-		} catch (err) {
-			logger.error(err);
+		} catch (err: any) {
+			logger.error(err.message || `failed to decrypt`, {
+				error: {
+					name: err.name,
+					stack: err.stack,
+					cause: err,
+				},
+			});
 			return {
 				success: false,
 				retry: 0, // TODO

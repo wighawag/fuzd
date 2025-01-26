@@ -72,8 +72,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       named-logs:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.2
+        version: 0.3.2
       remote-account:
         specifier: ^0.2.2
         version: 0.2.2
@@ -136,8 +136,8 @@ importers:
         specifier: ^0.3.12
         version: 0.3.12
       named-logs:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.2
+        version: 0.3.2
       remote-account:
         specifier: ^0.2.2
         version: 0.2.2
@@ -170,8 +170,8 @@ importers:
   packages/common:
     dependencies:
       named-logs:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.2
+        version: 0.3.2
     devDependencies:
       as-soon:
         specifier: ^0.0.11
@@ -201,8 +201,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       named-logs:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.2
+        version: 0.3.2
       remote-account:
         specifier: ^0.2.2
         version: 0.2.2
@@ -229,8 +229,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       named-logs:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.2
+        version: 0.3.2
     devDependencies:
       as-soon:
         specifier: ^0.0.11
@@ -287,8 +287,8 @@ importers:
         specifier: ^4.6.13
         version: 4.6.13
       named-logs:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.2
+        version: 0.3.2
       remote-account:
         specifier: ^0.2.2
         version: 0.2.2
@@ -326,12 +326,15 @@ importers:
 
   packages/tlock-decrypter:
     dependencies:
+      fuzd-common:
+        specifier: workspace:*
+        version: link:../common
       fuzd-scheduler:
         specifier: workspace:*
         version: link:../scheduler
       named-logs:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.2
+        version: 0.3.2
       tlock-js:
         specifier: ^0.9.0
         version: 0.9.0
@@ -355,8 +358,8 @@ importers:
   platforms/cf-worker:
     dependencies:
       named-logs:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.2
+        version: 0.3.2
       named-logs-context:
         specifier: ^0.1.1
         version: 0.1.1
@@ -4637,8 +4640,8 @@ packages:
   named-logs@0.2.4:
     resolution: {integrity: sha512-QHlcLpK2Ij+u7ZYDYgaYkTIlC/NcOwEnFdqbY+PF9ewAMUjvBwRVUyqBUtVaJ3V2YKVy2HiloAgLUdOEVRRyBA==}
 
-  named-logs@0.3.0:
-    resolution: {integrity: sha512-RC3u4eUFuvsACe7JQ513vIh6lYvXKXxP6f1dX4kdRGRE2Ep+QvnauybSdECXUHT/eROKaJITKQTWN9Kmd9Oh4Q==}
+  named-logs@0.3.2:
+    resolution: {integrity: sha512-rpgShWrH6NakMKUDK32Pn/FZyPl7QoQRleMekHKkbrExXDymb2wNm3/BUbdTG5f3v7Qa17imVkSWHOfNFhDIPw==}
 
   nanoid@3.3.7:
     resolution: {integrity: sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==}
@@ -10603,7 +10606,7 @@ snapshots:
 
   named-logs@0.2.4: {}
 
-  named-logs@0.3.0: {}
+  named-logs@0.3.2: {}
 
   nanoid@3.3.7: {}
 

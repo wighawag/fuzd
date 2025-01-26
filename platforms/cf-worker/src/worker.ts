@@ -35,7 +35,7 @@ async function wrapWithLogger(
 		request,
 		'FUZD.cloudflare',
 		env.LOGFLARE_API_KEY && env.LOGFLARE_SOURCE
-			? logflareReport({apiKey: env.LOGFLARE_API_KEY, source: env.LOGFLARE_SOURCE})
+			? logflareReport({batchAsSingleEvent: true, apiKey: env.LOGFLARE_API_KEY, source: env.LOGFLARE_SOURCE})
 			: consoleReporter,
 	);
 	// const trackLogger = new Proxy(_trackLogger, {

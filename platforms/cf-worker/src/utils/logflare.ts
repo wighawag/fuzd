@@ -1,100 +1,119 @@
 import type {LogEvent, LogLevels, Reporter} from 'workers-logger';
-import {format} from 'workers-logger';
 
-export const logflareReport: ({apiKey, source}: {apiKey: string; source: string}) => Reporter = ({apiKey, source}) => {
-	return (events: LogEvent[], {req, res}: {req: Request; res: Response}) => {
+const levelOrder: LogLevels[] = ['fatal', 'error', 'warn', 'debug', 'info', 'log'];
+
+export const logflareReport: ({
+	apiKey,
+	source,
+	batchAsSingleEvent,
+}: {
+	apiKey: string;
+	source: string;
+	batchAsSingleEvent?: boolean;
+}) => Reporter = ({batchAsSingleEvent, apiKey, source}) => {
+	return async (events: LogEvent[], {req, res}: {req: Request; res: Response}) => {
 		const url = new URL(req.url);
 
-		let firstError;
-		let logs: {
-			level: LogLevels;
-			message: any;
-			error:
-				| {
-						name: any;
-						message: any;
-						stack: any;
-				  }
-				| undefined;
-		}[] = [];
-		try {
-			logs = events.map((i) => {
-				let firstMessage: string = i.message || 'no message provided';
-				let moreMessages: string[] = [];
-				if (Array.isArray(i.messages) && i.messages.length > 0) {
-					firstMessage =
-						i.messages[0] && typeof i.messages[0] === 'object' && 'toString' in i.messages[0]
-							? i.messages[0].toString()
-							: '' + i.messages[0];
-					moreMessages = i.messages
-						.slice(1)
-						.map((m) => (m && typeof m === 'object' && 'toString' in m ? m.toString() : '' + m));
-				}
-				if (i.extra && Array.isArray(i.extra)) {
-					moreMessages.push(
-						...i.extra.map((m) => (m && typeof m === 'object' && 'toString' in m ? m.toString() : '' + m)),
-					);
-				}
-				return {
-					level: i.level,
-					message: moreMessages ? format(firstMessage, ...moreMessages) : format(firstMessage),
-					error: i.error
-						? {
-								name: i.error.name,
-								message: i.error.message,
-								stack: i.error.stack,
-							}
-						: undefined,
-				};
-			});
+		console.info(`reporting ${events.length} events on ${url.pathname}...`);
 
-			for (const l of logs) {
-				if (l.error) {
-					firstError = l.error;
-					break;
-				}
-			}
-		} catch (err: any) {
-			console.error(`logflare handling errored out with`, {
-				events,
-			});
-			firstError = {
-				name: err.name,
-				message: err.toString(),
-				stack: err.stack,
-			};
-			logs.push({
-				level: 'error',
-				message: err.toString(),
-				error: firstError,
-			});
-		}
-
-		const metadata = {
+		// ${req.headers.get('cf-connecting-ip')} (${req.headers.get('cf-ray')})
+		const requestMetadata = {
 			method: req.method,
 			pathname: url.pathname,
-			headers: Object.fromEntries(req.headers),
-			response: {
-				status: res.status,
-				headers: Object.fromEntries(res.headers),
-			},
-			log: logs,
-			firstError,
+			// headers: req.headers ? Object.fromEntries(req.headers) : undefined,
 		};
 
-		const message = `${req.headers.get('cf-connecting-ip')} (${req.headers.get('cf-ray')}) ${req.method} ${req.url} ${res.status}`;
+		let body: string | undefined;
 
-		return fetch('https://api.logflare.app/logs', {
+		if (batchAsSingleEvent) {
+			let firstMessage: string = 'no message provided';
+
+			let firstImportantEvent: LogEvent | undefined;
+			for (const event of events) {
+				if (!firstImportantEvent || levelOrder.indexOf(event.level) < levelOrder.indexOf(firstImportantEvent.level)) {
+					firstImportantEvent = event;
+				}
+			}
+
+			if (!firstImportantEvent) {
+				firstImportantEvent = {
+					name: 'firstImportantEvent',
+					level: 'error',
+					messages: ['no events provided'],
+				};
+			}
+
+			if (Array.isArray(firstImportantEvent.messages) && firstImportantEvent.messages.length > 0) {
+				const message = firstImportantEvent.messages[0];
+				firstMessage =
+					message && typeof message === 'object' && 'toString' in message ? message.toString() : '' + message;
+			}
+			const log_entry = `${res.status} ${req.url}: ${firstMessage}`;
+			try {
+				body = JSON.stringify({
+					source,
+					log_entry,
+					message: firstMessage,
+					metadata: {
+						logs: events.map((event) => ({
+							level: event.level,
+							message: `${event.messages[0] || 'no message'}`,
+							params:
+								event.messages.length > 1
+									? event.messages.slice(1).map((v) => ({
+											value: v,
+										}))
+									: undefined,
+						})),
+						request: requestMetadata,
+					},
+				});
+			} catch {}
+		} else {
+			const batch = events.map((event) => ({
+				message: `${res.status} ${req.url}: ${event.messages[0] || 'no message'}`,
+				metadata: {
+					level: event.level,
+					params:
+						event.messages.length > 1
+							? event.messages.slice(1).map((v) => ({
+									value: v,
+								}))
+							: undefined,
+					request: requestMetadata,
+				},
+			}));
+
+			try {
+				body = JSON.stringify({
+					source,
+					batch,
+				});
+			} catch {}
+		}
+
+		if (!body) {
+			const message = 'failed to stringify logflare body';
+			console.error(message, {data: {events}});
+			body = JSON.stringify({
+				source,
+				log_entry: message,
+				metadata: {level: 'error', request: requestMetadata},
+			});
+			return;
+		}
+
+		const response: Response = await fetch('https://api.logflare.app/logs', {
 			method: 'POST',
 			headers: {
 				'x-api-key': apiKey,
 				'content-type': 'application/json',
 			},
-			body: JSON.stringify({
-				source,
-				log_entry: message,
-				metadata,
-			}),
+			body,
 		});
+		if (response.status !== 200) {
+			console.error(`${response.status} ${response.statusText}, ${await response.text()}`, {data: {events}});
+		}
+		return response;
 	};
 };

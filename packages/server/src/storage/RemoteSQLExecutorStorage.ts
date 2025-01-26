@@ -3,10 +3,10 @@ import type {ExecutorStorage, BroadcasterData, ChainConfiguration, BroadcasterDa
 import {sqlToStatements, toValues} from './utils.js';
 import {logs} from 'named-logs';
 import setupTables from '../schema/ts/executor.sql.js';
-import {Fees, IntegerString, PendingExecutionStored, String0x, UpdateableParameter} from 'fuzd-common';
+import {FUZDLogger, Fees, IntegerString, PendingExecutionStored, String0x, UpdateableParameter} from 'fuzd-common';
 import {wait} from '../utils/time.js';
 
-const logger = logs('fuzd-server-executor-storage-sql');
+const logger = <FUZDLogger>logs('fuzd-server-executor-storage-sql');
 
 type BroadcasterInDB = {
 	address: String0x;

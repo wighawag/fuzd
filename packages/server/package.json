@@ -33,7 +33,7 @@
     "fuzd-scheduler": "workspace:*",
     "fuzd-tlock-decrypter": "workspace:*",
     "hono": "^4.6.13",
-    "named-logs": "^0.3.0",
+    "named-logs": "^0.3.2",
     "remote-account": "^0.2.2",
     "remote-sql": "^0.0.6",
     "tlock-js": "^0.9.0",

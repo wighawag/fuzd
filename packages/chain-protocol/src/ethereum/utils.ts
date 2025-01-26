@@ -1,8 +1,8 @@
 import {logs} from 'named-logs';
 import type {EIP1193ProviderWithoutEvents, EIP1193TransactionReceipt} from 'eip-1193';
-import {String0x} from 'fuzd-common';
+import {FUZDLogger, String0x} from 'fuzd-common';
 
-const logger = logs('fuzd-chain-protocol-ethereum-utils');
+const logger = <FUZDLogger>logs('fuzd-chain-protocol-ethereum-utils');
 
 export async function getTransactionStatus(
 	provider: EIP1193ProviderWithoutEvents,

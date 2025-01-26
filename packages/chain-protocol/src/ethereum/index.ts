@@ -13,6 +13,7 @@ import {createCurriedJSONRPC} from 'remote-procedure-call';
 import {
 	DerivationParameters,
 	fromHex,
+	FUZDLogger,
 	getBestGasEstimate,
 	IntegerString,
 	String0x,
@@ -25,7 +26,7 @@ import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {keccak_256} from '@noble/hashes/sha3';
 export type * from './types.js';
 
-const logger = logs('fuzd-chain-protocol-ethereum');
+const logger = <FUZDLogger>logs('fuzd-chain-protocol-ethereum');
 
 export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionData> {
 	private rpc: CurriedRPC<Methods>;

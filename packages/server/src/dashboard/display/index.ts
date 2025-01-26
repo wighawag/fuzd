@@ -1,10 +1,10 @@
 import {logs} from 'named-logs';
-import {PendingExecutionStored} from 'fuzd-common';
+import {FUZDLogger, PendingExecutionStored} from 'fuzd-common';
 import {ScheduledExecutionQueued} from 'fuzd-scheduler';
 import {formatEther, formatUnits, zeroAddress} from 'viem';
 import {Config} from '../../setup.js';
 
-const logger = logs('fuzd-server-display');
+const logger = <FUZDLogger>logs('fuzd-server-display');
 
 export function displayScheduledExecutionQueued<TransactionDataType>(
 	timeDiff: number,

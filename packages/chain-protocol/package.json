@@ -30,7 +30,7 @@
     "@scure/starknet": "^1.1.0",
     "eip-1193-signer": "^0.1.0",
     "fuzd-common": "workspace:*",
-    "named-logs": "^0.3.0",
+    "named-logs": "^0.3.2",
     "remote-account": "^0.2.2",
     "remote-procedure-call": "^0.0.15",
     "starknet-core": "^0.0.3",
