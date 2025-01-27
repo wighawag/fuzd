@@ -12,8 +12,12 @@ export function computeInitialExecutionTimeFromSubmission<ExecutionDataType>(
 			return timing.expectedTime;
 		case 'delta-time':
 			return timing.delta + timing.startTransaction.broadcastTime;
+		case 'delta-time-with-target-time':
+			return Math.max(timing.delta + timing.startTransaction.broadcastTime, timing.targetTimeUnlessHigherDelta);
 	}
-	throw new Error(`execution timing type must be "fixed-time" | "fixed-round" | "delta-time`);
+	throw new Error(
+		`execution timing type must be "fixed-time" | "fixed-round" | "delta-time" | "delta-time-with-target-time"`,
+	);
 }
 
 export function computePotentialExecutionTime<ExecutionDataType>(
@@ -53,5 +57,7 @@ export function computePotentialExecutionTime<ExecutionDataType>(
 			return startTimePlusDelta;
 	}
 
-	throw new Error(`execution timing type must be "fixed-time" | "fixed-round" | "delta-time"`);
+	throw new Error(
+		`execution timing type must be "fixed-time" | "fixed-round" | "delta-time" | "delta-time-with-target-time"`,
+	);
 }
