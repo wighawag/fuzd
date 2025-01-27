@@ -1,5 +1,13 @@
 # fuzd-tlock-decrypter
 
+## 0.9.7
+
+### Patch Changes
+
+- fixes + allow more timing options
+- Updated dependencies
+  - fuzd-scheduler@0.9.7
+
 ## 0.9.6
 
 ### Patch Changes

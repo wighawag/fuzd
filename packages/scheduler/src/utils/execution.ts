@@ -27,6 +27,18 @@ export function computePotentialExecutionTime<ExecutionDataType>(
 		case 'fixed-round':
 			return timing.expectedTime;
 		case 'delta-time':
+			return (
+				timing.delta +
+				(execution.priorTransactionConfirmation
+					? execution.priorTransactionConfirmation?.startTime
+						? execution.priorTransactionConfirmation?.startTime
+						: execution.priorTransactionConfirmation?.blockTime
+					: state?.startTimeToCountFrom
+						? state.startTimeToCountFrom
+						: timing.startTransaction.broadcastTime)
+			);
+
+		case 'delta-time-with-target-time':
 			const startTime = execution.priorTransactionConfirmation
 				? execution.priorTransactionConfirmation?.startTime
 					? execution.priorTransactionConfirmation?.startTime
@@ -34,7 +46,6 @@ export function computePotentialExecutionTime<ExecutionDataType>(
 				: state?.startTimeToCountFrom
 					? state.startTimeToCountFrom
 					: timing.startTransaction.broadcastTime;
-
 			const startTimePlusDelta = startTime + timing.delta;
 			if (timing.targetTimeUnlessHigherDelta && timing.targetTimeUnlessHigherDelta > startTimePlusDelta) {
 				return timing.targetTimeUnlessHigherDelta;

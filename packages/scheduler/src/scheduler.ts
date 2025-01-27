@@ -161,10 +161,11 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			initialTime =
 				(scheduledExecutionQueued.priorTransactionConfirmation?.blockTime ||
 					scheduledExecutionQueued.timing.startTransaction.broadcastTime) + scheduledExecutionQueued.timing.delta;
-			if (
-				scheduledExecutionQueued.timing.targetTimeUnlessHigherDelta &&
-				scheduledExecutionQueued.timing.targetTimeUnlessHigherDelta > initialTime
-			) {
+		} else if (scheduledExecutionQueued.timing.type === 'delta-time-with-target-time') {
+			initialTime =
+				(scheduledExecutionQueued.priorTransactionConfirmation?.blockTime ||
+					scheduledExecutionQueued.timing.startTransaction.broadcastTime) + scheduledExecutionQueued.timing.delta;
+			if (scheduledExecutionQueued.timing.targetTimeUnlessHigherDelta > initialTime) {
 				initialTime = scheduledExecutionQueued.timing.targetTimeUnlessHigherDelta;
 			}
 		} else if (scheduledExecutionQueued.timing.type === 'fixed-round') {
@@ -281,6 +282,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				} else {
 					return {status: 'unchanged', execution};
 				}
+			case 'delta-time-with-target-time':
 			case 'delta-time':
 				if (!execution.priorTransactionConfirmation) {
 					const txStatus = await chainProtocol.getTransactionStatus(timing.startTransaction);

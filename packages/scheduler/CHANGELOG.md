@@ -1,5 +1,11 @@
 # fuzd-scheduler
 
+## 0.9.7
+
+### Patch Changes
+
+- fixes + allow more timing options
+
 ## 0.9.6
 
 ### Patch Changes

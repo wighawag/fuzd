@@ -4,7 +4,16 @@
  */
 
 import type {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import type {ScheduleInfo, ScheduledExecution, DecryptedPayload} from 'fuzd-scheduler';
+import type {
+	ScheduleInfo,
+	ScheduledExecution,
+	DecryptedPayload,
+	TimingTypes,
+	FixedTime,
+	DeltaTime,
+	FixedRound,
+	DeltaTimeWithTargetTime,
+} from 'fuzd-scheduler';
 import {timelockEncrypt, HttpChainClient, roundAt, Buffer} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';
 import {
@@ -68,6 +77,18 @@ function fromSimplerTransactionData(
 		throw new Error(`invalid transaction: ${simple}`);
 	}
 }
+
+export type Submission = {
+	slot: string;
+	chainId: IntegerString;
+	transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
+	maxFeePerGasAuthorized: bigint;
+	criticalDelta?: number;
+	timing: FixedTime | DeltaTime | DeltaTimeWithTargetTime | Omit<FixedRound, 'scheduledRound'>;
+	paymentReserve?: {amount: bigint; broadcaster: String0x};
+	onBehalf?: `0x${string}`;
+	inClear?: boolean;
+};
 
 export function createClient(config: ClientConfig) {
 	const wallet = privateKeyToAccount(config.privateKey);
@@ -147,22 +168,16 @@ export function createClient(config: ClientConfig) {
 	}
 
 	async function scheduleExecution(
-		execution: {
-			slot: string;
-			chainId: IntegerString;
-			transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
-			maxFeePerGasAuthorized: bigint;
-			criticalDelta?: number;
-			scheduledTime: number;
-			expiryDelta?: number;
-			paymentReserve?: {amount: bigint; broadcaster: String0x};
-			onBehalf?: `0x${string}`;
-		},
+		execution: Submission,
 		options?: {fakeEncrypt?: boolean},
 	): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
-		if (execution.expiryDelta && execution.criticalDelta && execution.criticalDelta > execution.expiryDelta) {
+		if (
+			execution.timing.expiryDelta &&
+			execution.criticalDelta &&
+			execution.criticalDelta > execution.timing.expiryDelta
+		) {
 			throw new Error(
-				`invalid criticalDelta, criticalDelta need to be smaller than expiryDelta, it used to prioritize its execution`,
+				`invalid criticalDelta, criticalDelta need to be smaller than timing.expiryDelta, it used to prioritize its execution`,
 			);
 		}
 		let executionToSend: ScheduledExecution<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>>;
@@ -183,33 +198,73 @@ export function createClient(config: ClientConfig) {
 				},
 			],
 		};
-		const payloadAsJSONString = JSON.stringify(payloadJSON);
-
-		let round: number;
 
 		const timestamp = Math.floor(Date.now() / 1000);
+		const partialTiming = execution.timing;
+		let timing: TimingTypes;
+		let round: number | undefined;
 
-		const drandChainInfo = await drandClient.chain().info();
-		round = roundAt(options?.fakeEncrypt ? timestamp * 1000 : execution.scheduledTime * 1000, drandChainInfo);
+		if (partialTiming.type === 'fixed-round') {
+			if (execution.inClear) {
+				throw new Error(`fixed-round can't be used in clear`);
+			}
+			const drandChainInfo = await drandClient.chain().info();
+			round = roundAt(options?.fakeEncrypt ? timestamp * 1000 : partialTiming.expectedTime * 1000, drandChainInfo);
+			timing = {...partialTiming, scheduledRound: round};
+		} else if (!execution.inClear) {
+			timing = partialTiming;
+			if (timing.type === 'fixed-time') {
+				const drandChainInfo = await drandClient.chain().info();
+				round = roundAt(options?.fakeEncrypt ? timestamp * 1000 : timing.scheduledTime * 1000, drandChainInfo);
+			} else if (timing.type == 'delta-time-with-target-time') {
+				const drandChainInfo = await drandClient.chain().info();
+				round = roundAt(
+					options?.fakeEncrypt ? timestamp * 1000 : timing.targetTimeUnlessHigherDelta * 1000,
+					drandChainInfo,
+				);
+			}
+		} else {
+			timing = partialTiming;
+		}
 
-		const payload = await timelockEncrypt(round, Buffer.from(payloadAsJSONString, 'utf-8'), drandClient);
-		executionToSend = {
-			chainId: execution.chainId,
-			slot: execution.slot,
-			timing: {
-				type: 'fixed-round',
-				expectedTime: execution.scheduledTime,
-				scheduledRound: round,
-				expiryDelta: execution.expiryDelta,
-			},
-			executionServiceParameters: serviceParameters,
-			paymentReserve: execution.paymentReserve
-				? {amount: execution.paymentReserve.amount.toString(), broadcaster: execution.paymentReserve.broadcaster}
-				: undefined, // TODO 0xstring ?
-			onBehalf: execution.onBehalf,
-			type: 'time-locked',
-			payload,
-		};
+		if (
+			round &&
+			(timing.type === 'delta-time-with-target-time' || timing.type === 'fixed-round' || timing.type === 'fixed-time')
+		) {
+			const payloadAsJSONString = JSON.stringify(payloadJSON);
+			const payload = await timelockEncrypt(round, Buffer.from(payloadAsJSONString, 'utf-8'), drandClient);
+			executionToSend = {
+				chainId: execution.chainId,
+				slot: execution.slot,
+				timing,
+				executionServiceParameters: serviceParameters,
+				paymentReserve: execution.paymentReserve
+					? {amount: execution.paymentReserve.amount.toString(), broadcaster: execution.paymentReserve.broadcaster}
+					: undefined, // TODO 0xstring ?
+				onBehalf: execution.onBehalf,
+				type: 'time-locked',
+				payload,
+			};
+		} else {
+			if (!execution.inClear) {
+				throw new Error(
+					`option provided (${timing.type}) forces the execution to be in clear, provide the option {inClear} if tjat is what you want`,
+				);
+			}
+			executionToSend = {
+				chainId: execution.chainId,
+				slot: execution.slot,
+				timing,
+				executionServiceParameters: serviceParameters,
+				paymentReserve: execution.paymentReserve
+					? {amount: execution.paymentReserve.amount.toString(), broadcaster: execution.paymentReserve.broadcaster}
+					: undefined, // TODO 0xstring ?
+				onBehalf: execution.onBehalf,
+				type: 'clear',
+				executions: payloadJSON.executions,
+			};
+		}
+
 		const jsonAsString = JSON.stringify(executionToSend);
 		const signature = await wallet.signMessage({message: jsonAsString});
 		if (typeof config.schedulerEndPoint === 'string') {

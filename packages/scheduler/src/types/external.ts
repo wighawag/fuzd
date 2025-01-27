@@ -24,7 +24,13 @@ export type DeltaTime = {
 	expiryDelta?: number;
 	startTransaction: PriorTransactionInfo;
 	delta: number;
-	targetTimeUnlessHigherDelta?: number;
+};
+export type DeltaTimeWithTargetTime = {
+	type: 'delta-time-with-target-time';
+	expiryDelta?: number;
+	startTransaction: PriorTransactionInfo;
+	delta: number;
+	targetTimeUnlessHigherDelta: number;
 };
 // ------------------------------------------------------------------------------------------------
 
@@ -54,13 +60,13 @@ export type FixedRound = {
 // ------------------------------------------------------------------------------------------------
 // TimingTypesCompatibleWithTimeLock
 // ------------------------------------------------------------------------------------------------
-export type TimingTypesCompatibleWithTimeLock = FixedRound | FixedTime;
+export type TimingTypesCompatibleWithTimeLock = FixedRound | FixedTime | DeltaTimeWithTargetTime;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
 // TimingTypes
 // ------------------------------------------------------------------------------------------------
-export type TimingTypes = FixedRound | DeltaTime | FixedTime;
+export type TimingTypes = FixedRound | DeltaTime | DeltaTimeWithTargetTime | FixedTime;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------

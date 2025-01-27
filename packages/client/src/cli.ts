@@ -76,7 +76,10 @@ async function main() {
 			to,
 		},
 		maxFeePerGasAuthorized,
-		scheduledTime,
+		timing: {
+			type: 'fixed-round',
+			expectedTime: scheduledTime,
+		},
 	});
 }
 main();

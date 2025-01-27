@@ -1,5 +1,14 @@
 # fuzd-client
 
+## 0.9.8
+
+### Patch Changes
+
+- fixes + allow more timing options
+- Updated dependencies
+  - fuzd-scheduler@0.9.7
+  - fuzd-executor@0.9.6
+
 ## 0.9.7
 
 ### Patch Changes

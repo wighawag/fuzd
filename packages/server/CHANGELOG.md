@@ -1,5 +1,14 @@
 # fuzd-server
 
+## 0.9.7
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-tlock-decrypter@0.9.7
+  - fuzd-scheduler@0.9.7
+  - fuzd-executor@0.9.6
+
 ## 0.9.6
 
 ### Patch Changes

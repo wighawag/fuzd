@@ -45,7 +45,13 @@ export function initDecrypter<ExecutionDataType>(config: DecrypterConfig): Decry
 
 		if (json.type === 'time-locked') {
 			// onion decryption
-			if (!(execution.timing.type === 'fixed-time' || execution.timing.type === 'fixed-round')) {
+			if (
+				!(
+					execution.timing.type === 'fixed-time' ||
+					execution.timing.type === 'fixed-round' ||
+					execution.timing.type === 'delta-time-with-target-time'
+				)
+			) {
 			} else {
 				throw new Error(`execution timing of type "${execution.timing.type}" is not supported with tlock decrypter`);
 			}
@@ -58,6 +64,9 @@ export function initDecrypter<ExecutionDataType>(config: DecrypterConfig): Decry
 					break;
 				case 'fixed-round':
 					round = newTiming.scheduledRound;
+					break;
+				case 'delta-time-with-target-time':
+					round = newTiming.targetTimeUnlessHigherDelta;
 					break;
 			}
 			const retry = Math.floor(roundTime(drandChainInfo, round) / 1000);
