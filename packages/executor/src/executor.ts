@@ -610,9 +610,9 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				debtAssigned: debtDue.toString(),
 				onBehalf: execution.onBehalf,
 				bestTime: execution.bestTime,
-				helpedForUpToGasPrice: execution.helpedForUpToGasPrice;
+				helpedForUpToGasPrice: execution.helpedForUpToGasPrice,
 			};
-	
+
 			await storage.createOrUpdatePendingExecution(
 				newExecution,
 				{
