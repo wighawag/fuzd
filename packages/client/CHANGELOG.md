@@ -1,5 +1,11 @@
 # fuzd-client
 
+## 0.10.1
+
+### Patch Changes
+
+- export getBestGasEstimate as standalone function
+
 ## 0.10.0
 
 ### Minor Changes

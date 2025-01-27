@@ -78,6 +78,8 @@ function fromSimplerTransactionData(
 	}
 }
 
+export {getBestGasEstimate};
+
 export type Submission = {
 	slot: string;
 	chainId: IntegerString;
