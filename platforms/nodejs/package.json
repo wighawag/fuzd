@@ -1,6 +1,6 @@
 {
   "name": "fuzd-nodejs",
-  "version": "0.9.7",
+  "version": "0.10.0",
   "publishConfig": {
     "access": "public"
   },

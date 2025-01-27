@@ -1,5 +1,17 @@
 # fuzd-executor
 
+## 0.10.0
+
+### Minor Changes
+
+- release
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-chain-protocol@0.10.0
+  - fuzd-common@0.10.0
+
 ## 0.9.6
 
 ### Patch Changes

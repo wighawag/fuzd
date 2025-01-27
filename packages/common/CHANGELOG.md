@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.10.0
+
+### Minor Changes
+
+- release
+
 ## 0.9.4
 
 ### Patch Changes

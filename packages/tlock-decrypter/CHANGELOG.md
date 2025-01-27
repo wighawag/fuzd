@@ -1,5 +1,17 @@
 # fuzd-tlock-decrypter
 
+## 0.10.0
+
+### Minor Changes
+
+- release
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-common@0.10.0
+  - fuzd-scheduler@0.10.0
+
 ## 0.9.7
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.10.0
+
+### Minor Changes
+
+- release
+
 ## 0.9.0
 
 ### Minor Changes
