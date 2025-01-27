@@ -21,7 +21,7 @@ export type PriorTransactionInfo = {
 // ------------------------------------------------------------------------------------------------
 export type DeltaTime = {
 	type: 'delta-time';
-	expiry?: number;
+	expiryDelta?: number;
 	startTransaction: PriorTransactionInfo;
 	delta: number;
 };

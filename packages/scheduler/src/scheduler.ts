@@ -8,6 +8,7 @@ import {
 	ScheduleInfo,
 	Scheduler,
 	SchedulerBackend,
+	TimingTypes,
 } from './types/external.js';
 import {ScheduledExecutionQueued} from './types/scheduler-storage.js';
 import {
@@ -88,6 +89,17 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		return {chainId: execution.chainId, slot: execution.slot, account, checkinTime};
 	}
 
+	function getExpiryTime(initialTime: number, {timing}: {timing: TimingTypes}): number {
+		if (timing.type === 'delta-time') {
+			if (timing.expiryDelta) {
+				return initialTime + timing.expiryDelta;
+			}
+		} else if (timing.expiry) {
+			return timing.expiry;
+		}
+		return initialTime + maxExpiry;
+	}
+
 	async function retryLater(
 		execution: ScheduledExecutionQueued<TransactionDataType>,
 		newCheckinTime: number,
@@ -161,6 +173,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			logger.error(errorMessage);
 			throw new Error(errorMessage);
 		}
+		const expiryTime = getExpiryTime(initialTime, scheduledExecutionQueued);
 
 		try {
 			const results: ExecutionResponse<TransactionDataType>[] = [];
@@ -175,7 +188,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					{
 						trusted: true,
 						onBehalf: scheduledExecutionQueued.onBehalf,
-						expiryTime: scheduledExecutionQueued.timing.expiry,
+						expiryTime,
 						initialTime,
 					}, // The scheduler is trusted to have verified the exectuion parameters
 				);
@@ -371,15 +384,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			lastCheckin: currentTimestamp,
 		});
 
-		logger.error(`${currentTimestamp} > ${newCheckinTime} + Math.min(${executionUpdated.timing.expiry} || ${Number.MAX_SAFE_INTEGER}, ${maxExpiry}) +
-			${expectedFinality} * ${worstCaseBlockTime}`);
+		const expiryTime = getExpiryTime(newCheckinTime, executionUpdated);
 
-		if (
-			currentTimestamp >
-			newCheckinTime +
-				Math.min(executionUpdated.timing.expiry || Number.MAX_SAFE_INTEGER, maxExpiry) +
-				expectedFinality * worstCaseBlockTime
-		) {
+		if (currentTimestamp > expiryTime + expectedFinality * worstCaseBlockTime) {
 			// delete if execution expired
 			logger.warn(`too late, archiving ${displayExecution(execution)}...`);
 			await storage.archiveExecution(execution);
