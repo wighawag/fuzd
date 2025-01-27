@@ -158,44 +158,59 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 			}
 		})
 
-		.post('/deleteFinalizedPendingExecutions/:chainId?', async (c) => {
-			try {
-				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString | undefined;
+		.post(
+			'/deleteFinalizedPendingExecutions/:chainId?',
+			typiaValidator('json', createValidate<{upTo?: number}>()),
+			async (c) => {
+				try {
+					const config = c.get('config');
+					const chainId = c.req.param('chainId') as IntegerString | undefined;
 
-				const timestamp = Math.floor(Date.now() / 1000);
+					const timestamp = Math.floor(Date.now() / 1000);
 
-				await config.executorStorage.deleteFinalizedPendingExecutions({chainId, upTo: timestamp - 24 * 3600});
+					const {upTo} = await c.req.json();
 
-				return c.json(
-					{
-						success: true as const,
-					},
-					200,
-				);
-			} catch (err) {
-				return c.json(createErrorObject(err), 500);
-			}
-		})
-		.post('/deleteFinalizedScheduledExecutions/:chainId?', async (c) => {
-			try {
-				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString | undefined;
+					await config.executorStorage.deleteFinalizedPendingExecutions({chainId, upTo: upTo || timestamp - 24 * 3600});
 
-				const timestamp = Math.floor(Date.now() / 1000);
+					return c.json(
+						{
+							success: true as const,
+						},
+						200,
+					);
+				} catch (err) {
+					return c.json(createErrorObject(err), 500);
+				}
+			},
+		)
+		.post(
+			'/deleteFinalizedScheduledExecutions/:chainId?',
+			typiaValidator('json', createValidate<{upTo?: number}>()),
+			async (c) => {
+				try {
+					const config = c.get('config');
+					const chainId = c.req.param('chainId') as IntegerString | undefined;
 
-				await config.schedulerStorage.deleteFinalizedScheduledExecutions({chainId, upTo: timestamp - 24 * 3600});
+					const timestamp = Math.floor(Date.now() / 1000);
 
-				return c.json(
-					{
-						success: true as const,
-					},
-					200,
-				);
-			} catch (err) {
-				return c.json(createErrorObject(err), 500);
-			}
-		})
+					const {upTo} = await c.req.json();
+
+					await config.schedulerStorage.deleteFinalizedScheduledExecutions({
+						chainId,
+						upTo: upTo || timestamp - 24 * 3600,
+					});
+
+					return c.json(
+						{
+							success: true as const,
+						},
+						200,
+					);
+				} catch (err) {
+					return c.json(createErrorObject(err), 500);
+				}
+			},
+		)
 		.post('/updateFees/:chainId', async (c) => {
 			try {
 				const config = c.get('config');
