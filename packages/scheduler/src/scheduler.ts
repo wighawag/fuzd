@@ -250,6 +250,15 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		switch (timing.type) {
 			case 'fixed-time':
 			case 'fixed-round':
+				if (timing.type === 'fixed-round') {
+					if (currentTimestamp < timing.expectedTime) {
+						return {status: 'unchanged', execution};
+					}
+				} else {
+					if (currentTimestamp < timing.scheduledTime) {
+						return {status: 'unchanged', execution};
+					}
+				}
 				if (timing.assumedTransaction && !execution.priorTransactionConfirmation) {
 					const txStatus = await chainProtocol.getTransactionStatus(timing.assumedTransaction);
 					if (!txStatus.success) {
@@ -264,13 +273,17 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						await storage.archiveExecution(execution);
 						return {status: 'archived'};
 					} else {
-						if (txStatus.status == 'failed' || txStatus.status == 'replaced') {
+						if (txStatus.status == 'failed') {
 							logger.warn(
 								`deleting the execution as the tx it depends on  ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
 							);
 							// TODO archive
 							await storage.archiveExecution(execution);
 							return {status: 'archived'};
+						} else if (txStatus.status === 'replaced') {
+							// what to do if replaced ? //  || txStatus.status == 'replaced'
+							// we do not want to delete as it could be replaced by player....
+							return {status: 'unchanged', execution};
 						}
 						// we do not really need to store that, we can skip it and simply execute
 						execution.priorTransactionConfirmation = {
@@ -291,20 +304,27 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						throw txStatus.error;
 					}
 					if (!txStatus.finalised) {
-						logger.warn(`prior tx not yet finalized, will retry later...`);
+						if (currentTimestamp > timing.startTransaction.broadcastTime + expectedFinality * worstCaseBlockTime) {
+							logger.warn(`prior tx not yet finalized, will retry later...`);
+						}
+
 						const newCheckinTime = computePotentialExecutionTime(execution, {
 							startTimeToCountFrom: txStatus.blockTime || currentTimestamp,
 						});
 						const executionToRetry = await retryLater(execution, newCheckinTime);
 						return {status: 'willRetry', execution: executionToRetry};
 					} else {
-						if (txStatus.status == 'failed' || txStatus.status == 'replaced') {
+						if (txStatus.status == 'failed') {
 							logger.warn(
 								`deleting the execution as the tx it depends on ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
 							);
 							// TODO archive
 							await storage.archiveExecution(execution);
 							return {status: 'archived'};
+						} else if (txStatus.status === 'replaced') {
+							// what to do if replaced ? //  || txStatus.status == 'replaced'
+							// we do not want to delete as it could be replaced by player....
+							return {status: 'unchanged', execution};
 						}
 						// TODO implement event expectation with params extraction
 						// if (execution.timing.startTransaction.expectEvent) {
@@ -465,8 +485,8 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 
 		for (const execution of executions) {
 			try {
-				await processExecution(execution, result);
 			} catch (processExecutionError: any) {
+				await processExecution(execution, result);
 				logger.error(
 					`Processing of execution "${execution.chainId}_${execution.account}_${execution.slot}" thrown an exception: ${processExecutionError.message || processExecutionError}`,
 				);
