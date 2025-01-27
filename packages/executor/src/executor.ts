@@ -271,6 +271,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			}
 		}
 
+		const initialTime = options?.initialTime || timestamp;
 		const pendingExecutionToStore: ExecutionToStore<TransactionDataType> = {
 			chainId: submission.chainId,
 			account,
@@ -280,8 +281,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			transaction: submission.transaction as TransactionDataType,
 			maxFeePerGasAuthorized: submission.maxFeePerGasAuthorized,
 			isVoidTransaction: false,
-			initialTime: options?.initialTime || timestamp,
-			bestTime: submission.bestTime,
+			initialTime,
+			bestTime: submission.criticalDelta ? initialTime + submission.criticalDelta : undefined,
 			expiryTime: options?.expiryTime,
 			onBehalf: options?.onBehalf,
 			finalized: false,

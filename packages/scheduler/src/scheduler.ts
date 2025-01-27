@@ -36,7 +36,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 	type TransactionDataType = TransactionDataTypes<ChainProtocolTypes>;
 
 	const {chainProtocols, storage, executor} = config;
-	const maxExpiry = (config.maxExpiry = 24 * 3600);
+	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
 
 	async function scheduleExecution(
@@ -325,6 +325,8 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		// or alternatively a startTime option to diregard past transaction
 		// but this comes with its own risk.
 
+		// timestamp cache
+		// TODO add real time offset to it
 		let currentTimestamp = result.chainTimestamps[chainIdDecimal];
 		if (!currentTimestamp) {
 			currentTimestamp = await chainProtocol.getTimestamp();
@@ -332,7 +334,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		}
 
 		if (!currentTimestamp) {
-			logger.error(`currentTimestamp: ${currentTimestamp}`);
+			logger.error(`no currentTimestamp: ${currentTimestamp}`);
 		}
 
 		const updates = await checkAndUpdateExecutionIfNeeded(execution, currentTimestamp);
@@ -368,6 +370,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		const newCheckinTime = computePotentialExecutionTime(executionUpdated, {
 			lastCheckin: currentTimestamp,
 		});
+
+		logger.error(`${currentTimestamp} > ${newCheckinTime} + Math.min(${executionUpdated.timing.expiry} || ${Number.MAX_SAFE_INTEGER}, ${maxExpiry}) +
+			${expectedFinality} * ${worstCaseBlockTime}`);
 
 		if (
 			currentTimestamp >

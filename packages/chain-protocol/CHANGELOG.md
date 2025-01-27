@@ -1,5 +1,12 @@
 # fuzd-chain-protocol
 
+## 0.9.5
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-common@0.9.4
+
 ## 0.9.4
 
 ### Patch Changes

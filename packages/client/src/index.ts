@@ -152,7 +152,7 @@ export function createClient(config: ClientConfig) {
 			chainId: IntegerString;
 			transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
 			maxFeePerGasAuthorized: bigint;
-			bestTime?: number;
+			criticalDelta?: number;
 			time: number;
 			expiry?: number;
 			paymentReserve?: {amount: bigint; broadcaster: String0x};
@@ -160,13 +160,10 @@ export function createClient(config: ClientConfig) {
 		},
 		options?: {fakeEncrypt?: boolean},
 	): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
-		if (execution.bestTime && execution.bestTime < execution.time) {
+		if (execution.expiry && execution.criticalDelta && execution.time + execution.criticalDelta > execution.expiry) {
 			throw new Error(
-				`invalid bestTime, need to be greater than time, else set it to time itself for highest priority`,
+				`invalid criticalDelta, (criticalDelta + time) need to be smaller than expiry, it used to prioritize its execution`,
 			);
-		}
-		if (execution.expiry && execution.bestTime && execution.bestTime > execution.expiry) {
-			throw new Error(`invalid bestTime, need to be smaller than expiry, it used to prioritize its execution`);
 		}
 		let executionToSend: ScheduledExecution<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>>;
 		const remoteAccount = await _fetchRemoteAccount(execution.chainId);
@@ -182,7 +179,7 @@ export function createClient(config: ClientConfig) {
 					chainId: execution.chainId,
 					maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as String0x,
 					transaction: transactionData,
-					bestTime: execution.bestTime,
+					criticalDelta: execution.criticalDelta,
 				},
 			],
 		};

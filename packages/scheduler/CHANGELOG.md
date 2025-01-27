@@ -1,5 +1,14 @@
 # fuzd-scheduler
 
+## 0.9.5
+
+### Patch Changes
+
+- crititialDelta
+- Updated dependencies
+  - fuzd-common@0.9.4
+  - fuzd-chain-protocol@0.9.5
+
 ## 0.9.4
 
 ### Patch Changes

@@ -74,7 +74,7 @@ export type ExecutionSubmission<TransactionDataType> = {
 	chainId: IntegerString;
 	transaction: TransactionDataType;
 	maxFeePerGasAuthorized: String0x; // 1000 gwei // TODO CONFIGURE per network: max worst worst case
-	bestTime?: number;
+	criticalDelta?: number;
 	// TODO add payment tx
 	// cannot be verified as we don' want to track eth changes
 	// but this can help client count how much has been unspent
