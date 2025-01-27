@@ -52,7 +52,7 @@ async function main() {
 		throw new Error(`invalid delta`);
 	}
 	const gas = BigInt(options.gas);
-	const time = delta + Math.floor(Date.now() / 1000);
+	const scheduledTime = delta + Math.floor(Date.now() / 1000);
 	const data = options.delta ? (options.delta as String0x) : undefined;
 	const to = options.to ? (options.to as String0x) : undefined;
 	let maxFeePerGasAuthorized = BigInt(0);
@@ -76,7 +76,7 @@ async function main() {
 			to,
 		},
 		maxFeePerGasAuthorized,
-		time,
+		scheduledTime,
 	});
 }
 main();

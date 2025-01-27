@@ -1,5 +1,11 @@
 # fuzd-scheduler
 
+## 0.9.6
+
+### Patch Changes
+
+- targetTimeUnlessHigherDelta + expiryDelta
+
 ## 0.9.5
 
 ### Patch Changes

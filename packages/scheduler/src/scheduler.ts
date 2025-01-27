@@ -90,13 +90,10 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 	}
 
 	function getExpiryTime(initialTime: number, {timing}: {timing: TimingTypes}): number {
-		if (timing.type === 'delta-time') {
-			if (timing.expiryDelta) {
-				return initialTime + timing.expiryDelta;
-			}
-		} else if (timing.expiry) {
-			return timing.expiry;
+		if (timing.expiryDelta) {
+			return initialTime + timing.expiryDelta;
 		}
+
 		return initialTime + maxExpiry;
 	}
 
@@ -164,6 +161,12 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			initialTime =
 				(scheduledExecutionQueued.priorTransactionConfirmation?.blockTime ||
 					scheduledExecutionQueued.timing.startTransaction.broadcastTime) + scheduledExecutionQueued.timing.delta;
+			if (
+				scheduledExecutionQueued.timing.targetTimeUnlessHigherDelta &&
+				scheduledExecutionQueued.timing.targetTimeUnlessHigherDelta > initialTime
+			) {
+				initialTime = scheduledExecutionQueued.timing.targetTimeUnlessHigherDelta;
+			}
 		} else if (scheduledExecutionQueued.timing.type === 'fixed-round') {
 			initialTime = scheduledExecutionQueued.timing.expectedTime;
 		} else if (scheduledExecutionQueued.timing.type === 'fixed-time') {

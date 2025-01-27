@@ -24,6 +24,7 @@ export type DeltaTime = {
 	expiryDelta?: number;
 	startTransaction: PriorTransactionInfo;
 	delta: number;
+	targetTimeUnlessHigherDelta?: number;
 };
 // ------------------------------------------------------------------------------------------------
 
@@ -32,7 +33,7 @@ export type DeltaTime = {
 // ------------------------------------------------------------------------------------------------
 export type FixedTime = {
 	type: 'fixed-time';
-	expiry?: number;
+	expiryDelta?: number;
 	assumedTransaction?: PriorTransactionInfo;
 	scheduledTime: number;
 };
@@ -43,7 +44,7 @@ export type FixedTime = {
 // ------------------------------------------------------------------------------------------------
 export type FixedRound = {
 	type: 'fixed-round';
-	expiry?: number;
+	expiryDelta?: number;
 	assumedTransaction?: PriorTransactionInfo;
 	scheduledRound: number;
 	expectedTime: number;

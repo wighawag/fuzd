@@ -153,16 +153,16 @@ export function createClient(config: ClientConfig) {
 			transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
 			maxFeePerGasAuthorized: bigint;
 			criticalDelta?: number;
-			time: number;
-			expiry?: number;
+			scheduledTime: number;
+			expiryDelta?: number;
 			paymentReserve?: {amount: bigint; broadcaster: String0x};
 			onBehalf?: `0x${string}`;
 		},
 		options?: {fakeEncrypt?: boolean},
 	): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
-		if (execution.expiry && execution.criticalDelta && execution.time + execution.criticalDelta > execution.expiry) {
+		if (execution.expiryDelta && execution.criticalDelta && execution.criticalDelta > execution.expiryDelta) {
 			throw new Error(
-				`invalid criticalDelta, (criticalDelta + time) need to be smaller than expiry, it used to prioritize its execution`,
+				`invalid criticalDelta, criticalDelta need to be smaller than expiryDelta, it used to prioritize its execution`,
 			);
 		}
 		let executionToSend: ScheduledExecution<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>>;
@@ -190,7 +190,7 @@ export function createClient(config: ClientConfig) {
 		const timestamp = Math.floor(Date.now() / 1000);
 
 		const drandChainInfo = await drandClient.chain().info();
-		round = roundAt(options?.fakeEncrypt ? timestamp * 1000 : execution.time * 1000, drandChainInfo);
+		round = roundAt(options?.fakeEncrypt ? timestamp * 1000 : execution.scheduledTime * 1000, drandChainInfo);
 
 		const payload = await timelockEncrypt(round, Buffer.from(payloadAsJSONString, 'utf-8'), drandClient);
 		executionToSend = {
@@ -198,9 +198,9 @@ export function createClient(config: ClientConfig) {
 			slot: execution.slot,
 			timing: {
 				type: 'fixed-round',
-				expectedTime: execution.time,
+				expectedTime: execution.scheduledTime,
 				scheduledRound: round,
-				expiry: execution.expiry,
+				expiryDelta: execution.expiryDelta,
 			},
 			executionServiceParameters: serviceParameters,
 			paymentReserve: execution.paymentReserve

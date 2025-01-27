@@ -1,5 +1,13 @@
 # fuzd-client
 
+## 0.9.7
+
+### Patch Changes
+
+- targetTimeUnlessHigherDelta + expiryDelta
+- Updated dependencies
+  - fuzd-scheduler@0.9.6
+
 ## 0.9.6
 
 ### Patch Changes
