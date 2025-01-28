@@ -485,8 +485,8 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 
 		for (const execution of executions) {
 			try {
-			} catch (processExecutionError: any) {
 				await processExecution(execution, result);
+			} catch (processExecutionError: any) {
 				logger.error(
 					`Processing of execution "${execution.chainId}_${execution.account}_${execution.slot}" thrown an exception: ${processExecutionError.message || processExecutionError}`,
 				);
