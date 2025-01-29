@@ -251,25 +251,31 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 				from: broadcaster.address,
 			});
 		} catch (err: any) {
-			logger.error('estimation fails', {
-				error: {
-					name: err.name,
-					cause: err,
-				},
-			});
 			if (err.isInvalidError) {
+				logger.error('estimation fails with invalid error', {
+					error: {
+						name: err.name,
+						cause: err,
+					},
+				});
 				return {revert: 'unknown'}; // TODO add error message
 			} else if (err.message?.indexOf('revert')) {
 				// not 100% sure ?
 				// TODO error message // viem
-				// logger.error('The transaction reverts?', err, {
-				// 	from: broadcasterAddress,
-				// 	to: transactionData.to,
-				// 	data: transactionData.data,
-				// 	value: transactionData.value,
-				// });
+				logger.error(`The transaction reverts with "${err.message}"`, {
+					error: {
+						name: err.name,
+						cause: err,
+					},
+				});
 				return {notEnoughGas: true, revert: true};
 			} else {
+				logger.error('estimation fails for unknown reason', {
+					error: {
+						name: err.name,
+						cause: err,
+					},
+				});
 				return {revert: 'unknown'}; // TODO add error message
 			}
 		}
@@ -342,7 +348,6 @@ export class EthereumChainProtocol implements ChainProtocol<EthereumTransactionD
 			throw new Error(errorMessage);
 		}
 
-		// logger.error('already done, sending dummy transaction');
 		try {
 			// compute maxFeePerGas and maxPriorityFeePerGas to fill the total gas cost  * price that was alocated
 			// maybe not fill but increase from previoyus considering current fee and allowance

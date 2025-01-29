@@ -27,6 +27,10 @@ type ExecutionToStore<T> = Omit<
 	'hash' | 'broadcastTime' | 'nextCheckTime' | 'transactionParametersUsed'
 >;
 
+function computeExecutionIdentifier<T extends any>(execution: ExecutionToStore<T>): string {
+	return `${execution.chainId}/${execution.account}/${execution.slot}/${execution.batchIndex}`;
+}
+
 // taken from viem
 function formatInGwei(v: bigint | string) {
 	const decimals = 9;
@@ -341,7 +345,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				try {
 					await __processPendingTransaction(pendingExecution);
 				} catch (err: any) {
-					logger.error(`failed to process pending tx`, {
+					logger.error(`failed to process pending execution: ${computeExecutionIdentifier(pendingExecution)}`, {
 						error: {
 							name: err.name,
 							code: err.code,
@@ -378,7 +382,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		});
 
 		if (!dataFromStorage) {
-			const errorMessage = `could not lock broadcaster`;
+			const errorMessage = `could not lock broadcaster ${chainId}/${broadcasterAddress}`;
 			logger.error(errorMessage);
 			throw new Error(errorMessage);
 		}
@@ -433,13 +437,13 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			} else {
 				if (nonce !== currentNonceAsPerNetwork) {
 					if (currentNonceAsPerNetwork > nonce) {
-						const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}. this means some tx went through in between`;
+						const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}. this means some tx went through in between, execution: ${computeExecutionIdentifier(execution)}`;
 						logger.error(message);
 						noncePassedAlready = true;
 						// TODO test this scenario, but feel safer
 						throw new Error(message);
 					} else {
-						const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}, this means some tx has not been included yet and we should still keep using the exepected value.`;
+						const message = `nonce not matching, network nonce is ${currentNonceAsPerNetwork}, but expected nonce is ${nonce}, this means some tx has not been included yet and we should still keep using the exepected value, execution: ${computeExecutionIdentifier(execution)}`;
 						logger.error(message);
 					}
 				}
@@ -533,6 +537,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			let rawTxInfo: SignedTransactionInfo;
 			let isVoidTransaction = false;
 			if (options.forceVoid && 'signVoidTransaction' in chainProtocol && chainProtocol.signVoidTransaction) {
+				logger.error(`sending voidTransaction for ${computeExecutionIdentifier(execution)}`);
 				rawTxInfo = await chainProtocol.signVoidTransaction(execution.chainId, broadcaster, transactionParametersUsed);
 				isVoidTransaction = true;
 			} else {
@@ -566,15 +571,15 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 			if (!asPaymentFor) {
 				if (balance < maxCostAuthorized) {
-					const message = `not emough balance! ${balance} < ${maxCostAuthorized} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas})`;
+					const message = `broadcaster:${broadcaster.address}: not emough balance! ${balance} < ${maxCostAuthorized} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas})`;
 					logger.error(message);
 					throw new Error(message);
 				} else if (balance < maxCostAuthorized + feesToPay) {
-					const message = `not enough balance due to fees! ${balance} < ${maxCostAuthorized + feesToPay} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas}) + ${feesToPay}`;
+					const message = `broadcaster:${broadcaster.address}: not enough balance due to fees! ${balance} < ${maxCostAuthorized + feesToPay} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas}) + ${feesToPay}`;
 					logger.error(message);
 					throw new Error(message);
 				} else if (feesToPay > 0n && balance < maxCostAuthorized + currentDebt + feesToPay) {
-					const message = `not enough balance due to fees and debts! ${balance} < ${maxCostAuthorized + feesToPay + currentDebt} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas}) + ${feesToPay} + ${currentDebt}`;
+					const message = `broadcaster:${broadcaster.address}: not enough balance due to fees and debts! ${balance} < ${maxCostAuthorized + feesToPay + currentDebt} (${execution.maxFeePerGasAuthorized} * ${execution.transaction.gas}) + ${feesToPay} + ${currentDebt}`;
 					logger.error(message);
 					throw new Error(message);
 				}
@@ -628,7 +633,9 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			try {
 				await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
 			} catch (err: any) {
-				logger.error(`The broadcast (${newExecution.slot}) failed, we attempts one more time: ${err.message || err}`);
+				logger.error(
+					`The broadcast (${computeExecutionIdentifier(execution)}) failed, we attempts one more time: ${err.message || err}`,
+				);
 
 				const errorDueToFeeTooLow = ((err.message || err.toString()) as string).indexOf('feetoolow') != -1;
 
@@ -858,13 +865,15 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		}
 		if (txStatus.finalised) {
 			if (txStatus.status === 'failed') {
+				pendingExecution.lastError = 'FAILED';
 				logger.error(`transaction failed and finalized: ${pendingExecution.hash}`);
-			}
-
-			if (txStatus.status === 'replaced') {
+			} else if (txStatus.status === 'replaced') {
+				pendingExecution.lastError = 'REPLACED';
 				logger.error(
 					`transaction replaced and finalized: ${pendingExecution.hash}, from:${pendingExecution.transactionParametersUsed.from}, nonce:${pendingExecution.transactionParametersUsed.nonce}`,
 				);
+			} else {
+				pendingExecution.lastError = undefined;
 			}
 
 			pendingExecution.finalized = true;

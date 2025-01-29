@@ -23,6 +23,10 @@ import {
 import {SchedulerConfig} from './types/internal.js';
 import {ChainProtocol, TransactionDataTypes} from 'fuzd-chain-protocol';
 
+function computeScheduledExecutionIdentifier(scheduledExecution: ScheduledExecutionQueued<any>): string {
+	return `${scheduledExecution.chainId}/${scheduledExecution.account}/${scheduledExecution.slot}`;
+}
+
 const logger = <FUZDLogger>logs('fuzd-scheduler');
 
 /**
@@ -104,7 +108,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		execution.retries++;
 		if (execution.retries >= 100) {
 			logger.warn(
-				`deleting execution (chainid: ${execution.chainId}, account: ${execution.slot}, slot: ${execution.slot}) after ${execution.retries} retries ...`,
+				`deleting execution ${computeScheduledExecutionIdentifier(execution)} after ${execution.retries} retries ...`,
 			);
 			// TODO hook await this._reduceSpending(reveal);
 			// TODO archive
@@ -139,7 +143,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					// failed to decrypt and no retry, this means the decryption is failing
 					// TODO
 					// await storage.archiveExecution(execution);
-					logger.warn('failed to decrypt', {
+					logger.warn(`failed to decrypt ${computeScheduledExecutionIdentifier(scheduledExecutionQueued)}`, {
 						warning: {
 							data: decryptionResult,
 						},
@@ -217,7 +221,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			scheduledExecutionQueued.lastError = err.message || err.toString();
 
 			await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
-			logger.error(`failed to broadcast: ${scheduledExecutionQueued.lastError}`);
+			logger.error(
+				`failed to broadcast ${computeScheduledExecutionIdentifier(scheduledExecutionQueued)}: ${scheduledExecutionQueued.lastError}`,
+			);
 			throw err;
 		}
 	}
@@ -262,7 +268,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				if (timing.assumedTransaction && !execution.priorTransactionConfirmation) {
 					const txStatus = await chainProtocol.getTransactionStatus(timing.assumedTransaction);
 					if (!txStatus.success) {
-						logger.error(`could not get the assumed transaction status: ${txStatus.error.message || txStatus.error}`);
+						logger.error(
+							`could not get the assumed transaction (${timing.assumedTransaction.hash}) status: ${txStatus.error.message || txStatus.error}`,
+						);
 						throw txStatus.error;
 					}
 					if (!txStatus.finalised) {
@@ -275,7 +283,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					} else {
 						if (txStatus.status == 'failed') {
 							logger.warn(
-								`deleting the execution as the tx it depends on  ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
+								`deleting the execution as the tx it depends on (${timing.assumedTransaction.hash})  ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
 							);
 							// TODO archive
 							await storage.archiveExecution(execution);
@@ -300,7 +308,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				if (!execution.priorTransactionConfirmation) {
 					const txStatus = await chainProtocol.getTransactionStatus(timing.startTransaction);
 					if (!txStatus.success) {
-						logger.error(`could not get the prior transaction status: ${txStatus.error.message || txStatus.error}`);
+						logger.error(
+							`could not get the prior transaction (${timing.startTransaction.hash}) status: ${txStatus.error.message || txStatus.error}`,
+						);
 						throw txStatus.error;
 					}
 					if (!txStatus.finalised) {
@@ -316,7 +326,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					} else {
 						if (txStatus.status == 'failed') {
 							logger.warn(
-								`deleting the execution as the tx it depends on ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
+								`deleting the execution as the tx it depends on (${timing.startTransaction.hash}) ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
 							);
 							// TODO archive
 							await storage.archiveExecution(execution);
@@ -413,7 +423,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 
 		if (currentTimestamp > expiryTime + expectedFinality * worstCaseBlockTime) {
 			// delete if execution expired
-			logger.warn(`too late, archiving ${displayExecution(execution)}...`);
+			logger.warn(`too late, archiving ${computeScheduledExecutionIdentifier(execution)}...`);
 			await storage.archiveExecution(execution);
 			result.executions.push({
 				chainId: execution.chainId,
@@ -488,7 +498,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				await processExecution(execution, result);
 			} catch (processExecutionError: any) {
 				logger.error(
-					`Processing of execution "${execution.chainId}_${execution.account}_${execution.slot}" thrown an exception: ${processExecutionError.message || processExecutionError}`,
+					`Processing of execution ${computeScheduledExecutionIdentifier(execution)} thrown an exception: ${processExecutionError.message || processExecutionError}`,
 				);
 
 				// TODO ?
