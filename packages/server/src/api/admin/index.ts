@@ -73,16 +73,16 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				},
 			}),
 		)
-		.get('/clear', async (c) => {
-			try {
-				const config = c.get('config');
-				await config.executorStorage.clear();
-				await config.schedulerStorage.clear();
-				return c.json({success: true}, 200);
-			} catch (err) {
-				return c.json(createErrorObject(err), 500);
-			}
-		})
+		// .get('/clear', async (c) => {
+		// 	try {
+		// 		const config = c.get('config');
+		// 		await config.executorStorage.clear();
+		// 		await config.schedulerStorage.clear();
+		// 		return c.json({success: true}, 200);
+		// 	} catch (err) {
+		// 		return c.json(createErrorObject(err), 500);
+		// 	}
+		// })
 		.get('/setup', async (c) => {
 			try {
 				const config = c.get('config');
@@ -255,7 +255,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json(createErrorObject(err), 500);
 			}
 		})
-		.get('/archiveSubmission/:chainId/:account/:slot', async (c) => {
+		.post('/archiveSubmission/:chainId/:account/:slot', async (c) => {
 			try {
 				const config = c.get('config');
 				const chainId = c.req.param('chainId') as IntegerString;
