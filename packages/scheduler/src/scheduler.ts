@@ -269,13 +269,13 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					const txStatus = await chainProtocol.getTransactionStatus(timing.assumedTransaction);
 					if (!txStatus.success) {
 						logger.error(
-							`could not get the assumed transaction (${timing.assumedTransaction.hash}) status: ${txStatus.error.message || txStatus.error}`,
+							`could not get the assumed transaction (${timing.assumedTransaction.hash} / ${timing.assumedTransaction.broadcastTime}) status: ${txStatus.error.message || txStatus.error}`,
 						);
 						throw txStatus.error;
 					}
 					if (!txStatus.finalised) {
 						logger.warn(
-							`the tx the execution depends on (${timing.assumedTransaction.hash})  has not finalised and the timestamp has already passed`,
+							`the tx the execution depends on (${timing.assumedTransaction.hash} / ${timing.assumedTransaction.broadcastTime})  has not finalised and the timestamp has already passed`,
 						);
 						// TODO should we delete ?
 						// or retry later ?
@@ -285,7 +285,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					} else {
 						if (txStatus.status == 'failed') {
 							logger.warn(
-								`deleting the execution as the tx it depends on (${timing.assumedTransaction.hash})  ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
+								`deleting the execution as the tx it depends on (${timing.assumedTransaction.hash} / ${timing.assumedTransaction.broadcastTime})  ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
 							);
 							// TODO archive
 							await storage.archiveExecution(execution);
@@ -312,13 +312,15 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					const txStatus = await chainProtocol.getTransactionStatus(timing.startTransaction);
 					if (!txStatus.success) {
 						logger.error(
-							`could not get the prior transaction (${timing.startTransaction.hash}) status: ${txStatus.error.message || txStatus.error}`,
+							`could not get the prior transaction (${timing.startTransaction.hash} / ${timing.startTransaction.broadcastTime}) status: ${txStatus.error.message || txStatus.error}`,
 						);
 						throw txStatus.error;
 					}
 					if (!txStatus.finalised) {
 						if (currentTimestamp > timing.startTransaction.broadcastTime + expectedFinality * worstCaseBlockTime) {
-							logger.warn(`prior tx (${timing.startTransaction.hash}) not yet finalized, will retry later...`);
+							logger.warn(
+								`prior tx (${timing.startTransaction.hash} / ${timing.startTransaction.broadcastTime}) not yet finalized, will retry later...`,
+							);
 						}
 
 						const newCheckinTime = computePotentialExecutionTime(execution, {
@@ -329,7 +331,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					} else {
 						if (txStatus.status == 'failed') {
 							logger.warn(
-								`deleting the execution as the tx it depends on (${timing.startTransaction.hash}) ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
+								`deleting the execution as the tx it depends on (${timing.startTransaction.hash} / ${timing.startTransaction.broadcastTime}) ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
 							);
 							// TODO archive
 							await storage.archiveExecution(execution);
