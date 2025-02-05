@@ -274,7 +274,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						throw txStatus.error;
 					}
 					if (!txStatus.finalised) {
-						logger.warn(`the tx the execution depends on has not finalised and the timestamp has already passed`);
+						logger.warn(
+							`the tx the execution depends on (${timing.assumedTransaction.hash})  has not finalised and the timestamp has already passed`,
+						);
 						// TODO should we delete ?
 						// or retry later ?
 						// TODO archive in any case
@@ -289,6 +291,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 							await storage.archiveExecution(execution);
 							return {status: 'archived'};
 						} else if (txStatus.status === 'replaced') {
+							logger.warn(`prior tx (${timing.assumedTransaction.hash}) has been replaced`);
 							// what to do if replaced ? //  || txStatus.status == 'replaced'
 							// we do not want to delete as it could be replaced by player....
 							return {status: 'unchanged', execution};
@@ -315,7 +318,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					}
 					if (!txStatus.finalised) {
 						if (currentTimestamp > timing.startTransaction.broadcastTime + expectedFinality * worstCaseBlockTime) {
-							logger.warn(`prior tx not yet finalized, will retry later...`);
+							logger.warn(`prior tx (${timing.startTransaction.hash}) not yet finalized, will retry later...`);
 						}
 
 						const newCheckinTime = computePotentialExecutionTime(execution, {
@@ -332,6 +335,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 							await storage.archiveExecution(execution);
 							return {status: 'archived'};
 						} else if (txStatus.status === 'replaced') {
+							logger.warn(`prior tx (${timing.startTransaction.hash}) has been replaced`);
 							// what to do if replaced ? //  || txStatus.status == 'replaced'
 							// we do not want to delete as it could be replaced by player....
 							return {status: 'unchanged', execution};
