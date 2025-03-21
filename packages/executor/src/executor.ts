@@ -639,14 +639,24 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 				const errorDueToFeeTooLow = ((err.message || err.toString()) as string).indexOf('feetoolow') != -1;
 
-				// TODO
 				if (errorDueToFeeTooLow) {
+					// TODO record this and the value
+					// then adjust it here + record new parameterUsed
 					logger.warn(`feetoolow detected`);
 				}
 
 				try {
 					await chainProtocol.broadcastSignedTransaction(rawTxInfo.rawTx);
 				} catch (err: any) {
+					// TODO
+					// const errorDueToFeeTooLow = ((err.message || err.toString()) as string).indexOf('feetoolow') != -1;
+
+					// if (errorDueToFeeTooLow) {
+					// 	// TODO record this and the value
+					// 	// then adjust on next call
+					// 	logger.warn(`feetoolow detected`);
+					// }
+
 					// console.error('ERROR', err);
 					let errorString: string;
 					try {
@@ -669,7 +679,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 					await storage.createOrUpdatePendingExecution(newExecution, {updateNonceIfNeeded: undefined});
 					logger.error(
-						`The broadcast (${newExecution.slot}) failed again but we ignore it as we are going to handle it when processing recorded transactions.: ${err.message || err}`,
+						`The broadcast (${computeExecutionIdentifier(newExecution)}) failed again but we ignore it as we are going to handle it when processing recorded transactions.: ${err.message || err}`,
 					);
 				}
 			}

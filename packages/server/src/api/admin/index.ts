@@ -116,7 +116,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				const chainId = c.req.param('chainId') as IntegerString;
 				const timestamp = Math.floor(Date.now() / 1000);
 
-				const {value} = await c.req.json();
+				const {value} = c.req.valid('json');
 
 				if (BigInt(value) > 0n) {
 					const paymentAccount = config.paymentAccount;
@@ -168,7 +168,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 
 					const timestamp = Math.floor(Date.now() / 1000);
 
-					const {upTo} = await c.req.json();
+					const {upTo} = c.req.valid('json');
 
 					await config.executorStorage.deleteFinalizedPendingExecutions({chainId, upTo: upTo || timestamp - 24 * 3600});
 
@@ -193,7 +193,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 
 					const timestamp = Math.floor(Date.now() / 1000);
 
-					const {upTo} = await c.req.json();
+					const {upTo} = c.req.valid('json');
 
 					await config.schedulerStorage.deleteFinalizedScheduledExecutions({
 						chainId,

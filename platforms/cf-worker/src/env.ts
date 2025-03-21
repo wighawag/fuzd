@@ -4,7 +4,7 @@ export type Env = {
 	DB: D1Database;
 	HD_MNEMONIC?: string;
 	CONTRACT_TIMESTAMP?: String0x;
-	[chainId: `CHAIN_0x${string}`]: string | undefined;
+	[chainId: `CHAIN_${string}`]: string | undefined;
 	TIME_LOCK_DECRYPTION?: 'false' | 'true';
 	TOKEN_ADMIN?: string;
 	LOGFLARE_API_KEY?: string;
