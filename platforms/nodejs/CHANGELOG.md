@@ -1,5 +1,12 @@
 # fuzd-nodejs
 
+## 0.10.1
+
+### Patch Changes
+
+- Updated dependencies
+  - fuzd-server@0.10.1
+
 ## 0.10.0
 
 ### Minor Changes

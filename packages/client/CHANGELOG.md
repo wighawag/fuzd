@@ -1,5 +1,11 @@
 # fuzd-client
 
+## 0.10.2
+
+### Patch Changes
+
+- add broadcastExecution
+
 ## 0.10.1
 
 ### Patch Changes

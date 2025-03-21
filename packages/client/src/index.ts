@@ -17,6 +17,8 @@ import type {
 import {timelockEncrypt, HttpChainClient, roundAt, Buffer} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';
 import {
+	ExecutionBroadcast,
+	ExecutionResponse,
 	getBestGasEstimate,
 	type ExecutionSubmission,
 	type IntegerString,
@@ -90,6 +92,15 @@ export type Submission = {
 	paymentReserve?: {amount: bigint; broadcaster: String0x};
 	onBehalf?: `0x${string}`;
 	inClear?: boolean;
+};
+
+export type DirectSubmission = {
+	slot: string;
+	chainId: IntegerString;
+	transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
+	maxFeePerGasAuthorized: bigint;
+	criticalDelta?: number;
+	onBehalf?: `0x${string}`;
 };
 
 export function createClient(config: ClientConfig) {
@@ -292,6 +303,55 @@ export function createClient(config: ClientConfig) {
 		}
 	}
 
+	async function broadcastExecution(
+		execution: DirectSubmission,
+	): Promise<
+		| {success: true; info: ExecutionResponse<EthereumTransactionData | StarknetTransactionData>}
+		| {success: false; error: unknown}
+	> {
+		const remoteAccount = await _fetchRemoteAccount(execution.chainId);
+		if (_assignedRemoteAccount && remoteAccount.address != _assignedRemoteAccount.address) {
+			throw new Error(`remoteAccount derivation changed`);
+		}
+		const serviceParameters = remoteAccount.serviceParameters;
+		const transactionData = fromSimplerTransactionData(execution.transaction);
+
+		const executionToSend: ExecutionBroadcast<EthereumTransactionData | StarknetTransactionData> = {
+			chainId: execution.chainId,
+			slot: execution.slot,
+			serviceParameters,
+			onBehalf: execution.onBehalf,
+			criticalDelta: execution.criticalDelta,
+			transaction: transactionData,
+			maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as String0x,
+		};
+
+		const jsonAsString = JSON.stringify(executionToSend);
+		const signature = await wallet.signMessage({message: jsonAsString});
+		if (typeof config.schedulerEndPoint === 'string') {
+			const response = await fetch(`${config.schedulerEndPoint}/api/execution/broadcastExecution`, {
+				method: 'POST',
+				body: jsonAsString,
+				headers: {
+					signature,
+					'content-type': 'application/json',
+				},
+			});
+			try {
+				return response.json();
+			} catch (err: any) {
+				throw new Error(`could not parse response: ${err}`);
+			}
+		} else {
+			return {success: false, error: 'schedulerEndPoint function not supported for direct execution'};
+			// const info = await config.schedulerEndPoint(jsonAsString, signature);
+			// return {
+			// 	success: true,
+			// 	info,
+			// };
+		}
+	}
+
 	function getRemoteAccount() {
 		return _assignedRemoteAccount?.address;
 	}
@@ -302,6 +362,7 @@ export function createClient(config: ClientConfig) {
 		scheduleExecution,
 		computeTotalMaxCost,
 		computeBalanceRequired,
+		broadcastExecution,
 	};
 }
 

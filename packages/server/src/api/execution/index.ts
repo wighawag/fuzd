@@ -41,6 +41,29 @@ export function getExecutionAPI<Bindings extends Env>(options: ServerOptions<Bin
 			}
 		})
 
+		.get('/execution/:chainId/:account/:slot/:batchIndex', async (c) => {
+			try {
+				const config = c.get('config');
+				const chainId = c.req.param('chainId') as IntegerString;
+				const account = c.req.param('account').toLowerCase() as String0x;
+				const batchIndex = parseInt(c.req.param('batchIndex'));
+
+				if (isNaN(batchIndex)) {
+					throw new Error(`invalid batch index`);
+				}
+
+				const execution = await config.executorStorage.getPendingExecution({
+					chainId,
+					account,
+					slot: c.req.param('slot'),
+					batchIndex,
+				});
+				return c.json({success: true as const, execution}, 200);
+			} catch (err) {
+				return c.json(createErrorObject(err), 500);
+			}
+		})
+
 		.post(
 			'/broadcastExecution',
 			auth({debug: false, signReception: true}),

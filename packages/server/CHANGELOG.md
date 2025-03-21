@@ -1,5 +1,11 @@
 # fuzd-server
 
+## 0.10.1
+
+### Patch Changes
+
+- add broadcastExecution
+
 ## 0.10.0
 
 ### Minor Changes
