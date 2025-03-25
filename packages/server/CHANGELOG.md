@@ -1,5 +1,11 @@
 # fuzd-server
 
+## 0.10.2
+
+### Patch Changes
+
+- fix lowercase
+
 ## 0.10.1
 
 ### Patch Changes

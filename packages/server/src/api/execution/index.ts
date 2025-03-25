@@ -45,7 +45,10 @@ export function getExecutionAPI<Bindings extends Env>(options: ServerOptions<Bin
 			try {
 				const config = c.get('config');
 				const chainId = c.req.param('chainId') as IntegerString;
-				const account = c.req.param('account').toLowerCase() as String0x;
+
+				// TODO refactor to remove these incongruuity between lowecase address and other
+				// TODO use zod to parse all input
+				const account = c.req.param('account') as String0x; // .toLowerCase() as String0x;
 				const batchIndex = parseInt(c.req.param('batchIndex'));
 
 				if (isNaN(batchIndex)) {

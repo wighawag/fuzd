@@ -1,13 +1,20 @@
+// ------------------------------------------------------------------------------------------------
+// Logging
+// ------------------------------------------------------------------------------------------------
 import 'named-logs-context';
+import {enable as enableWorkersLogger} from 'workers-logger';
+import {logs} from 'named-logs';
+// ------------------------------------------------------------------------------------------------
 import {createServer} from 'fuzd-server';
 import {RemoteD1} from 'remote-sql-d1';
 import {Env} from './env.js';
-import {logs} from 'named-logs';
-import {track, enable as enableWorkersLogger} from 'workers-logger';
 import {ExecutionContext} from '@cloudflare/workers-types/experimental';
 import {wrapWithLogger} from './logging/index.js';
+
+// ------------------------------------------------------------------------------------------------
 enableWorkersLogger('*');
-const logger = logs('worker');
+const logger = logs('fuzd-cf-worker');
+// ------------------------------------------------------------------------------------------------
 
 export const app = createServer<Env>({
 	getDB: (c) => new RemoteD1(c.env.DB),

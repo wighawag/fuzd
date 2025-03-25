@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.10.1
+
+### Patch Changes
+
+- fix lowercase
+
 ## 0.10.0
 
 ### Minor Changes
