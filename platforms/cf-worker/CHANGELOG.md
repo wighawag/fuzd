@@ -1,5 +1,11 @@
 # fuzd-cf-worker
 
+## 0.11.0
+
+### Minor Changes
+
+- update
+
 ## 0.10.1
 
 ### Patch Changes
