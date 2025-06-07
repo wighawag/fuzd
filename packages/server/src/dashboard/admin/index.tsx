@@ -62,6 +62,24 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 				</Layout>,
 			);
 		})
+		.get('/unfinalized-submissions/:chainId/:broadcaster', async (c) => {
+			const config = c.get('config');
+			const broadcaster = assert<String0x>(c.req.param('broadcaster'));
+			const chainId = assert<string>(c.req.param('chainId'));
+			const queue = await config.schedulerStorage.getUnFinalizedScheduledExecutionsPerBroadcaster({
+				broadcaster,
+				chainId,
+				limit: 100,
+			});
+			const diff = await config.getTimeDiff(queue[0]?.chainId);
+			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));
+			return c.html(
+				<Layout>
+					<Table data={displayData} />
+				</Layout>,
+			);
+		})
+
 		.get('/account-archived-submissions/:account', async (c) => {
 			const config = c.get('config');
 			const account = assert<String0x>(c.req.param('account'));
