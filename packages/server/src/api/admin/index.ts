@@ -30,7 +30,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 			try {
 				const config = c.get('config');
 				const account = assert<String0x>(c.req.param('account'));
-				const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 100});
+				const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 1000});
 				return c.json({success: true as const, queue}, 200);
 			} catch (err) {
 				return c.json(createErrorObject(err), 500);

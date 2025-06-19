@@ -226,7 +226,7 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		account: String0x,
 		params: {limit: number},
 	): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
-		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE account = ?1 ORDER BY nextCheckTime ASC LIMIT ?2;`;
+		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE account = ?1 ORDER BY nextCheckTime DESC LIMIT ?2;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(account, params.limit).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
