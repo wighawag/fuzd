@@ -2,7 +2,7 @@ import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, Transact
 import type {Methods} from '@starknet-io/types-js';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC, type RPCErrors} from 'remote-procedure-call';
-import {DerivationParameters, IntegerString, String0x, TransactionParametersUsed} from 'fuzd-common';
+import {DerivationParameters, IntegerString, String0x, String0xSchema, TransactionParametersUsed} from 'fuzd-common';
 import type {
 	DEPLOY_ACCOUNT_TXN_V1,
 	DEPLOY_ACCOUNT_TXN_V3,
@@ -20,6 +20,7 @@ import {formatSignature} from 'starknet-core/utils/stark';
 import type {DeepReadonly} from 'strk';
 import {getExecuteCalldata} from 'starknet-core/utils/transaction';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
+import {z} from 'zod/v4';
 
 // TODO Fix readonly in @starknet-io/types-js
 type FullStarknetTransactionData =
@@ -52,6 +53,12 @@ type DeployAccountTransactionDataV1 = {
 };
 
 export type InvokeTransactionData = OmitSignedTransactionData<InvokeTransactionDataV1>;
+export const InvokeTransactionDataSchema = z.object({
+	type: z.literal('INVOKE'),
+	calldata: z.array(String0xSchema),
+	max_fee: String0xSchema,
+	version: z.literal('0x1'),
+}) satisfies z.ZodType<InvokeTransactionData>;
 // TODO
 // | (Omit<OmitSignedTransactionData<DeepReadonly<INVOKE_TXN_V3>>, 'resource_bounds' | 'tip'> & {
 // 		resource_bounds: {
@@ -66,6 +73,14 @@ export type InvokeTransactionData = OmitSignedTransactionData<InvokeTransactionD
 
 // TODO should not be accepted unless for preliminary
 export type DeployAccountTransactionData = OmitSignedTransactionData<DeployAccountTransactionDataV1>;
+export const DeployAccountTransactionDataSchema = z.object({
+	type: z.literal('DEPLOY_ACCOUNT'),
+	max_fee: String0xSchema,
+	version: z.literal('0x1'),
+	contract_address_salt: String0xSchema,
+	constructor_calldata: z.array(String0xSchema),
+	class_hash: String0xSchema,
+}) satisfies z.ZodType<DeployAccountTransactionData>;
 // TODO
 // | (Omit<OmitSignedTransactionData<DeepReadonly<DEPLOY_ACCOUNT_TXN_V3>>, 'resource_bounds' | 'tip'> & {
 // 		resource_bounds: {
@@ -79,7 +94,12 @@ export type DeployAccountTransactionData = OmitSignedTransactionData<DeployAccou
 //   });
 
 export type AllowedTransactionData = InvokeTransactionData;
+export const AllowedTransactionDataAchema = InvokeTransactionDataSchema;
 export type StarknetTransactionData = InvokeTransactionData | DeployAccountTransactionData;
+export const StarknetTransactionDataSchema = z.union([
+	InvokeTransactionDataSchema,
+	DeployAccountTransactionDataSchema,
+]) satisfies z.ZodType<StarknetTransactionData>;
 
 type AllMethods = Methods;
 type MethodsErrors = {

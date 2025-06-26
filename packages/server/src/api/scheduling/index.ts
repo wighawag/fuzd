@@ -1,16 +1,12 @@
 import {Hono} from 'hono';
-import {Bindings} from 'hono/types';
 import {ServerOptions} from '../../types.js';
 import {auth} from '../../auth.js';
-import {createValidate} from 'typia';
-import {ScheduledExecution} from 'fuzd-scheduler';
-import {typiaValidator} from '@hono/typia-validator';
-import {ExecutionSubmission, IntegerString, String0x} from 'fuzd-common';
-import {MyTransactionData} from '../../setup.js';
+import {ScheduledExecutionSchema} from 'fuzd-scheduler';
+import {ExecutionSubmissionSchema, IntegerString, String0x} from 'fuzd-common';
+import {MyTransactionDataSchema} from '../../setup.js';
 import {createErrorObject} from '../../utils/response.js';
 import {Env} from '../../env.js';
-
-const validate = createValidate<ScheduledExecution<ExecutionSubmission<MyTransactionData>>>();
+import {zValidator} from '@hono/zod-validator';
 
 export function getSchedulingAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
 	const app = new Hono<{Bindings: Bindings}>()
@@ -18,7 +14,7 @@ export function getSchedulingAPI<Bindings extends Env>(options: ServerOptions<Bi
 		.post(
 			'/scheduleExecution',
 			auth({debug: false, signReception: true}),
-			typiaValidator('json', validate),
+			zValidator('json', ScheduledExecutionSchema(ExecutionSubmissionSchema(MyTransactionDataSchema))),
 			async (c) => {
 				try {
 					const config = c.get('config');

@@ -1,23 +1,21 @@
 import {Hono} from 'hono';
-import {Bindings} from 'hono/types';
 import {ServerOptions} from '../../types.js';
-import {assert, createValidate} from 'typia';
 import {createErrorObject} from '../../utils/response.js';
-import {ExecutionBroadcast, IntegerString, String0x} from 'fuzd-common';
+import {ExecutionBroadcastSchema, IntegerString, String0x} from 'fuzd-common';
 import {Env} from '../../env.js';
 import {auth} from '../../auth.js';
-import {typiaValidator} from '@hono/typia-validator';
-import {MyTransactionData} from '../../setup.js';
+import {MyTransactionDataSchema} from '../../setup.js';
+import {zValidator} from '@hono/zod-validator';
 
-const validate = createValidate<ExecutionBroadcast<MyTransactionData>>();
+// const validate = createValidate<ExecutionBroadcast<MyTransactionData>>();
 
 export function getExecutionAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
 	const app = new Hono<{Bindings: Bindings}>()
 		.get('/remoteAccount/:chainId/:account', async (c) => {
 			try {
 				const config = c.get('config');
-				const chainId = assert<IntegerString>(c.req.param('chainId'));
-				const account = assert<String0x>(c.req.param('account'));
+				const chainId = c.req.param('chainId') as IntegerString;
+				const account = c.req.param('account').toLowerCase() as String0x; // .toLowerCase() to ensure consistency
 				const broadcasterInfo = await config.executor.getRemoteAccount(chainId, account);
 				return c.json({success: true as const, account: broadcasterInfo}, 200);
 			} catch (err) {
@@ -26,7 +24,7 @@ export function getExecutionAPI<Bindings extends Env>(options: ServerOptions<Bin
 		})
 		.get('/paymentRemoteAccount/:chainId', async (c) => {
 			try {
-				const chainId = assert<IntegerString>(c.req.param('chainId'));
+				const chainId = c.req.param('chainId') as IntegerString;
 				const config = c.get('config');
 
 				const paymentAccount = config.paymentAccount;
@@ -48,7 +46,7 @@ export function getExecutionAPI<Bindings extends Env>(options: ServerOptions<Bin
 
 				// TODO refactor to remove these incongruuity between lowecase address and other
 				// TODO use zod to parse all input
-				const account = c.req.param('account') as String0x; // .toLowerCase() as String0x;
+				const account = c.req.param('account').toLowerCase() as String0x; // .toLowerCase() to ensure consistency
 				const batchIndex = parseInt(c.req.param('batchIndex'));
 
 				if (isNaN(batchIndex)) {
@@ -70,7 +68,7 @@ export function getExecutionAPI<Bindings extends Env>(options: ServerOptions<Bin
 		.post(
 			'/broadcastExecution',
 			auth({debug: false, signReception: true}),
-			typiaValidator('json', validate),
+			zValidator('json', ExecutionBroadcastSchema(MyTransactionDataSchema)),
 			async (c) => {
 				try {
 					const config = c.get('config');

@@ -8,8 +8,7 @@ import {logs} from 'named-logs';
 import {Layout} from '../layout.js';
 import {Table} from '../components/Table.js';
 import {displayExecutionBroadcasted, displayScheduledExecutionQueued} from '../display/index.js';
-import {assert} from 'typia';
-import {String0x} from 'fuzd-common';
+import {IntegerString, String0x} from 'fuzd-common';
 import {Env} from '../../env.js';
 
 const logger = logs('fuzd-cf-worker-admin-dashboard');
@@ -52,7 +51,7 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 		})
 		.get('/account-submissions/:account', async (c) => {
 			const config = c.get('config');
-			const account = assert<String0x>(c.req.param('account'));
+			const account = c.req.param('account').toLowerCase() as String0x; // .toLowerCase() to ensure consistency
 			const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
 			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));
@@ -64,8 +63,8 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 		})
 		.get('/unfinalized-submissions/:chainId/:broadcaster', async (c) => {
 			const config = c.get('config');
-			const broadcaster = assert<String0x>(c.req.param('broadcaster'));
-			const chainId = assert<string>(c.req.param('chainId'));
+			const broadcaster = c.req.param('broadcaster').toLowerCase() as String0x; // .toLowerCase() to ensure consistency
+			const chainId = c.req.param('chainId') as IntegerString;
 			const queue = await config.schedulerStorage.getUnFinalizedScheduledExecutionsPerBroadcaster({
 				broadcaster,
 				chainId,
@@ -82,7 +81,7 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 
 		.get('/account-archived-submissions/:account', async (c) => {
 			const config = c.get('config');
-			const account = assert<String0x>(c.req.param('account'));
+			const account = c.req.param('account').toLowerCase() as String0x; // .toLowerCase() to ensure consistency
 			const queue = await config.schedulerStorage.getAccountArchivedSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
 			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));

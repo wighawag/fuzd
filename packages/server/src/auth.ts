@@ -1,7 +1,6 @@
 import {String0x} from 'fuzd-common';
 import {MiddlewareHandler} from 'hono';
 import {HTTPException} from 'hono/http-exception';
-import {assert} from 'typia';
 import {hashMessage, recoverAddress} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 
@@ -32,7 +31,7 @@ export function auth(options: AuthOptions): MiddlewareHandler {
 			account = signature.split('@')[1] as String0x;
 		} else {
 			try {
-				account = assert(await recoverAddress({hash, signature}));
+				account = (await recoverAddress({hash, signature})).toLowerCase() as String0x;
 			} catch (err: any) {
 				throw new HTTPException(400, {
 					message: 'failed to recover address from message and signature',

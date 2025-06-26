@@ -1,5 +1,14 @@
 import {ScheduledExecutionQueued} from './scheduler-storage.js';
-import {ExecutionSubmission, String0x, ExecutionServiceParameters, IntegerString} from 'fuzd-common';
+import {
+	ExecutionSubmission,
+	String0x,
+	ExecutionServiceParameters,
+	IntegerString,
+	IntegerStringSchema,
+	String0xSchema,
+	ExecutionServiceParametersSchema,
+} from 'fuzd-common';
+import * as z from 'zod/v4';
 // ------------------------------------------------------------------------------------------------
 // PriorTransactionInfo
 // ------------------------------------------------------------------------------------------------
@@ -14,6 +23,18 @@ export type PriorTransactionInfo = {
 	// 	startTimeParam?: string;
 	// };
 };
+export const PriorTransactionInfoSchema = z.object({
+	from: String0xSchema,
+	hash: String0xSchema,
+	nonce: String0xSchema,
+	broadcastTime: z.number().int(),
+	// expectEvent: z
+	// 	.object({
+	// 		eventABI: AbiEventSchema,
+	// 		startTimeParam: z.string().optional(),
+	// 	})
+	// 	.optional(),
+}) satisfies z.ZodType<PriorTransactionInfo>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -25,6 +46,15 @@ export type DeltaTime = {
 	startTransaction: PriorTransactionInfo;
 	delta: number;
 };
+export const DeltaTimeSchema = z.object({
+	type: z.literal('delta-time'),
+	expiryDelta: z.number().int().optional(),
+	startTransaction: PriorTransactionInfoSchema,
+	delta: z.number().int(),
+}) satisfies z.ZodType<DeltaTime>;
+// ------------------------------------------------------------------------------------------------
+// DeltaTimeWithTargetTime
+// ------------------------------------------------------------------------------------------------
 export type DeltaTimeWithTargetTime = {
 	type: 'delta-time-with-target-time';
 	expiryDelta?: number;
@@ -32,6 +62,13 @@ export type DeltaTimeWithTargetTime = {
 	delta: number;
 	targetTimeUnlessHigherDelta: number;
 };
+export const DeltaTimeWithTargetTimeSchema = z.object({
+	type: z.literal('delta-time-with-target-time'),
+	expiryDelta: z.number().int().optional(),
+	startTransaction: PriorTransactionInfoSchema,
+	delta: z.number().int(),
+	targetTimeUnlessHigherDelta: z.number().int(),
+}) satisfies z.ZodType<DeltaTimeWithTargetTime>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -43,6 +80,12 @@ export type FixedTime = {
 	assumedTransaction?: PriorTransactionInfo;
 	scheduledTime: number;
 };
+export const FixedTimeSchema = z.object({
+	type: z.literal('fixed-time'),
+	expiryDelta: z.number().int().optional(),
+	assumedTransaction: PriorTransactionInfoSchema.optional(),
+	scheduledTime: z.number().int(),
+}) satisfies z.ZodType<FixedTime>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -55,18 +98,36 @@ export type FixedRound = {
 	scheduledRound: number;
 	expectedTime: number;
 };
+export const FixedRoundSchema = z.object({
+	type: z.literal('fixed-round'),
+	expiryDelta: z.number().int().optional(),
+	assumedTransaction: PriorTransactionInfoSchema.optional(),
+	scheduledRound: z.number().int(),
+	expectedTime: z.number().int(),
+}) satisfies z.ZodType<FixedRound>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
 // TimingTypesCompatibleWithTimeLock
 // ------------------------------------------------------------------------------------------------
 export type TimingTypesCompatibleWithTimeLock = FixedRound | FixedTime | DeltaTimeWithTargetTime;
+export const TimingTypesCompatibleWithTimeLockSchema = z.union([
+	FixedRoundSchema,
+	FixedTimeSchema,
+	DeltaTimeWithTargetTimeSchema,
+]) satisfies z.ZodType<TimingTypesCompatibleWithTimeLock>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
 // TimingTypes
 // ------------------------------------------------------------------------------------------------
 export type TimingTypes = FixedRound | DeltaTime | DeltaTimeWithTargetTime | FixedTime;
+export const TimingTypesSchema = z.union([
+	FixedRoundSchema,
+	DeltaTimeSchema,
+	DeltaTimeWithTargetTimeSchema,
+	FixedTimeSchema,
+]) satisfies z.ZodType<TimingTypes>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -75,6 +136,20 @@ export type TimingTypes = FixedRound | DeltaTime | DeltaTimeWithTargetTime | Fix
 export type DecryptionResult<ExecutionDataType> =
 	| {success: true; executions: ExecutionDataType[]}
 	| {success: false; newPayload?: string; newTiming?: TimingTypes; retry?: number};
+export const DecryptionResultSchema = (<TypeT extends z.ZodType>(typeSchema: TypeT) => {
+	return z.discriminatedUnion('success', [
+		z.object({
+			success: z.literal(true),
+			executions: z.array(typeSchema),
+		}),
+		z.object({
+			success: z.literal(false),
+			newPayload: z.string().optional(),
+			newTiming: TimingTypesSchema.optional(),
+			retry: z.number().int().optional(),
+		}),
+	]);
+}) satisfies <T extends z.ZodType>(schema: T) => z.ZodType<DecryptionResult<z.infer<T>>>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -91,6 +166,19 @@ export type Decrypter<ExecutionDataType> = {
 export type DecryptedPayload<ExecutionDataType> =
 	| {type: 'time-locked'; payload: string; timing: TimingTypesCompatibleWithTimeLock}
 	| {type: 'clear'; executions: ExecutionDataType[]};
+export const DecryptedPayloadSchema = (<TypeT extends z.ZodType>(typeSchema: TypeT) => {
+	return z.discriminatedUnion('type', [
+		z.object({
+			type: z.literal('time-locked'),
+			payload: z.string(),
+			timing: TimingTypesCompatibleWithTimeLockSchema,
+		}),
+		z.object({
+			type: z.literal('clear'),
+			executions: z.array(typeSchema),
+		}),
+	]);
+}) satisfies <T extends z.ZodType>(schema: T) => z.ZodType<DecryptedPayload<z.infer<T>>>;
 // ------------------------------------------------------------------------------------------------
 
 export type BaseScheduledExecution = {
@@ -100,6 +188,18 @@ export type BaseScheduledExecution = {
 	paymentReserve?: {amount: string; broadcaster: String0x};
 	executionServiceParameters: ExecutionServiceParameters;
 };
+export const BaseScheduledExecutionSchema = z.object({
+	chainId: IntegerStringSchema,
+	slot: z.string(),
+	onBehalf: String0xSchema.optional(),
+	paymentReserve: z
+		.object({
+			amount: z.string(),
+			broadcaster: String0xSchema,
+		})
+		.optional(),
+	executionServiceParameters: ExecutionServiceParametersSchema,
+}) satisfies z.ZodType<BaseScheduledExecution>;
 
 // ------------------------------------------------------------------------------------------------
 // ScheduledTimeLockedExecution
@@ -109,6 +209,11 @@ export type ScheduledTimeLockedExecution = BaseScheduledExecution & {
 	payload: string;
 	timing: TimingTypesCompatibleWithTimeLock;
 };
+export const ScheduledExecutionTimeLockedSchema = BaseScheduledExecutionSchema.extend({
+	type: z.literal('time-locked'),
+	payload: z.string(),
+	timing: TimingTypesCompatibleWithTimeLockSchema,
+}) satisfies z.ZodType<ScheduledTimeLockedExecution>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -119,6 +224,13 @@ export type ScheduledExecutionInClear<ExecutionDataType> = BaseScheduledExecutio
 	executions: ExecutionDataType[];
 	timing: TimingTypes;
 };
+export const ScheduledExecutionInClearSchema = (<TypeT extends z.ZodType>(typeSchema: TypeT) => {
+	return BaseScheduledExecutionSchema.extend({
+		type: z.literal('clear'),
+		executions: z.array(typeSchema),
+		timing: TimingTypesSchema,
+	});
+}) satisfies <T extends z.ZodType>(schema: T) => z.ZodType<ScheduledExecutionInClear<z.infer<T>>>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -127,6 +239,12 @@ export type ScheduledExecutionInClear<ExecutionDataType> = BaseScheduledExecutio
 export type ScheduledExecution<ExecutionDataType> =
 	| ScheduledTimeLockedExecution
 	| ScheduledExecutionInClear<ExecutionDataType>;
+export const ScheduledExecutionSchema = (<TypeT extends z.ZodType>(typeSchema: TypeT) => {
+	return z.discriminatedUnion('type', [
+		ScheduledExecutionTimeLockedSchema,
+		ScheduledExecutionInClearSchema(typeSchema),
+	]);
+}) satisfies <T extends z.ZodType>(schema: T) => z.ZodType<ScheduledExecution<z.infer<T>>>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -138,6 +256,12 @@ export type ScheduleInfo = {
 	account: String0x;
 	slot: string;
 };
+export const ScheduleInfoAchema = z.object({
+	checkinTime: z.number().int(),
+	chainId: IntegerStringSchema,
+	account: String0xSchema,
+	slot: z.string(),
+}) satisfies z.ZodType<ScheduleInfo>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
@@ -158,7 +282,10 @@ export type ExecutionStatus = {
 	type: 'unknown' | 'deleted' | 'broadcasted' | 'archived' | 'reassigned' | 'skipped' | 'finalized';
 	reason: string;
 };
-
+export const ExecutionStatus = z.object({
+	type: z.enum(['unknown', 'deleted', 'broadcasted', 'archived', 'reassigned', 'skipped', 'finalized']),
+	reason: z.string(),
+}) satisfies z.ZodType<ExecutionStatus>;
 // ------------------------------------------------------------------------------------------------
 // QueueProcessingResult
 // ------------------------------------------------------------------------------------------------
@@ -167,6 +294,19 @@ export type QueueProcessingResult = {
 	executions: {chainId: string; account: String0x; slot: string; checkinTime: number; status: ExecutionStatus}[];
 	chainTimestamps: {[chainId: string]: number};
 };
+export const QueueProcessingResultSchema = z.object({
+	limit: z.number().int(),
+	executions: z.array(
+		z.object({
+			chainId: z.string(),
+			account: String0xSchema,
+			slot: z.string(),
+			checkinTime: z.number().int(),
+			status: ExecutionStatus,
+		}),
+	),
+	chainTimestamps: z.record(z.string(), z.number().int()),
+}) satisfies z.ZodType<QueueProcessingResult>;
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------

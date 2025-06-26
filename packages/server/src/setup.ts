@@ -9,10 +9,10 @@ import {HDKey} from '@scure/bip32';
 import {initDecrypter, mainnetClient} from 'fuzd-tlock-decrypter';
 import {RemoteSQLExecutorStorage} from './storage/RemoteSQLExecutorStorage.js';
 import {RemoteSQLSchedulerStorage} from './storage/RemoteSQLSchedulerStorage.js';
-import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
+import {EthereumChainProtocol, EthereumTransactionDataSchema} from 'fuzd-chain-protocol/ethereum';
 import {ChainProtocols, TransactionDataTypes} from 'fuzd-chain-protocol';
-import {StarknetChainProtocol} from 'fuzd-chain-protocol/starknet';
-import {tags} from 'typia';
+import {StarknetChainProtocol, StarknetTransactionDataSchema} from 'fuzd-chain-protocol/starknet';
+import * as z from 'zod/v4';
 
 const defaultPath = "m/44'/60'/0'/0/0";
 
@@ -27,6 +27,8 @@ type MyChainProtocols = EthereumChainProtocol | StarknetChainProtocol;
 
 export type MyTransactionData = TransactionDataTypes<MyChainProtocols>;
 
+export const MyTransactionDataSchema = z.union([EthereumTransactionDataSchema, StarknetTransactionDataSchema]);
+
 export type Config = {
 	executor: Executor<MyTransactionData> & ExecutorBackend;
 	scheduler: Scheduler<MyTransactionData> & SchedulerBackend;
@@ -35,7 +37,7 @@ export type Config = {
 	account: ReturnType<typeof initAccountFromHD>;
 	paymentAccount?: String0x;
 	chainProtocols: ChainProtocols<MyChainProtocols>;
-	contractTimestampAddress?: String0x & tags.Pattern<'^0[xX][A-Fa-f0-9][A-Fa-f0-9]+$'>;
+	contractTimestampAddress?: String0x;
 	getTimeDiff(chainId: IntegerString): Promise<number>;
 };
 

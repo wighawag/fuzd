@@ -2,12 +2,12 @@ import {Hono} from 'hono';
 import {ServerOptions} from '../../types.js';
 import {basicAuth} from 'hono/basic-auth';
 import {logs} from 'named-logs';
-import {assert, createValidate} from 'typia';
 import {createErrorObject} from '../../utils/response.js';
 import {FUZDLogger, IntegerString, String0x} from 'fuzd-common';
 import {setChainOverride, setup} from '../../setup.js';
 import {Env} from '../../env.js';
-import {typiaValidator} from '@hono/typia-validator';
+import {zValidator} from '@hono/zod-validator';
+import * as z from 'zod/v4';
 
 const logger = <FUZDLogger>logs('fuzd-cf-worker-admin-api');
 
@@ -29,7 +29,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 		.get('/account-submissions/:account', async (c) => {
 			try {
 				const config = c.get('config');
-				const account = assert<String0x>(c.req.param('account'));
+				const account = c.req.param('account').toLowerCase() as String0x; // .toLowerCase() to ensure consistency
 				const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 1000});
 				return c.json({success: true as const, queue}, 200);
 			} catch (err) {
@@ -110,57 +110,71 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json(createErrorObject(err), 500);
 			}
 		})
-		.post('/updateExpectedGasPrice/:chainId', typiaValidator('json', createValidate<{value: string}>()), async (c) => {
-			try {
-				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString;
-				const timestamp = Math.floor(Date.now() / 1000);
+		.post(
+			'/updateExpectedGasPrice/:chainId',
+			zValidator(
+				'json',
+				z.object({
+					value: z.string(),
+				}),
+			),
+			async (c) => {
+				try {
+					const config = c.get('config');
+					const chainId = c.req.param('chainId') as IntegerString;
+					const timestamp = Math.floor(Date.now() / 1000);
 
-				const {value} = c.req.valid('json');
+					const {value} = c.req.valid('json');
 
-				if (BigInt(value) > 0n) {
-					const paymentAccount = config.paymentAccount;
-					if (!paymentAccount) {
-						return c.json(
-							{
+					if (BigInt(value) > 0n) {
+						const paymentAccount = config.paymentAccount;
+						if (!paymentAccount) {
+							return c.json(
+								{
+									success: false as const,
+									errors: ['Payment account not configured'],
+								},
+								200,
+							);
+						}
+
+						const broadcasterInfo = await config.executor.getRemoteAccount(chainId, paymentAccount);
+						const balance = await config.chainProtocols[chainId].getBalance(broadcasterInfo.address);
+						if (balance < BigInt('1000000000000000000')) {
+							return c.json({
 								success: false as const,
-								errors: ['Payment account not configured'],
-							},
-							200,
-						);
+								// TODO config minimum balance per chain
+								errors: [`paymentAccount's remote account (${broadcasterInfo.address}) below 1 Native token`],
+							});
+						}
 					}
 
-					const broadcasterInfo = await config.executor.getRemoteAccount(chainId, paymentAccount);
-					const balance = await config.chainProtocols[chainId].getBalance(broadcasterInfo.address);
-					if (balance < BigInt('1000000000000000000')) {
-						return c.json({
-							success: false as const,
-							// TODO config minimum balance per chain
-							errors: [`paymentAccount's remote account (${broadcasterInfo.address}) below 1 Native token`],
-						});
-					}
+					const chainConfiguration = await config.executorStorage.updateExpectedWorstCaseGasPrice(
+						chainId,
+						timestamp,
+						BigInt(value),
+					);
+					return c.json(
+						{
+							success: true as const,
+							chainConfiguration,
+						},
+						200,
+					);
+				} catch (err) {
+					return c.json(createErrorObject(err), 500);
 				}
-
-				const chainConfiguration = await config.executorStorage.updateExpectedWorstCaseGasPrice(
-					chainId,
-					timestamp,
-					BigInt(value),
-				);
-				return c.json(
-					{
-						success: true as const,
-						chainConfiguration,
-					},
-					200,
-				);
-			} catch (err) {
-				return c.json(createErrorObject(err), 500);
-			}
-		})
+			},
+		)
 
 		.post(
 			'/deleteFinalizedPendingExecutions/:chainId?',
-			typiaValidator('json', createValidate<{upTo?: number}>()),
+			zValidator(
+				'json',
+				z.object({
+					upTo: z.number().optional(),
+				}),
+			),
 			async (c) => {
 				try {
 					const config = c.get('config');
@@ -185,7 +199,12 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 		)
 		.post(
 			'/deleteFinalizedScheduledExecutions/:chainId?',
-			typiaValidator('json', createValidate<{upTo?: number}>()),
+			zValidator(
+				'json',
+				z.object({
+					upTo: z.number().optional(),
+				}),
+			),
 			async (c) => {
 				try {
 					const config = c.get('config');

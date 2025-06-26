@@ -1,35 +1,26 @@
-import {tags} from 'typia';
+import * as z from 'zod/v4';
 
-// TODO this break all use of String0x where `0x${string}` is expected
-// export type String0x = string & tags.Pattern<'^0x[a-f0-9]+$'>;
-// for now:
-//  but see: https://github.com/samchon/typia/issues/1346
-export type String0x = `0x${string}` & tags.Pattern<'^0x[a-f0-9]+$'>;
+export type Assert<T extends true> = T;
+export type IsExactly<T, U> = (<G>() => G extends T ? 1 : 2) extends <G>() => G extends U ? 1 : 2 ? true : false;
+export type IsZodExactly<Z extends z.ZodType, U> =
+	(<G>() => G extends z.infer<Z> ? 1 : 2) extends <G>() => G extends U ? 1 : 2 ? true : false;
 
-export type IntegerString = string & tags.Pattern<'^[1-9][0-9]*$'>;
+export type ZodObjectShape<T extends object> = {
+	[K in keyof T]: z.ZodType<T[K]>;
+};
 
-// TODO more specific validation
-// export type Bytes0x = String0x;
+export type String0x = `0x${string}`;
+export const String0xSchema = z
+	.string()
+	.regex(/^0x[a-f0-9]+$/)
+	.transform((val) => val.toLowerCase() as String0x)
+	.and(z.custom<String0x>());
 
-// export type Bytes320x = String0x;
+export type IntegerString = string;
+export const IntegerStringSchema = z
+	.string()
+	.regex(/[0-9]+/)
+	.and(z.custom<IntegerString>());
 
-// export type Value0x = String0x;
-
-// export type Value256Bit0x = String0x;
-
-// export type EthereumAccount = String0x;
-
-// from https://dev.to/safareli/pick-omit-and-union-types-in-typescript-4nd9
-// type Keys<T> = keyof T;
-// type DistributiveKeys<T> = T extends unknown ? Keys<T> : never;
-
-// type Pick_<T, K> = Pick<T, Extract<keyof T, K>>;
-// export type DistributivePick<T, K extends DistributiveKeys<T>> = T extends unknown
-// 	? {[P in keyof Pick_<T, K>]: Pick_<T, K>[P]}
-// 	: never;
-// type Omit_<T, K> = Omit<T, Extract<keyof T, K>>;
-// export type DistributiveOmit<T, K extends DistributiveKeys<T>> = T extends unknown
-// 	? {[P in keyof Omit_<T, K>]: Omit_<T, K>[P]}
-// 	: never;
-
-// export type RequiredKeys<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
+type ZodMatchString0x = Assert<IsZodExactly<typeof String0xSchema, String0x>>;
+type ZodMatchIntegerString = Assert<IsZodExactly<typeof IntegerStringSchema, IntegerString>>;

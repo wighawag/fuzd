@@ -24,7 +24,7 @@ import type {FullEthereumTransactionData, EthereumTransactionData} from './types
 import type {ETHAccount} from 'remote-account';
 import {EIP1193LocalSigner} from 'eip-1193-signer';
 import {keccak_256} from '@noble/hashes/sha3';
-export type * from './types.js';
+export * from './types.js';
 
 const logger = <FUZDLogger>logs('fuzd-chain-protocol-ethereum');
 
