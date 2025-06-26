@@ -34,7 +34,8 @@
     "remote-account": "^0.2.2",
     "remote-procedure-call": "^0.0.15",
     "starknet-core": "^0.0.3",
-    "strk": "^0.0.15"
+    "strk": "^0.0.15",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@starknet-io/types-js": "^0.7.10",

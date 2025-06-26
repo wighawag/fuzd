@@ -36,7 +36,8 @@
     "remote-account": "^0.2.2",
     "remote-sql": "^0.0.6",
     "tlock-js": "^0.9.0",
-    "viem": "^2.21.55"
+    "viem": "^2.21.55",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "as-soon": "^0.0.11",

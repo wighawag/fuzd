@@ -18,7 +18,8 @@
     "src"
   ],
   "dependencies": {
-    "named-logs": "^0.3.2"
+    "named-logs": "^0.3.2",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "as-soon": "^0.0.11",
