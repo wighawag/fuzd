@@ -1,4 +1,4 @@
-import {String0x} from 'fuzd-common';
+import {String0x, String0xSchema} from 'fuzd-common';
 import {MiddlewareHandler} from 'hono';
 import {HTTPException} from 'hono/http-exception';
 import {hashMessage, recoverAddress} from 'viem';
@@ -19,7 +19,8 @@ declare module 'hono' {
 export function auth(options: AuthOptions): MiddlewareHandler {
 	return async (c, next) => {
 		const jsonAsString = await c.req.text();
-		const signature = c.req.header()['signature'] as String0x;
+		const signature = String0xSchema.parse(c.req.header()['signature']);
+
 		const hash = hashMessage(jsonAsString);
 		if (!signature) {
 			throw new HTTPException(400, {

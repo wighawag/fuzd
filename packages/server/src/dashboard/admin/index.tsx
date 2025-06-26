@@ -8,7 +8,7 @@ import {logs} from 'named-logs';
 import {Layout} from '../layout.js';
 import {Table} from '../components/Table.js';
 import {displayExecutionBroadcasted, displayScheduledExecutionQueued} from '../display/index.js';
-import {IntegerString, String0x} from 'fuzd-common';
+import {IntegerString, IntegerStringSchema, String0x, String0xSchema} from 'fuzd-common';
 import {Env} from '../../env.js';
 
 const logger = logs('fuzd-cf-worker-admin-dashboard');
@@ -51,7 +51,8 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 		})
 		.get('/account-submissions/:account', async (c) => {
 			const config = c.get('config');
-			const account = c.req.param('account').toLowerCase() as String0x; // .toLowerCase() to ensure consistency
+			const account = String0xSchema.parse(c.req.param('account'));
+
 			const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
 			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));
@@ -63,8 +64,9 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 		})
 		.get('/unfinalized-submissions/:chainId/:broadcaster', async (c) => {
 			const config = c.get('config');
-			const broadcaster = c.req.param('broadcaster').toLowerCase() as String0x; // .toLowerCase() to ensure consistency
-			const chainId = c.req.param('chainId') as IntegerString;
+			const broadcaster = String0xSchema.parse(c.req.param('broadcaster'));
+			const chainId = IntegerStringSchema.parse(c.req.param('chainId'));
+
 			const queue = await config.schedulerStorage.getUnFinalizedScheduledExecutionsPerBroadcaster({
 				broadcaster,
 				chainId,
@@ -81,7 +83,8 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 
 		.get('/account-archived-submissions/:account', async (c) => {
 			const config = c.get('config');
-			const account = c.req.param('account').toLowerCase() as String0x; // .toLowerCase() to ensure consistency
+			const account = String0xSchema.parse(c.req.param('account'));
+
 			const queue = await config.schedulerStorage.getAccountArchivedSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
 			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));

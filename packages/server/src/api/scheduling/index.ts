@@ -2,7 +2,7 @@ import {Hono} from 'hono';
 import {ServerOptions} from '../../types.js';
 import {auth} from '../../auth.js';
 import {ScheduledExecutionSchema} from 'fuzd-scheduler';
-import {ExecutionSubmissionSchema, IntegerString, String0x} from 'fuzd-common';
+import {ExecutionSubmissionSchema, IntegerString, IntegerStringSchema, String0x, String0xSchema} from 'fuzd-common';
 import {MyTransactionDataSchema} from '../../setup.js';
 import {createErrorObject} from '../../utils/response.js';
 import {Env} from '../../env.js';
@@ -38,8 +38,8 @@ export function getSchedulingAPI<Bindings extends Env>(options: ServerOptions<Bi
 			try {
 				const config = c.get('config');
 				const slot = c.req.param('slot');
-				const chainId = c.req.param('chainId') as IntegerString;
-				const broadcaster = c.req.param('broadcaster').toLowerCase() as String0x;
+				const chainId = IntegerStringSchema.parse(c.req.param('chainId'));
+				const broadcaster = String0xSchema.parse(c.req.param('broadcaster'));
 
 				const executions = await config.schedulerStorage.getUnFinalizedScheduledExecutionsPerBroadcaster({
 					chainId,
@@ -60,8 +60,8 @@ export function getSchedulingAPI<Bindings extends Env>(options: ServerOptions<Bi
 		.get('/scheduledExecution/:chainId/:account/:slot', async (c) => {
 			try {
 				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString;
-				const account = c.req.param('account').toLowerCase() as String0x;
+				const chainId = IntegerStringSchema.parse(c.req.param('chainId'));
+				const account = String0xSchema.parse(c.req.param('account'));
 
 				const execution = await config.schedulerStorage.getQueuedExecution({
 					chainId,
@@ -77,8 +77,8 @@ export function getSchedulingAPI<Bindings extends Env>(options: ServerOptions<Bi
 		.get('/scheduledExecutions/:chainId/:account', async (c) => {
 			try {
 				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString;
-				const account = c.req.param('account').toLowerCase() as String0x;
+				const chainId = IntegerStringSchema.parse(c.req.param('chainId'));
+				const account = String0xSchema.parse(c.req.param('account'));
 
 				const executions = await config.schedulerStorage.getQueuedExecutionsForAccount({
 					chainId,

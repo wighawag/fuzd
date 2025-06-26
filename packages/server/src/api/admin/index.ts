@@ -3,7 +3,7 @@ import {ServerOptions} from '../../types.js';
 import {basicAuth} from 'hono/basic-auth';
 import {logs} from 'named-logs';
 import {createErrorObject} from '../../utils/response.js';
-import {FUZDLogger, IntegerString, String0x} from 'fuzd-common';
+import {FUZDLogger, IntegerString, IntegerStringSchema, String0x, String0xSchema} from 'fuzd-common';
 import {setChainOverride, setup} from '../../setup.js';
 import {Env} from '../../env.js';
 import {zValidator} from '@hono/zod-validator';
@@ -29,7 +29,8 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 		.get('/account-submissions/:account', async (c) => {
 			try {
 				const config = c.get('config');
-				const account = c.req.param('account').toLowerCase() as String0x; // .toLowerCase() to ensure consistency
+				const account = String0xSchema.parse(c.req.param('account'));
+
 				const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 1000});
 				return c.json({success: true as const, queue}, 200);
 			} catch (err) {
@@ -96,7 +97,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 		.get('/chainConfiguration/:chainId', async (c) => {
 			try {
 				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString;
+				const chainId = IntegerStringSchema.parse(c.req.param('chainId'));
 
 				const chainConfiguration = await config.executorStorage.getChainConfiguration(chainId);
 				return c.json(
@@ -121,7 +122,8 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 			async (c) => {
 				try {
 					const config = c.get('config');
-					const chainId = c.req.param('chainId') as IntegerString;
+					const chainId = IntegerStringSchema.parse(c.req.param('chainId'));
+
 					const timestamp = Math.floor(Date.now() / 1000);
 
 					const {value} = c.req.valid('json');
@@ -178,7 +180,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 			async (c) => {
 				try {
 					const config = c.get('config');
-					const chainId = c.req.param('chainId') as IntegerString | undefined;
+					const chainId = IntegerStringSchema.optional().parse(c.req.param('chainId'));
 
 					const timestamp = Math.floor(Date.now() / 1000);
 
@@ -208,7 +210,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 			async (c) => {
 				try {
 					const config = c.get('config');
-					const chainId = c.req.param('chainId') as IntegerString | undefined;
+					const chainId = IntegerStringSchema.optional().parse(c.req.param('chainId'));
 
 					const timestamp = Math.floor(Date.now() / 1000);
 
@@ -233,7 +235,8 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 		.post('/updateFees/:chainId', async (c) => {
 			try {
 				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString;
+				const chainId = IntegerStringSchema.parse(c.req.param('chainId'));
+
 				const timestamp = Math.floor(Date.now() / 1000);
 				const chainConfiguration = await config.executorStorage.updateFees(chainId, timestamp, await c.req.json());
 				return c.json(
@@ -249,7 +252,8 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 		})
 		.get('/setChainOverride/:chainId/:chainOverride', async (c) => {
 			if ((c.env as any).DEV === 'true') {
-				const chainId = c.req.param('chainId') as IntegerString;
+				const chainId = IntegerStringSchema.parse(c.req.param('chainId'));
+
 				const chainOverride = c.req.param('chainOverride');
 				setChainOverride(chainId, chainOverride);
 				return c.json({success: true as const}, 200);
@@ -277,9 +281,10 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 		.post('/archiveSubmission/:chainId/:account/:slot', async (c) => {
 			try {
 				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString;
-				const account = c.req.param('account') as String0x;
-				const slot = c.req.param('slot') as string;
+				const chainId = IntegerStringSchema.parse(c.req.param('chainId'));
+				const account = String0xSchema.parse(c.req.param('account'));
+				const slot = c.req.param('slot');
+
 				const execution = await config.schedulerStorage.getQueuedExecution({chainId, account, slot});
 				if (execution) {
 					await config.schedulerStorage.archiveExecution(execution);
