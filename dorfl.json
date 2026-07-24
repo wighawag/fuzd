@@ -1,0 +1,8 @@
+{
+	"prepare": "pnpm install",
+	"verify": "pnpm -r format:check && pnpm -r build",
+	"harness": "pi",
+	"autoBuild": false,
+	"autoTask": false,
+	"promptGuidance": {"testFirst": true}
+}

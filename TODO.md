@@ -1,2 +1,0 @@
-- [ ] use DEFAULT_ETHEREUM_NODE ? see comment // TODO use DEFAULT_ETHEREUM_NODE
-- [ ] support starknet v3 transactions
