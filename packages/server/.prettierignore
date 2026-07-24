@@ -16,3 +16,4 @@ pnpm-lock.yaml
 package.json
 
 *.sql.ts
+*.css.ts

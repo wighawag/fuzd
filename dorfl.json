@@ -1,6 +1,6 @@
 {
 	"prepare": "pnpm install",
-	"verify": "pnpm -r format:check && pnpm -r build",
+	"verify": "pnpm -r --filter \"./packages/*\" format:check && pnpm -r build",
 	"harness": "pi",
 	"autoBuild": false,
 	"autoTask": false,
