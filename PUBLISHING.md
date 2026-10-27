@@ -15,7 +15,7 @@ Releases go out through changesets and npm Trusted Publishing (OIDC), from `.git
 | `@fuzd/client`          | `packages/client`          | `fuzd-client` |
 | `fuzd`                  | `platforms/nodejs`         | `fuzd`        |
 
-`@fuzd/cf-worker` is `private` and in changesets' `ignore`: it is a deployment, not a package. The list lives in `scripts/npm-names.txt` too, and `pnpm check:packaging` (part of the verify gate) checks every publishable package has the `repository`, `license` and `publishConfig.access` that provenance and scoped publishing need.
+`@fuzd/cf-worker` is `private` (and changesets' `privatePackages.version` is off): it is a deployment, not a package, so it is never versioned or published. The list lives in `scripts/npm-names.txt` too, and `pnpm check:packaging` (part of the verify gate) checks every publishable package has the `repository`, `license` and `publishConfig.access` that provenance and scoped publishing need.
 
 These names replaced `fuzd-common`, `fuzd-chain-protocol`, `fuzd-executor`, `fuzd-scheduler`, `fuzd-tlock-decrypter`, `fuzd-server`, `fuzd-client` and `fuzd-nodejs`, which stop at their last version and are deprecated.
 
