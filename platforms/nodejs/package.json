@@ -16,7 +16,7 @@
     ".env.default"
   ],
   "dependencies": {
-    "@hono/node-server": "^1.13.7",
+    "@hono/node-server": "^1.19.17",
     "@libsql/client": "^0.14.0",
     "commander": "^12.1.0",
     "@fuzd/server": "workspace:*",

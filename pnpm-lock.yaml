@@ -428,8 +428,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/server
       '@hono/node-server':
-        specifier: ^1.13.7
-        version: 1.13.7(hono@4.13.14)
+        specifier: ^1.19.17
+        version: 1.19.17(hono@4.13.14)
       '@libsql/client':
         specifier: ^0.14.0
         version: 0.14.0
@@ -1492,8 +1492,8 @@ packages:
   '@hapi/bourne@3.0.0':
     resolution: {integrity: sha512-Waj1cwPXJDucOib4a3bAISsKJVb15MKi9IvmTI/7ssVEm6sywXGjVJDhl6/umt1pK1ZS7PacXU3A1PmFKHEZ2w==}
 
-  '@hono/node-server@1.13.7':
-    resolution: {integrity: sha512-kTfUMsoloVKtRA2fLiGSd9qBddmru9KadNyhJCwgKBxTiNkaAJEwkVN9KV/rS4HtmmNRtUh6P+YpmjRMl0d9vQ==}
+  '@hono/node-server@1.19.17':
+    resolution: {integrity: sha512-dSneS5qhiauZWGDCeK4o695Xd9nUNjviSZCMQrj10eetr8Uln1ucn6bbphOM6UynAMMtNIzZNSpL9vnASJwrPQ==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
@@ -7087,7 +7087,7 @@ snapshots:
 
   '@hapi/bourne@3.0.0': {}
 
-  '@hono/node-server@1.13.7(hono@4.13.14)':
+  '@hono/node-server@1.19.17(hono@4.13.14)':
     dependencies:
       hono: 4.13.14
 
