@@ -1,0 +1,11 @@
+# Every name fuzd publishes. Used to reserve the new ones and register their
+# trusted publisher in one go (see PUBLISHING.md):
+#   node ~/dev/tools/reserve-npm-name.mjs --names-file scripts/npm-names.txt --license MIT --repo https://github.com/wighawag/fuzd --trust-github wighawag/fuzd --workflow release.yml --publish
+@fuzd/common
+@fuzd/chain-protocol
+@fuzd/executor
+@fuzd/scheduler
+@fuzd/tlock-decrypter
+@fuzd/server
+@fuzd/client
+fuzd

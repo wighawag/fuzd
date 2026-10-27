@@ -30,6 +30,8 @@
     "serve-docs": "ipfs-emulator --only -d docs/.vitepress/dist -p 8888",
     "docs:dev": "node openapi-transform.js && pwag docs/public/icon.svg docs/web-config.json -o docs/public && pnpm run publish-typedoc && vitepress dev docs",
     "docs:build": "node openapi-transform.js && pwag docs/public/icon.svg docs/web-config.json -o docs/public && pnpm run publish-typedoc && vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "check:packaging": "node scripts/check-packaging.mjs",
+    "release:ci": "pnpm check:packaging && pnpm -r --filter \"./packages/*\" format:check && pnpm -r build && pnpm -r --filter \"./packages/*\" test && pnpm changeset publish"
   }
 }

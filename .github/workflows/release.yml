@@ -1,0 +1,68 @@
+name: release
+
+# Changesets release flow (same shape as wighawag/waxdb):
+#   1. Land changes that include a changeset (`.changeset/*.md`) on main.
+#   2. This workflow opens/updates a "Version Packages" PR that bumps versions
+#      and updates changelogs from the pending changesets.
+#   3. Merging that PR (which removes the changesets) makes this workflow run
+#      `pnpm release:ci`, which runs the verify gate and then `changeset publish`.
+#   When main already carries bumped, unpublished versions and no changesets,
+#   step 3 happens directly.
+#
+# Auth is npm Trusted Publishing (OIDC): NO NPM_TOKEN secret. npm trusts this
+# repo + this workflow file (release.yml) through the trusted publisher
+# registered on each package. The handshake needs `id-token: write`, Node >= 22
+# and a recent npm/pnpm; publishes are stamped with provenance.
+#
+# Every published package must already exist on npm with a trusted publisher
+# tied to it. See PUBLISHING.md for the one-time bootstrap.
+on:
+  push:
+    branches: [main]
+  # manual trigger, e.g. to run the publish step right after configuring trust
+  workflow_dispatch: {}
+
+# Serialize release runs, and NEVER cancel one mid-publish. `changeset publish`
+# skips versions already on npm, so letting each queued run finish is safe.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write # npm trusted publishing + provenance
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: 11.25.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24 # >= 22 required for npm OIDC trusted publishing
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      # --ignore-scripts: pnpm 11 refuses to install with unapproved build scripts,
+      # and none of them is needed to build, test and publish the packages.
+      - name: Install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Create Release PR or Publish
+        uses: changesets/action@v1
+        with:
+          # release:ci runs the verify gate (packaging, format, build, tests) and
+          # then `changeset publish`; the action handles the git tags.
+          publish: pnpm release:ci
+          version: pnpm changeset version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
