@@ -1,12 +1,9 @@
-import {tags} from 'typia';
+// Any `0x`-prefixed hex string: addresses, hashes, calldata, Starknet felts.
+// fuzd-server accepts it in any case and normalises it to lowercase (see docs/adr/0003).
+export type String0x = `0x${string}`;
 
-// TODO this break all use of String0x where `0x${string}` is expected
-// export type String0x = string & tags.Pattern<'^0x[a-f0-9]+$'>;
-// for now:
-//  but see: https://github.com/samchon/typia/issues/1346
-export type String0x = `0x${string}` & tags.Pattern<'^0x[a-f0-9]+$'>;
-
-export type IntegerString = string & tags.Pattern<'^[1-9][0-9]*$'>;
+// A decimal integer string without leading zero (e.g. a chainId).
+export type IntegerString = string;
 
 // TODO more specific validation
 // export type Bytes0x = String0x;
