@@ -29,7 +29,7 @@ These names replaced `fuzd-common`, `fuzd-chain-protocol`, `fuzd-executor`, `fuz
 
 npm keeps the trusted-publisher setting on the package, so a name has to exist before it can hold one. `~/dev/tools/reserve-npm-name.mjs` does both steps for the whole list: it publishes an empty `0.0.0` placeholder for every name that does not exist yet, then runs `npm trust github <name> --file release.yml --repo wighawag/fuzd --allow-publish` for every name (new ones, and existing ones you maintain such as `fuzd`), skipping a package that already has a trusted publisher.
 
-Requirements: npm `>= 11.15.0` (`npm install -g npm@^11.15.0`), 2FA on the npm account, and the `@fuzd` org. The first `npm trust` call asks for 2FA in the browser; tick "skip 2FA for the next 5 minutes" there and the rest of the list goes through.
+Requirements: npm `>= 11.15.0` for `npm trust` (on the my-boxes hosts it comes with Node 24 from the flake, currently npm 11.17.0; upgrade it there rather than with `npm install -g`), 2FA on the npm account, and the `@fuzd` org. The first `npm trust` call asks for 2FA in the browser; tick "skip 2FA for the next 5 minutes" there and the rest of the list goes through.
 
 ```bash
 # dry run first: prints what it would reserve and trust, changes nothing
