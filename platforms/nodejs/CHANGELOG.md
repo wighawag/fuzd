@@ -1,5 +1,12 @@
 # fuzd
 
+## 0.11.2
+
+### Patch Changes
+
+- 05d9f09: `--help` no longer prints the command name twice (`Usage: fuzd fuzd ...`, `Usage: fuzd-client fuzd-client ...`), and `fuzd-client` starts again on Node 22+: it imported its package.json with `assert` (removed from Node) and from a path that does not exist in the published package.
+- c3771ca: Use `@hono/node-server` 1.19, which matches hono 4.13: the server no longer logs `Failed to find Response internal state key` at startup.
+
 ## 0.11.1
 
 ### Package name
