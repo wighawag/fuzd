@@ -27,6 +27,7 @@ fuzd lets users schedule and execute transactions in the future without the serv
 
 Standing per-change rules agents must follow in this repo.
 
+- **API validation** lives in `fuzd-server` (`src/schemas`): zod 4 schemas pinned with `schemaFor` to the canonical types, which stay in `fuzd-common` / `fuzd-scheduler` / `fuzd-chain-protocol`. Every `String0x` is normalised to lowercase at that boundary, never per route (`docs/adr/0003-api-validation-zod-lowercase-addresses.md`).
 - Every user-facing change needs a **changeset** (`pnpm changeset`) — this repo publishes its packages via Changesets (`.changeset/`).
 
 ## Skills this repo uses
