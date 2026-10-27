@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import {createClient} from './index.js';
 import {loadEnv} from 'ldenv';
 import {parseEther} from 'viem';
