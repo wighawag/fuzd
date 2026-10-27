@@ -231,3 +231,44 @@ describe('existing rows written before normalisation', () => {
 		}
 	});
 });
+
+describe('compatibility with deployed clients', () => {
+	it('accepts the time-locked body fuzd-client 0.10.1 sends for conquest.eth reveals', async () => {
+		// the exact shape fuzd-client@0.10.1 builds (`scheduleExecution`, time-locked branch), with the
+		// values conquest.eth passes: a checksummed `from` in startTransaction, a lowercase onBehalf, the
+		// remote account (lowercase, from the server) as paymentReserve.broadcaster. A field the server
+		// does not know about is dropped rather than rejected.
+		const now = Math.floor(Date.now() / 1000);
+		const body = {
+			chainId: CHAIN_ID,
+			slot: '0x7b8c1b5d2a3e4f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8',
+			timing: {
+				type: 'delta-time-with-target-time',
+				expiryDelta: 3960,
+				delta: 1800,
+				targetTimeUnlessHigherDelta: now + 3600,
+				startTransaction: {
+					broadcastTime: now,
+					from: checksummed,
+					hash: `0x${'ab'.repeat(32)}`,
+					nonce: '0x2a',
+				},
+			},
+			unknownField: 'dropped',
+			executionServiceParameters: serviceParameters,
+			paymentReserve: {amount: '100000000000000', broadcaster},
+			onBehalf: lowercase,
+			type: 'time-locked',
+			payload: 'age-encryption.org/v1\n-> tlock 12345678 52db9ba7\nopaque',
+		};
+		const {status, json} = await server.postSigned('/api/scheduling/scheduleExecution', wallet, body);
+		expect(json).toMatchObject({success: true, info: {chainId: CHAIN_ID, account: lowercase, slot: body.slot}});
+		expect(status).toBe(200);
+		expect(typeof json.signature).toBe('string');
+
+		const stored = await server.getJSON(`/api/scheduling/scheduledExecution/${CHAIN_ID}/${checksummed}/${body.slot}`);
+		expect(stored.json.execution.timing.startTransaction.from).toEqual(lowercase);
+		expect(stored.json.execution.unknownField).toBeUndefined();
+		expect(stored.json.execution.payload).toEqual(body.payload);
+	});
+});
