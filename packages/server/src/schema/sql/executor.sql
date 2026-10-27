@@ -76,3 +76,9 @@ CREATE TABLE IF NOT EXISTS ChainConfigurations (
     PRIMARY KEY (chainId)
 );
 
+
+-- Addresses are stored lowercase (docs/adr/0003). Normalise rows written before that, idempotently.
+-- OR IGNORE: if a lowercase row with the same key was already written, it is the newer one and wins.
+UPDATE OR IGNORE BroadcastedExecutions SET account = lower(account) WHERE account != lower(account);
+UPDATE BroadcastedExecutions SET onBehalf = lower(onBehalf) WHERE onBehalf != lower(onBehalf);
+UPDATE BroadcastedExecutions SET broadcaster = lower(broadcaster) WHERE broadcaster != lower(broadcaster);

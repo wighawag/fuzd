@@ -79,3 +79,13 @@ CREATE INDEX IF NOT EXISTS idx_ArchivedScheduledExecutions_broadcasted_finalized
 
 CREATE INDEX IF NOT EXISTS idx_ArchivedScheduledExecutions_account_nextCheckTime ON ArchivedScheduledExecutions (account, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_ArchivedScheduledExecutions_onBehalf_broadcasted ON ArchivedScheduledExecutions (onBehalf, broadcasted);
+
+
+-- Addresses are stored lowercase (docs/adr/0003). Normalise rows written before that, idempotently.
+-- OR IGNORE: if a lowercase row with the same key was already written, it is the newer one and wins.
+UPDATE OR IGNORE ScheduledExecutions SET account = lower(account) WHERE account != lower(account);
+UPDATE ScheduledExecutions SET onBehalf = lower(onBehalf) WHERE onBehalf != lower(onBehalf);
+UPDATE ScheduledExecutions SET broadcaster = lower(broadcaster) WHERE broadcaster != lower(broadcaster);
+UPDATE OR IGNORE ArchivedScheduledExecutions SET account = lower(account) WHERE account != lower(account);
+UPDATE ArchivedScheduledExecutions SET onBehalf = lower(onBehalf) WHERE onBehalf != lower(onBehalf);
+UPDATE ArchivedScheduledExecutions SET broadcaster = lower(broadcaster) WHERE broadcaster != lower(broadcaster);
