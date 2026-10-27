@@ -12,7 +12,7 @@ import {RemoteSQLSchedulerStorage} from './storage/RemoteSQLSchedulerStorage.js'
 import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
 import {ChainProtocols, TransactionDataTypes} from 'fuzd-chain-protocol';
 import {StarknetChainProtocol} from 'fuzd-chain-protocol/starknet';
-import {tags} from 'typia';
+import {String0xSchema} from './schemas/primitives.js';
 
 const defaultPath = "m/44'/60'/0'/0/0";
 
@@ -35,7 +35,7 @@ export type Config = {
 	account: ReturnType<typeof initAccountFromHD>;
 	paymentAccount?: String0x;
 	chainProtocols: ChainProtocols<MyChainProtocols>;
-	contractTimestampAddress?: String0x & tags.Pattern<'^0[xX][A-Fa-f0-9][A-Fa-f0-9]+$'>;
+	contractTimestampAddress?: String0x;
 	getTimeDiff(chainId: IntegerString): Promise<number>;
 };
 
@@ -151,7 +151,7 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			chainProtocols,
 			contractTimestampAddress: contractTimestamp,
 		};
-		const paymentAccount = env.PAYMENT_ACCOUNT as String0x | undefined;
+		const paymentAccount = env.PAYMENT_ACCOUNT ? String0xSchema.parse(env.PAYMENT_ACCOUNT) : undefined;
 		const executorConfig = {
 			...baseConfig,
 			storage: executorStorage,

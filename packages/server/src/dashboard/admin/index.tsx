@@ -8,8 +8,8 @@ import {logs} from 'named-logs';
 import {Layout} from '../layout.js';
 import {Table} from '../components/Table.js';
 import {displayExecutionBroadcasted, displayScheduledExecutionQueued} from '../display/index.js';
-import {assert} from 'typia';
-import {String0x} from 'fuzd-common';
+import {validate} from '../../validation.js';
+import {AccountParamSchema, ChainIdBroadcasterParamSchema} from '../../schemas/index.js';
 import {Env} from '../../env.js';
 
 const logger = logs('fuzd-cf-worker-admin-dashboard');
@@ -50,9 +50,9 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 				</Layout>,
 			);
 		})
-		.get('/account-submissions/:account', async (c) => {
+		.get('/account-submissions/:account', validate('param', AccountParamSchema), async (c) => {
 			const config = c.get('config');
-			const account = assert<String0x>(c.req.param('account'));
+			const {account} = c.req.valid('param');
 			const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
 			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));
@@ -62,27 +62,30 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 				</Layout>,
 			);
 		})
-		.get('/unfinalized-submissions/:chainId/:broadcaster', async (c) => {
-			const config = c.get('config');
-			const broadcaster = assert<String0x>(c.req.param('broadcaster'));
-			const chainId = assert<string>(c.req.param('chainId'));
-			const queue = await config.schedulerStorage.getUnFinalizedScheduledExecutionsPerBroadcaster({
-				broadcaster,
-				chainId,
-				limit: 100,
-			});
-			const diff = await config.getTimeDiff(queue[0]?.chainId);
-			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));
-			return c.html(
-				<Layout>
-					<Table data={displayData} />
-				</Layout>,
-			);
-		})
+		.get(
+			'/unfinalized-submissions/:chainId/:broadcaster',
+			validate('param', ChainIdBroadcasterParamSchema),
+			async (c) => {
+				const config = c.get('config');
+				const {broadcaster, chainId} = c.req.valid('param');
+				const queue = await config.schedulerStorage.getUnFinalizedScheduledExecutionsPerBroadcaster({
+					broadcaster,
+					chainId,
+					limit: 100,
+				});
+				const diff = await config.getTimeDiff(queue[0]?.chainId);
+				const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));
+				return c.html(
+					<Layout>
+						<Table data={displayData} />
+					</Layout>,
+				);
+			},
+		)
 
-		.get('/account-archived-submissions/:account', async (c) => {
+		.get('/account-archived-submissions/:account', validate('param', AccountParamSchema), async (c) => {
 			const config = c.get('config');
-			const account = assert<String0x>(c.req.param('account'));
+			const {account} = c.req.valid('param');
 			const queue = await config.schedulerStorage.getAccountArchivedSubmissions(account, {limit: 100});
 			const diff = await config.getTimeDiff(queue[0]?.chainId);
 			const displayData = await Promise.all(queue.map(displayScheduledExecutionQueued(diff, false, config)));

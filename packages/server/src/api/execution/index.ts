@@ -1,76 +1,90 @@
 import {Hono} from 'hono';
-import {Bindings} from 'hono/types';
 import {ServerOptions} from '../../types.js';
-import {assert, createValidate} from 'typia';
 import {createErrorObject} from '../../utils/response.js';
-import {ExecutionBroadcast, IntegerString, String0x} from 'fuzd-common';
 import {Env} from '../../env.js';
 import {auth} from '../../auth.js';
-import {typiaValidator} from '@hono/typia-validator';
-import {MyTransactionData} from '../../setup.js';
-
-const validate = createValidate<ExecutionBroadcast<MyTransactionData>>();
+import {describe, validate} from '../../validation.js';
+import {
+	ChainIdAccountParamSchema,
+	ChainIdParamSchema,
+	ExecutionBroadcastSchema,
+	ExecutionParamSchema,
+	ExecutionResponseSchema,
+	PendingExecutionStoredSchema,
+	RemoteAccountInfoSchema,
+	String0xSchema,
+	successResponse,
+} from '../../schemas/index.js';
 
 export function getExecutionAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
 	const app = new Hono<{Bindings: Bindings}>()
-		.get('/remoteAccount/:chainId/:account', async (c) => {
-			try {
-				const config = c.get('config');
-				const chainId = assert<IntegerString>(c.req.param('chainId'));
-				const account = assert<String0x>(c.req.param('account'));
-				const broadcasterInfo = await config.executor.getRemoteAccount(chainId, account);
-				return c.json({success: true as const, account: broadcasterInfo}, 200);
-			} catch (err) {
-				return c.json(createErrorObject(err), 500);
-			}
-		})
-		.get('/paymentRemoteAccount/:chainId', async (c) => {
-			try {
-				const chainId = assert<IntegerString>(c.req.param('chainId'));
-				const config = c.get('config');
-
-				const paymentAccount = config.paymentAccount;
-				if (paymentAccount) {
-					const broadcasterInfo = await config.executor.getRemoteAccount(chainId, paymentAccount);
+		.get(
+			'/remoteAccount/:chainId/:account',
+			describe({response: successResponse({account: RemoteAccountInfoSchema})}),
+			validate('param', ChainIdAccountParamSchema),
+			async (c) => {
+				try {
+					const config = c.get('config');
+					const {chainId, account} = c.req.valid('param');
+					const broadcasterInfo = await config.executor.getRemoteAccount(chainId, account);
 					return c.json({success: true as const, account: broadcasterInfo}, 200);
-				} else {
-					return c.json({success: true as const, account: undefined}, 200);
+				} catch (err) {
+					return c.json(createErrorObject(err), 500);
 				}
-			} catch (err) {
-				return c.json(createErrorObject(err), 500);
-			}
-		})
+			},
+		)
+		.get(
+			'/paymentRemoteAccount/:chainId',
+			describe({response: successResponse({account: RemoteAccountInfoSchema.optional()})}),
+			validate('param', ChainIdParamSchema),
+			async (c) => {
+				try {
+					const {chainId} = c.req.valid('param');
+					const config = c.get('config');
 
-		.get('/execution/:chainId/:account/:slot/:batchIndex', async (c) => {
-			try {
-				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString;
-
-				// TODO refactor to remove these incongruuity between lowecase address and other
-				// TODO use zod to parse all input
-				const account = c.req.param('account') as String0x; // .toLowerCase() as String0x;
-				const batchIndex = parseInt(c.req.param('batchIndex'));
-
-				if (isNaN(batchIndex)) {
-					throw new Error(`invalid batch index`);
+					const paymentAccount = config.paymentAccount;
+					if (paymentAccount) {
+						const broadcasterInfo = await config.executor.getRemoteAccount(chainId, paymentAccount);
+						return c.json({success: true as const, account: broadcasterInfo}, 200);
+					} else {
+						return c.json({success: true as const, account: undefined}, 200);
+					}
+				} catch (err) {
+					return c.json(createErrorObject(err), 500);
 				}
+			},
+		)
 
-				const execution = await config.executorStorage.getPendingExecution({
-					chainId,
-					account,
-					slot: c.req.param('slot'),
-					batchIndex,
-				});
-				return c.json({success: true as const, execution}, 200);
-			} catch (err) {
-				return c.json(createErrorObject(err), 500);
-			}
-		})
+		.get(
+			'/execution/:chainId/:account/:slot/:batchIndex',
+			describe({response: successResponse({execution: PendingExecutionStoredSchema.optional()})}),
+			validate('param', ExecutionParamSchema),
+			async (c) => {
+				try {
+					const config = c.get('config');
+					const {chainId, account, slot, batchIndex} = c.req.valid('param');
+
+					const execution = await config.executorStorage.getPendingExecution({
+						chainId,
+						account,
+						slot,
+						batchIndex,
+					});
+					return c.json({success: true as const, execution}, 200);
+				} catch (err) {
+					return c.json(createErrorObject(err), 500);
+				}
+			},
+		)
 
 		.post(
 			'/broadcastExecution',
+			describe({
+				description: 'broadcast an execution now, signed by the account submitting it (header `signature`)',
+				response: successResponse({info: ExecutionResponseSchema, signature: String0xSchema}),
+			}),
 			auth({debug: false, signReception: true}),
-			typiaValidator('json', validate),
+			validate('json', ExecutionBroadcastSchema),
 			async (c) => {
 				try {
 					const config = c.get('config');

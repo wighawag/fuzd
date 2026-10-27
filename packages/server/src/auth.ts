@@ -1,9 +1,9 @@
 import {String0x} from 'fuzd-common';
 import {MiddlewareHandler} from 'hono';
 import {HTTPException} from 'hono/http-exception';
-import {assert} from 'typia';
 import {hashMessage, recoverAddress} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
+import {String0xSchema} from './schemas/primitives.js';
 
 export type AuthOptions = {
 	debug?: boolean;
@@ -27,12 +27,19 @@ export function auth(options: AuthOptions): MiddlewareHandler {
 				message: `signature not provided`,
 			});
 		}
+		// the account is normalised here, once, like every other String0x the API receives (docs/adr/0003)
 		let account: String0x;
 		if (options?.debug && signature.startsWith('debug@')) {
-			account = signature.split('@')[1] as String0x;
+			const parsed = String0xSchema.safeParse(signature.split('@')[1]);
+			if (!parsed.success) {
+				throw new HTTPException(400, {
+					message: `invalid debug account`,
+				});
+			}
+			account = parsed.data;
 		} else {
 			try {
-				account = assert(await recoverAddress({hash, signature}));
+				account = String0xSchema.parse(await recoverAddress({hash, signature}));
 			} catch (err: any) {
 				throw new HTTPException(400, {
 					message: 'failed to recover address from message and signature',

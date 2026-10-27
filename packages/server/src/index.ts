@@ -14,6 +14,7 @@ import {hc} from 'hono/client';
 import {HTTPException} from 'hono/http-exception';
 import {Env} from './env.js';
 import {FUZDLogger} from 'fuzd-common';
+import {generateOpenAPIDocument} from './openapi.js';
 
 export type {Context} from 'hono';
 
@@ -47,11 +48,12 @@ function createAppWithPublicAPIOnly<Bindings extends Env>(options: ServerOptions
 	return app.route('/api', api);
 }
 
+let openAPIDocument: ReturnType<typeof generateOpenAPIDocument> | undefined;
 export function createDoc() {
 	return new Hono()
 		.get('/openapi.json', async (c) => {
-			const jsonModule = await import('../doc/openapi.json', {assert: {type: 'json'}});
-			return c.json(jsonModule.default, 200);
+			openAPIDocument = openAPIDocument || generateOpenAPIDocument();
+			return c.json(await openAPIDocument, 200);
 		})
 		.get('/ui', swaggerUI({url: '/doc/openapi.json'}));
 }

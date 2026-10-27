@@ -2,12 +2,21 @@ import {Hono} from 'hono';
 import {ServerOptions} from '../../types.js';
 import {basicAuth} from 'hono/basic-auth';
 import {logs} from 'named-logs';
-import {assert, createValidate} from 'typia';
 import {createErrorObject} from '../../utils/response.js';
-import {FUZDLogger, IntegerString, String0x} from 'fuzd-common';
+import {FUZDLogger} from 'fuzd-common';
 import {setChainOverride, setup} from '../../setup.js';
 import {Env} from '../../env.js';
-import {typiaValidator} from '@hono/typia-validator';
+import {z} from 'zod';
+import {validate} from '../../validation.js';
+import {
+	AccountParamSchema,
+	ChainIdAccountSlotParamSchema,
+	ChainIdParamSchema,
+	FeesSchema,
+	IntegerStringSchema,
+	OptionalChainIdParamSchema,
+	schemaFor,
+} from '../../schemas/index.js';
 
 const logger = <FUZDLogger>logs('fuzd-cf-worker-admin-api');
 
@@ -26,10 +35,10 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json(createErrorObject(err), 500);
 			}
 		})
-		.get('/account-submissions/:account', async (c) => {
+		.get('/account-submissions/:account', validate('param', AccountParamSchema), async (c) => {
 			try {
 				const config = c.get('config');
-				const account = assert<String0x>(c.req.param('account'));
+				const {account} = c.req.valid('param');
 				const queue = await config.schedulerStorage.getAccountSubmissions(account, {limit: 1000});
 				return c.json({success: true as const, queue}, 200);
 			} catch (err) {
@@ -93,10 +102,10 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json(createErrorObject(err), 500);
 			}
 		})
-		.get('/chainConfiguration/:chainId', async (c) => {
+		.get('/chainConfiguration/:chainId', validate('param', ChainIdParamSchema), async (c) => {
 			try {
 				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString;
+				const {chainId} = c.req.valid('param');
 
 				const chainConfiguration = await config.executorStorage.getChainConfiguration(chainId);
 				return c.json(
@@ -110,61 +119,67 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json(createErrorObject(err), 500);
 			}
 		})
-		.post('/updateExpectedGasPrice/:chainId', typiaValidator('json', createValidate<{value: string}>()), async (c) => {
-			try {
-				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString;
-				const timestamp = Math.floor(Date.now() / 1000);
-
-				const {value} = c.req.valid('json');
-
-				if (BigInt(value) > 0n) {
-					const paymentAccount = config.paymentAccount;
-					if (!paymentAccount) {
-						return c.json(
-							{
-								success: false as const,
-								errors: ['Payment account not configured'],
-							},
-							200,
-						);
-					}
-
-					const broadcasterInfo = await config.executor.getRemoteAccount(chainId, paymentAccount);
-					const balance = await config.chainProtocols[chainId].getBalance(broadcasterInfo.address);
-					if (balance < BigInt('1000000000000000000')) {
-						return c.json({
-							success: false as const,
-							// TODO config minimum balance per chain
-							errors: [`paymentAccount's remote account (${broadcasterInfo.address}) below 1 Native token`],
-						});
-					}
-				}
-
-				const chainConfiguration = await config.executorStorage.updateExpectedWorstCaseGasPrice(
-					chainId,
-					timestamp,
-					BigInt(value),
-				);
-				return c.json(
-					{
-						success: true as const,
-						chainConfiguration,
-					},
-					200,
-				);
-			} catch (err) {
-				return c.json(createErrorObject(err), 500);
-			}
-		})
-
 		.post(
-			'/deleteFinalizedPendingExecutions/:chainId?',
-			typiaValidator('json', createValidate<{upTo?: number}>()),
+			'/updateExpectedGasPrice/:chainId',
+			validate('param', ChainIdParamSchema),
+			validate('json', schemaFor<{value: string}>()(z.object({value: z.string()}))),
 			async (c) => {
 				try {
 					const config = c.get('config');
-					const chainId = c.req.param('chainId') as IntegerString | undefined;
+					const {chainId} = c.req.valid('param');
+					const timestamp = Math.floor(Date.now() / 1000);
+
+					const {value} = c.req.valid('json');
+
+					if (BigInt(value) > 0n) {
+						const paymentAccount = config.paymentAccount;
+						if (!paymentAccount) {
+							return c.json(
+								{
+									success: false as const,
+									errors: ['Payment account not configured'],
+								},
+								200,
+							);
+						}
+
+						const broadcasterInfo = await config.executor.getRemoteAccount(chainId, paymentAccount);
+						const balance = await config.chainProtocols[chainId].getBalance(broadcasterInfo.address);
+						if (balance < BigInt('1000000000000000000')) {
+							return c.json({
+								success: false as const,
+								// TODO config minimum balance per chain
+								errors: [`paymentAccount's remote account (${broadcasterInfo.address}) below 1 Native token`],
+							});
+						}
+					}
+
+					const chainConfiguration = await config.executorStorage.updateExpectedWorstCaseGasPrice(
+						chainId,
+						timestamp,
+						BigInt(value),
+					);
+					return c.json(
+						{
+							success: true as const,
+							chainConfiguration,
+						},
+						200,
+					);
+				} catch (err) {
+					return c.json(createErrorObject(err), 500);
+				}
+			},
+		)
+
+		.post(
+			'/deleteFinalizedPendingExecutions/:chainId?',
+			validate('param', OptionalChainIdParamSchema),
+			validate('json', schemaFor<{upTo?: number}>()(z.object({upTo: z.number().optional()}))),
+			async (c) => {
+				try {
+					const config = c.get('config');
+					const {chainId} = c.req.valid('param');
 
 					const timestamp = Math.floor(Date.now() / 1000);
 
@@ -185,11 +200,12 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 		)
 		.post(
 			'/deleteFinalizedScheduledExecutions/:chainId?',
-			typiaValidator('json', createValidate<{upTo?: number}>()),
+			validate('param', OptionalChainIdParamSchema),
+			validate('json', schemaFor<{upTo?: number}>()(z.object({upTo: z.number().optional()}))),
 			async (c) => {
 				try {
 					const config = c.get('config');
-					const chainId = c.req.param('chainId') as IntegerString | undefined;
+					const {chainId} = c.req.valid('param');
 
 					const timestamp = Math.floor(Date.now() / 1000);
 
@@ -211,12 +227,12 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				}
 			},
 		)
-		.post('/updateFees/:chainId', async (c) => {
+		.post('/updateFees/:chainId', validate('param', ChainIdParamSchema), validate('json', FeesSchema), async (c) => {
 			try {
 				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString;
+				const {chainId} = c.req.valid('param');
 				const timestamp = Math.floor(Date.now() / 1000);
-				const chainConfiguration = await config.executorStorage.updateFees(chainId, timestamp, await c.req.json());
+				const chainConfiguration = await config.executorStorage.updateFees(chainId, timestamp, c.req.valid('json'));
 				return c.json(
 					{
 						success: true as const,
@@ -228,16 +244,25 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json(createErrorObject(err), 500);
 			}
 		})
-		.get('/setChainOverride/:chainId/:chainOverride', async (c) => {
-			if ((c.env as any).DEV === 'true') {
-				const chainId = c.req.param('chainId') as IntegerString;
-				const chainOverride = c.req.param('chainOverride');
-				setChainOverride(chainId, chainOverride);
-				return c.json({success: true as const}, 200);
-			} else {
-				return c.json({success: false as const}, 500);
-			}
-		})
+		.get(
+			'/setChainOverride/:chainId/:chainOverride',
+			validate(
+				'param',
+				schemaFor<{chainId: string; chainOverride: string}>()(
+					z.object({chainId: IntegerStringSchema, chainOverride: z.string()}),
+				),
+			),
+			async (c) => {
+				if ((c.env as any).DEV === 'true') {
+					const {chainId} = c.req.valid('param');
+					const {chainOverride} = c.req.valid('param');
+					setChainOverride(chainId, chainOverride);
+					return c.json({success: true as const}, 200);
+				} else {
+					return c.json({success: false as const}, 500);
+				}
+			},
+		)
 		.get('/paymentAccountBroadcaster', async (c) => {
 			try {
 				const config = c.get('config');
@@ -255,12 +280,10 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json(createErrorObject(err), 500);
 			}
 		})
-		.post('/archiveSubmission/:chainId/:account/:slot', async (c) => {
+		.post('/archiveSubmission/:chainId/:account/:slot', validate('param', ChainIdAccountSlotParamSchema), async (c) => {
 			try {
 				const config = c.get('config');
-				const chainId = c.req.param('chainId') as IntegerString;
-				const account = c.req.param('account') as String0x;
-				const slot = c.req.param('slot') as string;
+				const {chainId, account, slot} = c.req.valid('param');
 				const execution = await config.schedulerStorage.getQueuedExecution({chainId, account, slot});
 				if (execution) {
 					await config.schedulerStorage.archiveExecution(execution);
