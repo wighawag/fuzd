@@ -16,9 +16,9 @@ import {
 	validateParameters,
 	IntegerString,
 	FUZDLogger,
-} from 'fuzd-common';
+} from '@fuzd/common';
 import {ExecutorConfig} from './types/internal.js';
-import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo, TransactionDataTypes} from 'fuzd-chain-protocol';
+import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo, TransactionDataTypes} from '@fuzd/chain-protocol';
 
 const logger = <FUZDLogger>logs('fuzd-executor');
 

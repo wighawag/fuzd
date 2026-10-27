@@ -1,4 +1,4 @@
-import {ExecutionSubmission, IntegerString, String0x} from 'fuzd-common';
+import {ExecutionSubmission, IntegerString, String0x} from '@fuzd/common';
 import {ScheduledExecution} from './external.js';
 
 export type ScheduledExecutionQueued<TransactionDataType> = ScheduledExecution<

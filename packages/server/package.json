@@ -1,8 +1,13 @@
 {
-  "name": "fuzd-server",
+  "name": "@fuzd/server",
   "version": "0.12.0",
   "description": "fuzd server app",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wighawag/fuzd.git",
+    "directory": "packages/server"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -27,11 +32,11 @@
     "eip-1193": "^0.6.1",
     "eip-1193-jsonrpc-provider": "^0.4.2",
     "eip-1193-signer": "^0.1.0",
-    "fuzd-chain-protocol": "workspace:*",
-    "fuzd-common": "workspace:*",
-    "fuzd-executor": "workspace:*",
-    "fuzd-scheduler": "workspace:*",
-    "fuzd-tlock-decrypter": "workspace:*",
+    "@fuzd/chain-protocol": "workspace:*",
+    "@fuzd/common": "workspace:*",
+    "@fuzd/executor": "workspace:*",
+    "@fuzd/scheduler": "workspace:*",
+    "@fuzd/tlock-decrypter": "workspace:*",
     "hono": "^4.11.2",
     "hono-openapi": "^1.5.0",
     "named-logs": "^0.3.2",

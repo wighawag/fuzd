@@ -11,12 +11,12 @@ fuzd lets users schedule and execute transactions in the future without the serv
 - **Blindfolded execution** — the core promise: a delegated executor runs a user's transaction at a future time without being able to read its content beforehand.
 - **Trust model** — users do NOT trust the fuzd host with their payload; they trust the Drand nodes for the timelock. The worst a host can do is not execute, or delay; it can never read or alter content ahead of time (`docs/adr/0001-trust-model-drand-not-host.md`).
 - **Preliminary transaction** — an optional executor hook (`requiredPreliminaryTransaction`) for chains (Starknet) whose accounts need an activation/setup tx before they can broadcast (`docs/adr/0002-preliminary-transaction-in-executor-interface.md`).
-- **Scheduler** (`fuzd-scheduler`) — performs the delayed execution, decrypts the payload when the time is reached, then defers the actual send to an execution API.
-- **Executor** (`fuzd-executor`) — the execution API that submits transactions on behalf of an account using a simple execution mechanism.
-- **tlock-decrypter** (`fuzd-tlock-decrypter`) — accepts Drand-encrypted payloads and decrypts them into transactions once the timelock round is reachable.
-- **chain-protocol** (`fuzd-chain-protocol`) — abstraction layer letting fuzd support any network (any Ethereum-RPC-spec EVM chain, plus Starknet).
-- **client** (`fuzd-client`) — client library plus a CLI to schedule execution from the command line.
-- **server** (`fuzd-server`) — a Hono-based API server wiring scheduler + executor together; deployable e.g. as `fuzd-cf-worker` (Cloudflare Worker + D1).
+- **Scheduler** (`@fuzd/scheduler`) — performs the delayed execution, decrypts the payload when the time is reached, then defers the actual send to an execution API.
+- **Executor** (`@fuzd/executor`) — the execution API that submits transactions on behalf of an account using a simple execution mechanism.
+- **tlock-decrypter** (`@fuzd/tlock-decrypter`) — accepts Drand-encrypted payloads and decrypts them into transactions once the timelock round is reachable.
+- **chain-protocol** (`@fuzd/chain-protocol`) — abstraction layer letting fuzd support any network (any Ethereum-RPC-spec EVM chain, plus Starknet).
+- **client** (`@fuzd/client`) — client library plus a CLI to schedule execution from the command line.
+- **server** (`@fuzd/server`) — a Hono-based API server wiring scheduler + executor together; deployable e.g. as `@fuzd/cf-worker` (Cloudflare Worker + D1).
 - **Drand / timelock** — the external randomness/timelock beacon (drand.love) used to keep payloads encrypted until a future round.
 - **Reveal transaction** — the decrypted transaction that becomes available at execution time (see the scheduling flow, where a reveal tx is constructed and submitted).
 - **Derivation parameters** — parameters (e.g. `publicKey`, optional `accountContractClassHash`) submitted at scheduling time alongside `chainId`.
@@ -27,7 +27,7 @@ fuzd lets users schedule and execute transactions in the future without the serv
 
 Standing per-change rules agents must follow in this repo.
 
-- **API validation** lives in `fuzd-server` (`src/schemas`): zod 4 schemas pinned with `schemaFor` to the canonical types, which stay in `fuzd-common` / `fuzd-scheduler` / `fuzd-chain-protocol`. Every `String0x` is normalised to lowercase at that boundary, never per route (`docs/adr/0003-api-validation-zod-lowercase-addresses.md`).
+- **API validation** lives in `@fuzd/server` (`src/schemas`): zod 4 schemas pinned with `schemaFor` to the canonical types, which stay in `@fuzd/common` / `@fuzd/scheduler` / `@fuzd/chain-protocol`. Every `String0x` is normalised to lowercase at that boundary, never per route (`docs/adr/0003-api-validation-zod-lowercase-addresses.md`).
 - Every user-facing change needs a **changeset** (`pnpm changeset`) — this repo publishes its packages via Changesets (`.changeset/`).
 
 ## Skills this repo uses

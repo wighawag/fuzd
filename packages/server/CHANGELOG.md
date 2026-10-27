@@ -1,6 +1,10 @@
-# fuzd-server
+# @fuzd/server
 
 ## 0.12.0
+
+### Package name
+
+- Published as `@fuzd/server`, previously `fuzd-server`. Same code; `fuzd-server` stops at its last version and is deprecated.
 
 ### Minor Changes
 

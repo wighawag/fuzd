@@ -1,4 +1,4 @@
-// import {FUZDLogger} from 'fuzd-common';
+// import {FUZDLogger} from '@fuzd/common';
 // import {logs} from 'named-logs';
 import {LogEvent, type Reporter} from 'workers-logger';
 // const logger = <FUZDLogger>logs('worker');

@@ -1,8 +1,13 @@
 {
-  "name": "fuzd-client",
+  "name": "@fuzd/client",
   "version": "0.11.2",
   "description": "default client for fuzd using tlock-js",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wighawag/fuzd.git",
+    "directory": "packages/client"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -14,7 +19,7 @@
     }
   },
   "bin": {
-    "fuzd": "dist/esm/cli.js"
+    "fuzd-client": "dist/esm/cli.js"
   },
   "files": [
     "dist",
@@ -22,10 +27,10 @@
   ],
   "dependencies": {
     "commander": "^12.1.0",
-    "fuzd-chain-protocol": "workspace:*",
-    "fuzd-common": "workspace:*",
-    "fuzd-executor": "workspace:*",
-    "fuzd-scheduler": "workspace:*",
+    "@fuzd/chain-protocol": "workspace:*",
+    "@fuzd/common": "workspace:*",
+    "@fuzd/executor": "workspace:*",
+    "@fuzd/scheduler": "workspace:*",
     "ldenv": "^0.3.12",
     "named-logs": "^0.3.2",
     "remote-account": "^0.2.2",

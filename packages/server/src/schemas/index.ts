@@ -9,7 +9,7 @@ import type {
 	PendingExecutionStored,
 	RemoteAccountInfo,
 	TransactionParametersUsed,
-} from 'fuzd-common';
+} from '@fuzd/common';
 import type {
 	PriorTransactionInfo,
 	ScheduledExecution,
@@ -17,9 +17,9 @@ import type {
 	ScheduleInfo,
 	TimingTypes,
 	TimingTypesCompatibleWithTimeLock,
-} from 'fuzd-scheduler';
-import type {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
-import type {DeployAccountTransactionData, InvokeTransactionData} from 'fuzd-chain-protocol/starknet';
+} from '@fuzd/scheduler';
+import type {EthereumTransactionData} from '@fuzd/chain-protocol/ethereum';
+import type {DeployAccountTransactionData, InvokeTransactionData} from '@fuzd/chain-protocol/starknet';
 import type {MyTransactionData} from '../setup.js';
 import type {ErrorType} from '../utils/response.js';
 import {IntegerStringSchema, IndexParamSchema, Plain, schemaFor, String0xSchema} from './primitives.js';

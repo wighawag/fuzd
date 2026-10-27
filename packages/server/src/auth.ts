@@ -1,4 +1,4 @@
-import {String0x} from 'fuzd-common';
+import {String0x} from '@fuzd/common';
 import {MiddlewareHandler} from 'hono';
 import {HTTPException} from 'hono/http-exception';
 import {hashMessage, recoverAddress} from 'viem';

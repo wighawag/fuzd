@@ -1,8 +1,13 @@
 {
-  "name": "fuzd-chain-protocol",
+  "name": "@fuzd/chain-protocol",
   "version": "0.11.1",
   "description": "protocol used by fuzd to interact with a chain",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wighawag/fuzd.git",
+    "directory": "packages/chain-protocol"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -29,7 +34,7 @@
     "@scure/bip32": "^1.6.0",
     "@scure/starknet": "^1.1.0",
     "eip-1193-signer": "^0.1.0",
-    "fuzd-common": "workspace:*",
+    "@fuzd/common": "workspace:*",
     "named-logs": "^0.3.2",
     "remote-account": "^0.2.2",
     "remote-procedure-call": "^0.0.15",

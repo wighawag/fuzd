@@ -1,8 +1,13 @@
 {
-  "name": "fuzd-scheduler",
+  "name": "@fuzd/scheduler",
   "version": "0.11.1",
   "description": "execute transaction in future plus tx can be sealed using drand tlock",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wighawag/fuzd.git",
+    "directory": "packages/scheduler"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -20,8 +25,8 @@
     "src"
   ],
   "dependencies": {
-    "fuzd-chain-protocol": "workspace:*",
-    "fuzd-common": "workspace:*",
+    "@fuzd/chain-protocol": "workspace:*",
+    "@fuzd/common": "workspace:*",
     "named-logs": "^0.3.2"
   },
   "devDependencies": {

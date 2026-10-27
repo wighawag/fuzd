@@ -19,9 +19,9 @@ import {
 	String0x,
 	time2text,
 	validateParameters,
-} from 'fuzd-common';
+} from '@fuzd/common';
 import {SchedulerConfig} from './types/internal.js';
-import {ChainProtocol, TransactionDataTypes} from 'fuzd-chain-protocol';
+import {ChainProtocol, TransactionDataTypes} from '@fuzd/chain-protocol';
 
 function computeScheduledExecutionIdentifier(scheduledExecution: ScheduledExecutionQueued<any>): string {
 	return `${scheduledExecution.chainId}/${scheduledExecution.account}/${scheduledExecution.slot}`;

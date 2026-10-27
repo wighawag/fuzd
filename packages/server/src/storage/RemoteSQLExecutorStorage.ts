@@ -1,9 +1,9 @@
 import type {RemoteSQL, SQLPreparedStatement} from 'remote-sql';
-import type {ExecutorStorage, BroadcasterData, ChainConfiguration, BroadcasterDataWithLock} from 'fuzd-executor';
+import type {ExecutorStorage, BroadcasterData, ChainConfiguration, BroadcasterDataWithLock} from '@fuzd/executor';
 import {sqlToStatements, toValues} from './utils.js';
 import {logs} from 'named-logs';
 import setupTables from '../schema/ts/executor.sql.js';
-import {FUZDLogger, Fees, IntegerString, PendingExecutionStored, String0x, UpdateableParameter} from 'fuzd-common';
+import {FUZDLogger, Fees, IntegerString, PendingExecutionStored, String0x, UpdateableParameter} from '@fuzd/common';
 import {wait} from '../utils/time.js';
 
 const logger = <FUZDLogger>logs('fuzd-server-executor-storage-sql');

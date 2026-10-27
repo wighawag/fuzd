@@ -1,6 +1,6 @@
 import {logs} from 'named-logs';
-import {FUZDLogger, PendingExecutionStored} from 'fuzd-common';
-import {ScheduledExecutionQueued} from 'fuzd-scheduler';
+import {FUZDLogger, PendingExecutionStored} from '@fuzd/common';
+import {ScheduledExecutionQueued} from '@fuzd/scheduler';
 import {formatEther, formatUnits, zeroAddress} from 'viem';
 import {Config} from '../../setup.js';
 

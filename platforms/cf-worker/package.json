@@ -1,9 +1,6 @@
 {
-  "name": "fuzd-cf-worker",
+  "name": "@fuzd/cf-worker",
   "version": "0.11.0",
-  "publishConfig": {
-    "access": "public"
-  },
   "type": "module",
   "files": [
     "src",
@@ -19,11 +16,11 @@
     "@cloudflare/vitest-pool-workers": "^0.5.36",
     "@cloudflare/workers-types": "^4.20241205.0",
     "@types/node": "^22.10.2",
-    "fuzd-chain-protocol": "workspace:*",
-    "fuzd-common": "workspace:*",
-    "fuzd-executor": "workspace:*",
-    "fuzd-scheduler": "workspace:*",
-    "fuzd-server": "workspace:*",
+    "@fuzd/chain-protocol": "workspace:*",
+    "@fuzd/common": "workspace:*",
+    "@fuzd/executor": "workspace:*",
+    "@fuzd/scheduler": "workspace:*",
+    "@fuzd/server": "workspace:*",
     "ldenv": "^0.3.12",
     "remote-account": "^0.2.2",
     "set-defaults": "^0.0.5",
@@ -36,7 +33,8 @@
     "prepare": "set-defaults .",
     "deploy:production": "wrangler -e production deploy --minify",
     "dev": "pnpm init-db && wrangler dev -e production --port 34002",
-    "init-db": "ldenv wrangler -e production d1 execute fuzd-db --file=node_modules/fuzd-server/src/schema/sql/scheduler.sql ~~ wrangler -e production d1 execute fuzd-db --file=node_modules/fuzd-server/src/schema/sql/executor.sql ~~",
+    "init-db": "ldenv wrangler -e production d1 execute fuzd-db --file=node_modules/@fuzd/server/src/schema/sql/scheduler.sql ~~ wrangler -e production d1 execute fuzd-db --file=node_modules/@fuzd/server/src/schema/sql/executor.sql ~~",
     "test": "vitest"
-  }
+  },
+  "private": true
 }

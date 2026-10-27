@@ -1,7 +1,7 @@
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
 import {keccak_256} from '@noble/hashes/sha3';
-import {ExecutionSubmission} from 'fuzd-common';
-import {Decrypter, DecryptionResult, ScheduledExecutionQueued} from 'fuzd-scheduler';
+import {ExecutionSubmission} from '@fuzd/common';
+import {Decrypter, DecryptionResult, ScheduledExecutionQueued} from '@fuzd/scheduler';
 
 function toHex(arr: Uint8Array): String0x {
 	let str = `0x`;

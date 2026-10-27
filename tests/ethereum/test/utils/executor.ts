@@ -1,13 +1,13 @@
-import {ExecutorConfig, createExecutor} from 'fuzd-executor';
-import {SchedulerConfig, createScheduler} from 'fuzd-scheduler';
+import {ExecutorConfig, createExecutor} from '@fuzd/executor';
+import {SchedulerConfig, createScheduler} from '@fuzd/scheduler';
 import {initAccountFromHD} from 'remote-account';
 import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
-import {RemoteSQLExecutorStorage, RemoteSQLSchedulerStorage} from 'fuzd-server';
+import {RemoteSQLExecutorStorage, RemoteSQLSchedulerStorage} from '@fuzd/server';
 import {RemoteLibSQL} from 'remote-sql-libsql';
 import {createClient} from '@libsql/client';
-import {ChainProtocol, TransactionDataTypes} from 'fuzd-chain-protocol';
-import {IntegerString, String0x} from 'fuzd-common';
+import {ChainProtocol, TransactionDataTypes} from '@fuzd/chain-protocol';
+import {IntegerString, String0x} from '@fuzd/common';
 
 const defaultPath = "m/44'/60'/0'/0/0";
 const seed = mnemonicToSeedSync('test test test test test test test test test test test junk');

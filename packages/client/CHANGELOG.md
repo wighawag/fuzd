@@ -1,6 +1,10 @@
-# fuzd-client
+# @fuzd/client
 
 ## 0.11.2
+
+### Package name
+
+- Published as `@fuzd/client`, previously `fuzd-client`. Same code; `fuzd-client` stops at its last version and is deprecated. Its command is now `fuzd-client` (was `fuzd`), so that `fuzd` names the node server.
 
 ### Patch Changes
 

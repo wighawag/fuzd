@@ -1,6 +1,10 @@
-# fuzd-executor
+# @fuzd/executor
 
 ## 0.11.1
+
+### Package name
+
+- Published as `@fuzd/executor`, previously `fuzd-executor`. Same code; `fuzd-executor` stops at its last version and is deprecated.
 
 ### Patch Changes
 

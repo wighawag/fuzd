@@ -9,7 +9,7 @@
     "@scure/bip32": "^1.6.0",
     "@scure/bip39": "^1.5.0",
     "@starknet-io/types-js": "^0.7.10",
-    "fuzd-chain-protocol": "workspace:*",
+    "@fuzd/chain-protocol": "workspace:*",
     "katana-rpc": "^0.0.5",
     "libsql": "^0.4.6",
     "prettier": "^3.4.2",

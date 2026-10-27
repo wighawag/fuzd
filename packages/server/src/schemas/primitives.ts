@@ -1,6 +1,6 @@
 import {z} from 'zod';
 import {schemaFor} from 'zod-schema-for';
-import type {IntegerString, String0x} from 'fuzd-common';
+import type {IntegerString, String0x} from '@fuzd/common';
 
 export {schemaFor};
 

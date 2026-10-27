@@ -1,4 +1,4 @@
-import {String0x} from 'fuzd-common';
+import {String0x} from '@fuzd/common';
 
 export type Env = {
 	HD_MNEMONIC?: string;

@@ -1,8 +1,8 @@
 import type {RemoteSQL} from 'remote-sql';
-import type {ScheduledExecutionQueued, SchedulerStorage} from 'fuzd-scheduler';
+import type {ScheduledExecutionQueued, SchedulerStorage} from '@fuzd/scheduler';
 import {sqlToStatements, toValues} from './utils.js';
 import setupTables from '../schema/ts/scheduler.sql.js';
-import {IntegerString, String0x} from 'fuzd-common';
+import {IntegerString, String0x} from '@fuzd/common';
 
 type ScheduledExecutionInDB = {
 	account: String0x;

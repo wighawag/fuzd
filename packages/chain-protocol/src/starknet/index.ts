@@ -2,7 +2,7 @@ import {BroadcasterSignerData, ChainProtocol, GasEstimate, Transaction, Transact
 import type {Methods} from '@starknet-io/types-js';
 import type {CurriedRPC, RequestRPC} from 'remote-procedure-call';
 import {createCurriedJSONRPC, type RPCErrors} from 'remote-procedure-call';
-import {DerivationParameters, IntegerString, String0x, TransactionParametersUsed} from 'fuzd-common';
+import {DerivationParameters, IntegerString, String0x, TransactionParametersUsed} from '@fuzd/common';
 import type {
 	DEPLOY_ACCOUNT_TXN_V1,
 	DEPLOY_ACCOUNT_TXN_V3,

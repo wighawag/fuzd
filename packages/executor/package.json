@@ -1,8 +1,13 @@
 {
-  "name": "fuzd-executor",
+  "name": "@fuzd/executor",
   "version": "0.11.1",
   "description": "execute transaction",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wighawag/fuzd.git",
+    "directory": "packages/executor"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -20,8 +25,8 @@
     "src"
   ],
   "dependencies": {
-    "fuzd-chain-protocol": "workspace:*",
-    "fuzd-common": "workspace:*",
+    "@fuzd/chain-protocol": "workspace:*",
+    "@fuzd/common": "workspace:*",
     "named-logs": "^0.3.2",
     "remote-account": "^0.2.2"
   },

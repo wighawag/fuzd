@@ -1,7 +1,7 @@
-import {ExecutionSubmission, Executor} from 'fuzd-common';
+import {ExecutionSubmission, Executor} from '@fuzd/common';
 import {Decrypter} from './external.js';
 import {SchedulerStorage} from './scheduler-storage.js';
-import {ChainProtocol, ChainProtocols, TransactionDataTypes} from 'fuzd-chain-protocol';
+import {ChainProtocol, ChainProtocols, TransactionDataTypes} from '@fuzd/chain-protocol';
 
 // ------------------------------------------------------------------------------------------------
 

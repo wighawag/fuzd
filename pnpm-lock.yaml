@@ -56,6 +56,9 @@ importers:
 
   packages/chain-protocol:
     dependencies:
+      '@fuzd/common':
+        specifier: workspace:*
+        version: link:../common
       '@noble/hashes':
         specifier: ^1.6.1
         version: 1.6.1
@@ -68,9 +71,6 @@ importers:
       eip-1193-signer:
         specifier: ^0.1.0
         version: 0.1.0(typescript@5.6.3)(zod@3.24.1)
-      fuzd-common:
-        specifier: workspace:*
-        version: link:../common
       named-logs:
         specifier: ^0.3.2
         version: 0.3.2
@@ -117,21 +117,21 @@ importers:
 
   packages/client:
     dependencies:
+      '@fuzd/chain-protocol':
+        specifier: workspace:*
+        version: link:../chain-protocol
+      '@fuzd/common':
+        specifier: workspace:*
+        version: link:../common
+      '@fuzd/executor':
+        specifier: workspace:*
+        version: link:../executor
+      '@fuzd/scheduler':
+        specifier: workspace:*
+        version: link:../scheduler
       commander:
         specifier: ^12.1.0
         version: 12.1.0
-      fuzd-chain-protocol:
-        specifier: workspace:*
-        version: link:../chain-protocol
-      fuzd-common:
-        specifier: workspace:*
-        version: link:../common
-      fuzd-executor:
-        specifier: workspace:*
-        version: link:../executor
-      fuzd-scheduler:
-        specifier: workspace:*
-        version: link:../scheduler
       ldenv:
         specifier: ^0.3.12
         version: 0.3.12
@@ -191,10 +191,10 @@ importers:
 
   packages/executor:
     dependencies:
-      fuzd-chain-protocol:
+      '@fuzd/chain-protocol':
         specifier: workspace:*
         version: link:../chain-protocol
-      fuzd-common:
+      '@fuzd/common':
         specifier: workspace:*
         version: link:../common
       named-logs:
@@ -219,10 +219,10 @@ importers:
 
   packages/scheduler:
     dependencies:
-      fuzd-chain-protocol:
+      '@fuzd/chain-protocol':
         specifier: workspace:*
         version: link:../chain-protocol
-      fuzd-common:
+      '@fuzd/common':
         specifier: workspace:*
         version: link:../common
       named-logs:
@@ -244,6 +244,21 @@ importers:
 
   packages/server:
     dependencies:
+      '@fuzd/chain-protocol':
+        specifier: workspace:*
+        version: link:../chain-protocol
+      '@fuzd/common':
+        specifier: workspace:*
+        version: link:../common
+      '@fuzd/executor':
+        specifier: workspace:*
+        version: link:../executor
+      '@fuzd/scheduler':
+        specifier: workspace:*
+        version: link:../scheduler
+      '@fuzd/tlock-decrypter':
+        specifier: workspace:*
+        version: link:../tlock-decrypter
       '@hono/swagger-ui':
         specifier: ^0.5.0
         version: 0.5.0(hono@4.13.14)
@@ -265,21 +280,6 @@ importers:
       eip-1193-signer:
         specifier: ^0.1.0
         version: 0.1.0(typescript@5.6.3)(zod@4.6.7)
-      fuzd-chain-protocol:
-        specifier: workspace:*
-        version: link:../chain-protocol
-      fuzd-common:
-        specifier: workspace:*
-        version: link:../common
-      fuzd-executor:
-        specifier: workspace:*
-        version: link:../executor
-      fuzd-scheduler:
-        specifier: workspace:*
-        version: link:../scheduler
-      fuzd-tlock-decrypter:
-        specifier: workspace:*
-        version: link:../tlock-decrypter
       hono:
         specifier: ^4.11.2
         version: 4.13.14
@@ -332,10 +332,10 @@ importers:
 
   packages/tlock-decrypter:
     dependencies:
-      fuzd-common:
+      '@fuzd/common':
         specifier: workspace:*
         version: link:../common
-      fuzd-scheduler:
+      '@fuzd/scheduler':
         specifier: workspace:*
         version: link:../scheduler
       named-logs:
@@ -382,24 +382,24 @@ importers:
       '@cloudflare/workers-types':
         specifier: ^4.20241205.0
         version: 4.20241205.0
+      '@fuzd/chain-protocol':
+        specifier: workspace:*
+        version: link:../../packages/chain-protocol
+      '@fuzd/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@fuzd/executor':
+        specifier: workspace:*
+        version: link:../../packages/executor
+      '@fuzd/scheduler':
+        specifier: workspace:*
+        version: link:../../packages/scheduler
+      '@fuzd/server':
+        specifier: workspace:*
+        version: link:../../packages/server
       '@types/node':
         specifier: ^22.10.2
         version: 22.10.2
-      fuzd-chain-protocol:
-        specifier: workspace:*
-        version: link:../../packages/chain-protocol
-      fuzd-common:
-        specifier: workspace:*
-        version: link:../../packages/common
-      fuzd-executor:
-        specifier: workspace:*
-        version: link:../../packages/executor
-      fuzd-scheduler:
-        specifier: workspace:*
-        version: link:../../packages/scheduler
-      fuzd-server:
-        specifier: workspace:*
-        version: link:../../packages/server
       ldenv:
         specifier: ^0.3.12
         version: 0.3.12
@@ -424,6 +424,9 @@ importers:
 
   platforms/nodejs:
     dependencies:
+      '@fuzd/server':
+        specifier: workspace:*
+        version: link:../../packages/server
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.13.7(hono@4.13.14)
@@ -433,9 +436,6 @@ importers:
       commander:
         specifier: ^12.1.0
         version: 12.1.0
-      fuzd-server:
-        specifier: workspace:*
-        version: link:../../packages/server
       ldenv:
         specifier: ^0.3.12
         version: 0.3.12
@@ -464,27 +464,27 @@ importers:
 
   tests/end-to-end:
     devDependencies:
-      fuzd-cf-worker:
+      '@fuzd/cf-worker':
         specifier: workspace:*
         version: link:../../platforms/cf-worker
-      fuzd-chain-protocol:
+      '@fuzd/chain-protocol':
         specifier: workspace:*
         version: link:../../packages/chain-protocol
-      fuzd-client:
+      '@fuzd/client':
         specifier: workspace:*
         version: link:../../packages/client
-      fuzd-common:
+      '@fuzd/common':
         specifier: workspace:*
         version: link:../../packages/common
-      fuzd-nodejs:
-        specifier: workspace:*
-        version: link:../../platforms/nodejs
-      fuzd-scheduler:
+      '@fuzd/scheduler':
         specifier: workspace:*
         version: link:../../packages/scheduler
-      fuzd-server:
+      '@fuzd/server':
         specifier: workspace:*
         version: link:../../packages/server
+      fuzd:
+        specifier: workspace:*
+        version: link:../../platforms/nodejs
       prool:
         specifier: ^0.0.16
         version: 0.0.16(debug@4.4.0(supports-color@8.1.1))
@@ -513,6 +513,24 @@ importers:
         specifier: ^0.3.1
         version: 0.3.1
     devDependencies:
+      '@fuzd/chain-protocol':
+        specifier: workspace:*
+        version: link:../../packages/chain-protocol
+      '@fuzd/client':
+        specifier: workspace:*
+        version: link:../../packages/client
+      '@fuzd/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@fuzd/executor':
+        specifier: workspace:*
+        version: link:../../packages/executor
+      '@fuzd/scheduler':
+        specifier: workspace:*
+        version: link:../../packages/scheduler
+      '@fuzd/server':
+        specifier: workspace:*
+        version: link:../../packages/server
       '@libsql/client':
         specifier: ^0.14.0
         version: 0.14.0
@@ -567,24 +585,6 @@ importers:
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0
-      fuzd-chain-protocol:
-        specifier: workspace:*
-        version: link:../../packages/chain-protocol
-      fuzd-client:
-        specifier: workspace:*
-        version: link:../../packages/client
-      fuzd-common:
-        specifier: workspace:*
-        version: link:../../packages/common
-      fuzd-executor:
-        specifier: workspace:*
-        version: link:../../packages/executor
-      fuzd-scheduler:
-        specifier: workspace:*
-        version: link:../../packages/scheduler
-      fuzd-server:
-        specifier: workspace:*
-        version: link:../../packages/server
       hardhat:
         specifier: ^2.22.17
         version: 2.22.17(supports-color@8.1.1)(typescript@5.6.3)
@@ -642,6 +642,9 @@ importers:
 
   tests/starknet:
     devDependencies:
+      '@fuzd/chain-protocol':
+        specifier: workspace:*
+        version: link:../../packages/chain-protocol
       '@libsql/client':
         specifier: ^0.14.0
         version: 0.14.0
@@ -657,9 +660,6 @@ importers:
       '@starknet-io/types-js':
         specifier: ^0.7.10
         version: 0.7.10
-      fuzd-chain-protocol:
-        specifier: workspace:*
-        version: link:../../packages/chain-protocol
       katana-rpc:
         specifier: ^0.0.5
         version: 0.0.5(prool@0.0.16(debug@4.4.0(supports-color@8.1.1)))

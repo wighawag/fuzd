@@ -1,7 +1,7 @@
 // ------------------------------------------------------------------------------------------------
 // RawTransactionInfo
 
-import {String0x} from 'fuzd-common';
+import {String0x} from '@fuzd/common';
 
 // ------------------------------------------------------------------------------------------------
 export type RawTransactionInfo<TransactionDataType> = {

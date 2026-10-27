@@ -1,5 +1,5 @@
 import {EIP1193ProviderWithoutEvents} from 'eip-1193';
-import {String0x} from 'fuzd-common';
+import {String0x} from '@fuzd/common';
 import {getChain} from 'rocketh';
 import {Abi, createPublicClient, createWalletClient, custom, getContract} from 'viem';
 

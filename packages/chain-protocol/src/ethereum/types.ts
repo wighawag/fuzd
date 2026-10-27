@@ -1,5 +1,5 @@
 import {EIP1193TransactionData} from 'eip-1193';
-import {String0x} from 'fuzd-common';
+import {String0x} from '@fuzd/common';
 
 // ------------------------------------------------------------------------------------------------
 // TransactionData

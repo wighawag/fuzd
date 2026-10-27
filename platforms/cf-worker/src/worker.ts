@@ -5,7 +5,7 @@ import 'named-logs-context';
 import {enable as enableWorkersLogger} from 'workers-logger';
 import {logs} from 'named-logs';
 // ------------------------------------------------------------------------------------------------
-import {createServer} from 'fuzd-server';
+import {createServer} from '@fuzd/server';
 import {RemoteD1} from 'remote-sql-d1';
 import {Env} from './env.js';
 import {ExecutionContext} from '@cloudflare/workers-types/experimental';

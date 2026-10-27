@@ -1,4 +1,4 @@
-# fuzd-cf-worker
+# @fuzd/cf-worker
 
 ## 0.11.0
 

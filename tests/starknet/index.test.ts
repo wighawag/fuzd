@@ -19,7 +19,7 @@ import {createTestExecutor} from '../ethereum/test/utils/executor';
 import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import {initAccountFromHD} from 'remote-account';
-import {AllowedTransactionData, StarknetChainProtocol} from 'fuzd-chain-protocol/starknet';
+import {AllowedTransactionData, StarknetChainProtocol} from '@fuzd/chain-protocol/starknet';
 import AccountContract from 'strk-account';
 import ERC20ABI from './abis/ERC20';
 import {String0x} from '../../packages/common/dist/esm/types';

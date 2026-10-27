@@ -19,7 +19,7 @@ import {
 	String0x,
 	toHex,
 	TransactionParametersUsed,
-} from 'fuzd-common';
+} from '@fuzd/common';
 import type {FullEthereumTransactionData, EthereumTransactionData} from './types.js';
 import type {ETHAccount} from 'remote-account';
 import {EIP1193LocalSigner} from 'eip-1193-signer';

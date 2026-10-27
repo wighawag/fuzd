@@ -1,6 +1,10 @@
-# fuzd-tlock-decrypter
+# @fuzd/tlock-decrypter
 
 ## 0.11.1
+
+### Package name
+
+- Published as `@fuzd/tlock-decrypter`, previously `fuzd-tlock-decrypter`. Same code; `fuzd-tlock-decrypter` stops at its last version and is deprecated.
 
 ### Patch Changes
 

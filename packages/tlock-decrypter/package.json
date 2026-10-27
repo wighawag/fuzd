@@ -1,8 +1,13 @@
 {
-  "name": "fuzd-tlock-decrypter",
+  "name": "@fuzd/tlock-decrypter",
   "version": "0.11.1",
   "description": "decrypt scheduled execution using drand's tlock-js",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wighawag/fuzd.git",
+    "directory": "packages/tlock-decrypter"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -20,8 +25,8 @@
     "src"
   ],
   "dependencies": {
-    "fuzd-common": "workspace:*",
-    "fuzd-scheduler": "workspace:*",
+    "@fuzd/common": "workspace:*",
+    "@fuzd/scheduler": "workspace:*",
     "named-logs": "^0.3.2",
     "tlock-js": "^0.9.0"
   },

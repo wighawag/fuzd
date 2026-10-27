@@ -1,6 +1,10 @@
-# fuzd-executor
+# @fuzd/common
 
 ## 0.11.1
+
+### Package name
+
+- Published as `@fuzd/common`, previously `fuzd-common`. Same code; `fuzd-common` stops at its last version and is deprecated.
 
 ### Patch Changes
 

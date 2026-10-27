@@ -20,7 +20,7 @@ import {createCommand} from 'prool-any';
 // });
 
 export const fuzd = createCommand(FUZD_URL, {
-	command: 'pnpm fuzd-nodejs',
+	command: 'pnpm fuzd',
 	readyMessage: 'Server is running on',
 });
 

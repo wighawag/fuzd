@@ -4,7 +4,7 @@ import {logs} from 'named-logs';
 import {createErrorObject} from '../../utils/response.js';
 import {setup} from '../../setup.js';
 import {Env} from '../../env.js';
-import {FUZDLogger} from 'fuzd-common';
+import {FUZDLogger} from '@fuzd/common';
 
 const logger = <FUZDLogger>logs('fuzd-server-internal-api');
 

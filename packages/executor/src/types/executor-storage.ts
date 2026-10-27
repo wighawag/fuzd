@@ -1,4 +1,4 @@
-import {Fees, IntegerString, PendingExecutionStored, String0x, UpdateableParameter} from 'fuzd-common';
+import {Fees, IntegerString, PendingExecutionStored, String0x, UpdateableParameter} from '@fuzd/common';
 
 export type BroadcasterData = {
 	chainId: IntegerString;

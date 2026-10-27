@@ -3,16 +3,16 @@ import {loadEnv} from 'ldenv';
 import {parseEther} from 'viem';
 import {Command} from 'commander';
 import pkg from '../package.json' assert {type: 'json'};
-import {String0x} from 'fuzd-common';
+import {String0x} from '@fuzd/common';
 loadEnv();
 
 async function main() {
 	const program = new Command();
 
 	program
-		.name('fuzd')
+		.name('fuzd-client')
 		.version(pkg.version)
-		.usage(`fuzd -e https://localhost:34002/api/scheduling/scheduleExecution -c 31337 -d 100 --value "1 gwei"`)
+		.usage(`fuzd-client -e https://localhost:34002/api/scheduling/scheduleExecution -c 31337 -d 100 --value "1 gwei"`)
 		.description('Execute encrypted transaction at a later time')
 		.requiredOption('-c, --chain <chainId>', `chain to execute tx on`)
 		.requiredOption('-d, --delta <value>', 'how far in future (in seconds)')

@@ -3,7 +3,7 @@
  * @module
  */
 
-import {DerivationParameters, IntegerString, String0x, TransactionParametersUsed} from 'fuzd-common';
+import {DerivationParameters, IntegerString, String0x, TransactionParametersUsed} from '@fuzd/common';
 import {ETHAccount} from 'remote-account';
 
 export type TransactionStatus =

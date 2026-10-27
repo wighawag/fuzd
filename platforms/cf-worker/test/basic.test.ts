@@ -1,10 +1,10 @@
 import {describe, it, expect} from 'vitest';
 import {setupWorker} from './utils';
 
-import type {ExecutionSubmission} from 'fuzd-common';
-import type {ScheduledExecution} from 'fuzd-scheduler';
+import type {ExecutionSubmission} from '@fuzd/common';
+import type {ScheduledExecution} from '@fuzd/scheduler';
 import {privateKeyToAccount} from 'viem/accounts';
-import type {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
+import type {EthereumTransactionData} from '@fuzd/chain-protocol/ethereum';
 
 const worker = setupWorker({
 	// CHAIN_31337: `http://localhost:8888#finality=2&worstCaseBlockTime=5`,

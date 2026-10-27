@@ -9,10 +9,10 @@ import {initAccountFromHD} from 'remote-account';
 import {createMockDecrypter, overrideProvider} from './utils/mock-provider';
 import {deployAll} from './utils';
 import {createViemContext} from '../utils/viem';
-import {EthereumChainProtocol, EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
+import {EthereumChainProtocol, EthereumTransactionData} from '@fuzd/chain-protocol/ethereum';
 import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
-import {ExecutionSubmission, String0x} from 'fuzd-common';
+import {ExecutionSubmission, String0x} from '@fuzd/common';
 
 const provider = overrideProvider(network.provider as EIP1193ProviderWithoutEvents);
 

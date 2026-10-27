@@ -1,7 +1,7 @@
 import {describe, it, expect, assert, beforeAll} from 'vitest';
 
 import {connectToWorker} from './external-worker';
-import {createClient} from 'fuzd-client';
+import {createClient} from '@fuzd/client';
 import {ANVIL_URL, FUZD_URL} from './prool/pool';
 
 const worker = connectToWorker();

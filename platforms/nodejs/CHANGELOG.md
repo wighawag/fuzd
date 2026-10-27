@@ -1,6 +1,10 @@
-# fuzd-nodejs
+# fuzd
 
 ## 0.11.1
+
+### Package name
+
+- Published as `fuzd`, previously `fuzd-nodejs`. Same code; `fuzd-nodejs` stops at its last version and is deprecated. Its command is now `fuzd` (was `fuzd-nodejs`).
 
 ### Patch Changes
 

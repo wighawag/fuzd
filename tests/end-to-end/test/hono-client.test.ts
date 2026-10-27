@@ -1,10 +1,10 @@
 import {describe, it, expect, assert, beforeAll} from 'vitest';
 
-import {createClient} from 'fuzd-server';
+import {createClient} from '@fuzd/server';
 import {ANVIL_URL, FUZD_URL} from './prool/pool';
-import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
-import {ExecutionBroadcast, ExecutionSubmission} from 'fuzd-common';
-import {ScheduledExecution} from 'fuzd-scheduler';
+import {EthereumTransactionData} from '@fuzd/chain-protocol/ethereum';
+import {ExecutionBroadcast, ExecutionSubmission} from '@fuzd/common';
+import {ScheduledExecution} from '@fuzd/scheduler';
 import {privateKeyToAccount} from 'viem/accounts';
 
 const client = createClient(FUZD_URL);

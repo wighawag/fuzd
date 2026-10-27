@@ -1,17 +1,17 @@
 import {MiddlewareHandler} from 'hono/types';
 import {ServerOptions} from './types.js';
-import {ExecutorBackend, ExecutorStorage, createExecutor} from 'fuzd-executor';
-import {Scheduler, SchedulerBackend, SchedulerConfig, SchedulerStorage, createScheduler} from 'fuzd-scheduler';
+import {ExecutorBackend, ExecutorStorage, createExecutor} from '@fuzd/executor';
+import {Scheduler, SchedulerBackend, SchedulerConfig, SchedulerStorage, createScheduler} from '@fuzd/scheduler';
 import {ETHAccount, initAccountFromHD} from 'remote-account';
-import {ExecutionSubmission, Executor, IntegerString, String0x} from 'fuzd-common';
+import {ExecutionSubmission, Executor, IntegerString, String0x} from '@fuzd/common';
 import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
-import {initDecrypter, mainnetClient} from 'fuzd-tlock-decrypter';
+import {initDecrypter, mainnetClient} from '@fuzd/tlock-decrypter';
 import {RemoteSQLExecutorStorage} from './storage/RemoteSQLExecutorStorage.js';
 import {RemoteSQLSchedulerStorage} from './storage/RemoteSQLSchedulerStorage.js';
-import {EthereumChainProtocol} from 'fuzd-chain-protocol/ethereum';
-import {ChainProtocols, TransactionDataTypes} from 'fuzd-chain-protocol';
-import {StarknetChainProtocol} from 'fuzd-chain-protocol/starknet';
+import {EthereumChainProtocol} from '@fuzd/chain-protocol/ethereum';
+import {ChainProtocols, TransactionDataTypes} from '@fuzd/chain-protocol';
+import {StarknetChainProtocol} from '@fuzd/chain-protocol/starknet';
 import {String0xSchema} from './schemas/primitives.js';
 
 const defaultPath = "m/44'/60'/0'/0/0";

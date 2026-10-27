@@ -4,10 +4,10 @@
 	"commit": false,
 	"fixed": [],
 	"linked": [],
-	"access": "restricted",
+	"access": "public",
 	"baseBranch": "main",
 	"updateInternalDependencies": "patch",
-	"ignore": [],
+	"ignore": ["@fuzd/cf-worker"],
 	"privatePackages": {
 		"tag": false,
 		"version": false

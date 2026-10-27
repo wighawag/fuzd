@@ -1,6 +1,6 @@
 import {logs} from 'named-logs';
-import {FUZDLogger} from 'fuzd-common';
-import {ScheduledExecutionQueued, Decrypter, DecryptionResult, DecryptedPayload} from 'fuzd-scheduler';
+import {FUZDLogger} from '@fuzd/common';
+import {ScheduledExecutionQueued, Decrypter, DecryptionResult, DecryptedPayload} from '@fuzd/scheduler';
 import {timelockDecrypt, HttpChainClient, roundTime, roundAt, Buffer} from 'tlock-js';
 
 export {testnetClient, mainnetClient} from 'tlock-js';

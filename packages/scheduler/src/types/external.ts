@@ -1,5 +1,5 @@
 import {ScheduledExecutionQueued} from './scheduler-storage.js';
-import {ExecutionSubmission, String0x, ExecutionServiceParameters, IntegerString} from 'fuzd-common';
+import {ExecutionSubmission, String0x, ExecutionServiceParameters, IntegerString} from '@fuzd/common';
 // ------------------------------------------------------------------------------------------------
 // PriorTransactionInfo
 // ------------------------------------------------------------------------------------------------

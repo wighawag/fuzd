@@ -3,7 +3,7 @@ import {ServerOptions} from '../../types.js';
 import {basicAuth} from 'hono/basic-auth';
 import {logs} from 'named-logs';
 import {createErrorObject} from '../../utils/response.js';
-import {FUZDLogger} from 'fuzd-common';
+import {FUZDLogger} from '@fuzd/common';
 import {setChainOverride, setup} from '../../setup.js';
 import {Env} from '../../env.js';
 import {z} from 'zod';

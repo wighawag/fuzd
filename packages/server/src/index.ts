@@ -13,7 +13,7 @@ import {swaggerUI} from '@hono/swagger-ui';
 import {hc} from 'hono/client';
 import {HTTPException} from 'hono/http-exception';
 import {Env} from './env.js';
-import {FUZDLogger} from 'fuzd-common';
+import {FUZDLogger} from '@fuzd/common';
 import {generateOpenAPIDocument} from './openapi.js';
 
 export type {Context} from 'hono';

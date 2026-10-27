@@ -1,6 +1,10 @@
-# fuzd-scheduler
+# @fuzd/scheduler
 
 ## 0.11.1
+
+### Package name
+
+- Published as `@fuzd/scheduler`, previously `fuzd-scheduler`. Same code; `fuzd-scheduler` stops at its last version and is deprecated.
 
 ### Patch Changes
 

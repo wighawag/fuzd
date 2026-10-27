@@ -1,6 +1,6 @@
-import {String0x} from 'fuzd-common';
+import {String0x} from '@fuzd/common';
 import {ExecutorStorage} from './executor-storage.js';
-import {ChainProtocol, ChainProtocols, TransactionDataTypes} from 'fuzd-chain-protocol';
+import {ChainProtocol, ChainProtocols, TransactionDataTypes} from '@fuzd/chain-protocol';
 import type {ETHAccount} from 'remote-account';
 
 // ------------------------------------------------------------------------------------------------

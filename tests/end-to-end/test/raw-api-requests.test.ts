@@ -1,9 +1,9 @@
 import {describe, it, expect, beforeAll} from 'vitest';
 
-import {ExecutionSubmission} from 'fuzd-common';
-import {ScheduledExecution} from 'fuzd-scheduler';
+import {ExecutionSubmission} from '@fuzd/common';
+import {ScheduledExecution} from '@fuzd/scheduler';
 import {privateKeyToAccount} from 'viem/accounts';
-import type {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
+import type {EthereumTransactionData} from '@fuzd/chain-protocol/ethereum';
 import {connectToWorker} from './external-worker';
 import {ANVIL_URL} from './prool/pool';
 

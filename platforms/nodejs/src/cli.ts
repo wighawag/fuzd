@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import 'named-logs-context';
-import {createServer} from 'fuzd-server';
+import {createServer} from '@fuzd/server';
 import {serve} from '@hono/node-server';
 import {RemoteLibSQL} from 'remote-sql-libsql';
 import {createClient} from '@libsql/client';
@@ -24,9 +24,9 @@ async function main() {
 	const program = new Command();
 
 	program
-		.name('fuzd-nodejs')
+		.name('fuzd')
 		.version(pkg.version)
-		.usage(`fuzd-nodejs [--port 34002] [--process-interval 1]`)
+		.usage(`fuzd [--port 34002] [--process-interval 1]`)
 		.description('run fuzd-server as a node process')
 		.option('-p, --port <port>')
 		.option(

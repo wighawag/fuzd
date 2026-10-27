@@ -1,3 +1,3 @@
-# fuzd-client
+# @fuzd/client
 
 client for fuzd api

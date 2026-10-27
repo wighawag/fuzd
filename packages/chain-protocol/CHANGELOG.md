@@ -1,6 +1,10 @@
-# fuzd-chain-protocol
+# @fuzd/chain-protocol
 
 ## 0.11.1
+
+### Package name
+
+- Published as `@fuzd/chain-protocol`, previously `fuzd-chain-protocol`. Same code; `fuzd-chain-protocol` stops at its last version and is deprecated.
 
 ### Patch Changes
 

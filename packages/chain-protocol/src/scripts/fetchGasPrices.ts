@@ -2,7 +2,7 @@ import {createCurriedJSONRPC} from 'remote-procedure-call';
 import {EthereumChainProtocol} from '../ethereum/index.js';
 import {formatEstimates, formatGasEstimate, formatGasPrice, formatRoughEstimates, formatValue} from './utils.js';
 import {Methods} from 'eip-1193';
-import {EstimateGasPriceOptions, getBestGasEstimate, getGasPriceEstimate, getRoughGasPriceEstimate} from 'fuzd-common';
+import {EstimateGasPriceOptions, getBestGasEstimate, getGasPriceEstimate, getRoughGasPriceEstimate} from '@fuzd/common';
 
 const args = process.argv.slice(2);
 const nodeURL = process.env.ETH_NODE_URL as string;

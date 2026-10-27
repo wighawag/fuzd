@@ -13,7 +13,7 @@ import type {
 	DeltaTime,
 	FixedRound,
 	DeltaTimeWithTargetTime,
-} from 'fuzd-scheduler';
+} from '@fuzd/scheduler';
 import {timelockEncrypt, HttpChainClient, roundAt, Buffer} from 'tlock-js';
 import {privateKeyToAccount} from 'viem/accounts';
 import {
@@ -24,11 +24,11 @@ import {
 	type IntegerString,
 	type RemoteAccountInfo,
 	type String0x,
-} from 'fuzd-common';
-import {EthereumTransactionData} from 'fuzd-chain-protocol/ethereum';
+} from '@fuzd/common';
+import {EthereumTransactionData} from '@fuzd/chain-protocol/ethereum';
 
 import {testnetClient, mainnetClient} from 'tlock-js';
-import {InvokeTransactionData, StarknetTransactionData} from 'fuzd-chain-protocol/starknet';
+import {InvokeTransactionData, StarknetTransactionData} from '@fuzd/chain-protocol/starknet';
 export {mainnetClient, testnetClient};
 
 export type {ScheduleInfo, ScheduledExecution, DecryptedPayload};

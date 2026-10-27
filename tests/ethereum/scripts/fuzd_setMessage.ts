@@ -5,7 +5,7 @@ import {loadEnvironmentFromHardhat} from 'hardhat-rocketh/helpers';
 import {createViemContext} from '../utils/viem';
 import {encodeFunctionData, formatEther, parseEther} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
-import {createClient} from 'fuzd-client';
+import {createClient} from '@fuzd/client';
 import {mainnetClient} from 'tlock-js';
 import {deriveRemoteAddress} from 'remote-account';
 
