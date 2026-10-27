@@ -26,7 +26,7 @@ async function main() {
 	program
 		.name('fuzd')
 		.version(pkg.version)
-		.usage(`fuzd [--port 34002] [--process-interval 1]`)
+		.usage(`[--port 34002] [--process-interval 1]`)
 		.description('run fuzd-server as a node process')
 		.option('-p, --port <port>')
 		.option(

@@ -2,9 +2,18 @@ import {createClient} from './index.js';
 import {loadEnv} from 'ldenv';
 import {parseEther} from 'viem';
 import {Command} from 'commander';
-import pkg from '../package.json' assert {type: 'json'};
+import fs from 'node:fs';
 import {String0x} from '@fuzd/common';
 loadEnv();
+
+// The package.json sits two levels above the built dist/esm/cli.js and one above src/cli.ts (run with tsx).
+// Read it from disk: a JSON import needs `with {type: 'json'}` on Node 22+ and would resolve to dist/package.json.
+const pkg = JSON.parse(
+	fs.readFileSync(
+		new URL(import.meta.url.includes('/dist/') ? '../../package.json' : '../package.json', import.meta.url),
+		'utf-8',
+	),
+);
 
 async function main() {
 	const program = new Command();
@@ -12,7 +21,7 @@ async function main() {
 	program
 		.name('fuzd-client')
 		.version(pkg.version)
-		.usage(`fuzd-client -e https://localhost:34002/api/scheduling/scheduleExecution -c 31337 -d 100 --value "1 gwei"`)
+		.usage(`-e https://localhost:34002/api/scheduling/scheduleExecution -c 31337 -d 100 --value "1 gwei"`)
 		.description('Execute encrypted transaction at a later time')
 		.requiredOption('-c, --chain <chainId>', `chain to execute tx on`)
 		.requiredOption('-d, --delta <value>', 'how far in future (in seconds)')
