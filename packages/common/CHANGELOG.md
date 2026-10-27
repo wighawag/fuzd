@@ -1,5 +1,11 @@
 # fuzd-executor
 
+## 0.11.1
+
+### Patch Changes
+
+- fdeaaab: `String0x` is now `` `0x${string}` `` and `IntegerString` is `string`, without typia tags (typia is no longer used).
+
 ## 0.11.0
 
 ### Minor Changes
