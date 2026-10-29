@@ -11,3 +11,4 @@ node_modules
 
 doc
 static
+/src/version.ts

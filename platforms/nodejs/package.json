@@ -12,7 +12,7 @@
   },
   "files": [
     "dist",
-    "stc",
+    "src",
     ".env.default"
   ],
   "dependencies": {
@@ -27,14 +27,19 @@
   "devDependencies": {
     "@types/node": "^22.10.2",
     "as-soon": "^0.0.11",
+    "prettier": "^3.4.2",
     "set-defaults": "^0.0.5",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
   },
   "scripts": {
     "prepare": "set-defaults .env.default",
     "dev": "tsx watch src/cli.ts --port 30042",
-    "build": "tsc"
+    "build": "tsc",
+    "test": "vitest run",
+    "format:check": "prettier --check .",
+    "format:write": "prettier --write ."
   },
   "repository": {
     "type": "git",

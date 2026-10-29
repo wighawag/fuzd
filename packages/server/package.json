@@ -59,14 +59,15 @@
   "scripts": {
     "openapi": "node ./dist/esm/generate-openapi.js ./doc/openapi.json",
     "build:ts": "tsc --project tsconfig.json",
-    "build": "pnpm sql2ts && pnpm build:ts && pnpm openapi && cp doc/openapi.json ../../docs/public/",
+    "build": "pnpm sql2ts && pnpm version2ts && pnpm build:ts && pnpm openapi && cp doc/openapi.json ../../docs/public/",
     "sql2ts": "node sql2ts.cjs executor scheduler",
     "sql2ts:watch": "pnpm sql2ts && as-soon -w ./src/schema/sql pnpm sql2ts",
     "css2ts": "node css2ts.cjs global",
     "css2ts:watch": "pnpm css2ts && as-soon -w ./src/schema/css pnpm css2ts",
-    "dev": "as-soon -w src pnpm build:ts",
+    "dev": "pnpm version2ts && as-soon -w src pnpm build:ts",
     "format:check": "prettier --check .",
     "format:write": "prettier --write .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "version2ts": "node version2ts.cjs"
   }
 }

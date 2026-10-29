@@ -17,3 +17,5 @@ package.json
 
 *.sql.ts
 *.css.ts
+
+src/version.ts

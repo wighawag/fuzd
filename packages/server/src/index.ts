@@ -13,6 +13,7 @@ import {swaggerUI} from '@hono/swagger-ui';
 import {hc} from 'hono/client';
 import {HTTPException} from 'hono/http-exception';
 import {Env} from './env.js';
+import {version} from './version.js';
 import {FUZDLogger} from '@fuzd/common';
 import {generateOpenAPIDocument} from './openapi.js';
 
@@ -69,7 +70,7 @@ export function createServer<Bindings extends Env>(options: ServerOptions<Bindin
 
 	return createAppWithPublicAPIOnly(options)
 		.get('/', (c) => {
-			return c.text(`fuzd api : 0.7.0`); // TODO from package.json
+			return c.text(`fuzd api : ${version}`);
 		})
 		.route('/internal', internalAPI)
 		.route('/admin', adminAPI)
