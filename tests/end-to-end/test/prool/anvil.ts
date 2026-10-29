@@ -9,7 +9,7 @@ export function defineAnvil(urlWithPoolId: string) {
 	const pathname = urlObject.pathname.slice(1);
 	const poolId = parseInt(pathname);
 	if (isNaN(poolId)) {
-		throw new Error(`url need to end with poolId as pathname like for example so http://localhost:8546/<poolId>`);
+		throw new Error(`url need to end with poolId as pathname like http://localhost:<port>/<poolId>`);
 	}
 
 	return {

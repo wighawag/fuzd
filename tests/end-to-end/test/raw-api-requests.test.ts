@@ -5,7 +5,7 @@ import {ScheduledExecution} from '@fuzd/scheduler';
 import {privateKeyToAccount} from 'viem/accounts';
 import type {EthereumTransactionData} from '@fuzd/chain-protocol/ethereum';
 import {connectToWorker} from './external-worker';
-import {ANVIL_URL} from './prool/pool';
+import {ADMIN_HEADERS, ANVIL_URL} from './prool/pool';
 
 const worker = connectToWorker();
 
@@ -16,9 +16,11 @@ describe('raw api call', () => {
 	//   We also call setChainOverride to ensure the api is talking to the proper eth node
 	// --------------------------------------------------------------------------------------------
 	beforeAll(async () => {
-		await worker.fetch(
+		const response = await worker.fetch(
 			`/admin/setChainOverride/31337/${encodeURIComponent(`${ANVIL_URL}#finality=2&worstCaseBlockTime=5`)}`,
+			{headers: ADMIN_HEADERS},
 		);
+		expect(await response.json()).toEqual({success: true});
 	}, 10000);
 	// --------------------------------------------------------------------------------------------
 

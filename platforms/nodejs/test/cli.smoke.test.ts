@@ -42,9 +42,15 @@ function cleanEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
 	for (const [key, value] of Object.entries(process.env)) {
 		if (
 			!key.startsWith('CHAIN_') &&
-			!['DB', 'HD_MNEMONIC', 'TOKEN_ADMIN', 'TIME_LOCK_DECRYPTION', 'PAYMENT_ACCOUNT', 'CONTRACT_TIMESTAMP'].includes(
-				key,
-			)
+			![
+				'DB',
+				'HD_MNEMONIC',
+				'TOKEN_ADMIN',
+				'TIME_LOCK_DECRYPTION',
+				'PAYMENT_ACCOUNT',
+				'CONTRACT_TIMESTAMP',
+				'DEV',
+			].includes(key)
 		) {
 			env[key] = value;
 		}
@@ -180,6 +186,24 @@ describe('the fuzd CLI', () => {
 		});
 		expect((await authorized.json()) as any).toMatchObject({success: true});
 	});
+
+	it('takes --dev over a DEV env that is not "true" (vitest sets DEV=1 in its env)', async () => {
+		const override = encodeURIComponent(`${rpc}#finality=1&worstCaseBlockTime=2`);
+		const setOverride = async () =>
+			(await (
+				await fetch(`${running!.base}/admin/setChainOverride/${CHAIN_ID}/${override}`, {
+					headers: {connection: 'close', Authorization: `Basic ${btoa('admin:a-token')}`},
+				})
+			).json()) as any;
+
+		await start(['--mnemonic', MNEMONIC_A, '--admin-token', 'a-token'], {DEV: '1'});
+		expect((await setOverride()).success).toBe(false);
+		await stop();
+
+		await start(['--mnemonic', MNEMONIC_A, '--admin-token', 'a-token', '--dev'], {DEV: '1'});
+		expect(await setOverride()).toEqual({success: true});
+		expect((await remoteAccount()).success).toBe(true);
+	}, 30000);
 
 	it('refuses a malformed --chain', async () => {
 		await expect(start(['--chain', 'no-equal-sign', '--mnemonic', MNEMONIC_A])).rejects.toThrow(/exited/);

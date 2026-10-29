@@ -1,11 +1,12 @@
 import {describe, it, expect, assert, beforeAll} from 'vitest';
 
 import {createClient} from '@fuzd/server';
-import {ANVIL_URL, FUZD_URL} from './prool/pool';
+import {ADMIN_HEADERS, ANVIL_URL, FUZD_URL} from './prool/pool';
 import {EthereumTransactionData} from '@fuzd/chain-protocol/ethereum';
 import {ExecutionBroadcast, ExecutionSubmission} from '@fuzd/common';
 import {ScheduledExecution} from '@fuzd/scheduler';
 import {privateKeyToAccount} from 'viem/accounts';
+import {fund} from './anvil-rpc';
 
 const client = createClient(FUZD_URL);
 
@@ -16,12 +17,16 @@ describe('hono client', () => {
 	//   We also call setChainOverride to ensure the api is talking to the proper eth node
 	// --------------------------------------------------------------------------------------------
 	beforeAll(async () => {
-		await client.admin.setChainOverride[':chainId'][':chainOverride'].$get({
-			param: {
-				chainId: '31337',
-				chainOverride: encodeURIComponent(`${ANVIL_URL}#finality=2&worstCaseBlockTime=5`),
+		const response = await client.admin.setChainOverride[':chainId'][':chainOverride'].$get(
+			{
+				param: {
+					chainId: '31337',
+					chainOverride: encodeURIComponent(`${ANVIL_URL}#finality=2&worstCaseBlockTime=5`),
+				},
 			},
-		});
+			{headers: ADMIN_HEADERS},
+		);
+		expect(await response.json()).toEqual({success: true});
 	}, 10000);
 	// --------------------------------------------------------------------------------------------
 
@@ -185,6 +190,8 @@ describe('hono client', () => {
 		assert(remoteAccountResult.success);
 
 		const serviceParameters = remoteAccountResult.account.serviceParameters;
+		// a broadcast is sent now: the remote account pays for it
+		await fund(remoteAccountResult.account.address);
 
 		// we build up first the transaction we want to submit in the future (delayed)
 		// this is a ethereum tx without gas pricing

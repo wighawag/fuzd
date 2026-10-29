@@ -1,5 +1,5 @@
 import {createWranglerDevServer} from 'prool-cf-worker';
-import {ANVIL_URL, FUZD_URL} from './pool';
+import {ADMIN_TOKEN, ANVIL_URL, FUZD_URL} from './pool';
 import {defineAnvil} from './anvil';
 import {createCommand} from 'prool-any';
 
@@ -22,6 +22,9 @@ import {createCommand} from 'prool-any';
 export const fuzd = createCommand(FUZD_URL, {
 	command: 'pnpm fuzd',
 	readyMessage: 'Server is running on',
+	// each test file points chain 31337 at its own anvil with setChainOverride, which needs both
+	adminToken: ADMIN_TOKEN,
+	dev: true, // vitest sets DEV=1 in the env the instance inherits, and only DEV=true enables the route
 });
 
 export const anvil = defineAnvil(ANVIL_URL);

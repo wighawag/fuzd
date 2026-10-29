@@ -71,6 +71,7 @@ async function main() {
 			'--contract-timestamp <address>',
 			'contract the chain time is read from, instead of the latest block [CONTRACT_TIMESTAMP]',
 		)
+		.option('--dev', 'enable the development routes, like /admin/setChainOverride [DEV=true]')
 		.option(
 			'-i, --process-interval <seconds>',
 			'seconds between each processQueue/processTransactions/checkScheduledExecutionStatus, 0 to disable',
@@ -88,6 +89,7 @@ async function main() {
 		timeLockDecryption?: 'true' | 'false';
 		paymentAccount?: string;
 		contractTimestamp?: string;
+		dev?: boolean;
 		processInterval: string;
 	};
 
@@ -105,6 +107,7 @@ async function main() {
 		TIME_LOCK_DECRYPTION: options.timeLockDecryption,
 		PAYMENT_ACCOUNT: options.paymentAccount,
 		CONTRACT_TIMESTAMP: options.contractTimestamp,
+		DEV: options.dev ? 'true' : undefined,
 	};
 	for (const [chainId, rpc] of Object.entries(options.chain || {})) {
 		fromFlags[`CHAIN_${chainId}`] = rpc;

@@ -253,7 +253,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				),
 			),
 			async (c) => {
-				if ((c.env as any).DEV === 'true') {
+				if (getEnv(c as any).DEV === 'true') {
 					const {chainId} = c.req.valid('param');
 					const {chainOverride} = c.req.valid('param');
 					setChainOverride(chainId, chainOverride);
