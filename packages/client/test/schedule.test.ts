@@ -183,6 +183,17 @@ describe('the payment for a batch', () => {
 		);
 	});
 
+	it('refuses an empty batch', () => {
+		expect(() => client.computeTotalMaxCost({maxFeePerGasAuthorized: 10n, transactions: []})).toThrow(
+			/at least one transaction/,
+		);
+	});
+
+	it('takes a readonly list', () => {
+		const readonlyBatch: readonly {gas: bigint}[] = [{gas: 1n}];
+		expect(client.computeTotalMaxCost({maxFeePerGasAuthorized: 10n, transactions: readonlyBatch})).toBeGreaterThan(0n);
+	});
+
 	it('counts what other slots reserve, for a batch too', async () => {
 		const maxFeePerGasAuthorized = 10n;
 		const required = await client.computeBalanceRequired({

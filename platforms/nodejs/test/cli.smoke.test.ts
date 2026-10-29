@@ -205,6 +205,24 @@ describe('the fuzd CLI', () => {
 		expect((await remoteAccount()).success).toBe(true);
 	}, 30000);
 
+	it('keeps the admin and development routes closed unless given a token and --dev', async () => {
+		await start(['--mnemonic', MNEMONIC_A]);
+		const override = encodeURIComponent(`${rpc}#finality=1&worstCaseBlockTime=2`);
+		for (const token of ['random-token', 'undefined', '']) {
+			const response = await fetch(`${running!.base}/admin/setChainOverride/${CHAIN_ID}/${override}`, {
+				headers: {connection: 'close', Authorization: `Basic ${btoa(`admin:${token}`)}`},
+			});
+			expect(response.status).toBe(401);
+		}
+		await stop();
+
+		await start(['--mnemonic', MNEMONIC_A, '--admin-token', 'a-token']);
+		const response = await fetch(`${running!.base}/admin/setChainOverride/${CHAIN_ID}/${override}`, {
+			headers: {connection: 'close', Authorization: `Basic ${btoa('admin:a-token')}`},
+		});
+		expect(((await response.json()) as any).success).toBe(false);
+	}, 30000);
+
 	it('refuses a malformed --chain', async () => {
 		await expect(start(['--chain', 'no-equal-sign', '--mnemonic', MNEMONIC_A])).rejects.toThrow(/exited/);
 	});

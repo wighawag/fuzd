@@ -109,7 +109,7 @@ export type Submission = SubmissionParameters & {
  * remote account, at the submission's time (each is then found at its index in the batch).
  */
 export type BatchSubmission = SubmissionParameters & {
-	transactions: SubmissionTransaction[];
+	transactions: readonly SubmissionTransaction[];
 	transaction?: never;
 };
 
@@ -119,10 +119,10 @@ export type TransactionCost = {gas: bigint | String0x | number; value?: bigint |
 /** The most a submission may cost: either one transaction's gas and value, or every transaction of a batch. */
 export type MaxCostParameters = {maxFeePerGasAuthorized: bigint} & (
 	| {gas: bigint; value?: bigint; transactions?: never}
-	| {transactions: TransactionCost[]; gas?: never; value?: never}
+	| {transactions: readonly TransactionCost[]; gas?: never; value?: never}
 );
 
-function submissionTransactions(execution: Submission | BatchSubmission): SubmissionTransaction[] {
+function submissionTransactions(execution: Submission | BatchSubmission): readonly SubmissionTransaction[] {
 	if (execution.transaction && execution.transactions) {
 		throw new Error(`provide either transaction or transactions, not both`);
 	}
@@ -184,6 +184,9 @@ export function createClient(config: ClientConfig) {
 			throw new Error(`need to assign a account first`);
 		}
 		const fees = _assignedRemoteAccount.serviceParameters.fees;
+		if (params.transactions && params.transactions.length === 0) {
+			throw new Error(`a submission needs at least one transaction`);
+		}
 		const transactions: {gas: bigint; value: bigint}[] = params.transactions
 			? params.transactions.map((v) => ({gas: BigInt(v.gas), value: v.value ? BigInt(v.value) : 0n}))
 			: [{gas: params.gas, value: params.value ? params.value : 0n}];
