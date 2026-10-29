@@ -82,10 +82,14 @@ function fromSimplerTransactionData(
 
 export {getBestGasEstimate};
 
-export type Submission = {
+/** A transaction to schedule: its own target, data and gas (and value, for ethereum). */
+export type SubmissionTransaction = SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
+
+/** What a submission sets once for all of its transactions. */
+export type SubmissionParameters = {
 	slot: string;
 	chainId: IntegerString;
-	transaction: SimplerEthereumTransactionData | SimplerStarknetTransactionData; // TODO use BinumberIshTransactionData
+	/** The most each transaction may pay per gas. */
 	maxFeePerGasAuthorized: bigint;
 	criticalDelta?: number;
 	timing: FixedTime | DeltaTime | DeltaTimeWithTargetTime | Omit<FixedRound, 'scheduledRound'>;
@@ -93,6 +97,41 @@ export type Submission = {
 	onBehalf?: `0x${string}`;
 	inClear?: boolean;
 };
+
+/** One transaction, scheduled alone. */
+export type Submission = SubmissionParameters & {
+	transaction: SubmissionTransaction;
+	transactions?: never;
+};
+
+/**
+ * Several transactions in one submission: the scheduler broadcasts them in this order, from one
+ * remote account, at the submission's time (each is then found at its index in the batch).
+ */
+export type BatchSubmission = SubmissionParameters & {
+	transactions: SubmissionTransaction[];
+	transaction?: never;
+};
+
+/** The gas (and value) a transaction may cost, which is what its payment is computed from. */
+export type TransactionCost = {gas: bigint | String0x | number; value?: bigint | String0x};
+
+/** The most a submission may cost: either one transaction's gas and value, or every transaction of a batch. */
+export type MaxCostParameters = {maxFeePerGasAuthorized: bigint} & (
+	| {gas: bigint; value?: bigint; transactions?: never}
+	| {transactions: TransactionCost[]; gas?: never; value?: never}
+);
+
+function submissionTransactions(execution: Submission | BatchSubmission): SubmissionTransaction[] {
+	if (execution.transaction && execution.transactions) {
+		throw new Error(`provide either transaction or transactions, not both`);
+	}
+	const transactions = execution.transactions || (execution.transaction ? [execution.transaction] : []);
+	if (transactions.length === 0) {
+		throw new Error(`a submission needs at least one transaction`);
+	}
+	return transactions;
+}
 
 export type DirectSubmission = {
 	slot: string;
@@ -135,28 +174,36 @@ export function createClient(config: ClientConfig) {
 		return getBestGasEstimate(provider, importanceRatio);
 	}
 
-	function computeTotalMaxCost(params: {maxFeePerGasAuthorized: bigint; gas: bigint; value?: bigint}): bigint {
-		const txCost = params.maxFeePerGasAuthorized * params.gas;
-		const value = params.value ? params.value : 0n;
+	/**
+	 * The most a submission may cost the remote account: for each transaction, its gas at
+	 * `maxFeePerGasAuthorized`, the service's fees on that (fixed and proportional, charged per
+	 * transaction, as the executor does when it broadcasts each one) and its value; summed over a batch.
+	 */
+	function computeTotalMaxCost(params: MaxCostParameters): bigint {
 		if (!_assignedRemoteAccount) {
 			throw new Error(`need to assign a account first`);
 		}
-		const serviceParameters = _assignedRemoteAccount.serviceParameters;
-		const fees = serviceParameters.fees;
-		if (fees.fixed != '0' || fees.per_1_000_000 > 0) {
-			const feeToPay = BigInt(fees.fixed) + (BigInt(fees.per_1_000_000) * txCost) / 1_000_000n;
-			return txCost + feeToPay + value;
+		const fees = _assignedRemoteAccount.serviceParameters.fees;
+		const transactions: {gas: bigint; value: bigint}[] = params.transactions
+			? params.transactions.map((v) => ({gas: BigInt(v.gas), value: v.value ? BigInt(v.value) : 0n}))
+			: [{gas: params.gas, value: params.value ? params.value : 0n}];
+		let total = 0n;
+		for (const transaction of transactions) {
+			const txCost = params.maxFeePerGasAuthorized * transaction.gas;
+			total += txCost + transaction.value;
+			if (fees.fixed != '0' || fees.per_1_000_000 > 0) {
+				total += BigInt(fees.fixed) + (BigInt(fees.per_1_000_000) * txCost) / 1_000_000n;
+			}
 		}
-		return txCost + value;
+		return total;
 	}
 
-	async function computeBalanceRequired(params: {
-		slot: string;
-		chainId: IntegerString;
-		maxFeePerGasAuthorized: bigint;
-		gas: bigint;
-		value?: bigint;
-	}): Promise<{amountReserved: bigint; totalMaxCost: bigint; balanceRequired: bigint}> {
+	async function computeBalanceRequired(
+		params: MaxCostParameters & {
+			slot: string;
+			chainId: IntegerString;
+		},
+	): Promise<{amountReserved: bigint; totalMaxCost: bigint; balanceRequired: bigint}> {
 		const totalMaxCost = computeTotalMaxCost(params);
 		if (!_assignedRemoteAccount) {
 			throw new Error(`need to assign a account first`);
@@ -180,8 +227,12 @@ export function createClient(config: ClientConfig) {
 		return {amountReserved, totalMaxCost, balanceRequired: amountReserved + totalMaxCost};
 	}
 
+	/**
+	 * Schedule one transaction (`transaction`) or several in one submission (`transactions`, broadcast
+	 * in that order). Timing, price, payment reserve and encryption are the submission's, shared by all.
+	 */
 	async function scheduleExecution(
-		execution: Submission,
+		execution: Submission | BatchSubmission,
 		options?: {fakeEncrypt?: boolean},
 	): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
 		if (
@@ -193,23 +244,21 @@ export function createClient(config: ClientConfig) {
 				`invalid criticalDelta, criticalDelta need to be smaller than timing.expiryDelta, it used to prioritize its execution`,
 			);
 		}
+		const transactions = submissionTransactions(execution);
 		let executionToSend: ScheduledExecution<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>>;
 		const remoteAccount = await _fetchRemoteAccount(execution.chainId);
 		if (_assignedRemoteAccount && remoteAccount.address != _assignedRemoteAccount.address) {
 			throw new Error(`remoteAccount derivation changed`);
 		}
 		const serviceParameters = remoteAccount.serviceParameters;
-		const transactionData = fromSimplerTransactionData(execution.transaction);
 		const payloadJSON: DecryptedPayload<ExecutionSubmission<EthereumTransactionData | StarknetTransactionData>> = {
 			type: 'clear',
-			executions: [
-				{
-					chainId: execution.chainId,
-					maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as String0x,
-					transaction: transactionData,
-					criticalDelta: execution.criticalDelta,
-				},
-			],
+			executions: transactions.map((transaction) => ({
+				chainId: execution.chainId,
+				maxFeePerGasAuthorized: ('0x' + execution.maxFeePerGasAuthorized.toString(16)) as String0x,
+				transaction: fromSimplerTransactionData(transaction),
+				criticalDelta: execution.criticalDelta,
+			})),
 		};
 
 		const timestamp = Math.floor(Date.now() / 1000);
