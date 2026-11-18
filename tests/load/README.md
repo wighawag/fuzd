@@ -59,7 +59,7 @@ Never run this against production: it broadcasts real transactions and bills the
 
 For the chain, either a testnet (use `--fund none` and pre-fund the remote accounts, which `schedule` prints into the state file), or a local anvil exposed to the worker with a tunnel (`cloudflared tunnel --url http://localhost:38545`) and `--fund anvil --rpc <tunnel url>`. The tunnel adds RPC latency, which is realistic since your production RPC is remote too.
 
-Suggested ladder, each with `--reveal-at +600 --window 3600`: `--count 100`, `600`, `1000`, `2000`. Watch the worker during the burst (`wrangler tail fuzd-cf-worker-staging --format json`): cron CPU time, wall time, the `processed N executions` log, D1 errors.
+Suggested ladder, each with `--reveal-at +600 --window 3600`: `--count 100`, `600`, `1000`, `2000`. Watch the worker during and after the burst with `cf-analytics.ts` (below): invocations, errors, CPU and wall time per minute. `wrangler tail` is not enough there: under load it samples, and drops most busy invocations and their logs.
 
 Measured on staging (2026-11-18, RPC through a tunnel):
 
@@ -78,7 +78,27 @@ Then with the processing loops (`PROCESSING_LOOPS`, `docs/adr/0004-claim-due-ite
 | 2000 players | | 2.8 min, 810 in the first minute | 1.3 min, 1577 in the first minute |
 | CPU per invocation | 4.3 to 8.4s (cron, 100) | up to 10.7s (alarm: 100 + pending checks) | same |
 
-Set the loop count with `printf 4 | npx wrangler secret put PROCESSING_LOOPS -e staging`, and back to `0` afterwards: an idle loop keeps waking every 5s. `wrangler tail` samples during a burst; the GraphQL analytics API has every invocation.
+Set the loop count with `printf 4 | npx wrangler secret put PROCESSING_LOOPS -e staging`, and back to `0` afterwards: an idle loop keeps waking every 5s.
+
+## Measuring on Cloudflare: cf-analytics.ts
+
+`cf-analytics.ts` reads the GraphQL analytics API, which counts every invocation (`wrangler tail` samples under load), and prints one line per minute and source: the Durable Object alarms (the processing loops, `durableObjectsInvocationsAdaptiveGroups`) and the Worker's own invocations by event type (`cron`, `fetch`, from `workersInvocationsAdaptive`), with the number of invocations, errors, CPU and wall time p50 and p99, and the Worker's total CPU, all in seconds.
+
+```sh
+export CLOUDFLARE_API_TOKEN=...   # a token with Account Analytics: Read
+cd tests/load
+node cf-analytics.ts --script fuzd-cf-worker-staging --since -30m
+node cf-analytics.ts --since 2026-11-18T16:20:00Z --until 2026-11-18T16:40:00Z --account <account id>
+```
+
+| option | default | meaning |
+| - | - | - |
+| `--script` | `fuzd-cf-worker-staging` | the Worker's name |
+| `--account` | `CLOUDFLARE_ACCOUNT_ID`, else read from `wrangler whoami` (in `platforms/cf-worker`) | account id; needed when the token sees several accounts |
+| `--since` / `--until` | `-60m` / `-0m` | `-<n>m`, `-<n>h`, `-<n>d` before now, or an ISO time |
+| `--json` | | print the API's answer as it is |
+
+The analytics lag a minute or two behind real time. `node --test cf-analytics.test.ts` (or `pnpm test` here) checks the parsing and the table against an answer recorded from staging (`fixtures/cf-analytics-sample.json`), without the network.
 
 Details in `work/notes/findings/cloudflare-worker-cron-capacity.md`.
 

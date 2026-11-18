@@ -1,0 +1,187 @@
+{
+  "data": {
+    "viewer": {
+      "accounts": [
+        {
+          "durableObjectsInvocationsAdaptiveGroups": [
+            {
+              "dimensions": {
+                "datetimeMinute": "2026-11-18T16:22:00Z"
+              },
+              "quantiles": {
+                "cpuTimeP50": 1546,
+                "cpuTimeP99": 770946,
+                "wallTimeP50": 348048,
+                "wallTimeP99": 5023515
+              },
+              "sum": {
+                "errors": 0,
+                "requests": 8,
+                "wallTime": 21226425
+              }
+            },
+            {
+              "dimensions": {
+                "datetimeMinute": "2026-11-18T16:23:00Z"
+              },
+              "quantiles": {
+                "cpuTimeP50": 93170,
+                "cpuTimeP99": 712676,
+                "wallTimeP50": 5009581,
+                "wallTimeP99": 5036112
+              },
+              "sum": {
+                "errors": 0,
+                "requests": 52,
+                "wallTime": 240694034
+              }
+            },
+            {
+              "dimensions": {
+                "datetimeMinute": "2026-11-18T16:24:00Z"
+              },
+              "quantiles": {
+                "cpuTimeP50": 97364,
+                "cpuTimeP99": 621643,
+                "wallTimeP50": 5015602,
+                "wallTimeP99": 65277790
+              },
+              "sum": {
+                "errors": 0,
+                "requests": 52,
+                "wallTime": 301033389
+              }
+            },
+            {
+              "dimensions": {
+                "datetimeMinute": "2026-11-18T16:25:00Z"
+              },
+              "quantiles": {
+                "cpuTimeP50": 86558,
+                "cpuTimeP99": 801347,
+                "wallTimeP50": 5015563,
+                "wallTimeP99": 5030299
+              },
+              "sum": {
+                "errors": 0,
+                "requests": 52,
+                "wallTime": 240819831
+              }
+            }
+          ],
+          "workersInvocationsAdaptive": [
+            {
+              "dimensions": {
+                "datetimeMinute": "2026-11-18T16:22:00Z",
+                "eventType": "cron"
+              },
+              "quantiles": {
+                "cpuTimeP50": 86687,
+                "cpuTimeP99": 127370,
+                "wallTimeP50": 1181936,
+                "wallTimeP99": 2650979
+              },
+              "sum": {
+                "cpuTimeUs": 278678,
+                "errors": 0,
+                "requests": 3,
+                "wallTime": 4718230
+              }
+            },
+            {
+              "dimensions": {
+                "datetimeMinute": "2026-11-18T16:23:00Z",
+                "eventType": "fetch"
+              },
+              "quantiles": {
+                "cpuTimeP50": 40831,
+                "cpuTimeP99": 518146,
+                "wallTimeP50": 101838,
+                "wallTimeP99": 1482046
+              },
+              "sum": {
+                "cpuTimeUs": 129441146,
+                "errors": 0,
+                "requests": 1520,
+                "wallTime": 256247881
+              }
+            },
+            {
+              "dimensions": {
+                "datetimeMinute": "2026-11-18T16:23:00Z",
+                "eventType": "cron"
+              },
+              "quantiles": {
+                "cpuTimeP50": 81855,
+                "cpuTimeP99": 109037,
+                "wallTimeP50": 335807,
+                "wallTimeP99": 373065
+              },
+              "sum": {
+                "cpuTimeUs": 190892,
+                "errors": 0,
+                "requests": 2,
+                "wallTime": 708872
+              }
+            },
+            {
+              "dimensions": {
+                "datetimeMinute": "2026-11-18T16:24:00Z",
+                "eventType": "fetch"
+              },
+              "quantiles": {
+                "cpuTimeP50": 28732,
+                "cpuTimeP99": 542878,
+                "wallTimeP50": 94288,
+                "wallTimeP99": 621659
+              },
+              "sum": {
+                "cpuTimeUs": 266526968,
+                "errors": 0,
+                "requests": 4512,
+                "wallTime": 540827176
+              }
+            },
+            {
+              "dimensions": {
+                "datetimeMinute": "2026-11-18T16:24:00Z",
+                "eventType": "cron"
+              },
+              "quantiles": {
+                "cpuTimeP50": 107797,
+                "cpuTimeP99": 130061,
+                "wallTimeP50": 554218,
+                "wallTimeP99": 3343141
+              },
+              "sum": {
+                "cpuTimeUs": 316699,
+                "errors": 0,
+                "requests": 3,
+                "wallTime": 4136293
+              }
+            },
+            {
+              "dimensions": {
+                "datetimeMinute": "2026-11-18T16:25:00Z",
+                "eventType": "cron"
+              },
+              "quantiles": {
+                "cpuTimeP50": 60332,
+                "cpuTimeP99": 60332,
+                "wallTimeP50": 914536,
+                "wallTimeP99": 914536
+              },
+              "sum": {
+                "cpuTimeUs": 60332,
+                "errors": 0,
+                "requests": 1,
+                "wallTime": 914536
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "errors": null
+}

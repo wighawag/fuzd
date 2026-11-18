@@ -10,6 +10,8 @@
   },
   "scripts": {
     "schedule": "node reveal-burst.ts schedule",
-    "watch": "node reveal-burst.ts watch"
+    "watch": "node reveal-burst.ts watch",
+    "analytics": "node cf-analytics.ts",
+    "test": "node --test cf-analytics.test.ts"
   }
 }
