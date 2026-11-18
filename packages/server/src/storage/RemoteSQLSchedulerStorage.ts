@@ -211,8 +211,16 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		upToCheckinTime: number;
 		claim: {by: string; now: number; expiresAt: number};
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
-		// one statement: SQLite (and D1) runs it atomically, so a row is claimed by one run only
-		const sqlStatement = `UPDATE ScheduledExecutions SET claimedBy = ?1, claimExpiresAt = ?2 WHERE rowid IN (SELECT rowid FROM ScheduledExecutions WHERE chainId = ?3 AND broadcasted = FALSE AND nextCheckTime <= ?4 AND (claimExpiresAt IS NULL OR claimExpiresAt <= ?5) ORDER BY nextCheckTime ASC LIMIT ?6) RETURNING *;`;
+		// one statement: SQLite (and D1) runs it atomically, so a row is claimed by one run only.
+		// One account at a time (docs/adr/0004): the first `limit` due executions, leaving out every
+		// account another run holds an execution of. The executions of one account share a broadcaster
+		// and its nonces, so they go to one run at a time, which sends them in order. This run's own
+		// accounts are not left out: its next batch carries on with them, in order.
+		// The `+` keep SQLite from using the chainId index for the held accounts: they come from the
+		// claimedBy index (a handful of rows) instead.
+		const due = `chainId = ?3 AND broadcasted = FALSE AND nextCheckTime <= ?4 AND (claimExpiresAt IS NULL OR claimExpiresAt <= ?5)`;
+		const heldByOthers = `SELECT account FROM ScheduledExecutions WHERE claimedBy > '' AND claimedBy != ?1 AND claimExpiresAt > ?5 AND +chainId = ?3`;
+		const sqlStatement = `UPDATE ScheduledExecutions SET claimedBy = ?1, claimExpiresAt = ?2 WHERE rowid IN (SELECT rowid FROM ScheduledExecutions WHERE ${due} AND account NOT IN (${heldByOthers}) ORDER BY nextCheckTime ASC LIMIT ?6) RETURNING *;`;
 		const {by, now, expiresAt} = params.claim;
 		const {results} = await this.db
 			.prepare(sqlStatement)

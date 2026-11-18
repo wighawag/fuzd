@@ -46,7 +46,12 @@ export interface SchedulerStorage<TransactionDataType> {
 	 * first) that no other run holds: in one atomic step, so two runs never get the same one. They stay
 	 * the claimant's until it writes them (createOrUpdateQueuedExecution and archiveExecution release
 	 * them), calls releaseExecutionClaims, or the claim expires (`claim.expiresAt`, unix ms).
-	 * See docs/adr/0004-claim-due-items-with-a-lease.md.
+	 *
+	 * One account at a time: an account another run still holds an execution of is left out entirely.
+	 * The executions of one account share a broadcaster and its nonces, so one run at a time sends
+	 * them, in order, and two runs never wait on each other's broadcaster lock. The claimant's own
+	 * accounts are not left out, so its next batch carries on with them. Fewer than `limit` means
+	 * nothing more is claimable now. See docs/adr/0004-claim-due-items-with-a-lease.md.
 	 */
 	claimDueExecutions(params: {
 		limit: number;

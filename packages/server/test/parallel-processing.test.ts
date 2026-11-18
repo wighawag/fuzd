@@ -128,6 +128,51 @@ describe('concurrent processQueue runs', () => {
 	});
 });
 
+describe('concurrent processQueue runs over one account', () => {
+	it('hold the account one at a time: broadcast in order, without waiting on the broadcaster lock', async () => {
+		// small batches: with a claim per row, each run took two of the account's executions at once,
+		// the runs met on the account's broadcaster lock, and the nonces followed the lock
+		server = await createTestServer({PROCESSING_BATCH_SIZE: '2'});
+		const [player] = await createPlayers(server, 'one-account', 1);
+		const slots = 6;
+		const time = Math.floor(Date.now() / 1000) + 3;
+		for (let i = 0; i < slots; i++) {
+			const {json} = await server.postSigned('/api/scheduling/scheduleExecution', player.wallet, {
+				type: 'clear',
+				chainId: CHAIN_ID,
+				slot: `move-${i}`,
+				// one second apart: the order they are due in
+				timing: {type: 'fixed-time', scheduledTime: time + i},
+				executions: [
+					{
+						chainId: CHAIN_ID,
+						transaction: {type: '0x2', gas: '0x5208', to: player.remoteAccount},
+						maxFeePerGasAuthorized: '0x10',
+					},
+				],
+				executionServiceParameters: player.serviceParameters,
+			});
+			expect(json).toMatchObject({success: true});
+		}
+		await new Promise((resolve) => setTimeout(resolve, (time + slots) * 1000 - Date.now()));
+
+		const results = await Promise.all([run(server, 'processQueue'), run(server.createPeer(), 'processQueue')]);
+
+		const statuses = results.flatMap((r) => r.result.executions.map((v: any) => `${v.slot}: ${v.status.reason}`));
+		expect(statuses.filter((v) => /lock/.test(v))).toEqual([]);
+		// each handled once, by one run or the other (a run may take over the account between two
+		// batches of the other, once that one has sent the earlier executions)
+		expect(results.reduce((n, r) => n + r.result.executions.length, 0)).toBe(slots);
+		const {rows} = await server.db.execute('SELECT slot, nonce FROM BroadcastedExecutions ORDER BY nonce');
+		expect(rows.map((v: any) => [v.slot, Number(v.nonce)])).toEqual(
+			Array.from({length: slots}, (_, i) => [`move-${i}`, i]),
+		);
+		const {rows: scheduled} = await server.db.execute('SELECT broadcasted FROM ScheduledExecutions');
+		expect(scheduled.map((v: any) => v.broadcasted)).toEqual(new Array(slots).fill(1));
+		expect(await claimedRows(server, 'ScheduledExecutions')).toBe(0);
+	});
+});
+
 describe('concurrent processTransactions runs', () => {
 	it('never check the same transaction', async () => {
 		server = await createTestServer();
@@ -162,6 +207,35 @@ describe('a claim', () => {
 		await run(server, 'processQueue');
 		expect(sentTransactions(server)).toBe(players.length);
 		expect(await claimedRows(server, 'ScheduledExecutions')).toBe(0);
+	});
+
+	it('on one execution of an account keeps the account from other runs', async () => {
+		server = await createTestServer();
+		const players = await dueBurst(server, 'held-account', 3);
+		const [held] = players;
+		// another execution of the first player, due as well: a run holds it
+		await server.db.execute({
+			sql: `INSERT INTO ScheduledExecutions (account, chainId, slot, onBehalf, broadcasted, finalized, nextCheckTime, type, payload, timing, executionServiceParameters, paymentReserve, broadcaster, priorTransactionConfirmation, retries, expiry, lastError, claimedBy, claimExpiresAt) SELECT account, chainId, 'other', onBehalf, broadcasted, finalized, nextCheckTime, type, payload, timing, executionServiceParameters, paymentReserve, broadcaster, priorTransactionConfirmation, retries, expiry, lastError, 'other-run', ? FROM ScheduledExecutions WHERE account = ?`,
+			args: [Date.now() + 60_000, held.account],
+		});
+
+		const {result} = await run(server, 'processQueue');
+
+		const handled = result.executions.map((v: any) => v.account).sort();
+		expect(handled).toEqual(
+			players
+				.slice(1)
+				.map((v) => v.account)
+				.sort(),
+		);
+		const {rows} = await server.db.execute({
+			sql: `SELECT slot, broadcasted FROM ScheduledExecutions WHERE account = ? ORDER BY slot`,
+			args: [held.account],
+		});
+		expect(rows.map((v: any) => [v.slot, v.broadcasted])).toEqual([
+			['other', 0],
+			['reveal', 0],
+		]);
 	});
 
 	it('of a pending transaction expires too', async () => {

@@ -562,7 +562,8 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 	 *
 	 * Runs may overlap (several crons, loops or processes on one database): each batch is claimed by
 	 * this run only, for `leaseDurationMs`, and released as each execution is written back
-	 * (docs/adr/0004-claim-due-items-with-a-lease.md).
+	 * (docs/adr/0004-claim-due-items-with-a-lease.md). An account another run holds an execution of
+	 * is left out of a claim, so the executions of one account are sent by one run at a time, in order.
 	 */
 	async function processQueue() {
 		const budget = processingBudget;
@@ -633,7 +634,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					);
 
 					if (executions.length < limit) {
-						// that was every due execution of this chain
+						// that was every claimable due execution of this chain
 						break;
 					}
 				}
