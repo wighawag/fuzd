@@ -10,6 +10,22 @@ export default defineWorkersConfig(async () => {
 	// the lockfile changing, which is all Vite checks before reusing a bundle, and vitest drops
 	// `optimizeDeps.force`. So the bundle is made again on every run.
 	fs.rmSync(path.join(__dirname, 'node_modules/.vite/vitest/deps_ssr'), {recursive: true, force: true});
+	// The pool loads the secrets of a .dev.vars (or .env) beside the wrangler config: a developer's
+	// own, which would leak into the tests (a CHAIN_<id> pointing at their node, DEV, ...). The tests
+	// use a copy of wrangler.toml in a directory of their own instead, with `main` made absolute.
+	const testConfigDir = path.join(__dirname, 'node_modules/.cache/vitest-wrangler');
+	fs.mkdirSync(testConfigDir, {recursive: true});
+	const wranglerToml = fs.readFileSync(path.join(__dirname, 'wrangler.toml'), 'utf8');
+	const testWranglerToml = wranglerToml.replace(
+		/^main = "(.*)"$/m,
+		(_, main) => `main = ${JSON.stringify(path.join(__dirname, main))}`,
+	);
+	if (testWranglerToml === wranglerToml) {
+		throw new Error('wrangler.toml: no main = "..." line to rewrite');
+	}
+	const testConfigPath = path.join(testConfigDir, 'wrangler.toml');
+	fs.writeFileSync(testConfigPath, testWranglerToml);
+	process.env.CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV = 'false';
 	return {
 		test: {
 			include: ['test/**/*.test.ts'],
@@ -23,12 +39,11 @@ export default defineWorkersConfig(async () => {
 				workers: {
 					// singleWorker: true,
 					wrangler: {
-						configPath: './wrangler.toml',
+						configPath: testConfigPath,
 						environment: 'production',
 					},
 					miniflare: {
-						// a test-only binding for the migrations, applied in a setup file, and the test's own
-						// secrets, over any .dev.vars (which the pool reads too)
+						// a test-only binding for the migrations, applied in a setup file, and the test's secrets
 						bindings: {
 							TEST_MIGRATIONS: migrations,
 							HD_MNEMONIC: 'test test test test test test test test test test test junk',

@@ -11,6 +11,11 @@ const worker_ = setupWorker();
 const admin = {Authorization: `Basic ${btoa(`admin:${env.TOKEN_ADMIN}`)}`};
 
 describe('the fuzd worker', () => {
+	it('runs with its own env, never with the secrets of a .dev.vars', () => {
+		const secrets = Object.keys(env).filter((key) => /^(CHAIN_|DEV$|NAMED_LOGS)/.test(key));
+		expect(secrets).toEqual([]);
+	});
+
 	it('answers with its version', async () => {
 		const response = await worker_.fetch('/');
 		expect(response.status).toBe(200);
