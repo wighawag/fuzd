@@ -6,6 +6,7 @@ import {createErrorObject} from '../../utils/response.js';
 import {setup} from '../../setup.js';
 import {Env} from '../../env.js';
 import {FUZDLogger} from '@fuzd/common';
+import {safeEqual} from '../../utils/safe-equal.js';
 
 const logger = <FUZDLogger>logs('fuzd-server-internal-api');
 
@@ -36,7 +37,10 @@ export function getInternalAPI<Bindings extends Env>(options: ServerOptions<Bind
 	const adminAuth = createAdminAuth(options);
 	const app = new Hono<{Bindings: Bindings}>()
 		.use(async (c, next) => {
-			if (c.req.header(INTERNAL_TOKEN_HEADER) === getInternalToken()) {
+			const token = c.req.header(INTERNAL_TOKEN_HEADER);
+			// in constant time: a comparison that stops at the first wrong character would tell how much of
+			// a guess is right
+			if (token !== undefined && (await safeEqual(token, getInternalToken()))) {
 				return next();
 			}
 			return adminAuth(c, next);
