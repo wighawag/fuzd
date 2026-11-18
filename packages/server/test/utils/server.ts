@@ -174,6 +174,8 @@ export async function createTestServer(extraEnv: Record<string, string> = {}, op
 
 	return {
 		app,
+		/** the env every request reads (and the peers'): a test may change it between requests */
+		env,
 		db: client,
 		dbStats,
 		rpc,

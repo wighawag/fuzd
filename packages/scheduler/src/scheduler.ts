@@ -664,39 +664,36 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			chainTimestamps: {},
 		};
 
-		const executions = await storage.getUnFinalizedBroadcastedScheduledExecutions({limit});
+		// chain by chain, configured chains only: the executor finalizes the transactions of those
+		// only, so the rows of a chain no longer configured would otherwise take every place
+		for (const chainId of Object.keys(chainProtocols) as IntegerString[]) {
+			const executions = await storage.getUnFinalizedBroadcastedScheduledExecutions({limit, chainId});
+			for (const execution of executions) {
+				let statusToReport: ExecutionStatus;
+				try {
+					const status = await executor.getExecutionStatus(execution);
+					if (status === 'finalized') {
+						execution.finalized = true;
+						await storage.createOrUpdateQueuedExecution(execution);
+						statusToReport = {type: 'finalized', reason: 'queried'};
+					} else {
+						statusToReport = {type: status ? 'broadcasted' : 'unknown', reason: 'queried'};
+					}
+				} catch (err: any) {
+					// one execution whose status cannot be read must not stop the others; it is looked at
+					// again at the next run
+					logger.error(`could not check the status of ${chainId}/${execution.account}/${execution.slot}`, err);
+					statusToReport = {type: 'unknown', reason: `failed to check: ${err?.message || err}`};
+				}
 
-		if (executions.length === 0) {
-			// logger.info(`found zero executions to process`);
-		} else if (executions.length === 1) {
-			// logger.info(`found 1 queued execution for ${executions[0].checkinTime}`);
-		} else {
-			// logger.info(
-			// 	`found ${executions.length} queued execution from ${executions[0].checkinTime} to ${
-			// 		executions[executions.length - 1].checkinTime
-			// 	}`,
-			// );
-		}
-
-		for (const execution of executions) {
-			const status = await executor.getExecutionStatus(execution);
-			let statusToReport: 'broadcasted' | 'unknown' | 'finalized' = status ? 'broadcasted' : 'unknown';
-			if (status === 'finalized') {
-				execution.finalized = true;
-				await storage.createOrUpdateQueuedExecution(execution);
-				statusToReport = 'finalized';
+				result.executions.push({
+					chainId: execution.chainId,
+					account: execution.account,
+					slot: execution.slot,
+					checkinTime: execution.checkinTime,
+					status: statusToReport,
+				});
 			}
-
-			result.executions.push({
-				chainId: execution.chainId,
-				account: execution.account,
-				slot: execution.slot,
-				checkinTime: execution.checkinTime,
-				status: {
-					type: statusToReport,
-					reason: 'queried',
-				},
-			});
 		}
 
 		return result;

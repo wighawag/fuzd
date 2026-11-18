@@ -56,8 +56,10 @@ export interface SchedulerStorage<TransactionDataType> {
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	/** Release whatever `claimant` still holds (its run is over). */
 	releaseExecutionClaims(claimant: string): Promise<void>;
+	/** The oldest broadcast executions not yet finalized, of one chain when `chainId` is given. */
 	getUnFinalizedBroadcastedScheduledExecutions(params: {
 		limit: number;
+		chainId?: IntegerString;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	getUnFinalizedScheduledExecutionsPerBroadcaster(params: {
 		chainId: IntegerString;

@@ -233,10 +233,17 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 
 	async getUnFinalizedBroadcastedScheduledExecutions(params: {
 		limit: number;
+		chainId?: IntegerString;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
-		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcasted = TRUE AND finalized = FALSE ORDER BY nextCheckTime ASC LIMIT ?1;`;
+		const conditions = ['broadcasted = TRUE', 'finalized = FALSE'];
+		const bindings: (string | number)[] = [params.limit];
+		if (params.chainId !== undefined) {
+			bindings.push(params.chainId);
+			conditions.push(`chainId = ?${bindings.length}`);
+		}
+		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE ${conditions.join(' AND ')} ORDER BY nextCheckTime ASC LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
-		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
+		const {results} = await statement.bind(...bindings).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 
