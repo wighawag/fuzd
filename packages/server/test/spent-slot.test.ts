@@ -205,6 +205,146 @@ describe('a schedule into a slot a run is processing', () => {
 	});
 });
 
+/** broadcast now, through the executor's API, into one of the account's slots */
+function broadcastNow(slot: string, to: `0x${string}`) {
+	return server.postSigned('/api/execution/broadcastExecution', wallet, {
+		...tx(to),
+		slot,
+		serviceParameters,
+	});
+}
+
+/** the account's archived schedule of that slot, with its last error */
+async function archived(slot: string) {
+	const {rows} = await server.db.execute({
+		sql: 'SELECT payload, lastError FROM ArchivedScheduledExecutions WHERE account = ? AND slot = ?',
+		args: [account, slot],
+	});
+	return rows.map((v: any) => ({to: JSON.parse(v.payload)[0]?.transaction.to, lastError: v.lastError}));
+}
+
+describe('a direct broadcast into a slot', () => {
+	it('that holds a queued schedule is refused, and the schedule is broadcast', async () => {
+		const slot = 'queued-then-direct';
+		expect((await schedule(slot, [tx(first)])).json.success).toBe(true);
+
+		const direct = await broadcastNow(slot, second);
+		expect(direct.status).toBe(500);
+		expect(direct.json.errors[0].message).toMatch(/queued schedule/);
+		expect(direct.json.errors[0].message).toContain(slot);
+
+		await processQueue();
+		expect(sentTo()).toEqual([first]);
+		expect((await queued(slot)).broadcasted).toBe(true);
+	});
+
+	it("of the queued schedule's own transaction is sent now, and the schedule finds it sent", async () => {
+		const slot = 'send-it-now';
+		expect((await schedule(slot, [tx(first)])).json.success).toBe(true);
+
+		expect((await broadcastNow(slot, first)).json.success).toBe(true);
+		expect(sentTo()).toEqual([first]);
+
+		const {result} = await processQueue();
+		expect(result.executions.map((v: any) => v.status.type)).toEqual(['broadcasted']);
+		expect(sentTo()).toEqual([first]);
+		expect((await queued(slot)).broadcasted).toBe(true);
+	});
+});
+
+describe('a schedule that meets a slot already used by another execution', () => {
+	// The slot looked free when the schedule was accepted, then something else used it: a direct
+	// broadcast in flight at that moment, or a run that had broadcast part of the slot. Its run must not
+	// mark it broadcast (it was never sent): it is archived, with the reason as its last error.
+	it('scheduled while a direct broadcast was in flight is archived, and nothing more is sent', async () => {
+		const slot = 'direct-in-flight';
+		let during: {status: number; json: any} | undefined;
+		server.rpc.onCall = async (method) => {
+			if (method === 'eth_getTransactionCount' && !during) {
+				during = {status: 0, json: undefined};
+				during = await schedule(slot, [tx(second), tx(second)]);
+			}
+		};
+		expect((await broadcastNow(slot, first)).json.success).toBe(true);
+		server.rpc.onCall = undefined;
+		// the slot looked free: no queued schedule, nothing stored by the executor yet
+		expect(during!.json.success).toBe(true);
+
+		await processQueue();
+
+		expect(sentTo()).toEqual([first]);
+		expect(await queued(slot)).toBeUndefined();
+		const [record] = await archived(slot);
+		expect(record.to).toEqual(second);
+		expect(record.lastError).toMatch(/already been used by another execution/);
+	});
+
+	it('run while the direct broadcast holds the broadcaster lock is archived too', async () => {
+		const slot = 'direct-locked';
+		// 1. the schedule lands while the direct broadcast is in flight (before it takes the lock)
+		// 2. while the direct broadcast holds the broadcaster lock (before it stores its record), a run
+		//    starts on the schedule, finds the slot free, and waits for the lock: it then finds the
+		//    direct broadcast's record under it
+		let step = 0;
+		let reachedLock!: () => void;
+		const runReachedLock = new Promise<void>((resolve) => (reachedLock = resolve));
+		let run: Promise<unknown> | undefined;
+		server.rpc.onCall = async (method) => {
+			if (method === 'eth_getTransactionCount' && step === 0) {
+				step = 1;
+				expect((await schedule(slot, [tx(second)])).json.success).toBe(true);
+			} else if (method === 'eth_estimateGas' && step === 1) {
+				// the direct broadcast holds the lock now, and has stored nothing yet
+				step = 2;
+				run = processQueue().finally(reachedLock);
+				await runReachedLock;
+			} else if (method === 'eth_getTransactionCount' && step === 2) {
+				// the run asks for the nonce just before it tries the lock
+				step = 3;
+				reachedLock();
+			}
+		};
+		expect((await broadcastNow(slot, first)).json.success).toBe(true);
+		await run;
+		server.rpc.onCall = undefined;
+
+		expect(sentTo()).toEqual([first]);
+		expect(await queued(slot)).toBeUndefined();
+		const [record] = await archived(slot);
+		expect(record.to).toEqual(second);
+		expect(record.lastError).toMatch(/already been used by another execution/);
+	});
+
+	it('written over a partially broadcast slot is archived, and its other indices are not sent', async () => {
+		const slot = 'partial-replaced';
+		const tooMuchGas = '0x6000000000000000' as const;
+		expect((await schedule(slot, [tx(first), tx(first, {gas: tooMuchGas})])).json.success).toBe(true);
+		await processQueue();
+		expect(sentTo()).toEqual([first]);
+		// what a schedule landing in the instant before the failed run's write-back leaves: a new batch
+		// in the slot, still queued, due
+		const {rows} = await server.db.execute({
+			sql: 'SELECT payload FROM ScheduledExecutions WHERE account = ? AND slot = ?',
+			args: [account, slot],
+		});
+		const payload = JSON.parse((rows[0] as any).payload);
+		payload[0].transaction.to = second;
+		payload[1] = {...payload[0]};
+		await server.db.execute({
+			sql: 'UPDATE ScheduledExecutions SET payload = ?, nextCheckTime = 0 WHERE account = ? AND slot = ?',
+			args: [JSON.stringify(payload), account, slot],
+		});
+
+		await processQueue();
+
+		expect(sentTo()).toEqual([first]);
+		expect(await queued(slot)).toBeUndefined();
+		const [record] = await archived(slot);
+		expect(record.to).toEqual(second);
+		expect(record.lastError).toMatch(/already been used by another execution/);
+	});
+});
+
 describe('a slot archived twice', () => {
 	// a slot archived without a broadcast is free again: its next schedule may be archived too, and
 	// the archive keeps one record per slot (the latest)

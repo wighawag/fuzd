@@ -1,4 +1,5 @@
 import {Hono} from 'hono';
+import {sameTransaction} from '@fuzd/common';
 import {ServerOptions} from '../../types.js';
 import {createErrorObject} from '../../utils/response.js';
 import {Env} from '../../env.js';
@@ -96,6 +97,24 @@ export function getExecutionAPI<Bindings extends Env>(options: ServerOptions<Bin
 					}
 
 					const {slot, serviceParameters, onBehalf, expiryTime, ...execution} = data;
+					// a slot the scheduler holds a schedule for is that schedule's: broadcasting another
+					// transaction into it now would leave the schedule never sent. Broadcasting the schedule's
+					// own transaction now (a "send it now" for a one-transaction schedule in clear) is fine: the
+					// schedule then finds it sent, as a retry of itself would
+					const scheduled = await config.schedulerStorage.getQueuedExecution({
+						chainId: execution.chainId,
+						account,
+						slot,
+					});
+					const sameAsScheduled =
+						scheduled?.type === 'clear' &&
+						scheduled.executions.length === 1 &&
+						sameTransaction(scheduled.executions[0].transaction, execution.transaction);
+					if (scheduled && !scheduled.broadcasted && !sameAsScheduled) {
+						throw new Error(
+							`cannot proceed. the slot (chainId: ${execution.chainId}, account: ${account}, slot: ${slot}) has a queued schedule: broadcast into a new slot, or wait for the schedule.`,
+						);
+					}
 					const result = await config.executor.broadcastExecution(slot, 0, account, execution, serviceParameters, {
 						onBehalf,
 						expiryTime,

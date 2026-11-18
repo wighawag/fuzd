@@ -22,6 +22,7 @@ import {
 	processInGroups,
 	resolveProcessingBudget,
 	retryDelaySeconds,
+	sameTransaction,
 } from '@fuzd/common';
 import {SchedulerConfig} from './types/internal.js';
 import {ChainProtocol, TransactionDataTypes} from '@fuzd/chain-protocol';
@@ -296,16 +297,28 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						initialTime,
 					}, // The scheduler is trusted to have verified the exectuion parameters
 				);
+				if (executionResult.slotAlreadyUsed && !sameTransaction(executionResult.transaction, execution.transaction)) {
+					// this index of the slot was used by ANOTHER execution: a direct broadcast, or another
+					// schedule, that took the slot after this one was accepted. This one was never sent, and none
+					// of its other indices must be sent under the spent slot: it is archived, with the reason.
+					// (the executor keeps a transaction as submitted, through resubmissions and voids, so a retry
+					// of this same record always compares equal)
+					// every index before this one is on chain: sent now, or found sent with the same transaction
+					const sentBefore = i;
+					scheduledExecutionQueued.lastError = `the slot (chainId: ${scheduledExecutionQueued.chainId}, account: ${scheduledExecutionQueued.account}, slot: ${scheduledExecutionQueued.slot}) has already been used by another execution (batch index ${i}): ${sentBefore > 0 ? `only its first ${sentBefore} transaction(s) were sent` : 'this one was not sent'}.`;
+					logger.error(scheduledExecutionQueued.lastError);
+					await archiveClaimed(scheduledExecutionQueued, claimant);
+					return {type: 'archived', reason: scheduledExecutionQueued.lastError};
+				}
 				results.push(executionResult);
 			}
 
-			// A result with slotAlreadyUsed is expected here: it is a retry of this same record after an
-			// earlier run broadcast some of its indices and then failed (or crashed) before the write
-			// below, and the executor does not send those indices again. A DIFFERENT record meets it in
-			// two cases only: a direct broadcastExecution (the executor's API) into a slot the scheduler
-			// holds queued, which nothing refuses; and a schedule landing in the milliseconds between
-			// scheduleExecution's executor check and its write, while a run that just broadcast part of
-			// the slot and failed writes it back. (scheduleExecution refuses a slot a run holds.)
+			// A result with slotAlreadyUsed for the same transaction is expected here: a retry of this
+			// record after an earlier run broadcast some of its indices and then failed (or crashed) before
+			// the write below; the executor does not send those indices again. For another transaction, the
+			// record was archived above: the slot was taken after it was accepted (a direct broadcast in
+			// flight while it was scheduled, or a schedule landing as a run that broadcast part of the slot
+			// wrote it back), and both checks that refuse it beforehand had seen the slot free.
 
 			// if we reaches there, the execution is now handled by the executor
 			// the schedule has done its job

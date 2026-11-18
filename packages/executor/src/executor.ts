@@ -539,7 +539,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			batchIndex: number;
 			helpedForUpToGasPrice: {upToGasPrice: bigint; valueSent: bigint};
 		},
-	): Promise<PendingExecutionStored<TransactionDataType> | undefined> {
+	): Promise<ExecutionResponse<TransactionDataType> | undefined> {
 		const chainProtocol = _getChainProtocol(execution.chainId);
 		const {currentNonceAsPerNetwork, broadcasterData} = await _acquireBroadcaster(
 			execution.chainId,
@@ -559,7 +559,9 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 					batchIndex: execution.batchIndex,
 				});
 				if (alreadyStored) {
-					return alreadyStored;
+					// as the check before the lock does: the caller (the scheduler) must know the slot was used,
+					// and by what, rather than take it for its own broadcast
+					return {...alreadyStored, slotAlreadyUsed: true};
 				}
 			}
 
