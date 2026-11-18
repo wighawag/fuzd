@@ -1,6 +1,6 @@
 import {Hono} from 'hono';
 import {ServerOptions} from '../../types.js';
-import {basicAuth} from 'hono/basic-auth';
+import {adminAuth} from '../../admin-auth.js';
 import {logs} from 'named-logs';
 import {createErrorObject} from '../../utils/response.js';
 import {FUZDLogger} from '@fuzd/common';
@@ -22,10 +22,8 @@ const logger = <FUZDLogger>logs('fuzd-cf-worker-admin-api');
 
 export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
 	const {getEnv} = options;
-	const tmp = new Hono<{Bindings: Bindings}>()
-		.use(setup({serverOptions: options}))
-
-		// TODO authentication
+	// every route here is for the operator: adminAuth is applied to all of them, below
+	const reads = new Hono<{Bindings: Bindings}>()
 		.get('/queue', async (c) => {
 			try {
 				const config = c.get('config');
@@ -73,15 +71,7 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 			}
 		});
 
-	const authenticated = new Hono<{Bindings: Env & {}}>()
-		.use(
-			basicAuth({
-				verifyUser: (username, password, c) => {
-					const env = getEnv(c);
-					return username === 'admin' && password === (env as any).TOKEN_ADMIN; // TODO remove any
-				},
-			}),
-		)
+	const operations = new Hono<{Bindings: Env & {}}>()
 		// .get('/clear', async (c) => {
 		// 	try {
 		// 		const config = c.get('config');
@@ -270,8 +260,9 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 				return c.json(
 					{
 						success: true as const,
+						// only the address: the derived account also carries its private key (the operator funds it, nothing needs the key)
 						paymentAccountBroadcaster: config.paymentAccount
-							? config.account.deriveForAddress(config.paymentAccount)
+							? {address: config.account.deriveForAddress(config.paymentAccount).address}
 							: null,
 					},
 					200,
@@ -306,7 +297,11 @@ export function getAdminAPI<Bindings extends Env>(options: ServerOptions<Binding
 			}
 		});
 
-	const app = new Hono<{Bindings: Env & {}}>().route('/', tmp).route('/', authenticated);
+	const app = new Hono<{Bindings: Env & {}}>()
+		.use(adminAuth(options))
+		.use(setup({serverOptions: options}))
+		.route('/', reads)
+		.route('/', operations);
 
 	return app;
 }

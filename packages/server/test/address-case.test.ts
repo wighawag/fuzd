@@ -156,21 +156,25 @@ describe('admin and dashboard', () => {
 	});
 
 	it('admin/account-submissions/:account lists the same records from either form', async () => {
-		const a = await server.getJSON(`/admin/account-submissions/${checksummed}`);
-		const b = await server.getJSON(`/admin/account-submissions/${lowercase}`);
+		const a = await server.getJSON(`/admin/account-submissions/${checksummed}`, {headers: server.adminHeaders});
+		const b = await server.getJSON(`/admin/account-submissions/${lowercase}`, {headers: server.adminHeaders});
 		expect(a.json.queue.map((v: any) => v.slot)).toContain(slot);
 		expect(b.json).toEqual(a.json);
 	});
 
 	it('dashboard account pages render the same from either form', async () => {
 		for (const route of ['account-submissions', 'account-archived-submissions']) {
-			const a = await server.request(`/dashboard/admin/${route}/${checksummed}`);
-			const b = await server.request(`/dashboard/admin/${route}/${lowercase}`);
+			const a = await server.request(`/dashboard/admin/${route}/${checksummed}`, {headers: server.adminHeaders});
+			const b = await server.request(`/dashboard/admin/${route}/${lowercase}`, {headers: server.adminHeaders});
 			expect(a.status).toBe(200);
 			expect(await b.text()).toEqual(await a.text());
 		}
-		const a = await server.request(`/dashboard/admin/unfinalized-submissions/${CHAIN_ID}/${getAddress(broadcaster)}`);
-		const b = await server.request(`/dashboard/admin/unfinalized-submissions/${CHAIN_ID}/${broadcaster}`);
+		const a = await server.request(`/dashboard/admin/unfinalized-submissions/${CHAIN_ID}/${getAddress(broadcaster)}`, {
+			headers: server.adminHeaders,
+		});
+		const b = await server.request(`/dashboard/admin/unfinalized-submissions/${CHAIN_ID}/${broadcaster}`, {
+			headers: server.adminHeaders,
+		});
 		expect(a.status).toBe(200);
 		expect(await b.text()).toEqual(await a.text());
 	});

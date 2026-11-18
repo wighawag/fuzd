@@ -3,7 +3,8 @@
 import {jsx} from 'hono/jsx';
 import {Hono} from 'hono';
 import {ServerOptions} from '../../types.js';
-import {basicAuth} from 'hono/basic-auth';
+import {adminAuth} from '../../admin-auth.js';
+import {setup} from '../../setup.js';
 import {logs} from 'named-logs';
 import {Layout} from '../layout.js';
 import {Table} from '../components/Table.js';
@@ -15,8 +16,10 @@ import {Env} from '../../env.js';
 const logger = logs('fuzd-cf-worker-admin-dashboard');
 
 export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<Bindings>) {
-	const tmp = new Hono<{Bindings: Bindings}>()
-		// TODO authentication
+	// every page is for the operator (they list payloads, broadcasters and errors), so all are behind adminAuth
+	const app = new Hono<{Bindings: Bindings}>()
+		.use(adminAuth(options))
+		.use(setup({serverOptions: options}))
 		.get('/queue', async (c) => {
 			const config = c.get('config');
 			const queue = await config.schedulerStorage.getQueueTopMostExecutions({limit: 100});
@@ -115,14 +118,6 @@ export function getAdminDashboard<Bindings extends Env>(options: ServerOptions<B
 				</Layout>,
 			);
 		});
-
-	const authenticated = new Hono<{Bindings: Env & {}}>().use(
-		basicAuth({
-			verifyUser: (username, password, c) => username === 'admin' && password === c.env.TOKEN_ADMIN,
-		}),
-	);
-
-	const app = new Hono<{Bindings: Env & {}}>().route('/', tmp).route('/', authenticated);
 
 	return app;
 }

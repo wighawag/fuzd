@@ -1,5 +1,5 @@
 import {Hono} from 'hono';
-import {basicAuth} from 'hono/basic-auth';
+import {adminAuth as createAdminAuth} from '../../admin-auth.js';
 import {ServerOptions} from '../../types.js';
 import {logs} from 'named-logs';
 import {createErrorObject} from '../../utils/response.js';
@@ -33,12 +33,7 @@ export function createInternalToken(): string {
  * runs at will: costs on a metered platform, and runs overlapping each other.
  */
 export function getInternalAPI<Bindings extends Env>(options: ServerOptions<Bindings>, getInternalToken: () => string) {
-	const adminAuth = basicAuth({
-		verifyUser: (username, password, c) => {
-			const tokenAdmin = (options.getEnv(c) as Env).TOKEN_ADMIN;
-			return !!tokenAdmin && username === 'admin' && password === tokenAdmin;
-		},
-	});
+	const adminAuth = createAdminAuth(options);
 	const app = new Hono<{Bindings: Bindings}>()
 		.use(async (c, next) => {
 			if (c.req.header(INTERNAL_TOKEN_HEADER) === getInternalToken()) {

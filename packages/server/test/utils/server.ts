@@ -83,7 +83,12 @@ function installMockRPC(state: MockRPCState) {
 
 export type TestServer = Awaited<ReturnType<typeof createTestServer>>;
 
-export async function createTestServer(extraEnv: Record<string, string> = {}) {
+export type TestServerOptions = {
+	/** remove TOKEN_ADMIN from the env once the database is set up: a server run without one */
+	forgetAdminTokenAfterSetup?: boolean;
+};
+
+export async function createTestServer(extraEnv: Record<string, string> = {}, options: TestServerOptions = {}) {
 	// the database lives in a scratch dir, never in a shared location
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fuzd-server-test-'));
 	const client = createClient({url: `file:${path.join(dir, 'db.sqlite')}`});
@@ -108,7 +113,7 @@ export async function createTestServer(extraEnv: Record<string, string> = {}) {
 		TIME_LOCK_DECRYPTION: 'false',
 		TOKEN_ADMIN,
 		...extraEnv,
-	} as const;
+	} as Record<string, string | undefined>;
 	const app = createServer<any>({getDB: () => db, getEnv: () => env});
 	const rpc: MockRPCState = {balances: new Map(), calls: []};
 	const uninstallMockRPC = installMockRPC(rpc);
@@ -134,6 +139,9 @@ export async function createTestServer(extraEnv: Record<string, string> = {}) {
 	const setup = await getJSON('/admin/setup', {headers: adminHeaders});
 	if (!setup.json.success) {
 		throw new Error(`setup failed: ${JSON.stringify(setup.json)}`);
+	}
+	if (options.forgetAdminTokenAfterSetup) {
+		delete env.TOKEN_ADMIN;
 	}
 
 	return {

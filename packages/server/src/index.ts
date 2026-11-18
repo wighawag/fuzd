@@ -62,9 +62,8 @@ export function createDoc() {
 
 export function createServer<Bindings extends Env>(options: ServerOptions<Bindings>) {
 	const adminDashboard = getAdminDashboard<Bindings>(options);
-	const dashboard = new Hono<{Bindings: Env & {}}>()
-		.use(setup({serverOptions: options}))
-		.route('/admin', adminDashboard);
+	// the admin dashboard authenticates before its setup (deriving the server account costs CPU)
+	const dashboard = new Hono<{Bindings: Env & {}}>().route('/admin', adminDashboard);
 
 	// only this process knows it: the crons of the platform (cf-worker, nodejs) use it, through
 	// internalRequest, to trigger the internal actions that are otherwise refused without admin credentials.
