@@ -239,6 +239,57 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 			.all();
 	}
 
+	async updateClaimedExecution(
+		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
+		claimant: string,
+	): Promise<boolean> {
+		const inDB = toScheduledExecutionInDB(executionToStore);
+		const {account, chainId, slot, ...rest} = inDB;
+		const columns = Object.keys(rest);
+		// ?1 to ?4: the key and the claimant, then the columns
+		const sets = columns.map((column, i) => `${column} = ?${i + 5}`).join(', ');
+		const {results} = await this.db
+			.prepare(
+				`UPDATE ScheduledExecutions SET ${sets}, claimedBy = NULL, claimExpiresAt = NULL WHERE account = ?1 AND chainId = ?2 AND slot = ?3 AND claimedBy = ?4 RETURNING slot;`,
+			)
+			.bind(account, chainId, slot, claimant, ...columns.map((column) => (rest as Record<string, unknown>)[column]))
+			.all<{slot: string}>();
+		return results.length > 0;
+	}
+
+	async markExecutionFinalized(execution: {chainId: IntegerString; account: String0x; slot: string}): Promise<boolean> {
+		const {results} = await this.db
+			.prepare(
+				`UPDATE ScheduledExecutions SET finalized = TRUE WHERE account = ?1 AND chainId = ?2 AND slot = ?3 AND broadcasted = TRUE RETURNING slot;`,
+			)
+			.bind(execution.account, execution.chainId, execution.slot)
+			.all<{slot: string}>();
+		return results.length > 0;
+	}
+
+	async archiveClaimedExecution(
+		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
+		claimant: string,
+	): Promise<boolean> {
+		const {account, chainId, slot} = executionToStore;
+		const inDB = toScheduledExecutionInDB(executionToStore);
+		const columns = Object.keys(inDB);
+		const values = columns.map((column) => (inDB as Record<string, unknown>)[column]);
+		// ?1 to ?4: the key and the claimant, then the columns. One batch (a transaction): the archive
+		// row is written only if the claim is still held, then the row is deleted under the same guard
+		const held = `account = ?1 AND chainId = ?2 AND slot = ?3 AND claimedBy = ?4`;
+		const insertIntoArchive = this.db
+			.prepare(
+				`INSERT INTO ArchivedScheduledExecutions (${columns.join(', ')}) SELECT ${columns.map((_, i) => `?${i + 5}`).join(', ')} WHERE EXISTS (SELECT 1 FROM ScheduledExecutions WHERE ${held});`,
+			)
+			.bind(account, chainId, slot, claimant, ...values);
+		const deleteFromExecutions = this.db
+			.prepare(`DELETE FROM ScheduledExecutions WHERE ${held} RETURNING slot;`)
+			.bind(account, chainId, slot, claimant);
+		const [, deleted] = await this.db.batch<{slot: string}>([insertIntoArchive, deleteFromExecutions]);
+		return deleted.results.length > 0;
+	}
+
 	async getUnFinalizedBroadcastedScheduledExecutions(params: {
 		limit: number;
 		chainId?: IntegerString;

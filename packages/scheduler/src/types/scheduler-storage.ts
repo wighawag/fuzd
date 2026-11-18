@@ -44,8 +44,9 @@ export interface SchedulerStorage<TransactionDataType> {
 	/**
 	 * Claim the due executions of a chain (not broadcast, `checkinTime <= upToCheckinTime`, earliest
 	 * first) that no other run holds: in one atomic step, so two runs never get the same one. They stay
-	 * the claimant's until it writes them (createOrUpdateQueuedExecution and archiveExecution release
-	 * them), calls releaseExecutionClaims, or the claim expires (`claim.expiresAt`, unix ms).
+	 * the claimant's until it writes them (updateClaimedExecution and archiveClaimedExecution release
+	 * them, and so does a new schedule through createOrUpdateQueuedExecution), calls
+	 * releaseExecutionClaims, or the claim expires (`claim.expiresAt`, unix ms).
 	 *
 	 * One account at a time: an account another run still holds an execution of is left out entirely.
 	 * The executions of one account share a broadcaster and its nonces, so one run at a time sends
@@ -61,6 +62,28 @@ export interface SchedulerStorage<TransactionDataType> {
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	/** Release whatever `claimant` still holds (its run is over). */
 	releaseExecutionClaims(claimant: string): Promise<void>;
+	/**
+	 * Write back an execution `claimant` claimed, and release it: only while `claimant` still holds
+	 * the claim. Once its lease expired and another run claimed the execution, or a new schedule
+	 * replaced it, or it was archived, nothing is written and this answers false. A run stuck past
+	 * its lease can then never undo what happened since (write `broadcasted = false` over another
+	 * run's broadcast, or bring an archived execution back). See docs/adr/0004.
+	 */
+	updateClaimedExecution(
+		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
+		claimant: string,
+	): Promise<boolean>;
+	/**
+	 * Mark a broadcast execution finalized (what checkScheduledExecutionStatus writes), and nothing
+	 * else: only while the stored execution is still broadcast, so that a new schedule written into
+	 * the slot since it was read is left as it is. Answers whether it applied.
+	 */
+	markExecutionFinalized(execution: {chainId: IntegerString; account: String0x; slot: string}): Promise<boolean>;
+	/** archiveExecution, only while `claimant` still holds the claim (see updateClaimedExecution). */
+	archiveClaimedExecution(
+		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
+		claimant: string,
+	): Promise<boolean>;
 	/** The oldest broadcast executions not yet finalized, of one chain when `chainId` is given. */
 	getUnFinalizedBroadcastedScheduledExecutions(params: {
 		limit: number;

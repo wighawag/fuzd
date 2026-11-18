@@ -130,9 +130,31 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		execution.priorTransactionConfirmation = undefined;
 	}
 
+	/**
+	 * The writes of a processing run: they apply only while the run still holds its claim on the
+	 * execution. A run stuck past its lease must not undo what another run (or a new schedule) did
+	 * since, e.g. write `broadcasted = false` over another run's broadcast (docs/adr/0004).
+	 */
+	async function writeClaimed(execution: ScheduledExecutionQueued<TransactionDataType>, claimant: string) {
+		if (!(await storage.updateClaimedExecution(execution, claimant))) {
+			logger.warn(
+				`${claimant} no longer holds ${computeScheduledExecutionIdentifier(execution)} (its lease expired, or it was replaced or archived): not written`,
+			);
+		}
+	}
+
+	async function archiveClaimed(execution: ScheduledExecutionQueued<TransactionDataType>, claimant: string) {
+		if (!(await storage.archiveClaimedExecution(execution, claimant))) {
+			logger.warn(
+				`${claimant} no longer holds ${computeScheduledExecutionIdentifier(execution)} (its lease expired, or it was replaced or archived): not archived`,
+			);
+		}
+	}
+
 	async function retryLater(
 		execution: ScheduledExecutionQueued<TransactionDataType>,
 		newCheckinTime: number,
+		claimant: string,
 	): Promise<ScheduledExecutionQueued<TransactionDataType>> {
 		execution.retries++;
 		if (execution.retries >= 100) {
@@ -141,10 +163,10 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			);
 			// TODO hook await this._reduceSpending(reveal);
 			// TODO archive
-			await storage.archiveExecution(execution);
+			await archiveClaimed(execution, claimant);
 		} else {
 			execution.checkinTime = newCheckinTime;
-			await storage.createOrUpdateQueuedExecution(execution);
+			await writeClaimed(execution, claimant);
 		}
 		return execution;
 	}
@@ -156,6 +178,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 	async function execute(
 		scheduledExecutionQueued: ScheduledExecutionQueued<TransactionDataType>,
 		currentTimestamp: number,
+		claimant: string,
 	): Promise<ExecutionStatus> {
 		let executions: ExecutionSubmission<TransactionDataType>[];
 		if (scheduledExecutionQueued.type === 'time-locked') {
@@ -177,7 +200,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						computePotentialExecutionTime(scheduledExecutionQueued),
 						decryptionResult.retry || 0,
 					);
-					await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
+					await writeClaimed(scheduledExecutionQueued, claimant);
 					return {type: 'reassigned', reason: 'outer time-lock layer decrypted'};
 				} else if (decryptionResult.retry) {
 					// a round already past would make it due again at once: give it at least the first retry delay
@@ -185,7 +208,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						decryptionResult.retry,
 						currentTimestamp + retryDelaySeconds(1),
 					);
-					await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
+					await writeClaimed(scheduledExecutionQueued, claimant);
 					return {type: 'reassigned', reason: 'decryption retry'};
 				} else {
 					// the decrypter reports any failure this way, a drand request that failed included: retry it
@@ -259,7 +282,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			// if for some reason `executor.broadcastExecution(...)` fails to return but has actually broadcasted the tx
 			// the scheduler will attempt again. the id tell the executor to not reexecute
 			scheduledExecutionQueued.broadcasted = true;
-			await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
+			await writeClaimed(scheduledExecutionQueued, claimant);
 
 			return {
 				type: 'broadcasted',
@@ -286,6 +309,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 	async function checkAndUpdateExecutionIfNeeded(
 		execution: ScheduledExecutionQueued<TransactionDataType>,
 		currentTimestamp: number,
+		claimant: string,
 	): Promise<
 		| {status: 'deleted'} // TODO remove ? (not used for now)
 		| {status: 'archived'}
@@ -325,7 +349,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						// TODO should we delete ?
 						// or retry later ?
 						// TODO archive in any case
-						await storage.archiveExecution(execution);
+						await archiveClaimed(execution, claimant);
 						return {status: 'archived'};
 					} else {
 						if (txStatus.status == 'failed') {
@@ -333,7 +357,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 								`deleting the execution as the tx it depends on (${timing.assumedTransaction.hash} / ${timing.assumedTransaction.broadcastTime})  ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
 							);
 							// TODO archive
-							await storage.archiveExecution(execution);
+							await archiveClaimed(execution, claimant);
 							return {status: 'archived'};
 						} else if (txStatus.status === 'replaced') {
 							logger.warn(`prior tx (${timing.assumedTransaction.hash}) has been replaced`);
@@ -371,7 +395,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						const newCheckinTime = computePotentialExecutionTime(execution, {
 							startTimeToCountFrom: txStatus.blockTime || currentTimestamp,
 						});
-						const executionToRetry = await retryLater(execution, newCheckinTime);
+						const executionToRetry = await retryLater(execution, newCheckinTime, claimant);
 						return {status: 'willRetry', execution: executionToRetry};
 					} else {
 						if (txStatus.status == 'failed') {
@@ -379,7 +403,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 								`deleting the execution as the tx it depends on (${timing.startTransaction.hash} / ${timing.startTransaction.broadcastTime}) ${txStatus.status == 'failed' ? 'failed' : 'was replaced'}...`,
 							);
 							// TODO archive
-							await storage.archiveExecution(execution);
+							await archiveClaimed(execution, claimant);
 							return {status: 'archived'};
 						} else if (txStatus.status === 'replaced') {
 							logger.warn(`prior tx (${timing.startTransaction.hash}) has been replaced`);
@@ -411,6 +435,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 	async function processExecution(
 		execution: ScheduledExecutionQueued<TransactionDataType>,
 		result: QueueProcessingResult,
+		claimant: string,
 	) {
 		const chainIdDecimal = Number(execution.chainId).toString();
 		const chainProtocol = _getChainProtocol(execution.chainId);
@@ -436,7 +461,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			logger.error(`no currentTimestamp: ${currentTimestamp}`);
 		}
 
-		const updates = await checkAndUpdateExecutionIfNeeded(execution, currentTimestamp);
+		const updates = await checkAndUpdateExecutionIfNeeded(execution, currentTimestamp, claimant);
 		if (updates.status === 'archived' || updates.status === 'willRetry' || updates.status === 'deleted') {
 			let status: ExecutionStatus;
 			if (updates.status === 'deleted') {
@@ -475,7 +500,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		if (currentTimestamp > expiryTime + expectedFinality * worstCaseBlockTime) {
 			// delete if execution expired
 			logger.warn(`too late, archiving ${computeScheduledExecutionIdentifier(execution)}...`);
-			await storage.archiveExecution(execution);
+			await archiveClaimed(execution, claimant);
 			result.executions.push({
 				chainId: execution.chainId,
 				account: execution.account,
@@ -488,7 +513,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 
 		if (currentTimestamp >= newCheckinTime) {
 			// execute if it is the time
-			const status = await execute(executionUpdated, currentTimestamp);
+			const status = await execute(executionUpdated, currentTimestamp, claimant);
 			result.executions.push({
 				chainId: execution.chainId,
 				account: execution.account,
@@ -499,7 +524,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		} else {
 			// if not, then in most case we detected a change in the execution time
 			if (updates.status === 'changed') {
-				await storage.createOrUpdateQueuedExecution(executionUpdated);
+				await writeClaimed(executionUpdated, claimant);
 				result.executions.push({
 					chainId: execution.chainId,
 					account: execution.account,
@@ -531,6 +556,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		execution: ScheduledExecutionQueued<TransactionDataType>,
 		error: any,
 		result: QueueProcessingResult,
+		claimant: string,
 	) {
 		const identifier = computeScheduledExecutionIdentifier(execution);
 		execution.lastError = (error && (error.message || error.toString())) || 'unknown error';
@@ -539,7 +565,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			result.chainTimestamps[Number(execution.chainId).toString()] || Math.floor(Date.now() / 1000);
 		const delay = retryDelaySeconds(execution.retries + 1);
 		try {
-			await retryLater(execution, currentTimestamp + delay);
+			await retryLater(execution, currentTimestamp + delay, claimant);
 			result.executions.push({
 				chainId: execution.chainId,
 				account: execution.account,
@@ -626,9 +652,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 						budget.concurrency,
 						async (execution) => {
 							try {
-								await processExecution(execution, result);
+								await processExecution(execution, result, claimant);
 							} catch (err: any) {
-								await retryAfterFailure(execution, err, result);
+								await retryAfterFailure(execution, err, result, claimant);
 							}
 						},
 					);
@@ -674,9 +700,13 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				try {
 					const status = await executor.getExecutionStatus(execution);
 					if (status === 'finalized') {
-						execution.finalized = true;
-						await storage.createOrUpdateQueuedExecution(execution);
-						statusToReport = {type: 'finalized', reason: 'queried'};
+						// only the flag, and only while still broadcast: a new schedule written into the slot since
+						// this run read it must not be overwritten by the old record
+						if (await storage.markExecutionFinalized(execution)) {
+							statusToReport = {type: 'finalized', reason: 'queried'};
+						} else {
+							statusToReport = {type: 'unknown', reason: 'replaced since it was read'};
+						}
 					} else {
 						statusToReport = {type: status ? 'broadcasted' : 'unknown', reason: 'queried'};
 					}

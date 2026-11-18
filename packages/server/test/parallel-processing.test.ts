@@ -253,6 +253,75 @@ describe('a claim', () => {
 		expect((await run(server, 'processTransactions')).transactions).toHaveLength(players.length);
 	});
 
+	it('that expired while its run was still working: the run cannot write over what another run did since', async () => {
+		server = await createTestServer();
+		const [player] = await dueBurst(server, 'outlived', 1);
+		const peer = server.createPeer();
+		const db = server.db;
+		// the first run is stuck past its lease just before broadcasting: meanwhile another run claims the
+		// execution and broadcasts it, then the first run fails (its RPC request) and writes it back
+		// with a retry time, as not broadcast
+		let stuck = false;
+		server.rpc.onCall = async (method) => {
+			if (method === 'eth_getTransactionCount' && !stuck) {
+				stuck = true;
+				await db.execute({sql: 'UPDATE ScheduledExecutions SET claimExpiresAt = ?', args: [Date.now() - 1]});
+				const other = await run(peer, 'processQueue');
+				expect(other.result.executions.map((v: any) => v.status.type)).toEqual(['broadcasted']);
+				throw new Error('the first run lost its RPC');
+			}
+		};
+
+		const first = await run(server, 'processQueue');
+		server.rpc.onCall = undefined;
+
+		expect(first.result.executions.map((v: any) => v.status.type)).toEqual(['reassigned']);
+		const {rows} = await server.db.execute({
+			sql: 'SELECT broadcasted, retries, lastError, claimedBy FROM ScheduledExecutions WHERE account = ?',
+			args: [player.account],
+		});
+		expect(rows.map((v: any) => ({...v}))).toEqual([{broadcasted: 1, retries: 0, lastError: null, claimedBy: null}]);
+		expect(sentTransactions(server)).toBe(1);
+	});
+
+	it('is released by a new schedule into the slot, which the run then does not overwrite', async () => {
+		server = await createTestServer();
+		const [player] = await dueBurst(server, 'rescheduled', 1);
+		const later = Math.floor(Date.now() / 1000) + 3600;
+		let rescheduled = false;
+		server.rpc.onCall = async (method) => {
+			if (method === 'eth_getTransactionCount' && !rescheduled) {
+				rescheduled = true;
+				const {json} = await server!.postSigned('/api/scheduling/scheduleExecution', player.wallet, {
+					type: 'clear',
+					chainId: CHAIN_ID,
+					slot: 'reveal',
+					timing: {type: 'fixed-time', scheduledTime: later},
+					executions: [
+						{
+							chainId: CHAIN_ID,
+							transaction: {type: '0x2', gas: '0x5208', to: player.remoteAccount, value: '0x1'},
+							maxFeePerGasAuthorized: '0x10',
+						},
+					],
+					executionServiceParameters: player.serviceParameters,
+				});
+				expect(json).toMatchObject({success: true});
+			}
+		};
+
+		await run(server, 'processQueue');
+		server.rpc.onCall = undefined;
+
+		// the run broadcast the batch it had read, but the slot holds the new schedule, still queued
+		expect(sentTransactions(server)).toBe(1);
+		const {rows} = await server.db.execute({
+			sql: 'SELECT broadcasted, nextCheckTime, claimedBy FROM ScheduledExecutions WHERE account = ?',
+			args: [player.account],
+		});
+		expect(rows.map((v: any) => ({...v}))).toEqual([{broadcasted: 0, nextCheckTime: later, claimedBy: null}]);
+	});
+
 	it('lasts the configured lease', async () => {
 		server = await createTestServer({PROCESSING_LEASE_DURATION_MS: '90000'});
 		await dueBurst(server, 'lease', 1);
