@@ -8,9 +8,6 @@ export function sameTransaction(a: unknown, b: unknown): boolean {
 		if (typeof value === 'string') {
 			return value.toLowerCase();
 		}
-		if (typeof value === 'bigint') {
-			return `0x${value.toString(16)}`;
-		}
 		if (Array.isArray(value)) {
 			return value.map(canonical);
 		}

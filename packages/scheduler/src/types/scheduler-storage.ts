@@ -29,18 +29,19 @@ export interface SchedulerStorage<TransactionDataType> {
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	deleteExecution(params: {chainId: IntegerString; account: String0x; slot: string}): Promise<void>;
 	archiveExecution(executionToStore: ScheduledExecutionQueued<TransactionDataType>): Promise<void>;
+	/** Insert or overwrite a queued execution, unconditionally (tools and tests: scheduleExecution uses queueExecution). */
 	createOrUpdateQueuedExecution(
 		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
 	): Promise<ScheduledExecutionQueued<TransactionDataType>>;
 	/**
 	 * Store a new schedule (what scheduleExecution writes): insert it, or replace the slot's queued
-	 * execution, in one atomic step, unless that one has been broadcast (`broadcasted`) or a run holds
-	 * it right now (`claimed`, a live claim at `now`, unix ms): it may be broadcasting it.
+	 * execution, in one atomic step, unless that one has been broadcast or a run holds a live claim on
+	 * it at `now` (unix ms). Answers whether it stored it.
 	 */
 	queueExecution(
 		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
 		options: {now: number},
-	): Promise<{stored: true} | {stored: false; reason: 'broadcasted' | 'claimed'}>;
+	): Promise<boolean>;
 	/**
 	 * The queued (not yet broadcast) executions with the earliest checkin time first.
 	 * `chainId` restricts them to one chain, `upToCheckinTime` to those due at that time.

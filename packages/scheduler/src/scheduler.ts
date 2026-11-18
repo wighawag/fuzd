@@ -85,18 +85,20 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			);
 		}
 
-		// A slot is replaced while nothing of it has been broadcast. Once any of its batch indices has
-		// been broadcast the slot is spent: the executor answers slotAlreadyUsed for those indices
-		// without sending, so a new schedule into it would answer success and never be sent. Refuse it.
-		// (A slot freed by the admin prune routes is indistinguishable from a fresh one, and is accepted.)
-		const existing = await storage.getQueuedExecution({chainId: execution.chainId, account, slot: execution.slot});
-		const spent =
-			existing?.broadcasted ||
-			(await executor.getExecutionStatus({chainId: execution.chainId, account, slot: execution.slot})) !== undefined;
-		if (spent) {
-			const errorMessage = `cannot proceed. the slot (chainId: ${execution.chainId}, account: ${account}, slot: ${execution.slot}) has already been used: its execution has already been broadcast. schedule into a new slot.`;
+		// A queued slot is replaced; one the executor holds any transaction for is spent (a new schedule
+		// into it would answer success and never be sent), and one a run holds may be broadcasting right
+		// now: both refused. (A slot freed by the admin prune routes counts as fresh.)
+		const where = `the slot (chainId: ${execution.chainId}, account: ${account}, slot: ${execution.slot})`;
+		const refuse = (errorMessage: string) => {
 			logger.error(errorMessage);
-			throw new Error(errorMessage);
+			return new Error(errorMessage);
+		};
+		if (
+			(await executor.getExecutionStatus({chainId: execution.chainId, account, slot: execution.slot})) !== undefined
+		) {
+			throw refuse(
+				`cannot proceed. ${where} has already been used: its execution has already been broadcast. schedule into a new slot.`,
+			);
 		}
 
 		const queuedExecution: ScheduledExecutionQueued<TransactionDataType> = {
@@ -108,17 +110,10 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			retries: 0,
 		};
 
-		// a run holding the slot may be broadcasting it right now (the executor has not stored anything
-		// yet, so the check above saw nothing): a schedule accepted then would never be sent
-		const queued = await storage.queueExecution(queuedExecution, {now: Date.now()});
-		if (!queued.stored) {
-			const where = `the slot (chainId: ${execution.chainId}, account: ${account}, slot: ${execution.slot})`;
-			const errorMessage =
-				queued.reason === 'broadcasted'
-					? `cannot proceed. ${where} has already been used: its execution has already been broadcast. schedule into a new slot.`
-					: `cannot proceed. ${where} is being processed: its execution may be broadcasting right now. try again in a moment.`;
-			logger.error(errorMessage);
-			throw new Error(errorMessage);
+		if (!(await storage.queueExecution(queuedExecution, {now: Date.now()}))) {
+			throw refuse(
+				`cannot proceed. ${where} is being processed, or was just broadcast: try again in a moment, and schedule into a new slot if it is refused as used.`,
+			);
 		}
 		return {chainId: execution.chainId, slot: execution.slot, account, checkinTime};
 	}
@@ -298,14 +293,9 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 					}, // The scheduler is trusted to have verified the exectuion parameters
 				);
 				if (executionResult.slotAlreadyUsed && !sameTransaction(executionResult.transaction, execution.transaction)) {
-					// this index of the slot was used by ANOTHER execution: a direct broadcast, or another
-					// schedule, that took the slot after this one was accepted. This one was never sent, and none
-					// of its other indices must be sent under the spent slot: it is archived, with the reason.
-					// (the executor keeps a transaction as submitted, through resubmissions and voids, so a retry
-					// of this same record always compares equal)
-					// every index before this one is on chain: sent now, or found sent with the same transaction
-					const sentBefore = i;
-					scheduledExecutionQueued.lastError = `the slot (chainId: ${scheduledExecutionQueued.chainId}, account: ${scheduledExecutionQueued.account}, slot: ${scheduledExecutionQueued.slot}) has already been used by another execution (batch index ${i}): ${sentBefore > 0 ? `only its first ${sentBefore} transaction(s) were sent` : 'this one was not sent'}.`;
+					// another execution took this index of the slot after this one was accepted: archive this one
+					// with the reason, and send none of its later indices (indices before i are on chain)
+					scheduledExecutionQueued.lastError = `the slot (chainId: ${scheduledExecutionQueued.chainId}, account: ${scheduledExecutionQueued.account}, slot: ${scheduledExecutionQueued.slot}) has already been used by another execution (batch index ${i}): ${i > 0 ? `only its first ${i} transaction(s) were sent` : 'this one was not sent'}.`;
 					logger.error(scheduledExecutionQueued.lastError);
 					await archiveClaimed(scheduledExecutionQueued, claimant);
 					return {type: 'archived', reason: scheduledExecutionQueued.lastError};
@@ -313,12 +303,8 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				results.push(executionResult);
 			}
 
-			// A result with slotAlreadyUsed for the same transaction is expected here: a retry of this
-			// record after an earlier run broadcast some of its indices and then failed (or crashed) before
-			// the write below; the executor does not send those indices again. For another transaction, the
-			// record was archived above: the slot was taken after it was accepted (a direct broadcast in
-			// flight while it was scheduled, or a schedule landing as a run that broadcast part of the slot
-			// wrote it back), and both checks that refuse it beforehand had seen the slot free.
+			// slotAlreadyUsed with the same transaction is a retry of this record (an earlier run sent those
+			// indices, then failed before this write); see work/tasks/done/reject-a-schedule-into-a-spent-slot.md
 
 			// if we reaches there, the execution is now handled by the executor
 			// the schedule has done its job
