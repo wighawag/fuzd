@@ -184,6 +184,31 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		return executionToStore;
 	}
 
+	async queueExecution(
+		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
+		options: {now: number},
+	): Promise<{stored: true} | {stored: false; reason: 'broadcasted' | 'claimed'}> {
+		const inDB = toScheduledExecutionInDB(executionToStore);
+		const columns = Object.keys(inDB);
+		const values = columns.map((column) => (inDB as Record<string, unknown>)[column]);
+		// ?1 is now, then the columns
+		const bindings = columns.map((_, i) => `?${i + 2}`).join(', ');
+		const overwrites = columns.map((column) => `${column} = excluded.${column}`).join(', ');
+		// one statement: the replacement happens only if the queued execution is neither broadcast nor
+		// held by a run at that instant (SQLite and D1 run it atomically)
+		const {results} = await this.db
+			.prepare(
+				`INSERT INTO ScheduledExecutions (${columns.join(', ')}) VALUES (${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites}, claimedBy = NULL, claimExpiresAt = NULL WHERE ScheduledExecutions.broadcasted = FALSE AND (ScheduledExecutions.claimExpiresAt IS NULL OR ScheduledExecutions.claimExpiresAt <= ?1) RETURNING slot;`,
+			)
+			.bind(options.now, ...values)
+			.all<{slot: string}>();
+		if (results.length > 0) {
+			return {stored: true};
+		}
+		const existing = await this.getQueuedExecution(executionToStore);
+		return {stored: false, reason: existing?.broadcasted ? 'broadcasted' : 'claimed'};
+	}
+
 	async getQueueTopMostExecutions(params: {
 		limit: number;
 		chainId?: IntegerString;

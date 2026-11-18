@@ -207,3 +207,30 @@ describe('the payment for a batch', () => {
 		expect(required).toEqual({amountReserved: 12346n, totalMaxCost, balanceRequired: 12346n + totalMaxCost});
 	});
 });
+
+describe('a schedule into a slot already broadcast', () => {
+	it('returns the server refusal unchanged, typed as errors', async () => {
+		const slot = 'spent';
+		const transaction = {to: '0x000000000000000000000000000000000000cc01', gas: 21000n} as const;
+		const sent = await client.broadcastExecution({slot, chainId: CHAIN_ID, transaction, maxFeePerGasAuthorized: 10n});
+		expect(sent.success).toBe(true);
+
+		const result = await client.scheduleExecution({
+			slot,
+			chainId: CHAIN_ID,
+			transaction,
+			maxFeePerGasAuthorized: 10n,
+			timing: {type: 'fixed-time', scheduledTime: scheduledTime()},
+			inClear: true,
+		});
+		expect(result.success).toBe(false);
+		if (result.success) {
+			return;
+		}
+		// the declared type is the body the server sends: no cast needed to read the message
+		const message: string = result.errors[0].message;
+		expect(message).toContain(slot);
+		expect(message).toMatch(/already been used/);
+		expect(await stored(slot)).toBeUndefined();
+	});
+});

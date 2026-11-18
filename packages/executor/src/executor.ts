@@ -137,7 +137,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		account: String0x;
 	}): Promise<'finalized' | 'broadcasted' | undefined> {
 		const batch = await storage.getPendingExecutionBatch(executionBatch);
-		if (!batch) {
+		// the storage answers an empty list for a slot it holds nothing for: that slot has no status
+		if (!batch || batch.length === 0) {
 			return undefined;
 		}
 		for (const exec of batch) {
@@ -157,7 +158,9 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		}
 		const unfinalized = await storage.getSlotsWithUnfinalizedExecutions({chainId, slots});
 		const pending = new Set(unfinalized.map((v) => `${v.account.toLowerCase()}/${v.slot}`));
-		// as getExecutionStatus: a slot without transactions (pruned once final) counts as finalized
+		// unlike getExecutionStatus (undefined), a slot without transactions counts as finalized here:
+		// nothing of it is pending (an empty batch, or transactions pruned once final), and the status
+		// check must finalize it, or it would stay first in its queue with its payment reserve counting
 		return slots.map((v) => (pending.has(`${v.account.toLowerCase()}/${v.slot}`) ? 'broadcasted' : 'finalized'));
 	}
 

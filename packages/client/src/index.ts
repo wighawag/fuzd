@@ -133,6 +133,15 @@ function submissionTransactions(execution: Submission | BatchSubmission): readon
 	return transactions;
 }
 
+/**
+ * What the server answers when it refuses a request: its `createErrorObject` body, returned unchanged
+ * over HTTP (for example a schedule into a slot that has already been broadcast).
+ */
+export type FailureResponse = {
+	success: false;
+	errors: {name?: string; message: string; code?: number; status?: number}[];
+};
+
 export type DirectSubmission = {
 	slot: string;
 	chainId: IntegerString;
@@ -237,7 +246,7 @@ export function createClient(config: ClientConfig) {
 	async function scheduleExecution(
 		execution: Submission | BatchSubmission,
 		options?: {fakeEncrypt?: boolean},
-	): Promise<{success: true; info: ScheduleInfo} | {success: false; error: unknown}> {
+	): Promise<{success: true; info: ScheduleInfo} | FailureResponse> {
 		if (
 			execution.timing.expiryDelta &&
 			execution.criticalDelta &&
@@ -358,8 +367,7 @@ export function createClient(config: ClientConfig) {
 	async function broadcastExecution(
 		execution: DirectSubmission,
 	): Promise<
-		| {success: true; info: ExecutionResponse<EthereumTransactionData | StarknetTransactionData>}
-		| {success: false; error: unknown}
+		{success: true; info: ExecutionResponse<EthereumTransactionData | StarknetTransactionData>} | FailureResponse
 	> {
 		const remoteAccount = await _fetchRemoteAccount(execution.chainId);
 		if (_assignedRemoteAccount && remoteAccount.address != _assignedRemoteAccount.address) {
@@ -395,7 +403,7 @@ export function createClient(config: ClientConfig) {
 				throw new Error(`could not parse response: ${err}`);
 			}
 		} else {
-			return {success: false, error: 'schedulerEndPoint function not supported for direct execution'};
+			return {success: false, errors: [{message: 'schedulerEndPoint function not supported for direct execution'}]};
 			// const info = await config.schedulerEndPoint(jsonAsString, signature);
 			// return {
 			// 	success: true,

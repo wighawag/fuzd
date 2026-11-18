@@ -84,6 +84,20 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			);
 		}
 
+		// A slot is replaced while nothing of it has been broadcast. Once any of its batch indices has
+		// been broadcast the slot is spent: the executor answers slotAlreadyUsed for those indices
+		// without sending, so a new schedule into it would answer success and never be sent. Refuse it.
+		// (A slot freed by the admin prune routes is indistinguishable from a fresh one, and is accepted.)
+		const existing = await storage.getQueuedExecution({chainId: execution.chainId, account, slot: execution.slot});
+		const spent =
+			existing?.broadcasted ||
+			(await executor.getExecutionStatus({chainId: execution.chainId, account, slot: execution.slot})) !== undefined;
+		if (spent) {
+			const errorMessage = `cannot proceed. the slot (chainId: ${execution.chainId}, account: ${account}, slot: ${execution.slot}) has already been used: its execution has already been broadcast. schedule into a new slot.`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
+		}
+
 		const queuedExecution: ScheduledExecutionQueued<TransactionDataType> = {
 			...execution,
 			account,
@@ -93,7 +107,18 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			retries: 0,
 		};
 
-		await storage.createOrUpdateQueuedExecution(queuedExecution);
+		// a run holding the slot may be broadcasting it right now (the executor has not stored anything
+		// yet, so the check above saw nothing): a schedule accepted then would never be sent
+		const queued = await storage.queueExecution(queuedExecution, {now: Date.now()});
+		if (!queued.stored) {
+			const where = `the slot (chainId: ${execution.chainId}, account: ${account}, slot: ${execution.slot})`;
+			const errorMessage =
+				queued.reason === 'broadcasted'
+					? `cannot proceed. ${where} has already been used: its execution has already been broadcast. schedule into a new slot.`
+					: `cannot proceed. ${where} is being processed: its execution may be broadcasting right now. try again in a moment.`;
+			logger.error(errorMessage);
+			throw new Error(errorMessage);
+		}
 		return {chainId: execution.chainId, slot: execution.slot, account, checkinTime};
 	}
 
@@ -274,8 +299,13 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				results.push(executionResult);
 			}
 
-			// TODO if trying to execute different data when previous tx is already broadcasted: we should throw here
-			// because now the executor skip it
+			// A result with slotAlreadyUsed is expected here: it is a retry of this same record after an
+			// earlier run broadcast some of its indices and then failed (or crashed) before the write
+			// below, and the executor does not send those indices again. A DIFFERENT record meets it in
+			// two cases only: a direct broadcastExecution (the executor's API) into a slot the scheduler
+			// holds queued, which nothing refuses; and a schedule landing in the milliseconds between
+			// scheduleExecution's executor check and its write, while a run that just broadcast part of
+			// the slot and failed writes it back. (scheduleExecution refuses a slot a run holds.)
 
 			// if we reaches there, the execution is now handled by the executor
 			// the schedule has done its job

@@ -12,16 +12,48 @@ export const CHAIN_ID = '31337';
 const RPC_URL = 'http://fuzd-test-rpc.invalid/';
 export const TOKEN_ADMIN = 'test-admin-token';
 
+const LATEST_BLOCK = 0x10;
+const MINED_BLOCK = 0x5; // final with finality=1: 5 <= 16 - 1
+const MINED_BLOCK_HASH = `0x${'55'.repeat(32)}`;
+
 /**
  * What a test can steer or observe on the mock node: balances per address (lowercase; 100 ether
- * otherwise), and every method called, in order.
+ * otherwise), every method called, in order, the chain's clock (moved forward with `timeOffset`, in
+ * seconds) and the transactions mined (by hash). Until a transaction is mined it has no receipt.
  */
 export type MockRPCState = {
 	balances: Map<string, bigint>;
 	calls: {method: string; params: any[]}[];
 	/** called before each answer: a test can look at the database while a run is in flight */
 	onCall?: (method: string) => void | Promise<void>;
+	timeOffset: number;
+	mined: Set<string>;
 };
+
+/** The mock node seen as a chain: its clock, what it was sent, and a way to mine it. */
+function chainOf(state: MockRPCState) {
+	return {
+		now() {
+			return Math.floor(Date.now() / 1000) + state.timeOffset;
+		},
+		/** move the chain's clock forward, so that a schedule falls due */
+		advanceTime(seconds: number) {
+			state.timeOffset += seconds;
+		},
+		/** every raw transaction sent so far, in order */
+		get sent(): {hash: `0x${string}`; rawTx: `0x${string}`}[] {
+			return state.calls
+				.filter((v) => v.method === 'eth_sendRawTransaction')
+				.map((v) => ({hash: keccak256(v.params[0]), rawTx: v.params[0]}));
+		},
+		/** include every transaction sent so far, in a block already final */
+		mine() {
+			for (const {hash} of this.sent) {
+				state.mined.add(hash);
+			}
+		},
+	};
+}
 
 /**
  * A minimal JSON-RPC node, answering only what the server asks while scheduling and broadcasting.
@@ -29,14 +61,21 @@ export type MockRPCState = {
  */
 function mockRPC(state: MockRPCState, method: string, params: any[]): unknown {
 	state.calls.push({method, params});
-	const now = Math.floor(Date.now() / 1000);
+	const now = Math.floor(Date.now() / 1000) + state.timeOffset;
 	switch (method) {
 		case 'eth_chainId':
 			return '0x7a69';
 		case 'eth_blockNumber':
-			return '0x10';
+			return `0x${LATEST_BLOCK.toString(16)}`;
 		case 'eth_getBlockByNumber':
-			return {number: '0x10', timestamp: `0x${now.toString(16)}`, baseFeePerGas: '0x1', hash: `0x${'11'.repeat(32)}`};
+			return {
+				number: `0x${LATEST_BLOCK.toString(16)}`,
+				timestamp: `0x${now.toString(16)}`,
+				baseFeePerGas: '0x1',
+				hash: `0x${'11'.repeat(32)}`,
+			};
+		case 'eth_getBlockByHash':
+			return {number: `0x${MINED_BLOCK.toString(16)}`, timestamp: `0x${now.toString(16)}`, hash: params[0]};
 		case 'eth_feeHistory':
 			return {oldestBlock: '0x1', baseFeePerGas: ['0x1', '0x1'], gasUsedRatio: [0.5], reward: [['0x1', '0x1', '0x1']]};
 		case 'eth_gasPrice':
@@ -53,6 +92,17 @@ function mockRPC(state: MockRPCState, method: string, params: any[]): unknown {
 		case 'eth_sendRawTransaction':
 			return keccak256(params[0]);
 		case 'eth_getTransactionReceipt':
+			if (state.mined.has(params[0])) {
+				return {
+					transactionHash: params[0],
+					blockNumber: `0x${MINED_BLOCK.toString(16)}`,
+					blockHash: MINED_BLOCK_HASH,
+					status: '0x1',
+					gasUsed: '0x5208',
+					effectiveGasPrice: '0x1',
+				};
+			}
+			return null;
 		case 'eth_getTransactionByHash':
 			return null;
 	}
@@ -126,7 +176,7 @@ export async function createTestServer(extraEnv: Record<string, string> = {}, op
 	} as Record<string, string | undefined>;
 	const drand = options.drand;
 	const app = createServer<any>({getDB: () => db, getEnv: () => env, getDrandClient: drand && (() => drand)});
-	const rpc: MockRPCState = {balances: new Map(), calls: []};
+	const rpc: MockRPCState = {balances: new Map(), calls: [], timeOffset: 0, mined: new Set()};
 	const uninstallMockRPC = installMockRPC(rpc);
 
 	async function request(pathname: string, init?: RequestInit) {
@@ -179,6 +229,7 @@ export async function createTestServer(extraEnv: Record<string, string> = {}, op
 		db: client,
 		dbStats,
 		rpc,
+		chain: chainOf(rpc),
 		request,
 		getJSON,
 		postSigned,

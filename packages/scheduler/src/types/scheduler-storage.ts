@@ -33,6 +33,15 @@ export interface SchedulerStorage<TransactionDataType> {
 		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
 	): Promise<ScheduledExecutionQueued<TransactionDataType>>;
 	/**
+	 * Store a new schedule (what scheduleExecution writes): insert it, or replace the slot's queued
+	 * execution, in one atomic step, unless that one has been broadcast (`broadcasted`) or a run holds
+	 * it right now (`claimed`, a live claim at `now`, unix ms): it may be broadcasting it.
+	 */
+	queueExecution(
+		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
+		options: {now: number},
+	): Promise<{stored: true} | {stored: false; reason: 'broadcasted' | 'claimed'}>;
+	/**
 	 * The queued (not yet broadcast) executions with the earliest checkin time first.
 	 * `chainId` restricts them to one chain, `upToCheckinTime` to those due at that time.
 	 */
@@ -45,7 +54,7 @@ export interface SchedulerStorage<TransactionDataType> {
 	 * Claim the due executions of a chain (not broadcast, `checkinTime <= upToCheckinTime`, earliest
 	 * first) that no other run holds: in one atomic step, so two runs never get the same one. They stay
 	 * the claimant's until it writes them (updateClaimedExecution and archiveClaimedExecution release
-	 * them, and so does a new schedule through createOrUpdateQueuedExecution), calls
+	 * them; queueExecution, for a new schedule, refuses a slot a run holds), calls
 	 * releaseExecutionClaims, or the claim expires (`claim.expiresAt`, unix ms).
 	 *
 	 * One account at a time: an account another run still holds an execution of is left out entirely.

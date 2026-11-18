@@ -8,7 +8,7 @@ export const FUZD_URL = 'http://fuzd-client-test.invalid';
 const RPC_URL = 'http://fuzd-client-test-rpc.invalid/';
 const TOKEN_ADMIN = 'test-admin-token';
 
-/** What the server asks a chain while scheduling; the test never reaches a network. */
+/** What the server asks a chain while scheduling and broadcasting; the test never reaches a network. */
 function mockRPC(method: string, params: any[]): unknown {
 	const now = Math.floor(Date.now() / 1000);
 	switch (method) {
@@ -18,6 +18,10 @@ function mockRPC(method: string, params: any[]): unknown {
 			return '0x10';
 		case 'eth_getBlockByNumber':
 			return {number: '0x10', timestamp: `0x${now.toString(16)}`, baseFeePerGas: '0x1', hash: `0x${'11'.repeat(32)}`};
+		case 'eth_feeHistory':
+			return {oldestBlock: '0x1', baseFeePerGas: ['0x1', '0x1'], gasUsedRatio: [0.5], reward: [['0x1', '0x1', '0x1']]};
+		case 'eth_estimateGas':
+			return '0x5208';
 		case 'eth_gasPrice':
 		case 'eth_maxPriorityFeePerGas':
 			return '0x1';

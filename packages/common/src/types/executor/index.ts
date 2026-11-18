@@ -125,6 +125,7 @@ export type Executor<TransactionDataType> = {
 		},
 	): Promise<ExecutionResponse<TransactionDataType>>;
 
+	/** `broadcasted` while one of the slot's transactions is not finalized, `finalized` once all are, undefined when it holds none */
 	getExecutionStatus(executionBatch: {
 		chainId: IntegerString;
 		slot: string;
@@ -132,8 +133,9 @@ export type Executor<TransactionDataType> = {
 	}): Promise<'finalized' | 'broadcasted' | undefined>;
 
 	/**
-	 * getExecutionStatus for many slots of one chain at once, in the same order: `broadcasted` while
-	 * one of a slot's transactions is not finalized, `finalized` otherwise.
+	 * The status of many slots of one chain at once, in the same order: `broadcasted` while one of a
+	 * slot's transactions is not finalized, `finalized` otherwise, including a slot without any
+	 * transaction (for which getExecutionStatus answers undefined).
 	 */
 	getExecutionStatuses(
 		chainId: IntegerString,

@@ -327,7 +327,7 @@ describe('a claim', () => {
 		expect(sentTransactions(server)).toBe(1);
 	});
 
-	it('is released by a new schedule into the slot, which the run then does not overwrite', async () => {
+	it('that expired is released by a new schedule into the slot, which the run then does not overwrite', async () => {
 		server = await createTestServer();
 		const [player] = await dueBurst(server, 'rescheduled', 1);
 		const later = Math.floor(Date.now() / 1000) + 3600;
@@ -335,6 +335,8 @@ describe('a claim', () => {
 		server.rpc.onCall = async (method) => {
 			if (method === 'eth_getTransactionCount' && !rescheduled) {
 				rescheduled = true;
+				// the run is stuck past its lease (a live claim refuses a new schedule into the slot)
+				await server!.db.execute({sql: 'UPDATE ScheduledExecutions SET claimExpiresAt = ?', args: [Date.now() - 1]});
 				const {json} = await server!.postSigned('/api/scheduling/scheduleExecution', player.wallet, {
 					type: 'clear',
 					chainId: CHAIN_ID,
