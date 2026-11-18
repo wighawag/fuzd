@@ -12,5 +12,10 @@ export type Env = {
 	NAMED_LOGS?: string;
 	NAMED_LOGS_LEVEL?: string;
 	DEV?: string;
+	/** processing budget of each processQueue / processTransactions run (see ProcessingBudget) */
+	PROCESSING_BATCH_SIZE?: string;
+	PROCESSING_CONCURRENCY?: string;
+	PROCESSING_MAX_ITEMS_PER_RUN?: string;
+	PROCESSING_MAX_DURATION_MS?: string;
 	DISABLE_CRON?: string;
 };

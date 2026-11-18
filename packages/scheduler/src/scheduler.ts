@@ -19,6 +19,9 @@ import {
 	String0x,
 	time2text,
 	validateParameters,
+	processInGroups,
+	resolveProcessingBudget,
+	retryDelaySeconds,
 } from '@fuzd/common';
 import {SchedulerConfig} from './types/internal.js';
 import {ChainProtocol, TransactionDataTypes} from '@fuzd/chain-protocol';
@@ -43,6 +46,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 	const {chainProtocols, storage, executor} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
 	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
+	const processingBudget = resolveProcessingBudget(config.processing);
 
 	async function scheduleExecution(
 		account: String0x,
@@ -120,8 +124,13 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		return execution;
 	}
 
+	/**
+	 * Throws when the execution could not be broadcast. The caller (processQueue) records the error
+	 * and reschedules it, so that a failing execution never stays at the head of the queue.
+	 */
 	async function execute(
 		scheduledExecutionQueued: ScheduledExecutionQueued<TransactionDataType>,
+		currentTimestamp: number,
 	): Promise<ExecutionStatus> {
 		let executions: ExecutionSubmission<TransactionDataType>[];
 		if (scheduledExecutionQueued.type === 'time-locked') {
@@ -136,19 +145,23 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				executions = decryptionResult.executions;
 			} else {
 				if (decryptionResult.retry) {
-					scheduledExecutionQueued.checkinTime = decryptionResult.retry;
+					// a round already past would make it due again at once: give it at least the first retry delay
+					scheduledExecutionQueued.checkinTime = Math.max(
+						decryptionResult.retry,
+						currentTimestamp + retryDelaySeconds(1),
+					);
 					await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
 					return {type: 'reassigned', reason: 'decryption retry'};
 				} else {
-					// failed to decrypt and no retry, this means the decryption is failing
-					// TODO
-					// await storage.archiveExecution(execution);
+					// the decrypter reports any failure this way, a drand request that failed included: retry it
+					// later (it is archived once expired, or after 100 retries: about 3h at the 2 minutes cap)
+					// rather than leave it due and first in the queue
 					logger.warn(`failed to decrypt ${computeScheduledExecutionIdentifier(scheduledExecutionQueued)}`, {
 						warning: {
 							data: decryptionResult,
 						},
 					});
-					return {type: 'archived', reason: 'failed to decrypt'};
+					throw new Error(`failed to decrypt`);
 				}
 			}
 		} else {
@@ -218,11 +231,8 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				reason: `broadcasted via txs ${results && results.map((v) => (v as any).hash).join(',')}`,
 			};
 		} catch (err: any) {
-			scheduledExecutionQueued.lastError = err.message || err.toString();
-
-			await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
 			logger.error(
-				`failed to broadcast ${computeScheduledExecutionIdentifier(scheduledExecutionQueued)}: ${scheduledExecutionQueued.lastError}`,
+				`failed to broadcast ${computeScheduledExecutionIdentifier(scheduledExecutionQueued)}: ${err.message || err}`,
 			);
 			throw err;
 		}
@@ -443,7 +453,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 
 		if (currentTimestamp >= newCheckinTime) {
 			// execute if it is the time
-			const status = await execute(executionUpdated);
+			const status = await execute(executionUpdated, currentTimestamp);
 			result.executions.push({
 				chainId: execution.chainId,
 				account: execution.account,
@@ -476,51 +486,109 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		}
 	}
 
+	/**
+	 * An execution whose processing threw (the executor refused it, an RPC or drand request failed)
+	 * keeps its error and is retried after a delay growing with its retries. Leaving it as it was would
+	 * keep it first in the queue, and enough of them would starve every other execution.
+	 */
+	async function retryAfterFailure(
+		execution: ScheduledExecutionQueued<TransactionDataType>,
+		error: any,
+		result: QueueProcessingResult,
+	) {
+		const identifier = computeScheduledExecutionIdentifier(execution);
+		execution.lastError = (error && (error.message || error.toString())) || 'unknown error';
+		logger.error(`Processing of execution ${identifier} thrown an exception: ${execution.lastError}`);
+		const currentTimestamp =
+			result.chainTimestamps[Number(execution.chainId).toString()] || Math.floor(Date.now() / 1000);
+		const delay = retryDelaySeconds(execution.retries + 1);
+		try {
+			await retryLater(execution, currentTimestamp + delay);
+			result.executions.push({
+				chainId: execution.chainId,
+				account: execution.account,
+				slot: execution.slot,
+				checkinTime: execution.checkinTime,
+				status:
+					execution.retries >= 100
+						? {type: 'archived', reason: `failed ${execution.retries} times: ${execution.lastError}`}
+						: {type: 'reassigned', reason: `failed, retry in ${delay}s: ${execution.lastError}`},
+			});
+		} catch (retryError: any) {
+			logger.error(`could not reschedule ${identifier}: ${retryError.message || retryError}`);
+		}
+	}
+
+	/**
+	 * Process the executions that are due, chain by chain: batches of due executions are fetched and
+	 * processed until none is left or the processing budget is spent. Executions of different accounts
+	 * run concurrently, those of one account one after the other (they share a broadcaster and its nonce).
+	 */
 	async function processQueue() {
-		const limit = maxNumTransactionsToProcessInOneGo;
+		const budget = processingBudget;
 		const result: QueueProcessingResult = {
-			limit,
+			limit: budget.maxItemsPerRun,
 			executions: [],
 			chainTimestamps: {},
 		};
+		const start = Date.now();
+		const seen = new Set<string>();
+		let processed = 0;
+		const withinBudget = () => processed < budget.maxItemsPerRun && Date.now() - start < budget.maxDurationPerRunMs;
 
-		// TODO only query up to a certain time
-		const executions = await storage.getQueueTopMostExecutions({limit});
-
-		if (executions.length === 0) {
-			// logger.info(`found zero executions to process`);
-		} else if (executions.length === 1) {
-			// logger.info(`found 1 queued execution for ${executions[0].checkinTime}`);
-		} else {
-			// logger.info(
-			// 	`found ${executions.length} queued execution from ${executions[0].checkinTime} to ${
-			// 		executions[executions.length - 1].checkinTime
-			// 	}`,
-			// );
-		}
-
-		for (const execution of executions) {
+		for (const chainId of Object.keys(chainProtocols) as IntegerString[]) {
+			if (!withinBudget()) {
+				break;
+			}
+			let currentTimestamp: number;
 			try {
-				await processExecution(execution, result);
-			} catch (processExecutionError: any) {
-				logger.error(
-					`Processing of execution ${computeScheduledExecutionIdentifier(execution)} thrown an exception: ${processExecutionError.message || processExecutionError}`,
+				currentTimestamp = await _getChainProtocol(chainId).getTimestamp();
+			} catch (err: any) {
+				logger.error(`could not get the timestamp of chain ${chainId}, skipping it: ${err.message || err}`);
+				continue;
+			}
+			result.chainTimestamps[Number(chainId).toString()] = currentTimestamp;
+
+			while (withinBudget()) {
+				const limit = Math.min(budget.batchSize, budget.maxItemsPerRun - processed);
+				const executions = await storage.getQueueTopMostExecutions({
+					limit,
+					chainId,
+					upToCheckinTime: currentTimestamp,
+				});
+				// an execution handled earlier in this run and still due made no progress: not again in this run
+				const fresh = executions.filter((v) => !seen.has(computeScheduledExecutionIdentifier(v)));
+				if (fresh.length === 0) {
+					break;
+				}
+				for (const execution of fresh) {
+					seen.add(computeScheduledExecutionIdentifier(execution));
+				}
+				processed += fresh.length;
+
+				await processInGroups(
+					fresh,
+					(execution) => `${execution.chainId}/${execution.account}`,
+					budget.concurrency,
+					async (execution) => {
+						try {
+							await processExecution(execution, result);
+						} catch (err: any) {
+							await retryAfterFailure(execution, err, result);
+						}
+					},
 				);
 
-				// TODO ?
-				// logger.info(`we ll push to 5 min later`)
-				// execution.checkinTime += 5 * 60;
-				// await storage.createOrUpdateQueuedExecution(execution);
-				// result.executions.push({
-				// 	chainId: execution.chainId,
-				// 	account: execution.account,
-				// 	slot: execution.slot,
-				// 	checkinTime: execution.checkinTime,
-				// 	status: {type: 'reassigned', reason: 'changed'},
-				// });
+				if (executions.length < limit) {
+					// that was every due execution of this chain
+					break;
+				}
 			}
 		}
 
+		if (processed > 0) {
+			logger.info(`processed ${processed} executions in ${Date.now() - start}ms`);
+		}
 		return result;
 	}
 

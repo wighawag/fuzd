@@ -46,7 +46,7 @@ node reveal-burst.ts watch --state /tmp/state.json
 
 Stop both background processes afterwards.
 
-Measured baseline (40 players, 60s interval): 40/40 in time, exactly 10 broadcasts per minute, last one 205s after the reveal. That is the `maxNumTransactionsToProcessInOneGo: 10` batch (`packages/server/src/setup.ts`) times one `processQueue` per minute: **a 1h window holds at most about 600 reveals, a 2h window about 1200**, on any host.
+Measured before `drain-reveal-bursts` (40 players, 60s interval): exactly 10 broadcasts per minute, the fixed batch of 10 times one `processQueue` per minute, so a 1h window held at most about 600 reveals on any host. Since then a run drains due executions up to its processing budget (`PROCESSING_*`, 100 per run by default).
 
 ## Scenario 2: Cloudflare staging (the real numbers)
 
@@ -59,10 +59,21 @@ Never run this against production: it broadcasts real transactions and bills the
 
 For the chain, either a testnet (use `--fund none` and pre-fund the remote accounts, which `schedule` prints into the state file), or a local anvil exposed to the worker with a tunnel (`cloudflared tunnel --url http://localhost:38545`) and `--fund anvil --rpc <tunnel url>`. The tunnel adds RPC latency, which is realistic since your production RPC is remote too.
 
-Suggested ladder, each with `--reveal-at +600 --window 3600`: `--count 100`, `600`, `1000`, `2000`. Watch the worker in the dashboard during the burst: cron CPU time, wall time, D1 query count and `overloaded` errors.
+Suggested ladder, each with `--reveal-at +600 --window 3600`: `--count 100`, `600`, `1000`, `2000`. Watch the worker during the burst (`wrangler tail fuzd-cf-worker-staging --format json`): cron CPU time, wall time, the `processed N executions` log, D1 errors.
+
+Measured on staging (2026-11-18, RPC through a tunnel):
+
+| run | before | after (default budget, 100 per run) | after (`PROCESSING_MAX_ITEMS_PER_RUN=200`) |
+| - | - | - | - |
+| 300 players | 29.7 min, 10/min | | |
+| 600 players | about 60 min (window edge) | 6 min, 600/600 | |
+| 2000 players | about 200 min, ~1400 missed | | 10.3 min, 2000/2000 |
+| cron CPU per run | under 1s (10) | 4 to 7s (100) | 9 to 20s (200), limit 30s |
+
+Details in `work/notes/findings/cloudflare-worker-cron-capacity.md`.
 
 ## Things the test does NOT cover
 
-- Gas spikes: a reveal that is broadcast but stuck under-priced is resubmitted by `processTransactions`, also 10 per minute.
+- Gas spikes: a reveal that is broadcast but stuck under-priced is resubmitted by `processTransactions`, within the same processing budget; the load test never raises gas prices.
 - The game's own commit transactions and its RPC quota. All fuzd traffic goes through one RPC key, roughly 8 calls per execution, and the provider's rate limit may be the first wall.
 - Drand outages. Time-locked executions cannot be decrypted without a drand beacon.

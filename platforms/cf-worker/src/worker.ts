@@ -5,7 +5,7 @@ import 'named-logs-context';
 import {enable as enableWorkersLogger} from 'workers-logger';
 import {logs} from 'named-logs';
 // ------------------------------------------------------------------------------------------------
-import {createServer} from '@fuzd/server';
+import {createServer, type InternalAction} from '@fuzd/server';
 import {RemoteD1} from 'remote-sql-d1';
 import {Env} from './env.js';
 import {ExecutionContext} from '@cloudflare/workers-types/experimental';
@@ -27,7 +27,7 @@ const fetch = async (request: Request, env: Env, ctx: ExecutionContext) => {
 	});
 };
 
-const cronInternalActions: Record<string, string> = {
+const cronInternalActions: Record<string, InternalAction> = {
 	'* * * * *': 'processQueue',
 	'*/1 * * * *': 'processTransactions',
 	'*/2 * * * *': 'checkScheduledExecutionStatus',
@@ -42,7 +42,7 @@ const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext)
 	const action = cronInternalActions[event.cron];
 	return wrapWithLogger(new Request(`https://scheduler.fuzd.dev/${action || event.cron}`), env, ctx, async () => {
 		if (action) {
-			return app.fetch(new Request(`http://localhost/internal/${action}`), env, ctx);
+			return app.fetch(app.internalRequest(action), env, ctx);
 		} else {
 			return new Response(`invalid CRON`, {
 				status: 500,

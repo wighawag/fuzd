@@ -12,10 +12,20 @@ const RPC_URL = 'http://fuzd-test-rpc.invalid/';
 export const TOKEN_ADMIN = 'test-admin-token';
 
 /**
+ * What a test can steer or observe on the mock node: balances per address (lowercase; 100 ether
+ * otherwise), and every method called, in order.
+ */
+export type MockRPCState = {
+	balances: Map<string, bigint>;
+	calls: {method: string; params: any[]}[];
+};
+
+/**
  * A minimal JSON-RPC node, answering only what the server asks while scheduling and broadcasting.
  * The test never reaches the network: requests to RPC_URL are answered here, anything else fails.
  */
-function mockRPC(method: string, params: any[]): unknown {
+function mockRPC(state: MockRPCState, method: string, params: any[]): unknown {
+	state.calls.push({method, params});
 	const now = Math.floor(Date.now() / 1000);
 	switch (method) {
 		case 'eth_chainId':
@@ -31,8 +41,10 @@ function mockRPC(method: string, params: any[]): unknown {
 			return '0x1';
 		case 'eth_getTransactionCount':
 			return '0x0';
-		case 'eth_getBalance':
-			return '0x56bc75e2d63100000'; // 100 ether
+		case 'eth_getBalance': {
+			const balance = state.balances.get(String(params[0]).toLowerCase());
+			return balance === undefined ? '0x56bc75e2d63100000' : `0x${balance.toString(16)}`; // 100 ether by default
+		}
 		case 'eth_estimateGas':
 			return '0x5208';
 		case 'eth_sendRawTransaction':
@@ -45,7 +57,7 @@ function mockRPC(method: string, params: any[]): unknown {
 }
 
 const realFetch = globalThis.fetch;
-function installMockRPC() {
+function installMockRPC(state: MockRPCState) {
 	globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
 		const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
 		if (!url.startsWith(RPC_URL)) {
@@ -56,7 +68,7 @@ function installMockRPC() {
 		);
 		const answer = (request: {id: number; method: string; params?: any[]}) => {
 			try {
-				return {jsonrpc: '2.0', id: request.id, result: mockRPC(request.method, request.params || [])};
+				return {jsonrpc: '2.0', id: request.id, result: mockRPC(state, request.method, request.params || [])};
 			} catch (err: any) {
 				return {jsonrpc: '2.0', id: request.id, error: {code: -32601, message: err.message}};
 			}
@@ -75,6 +87,20 @@ export async function createTestServer(extraEnv: Record<string, string> = {}) {
 	// the database lives in a scratch dir, never in a shared location
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fuzd-server-test-'));
 	const client = createClient({url: `file:${path.join(dir, 'db.sqlite')}`});
+	// count what reaches the database: a D1 worker invocation may only make so many queries
+	const dbStats = {requests: 0, statements: 0};
+	const execute = client.execute.bind(client);
+	const batch = client.batch.bind(client);
+	client.execute = ((...args: Parameters<typeof execute>) => {
+		dbStats.requests++;
+		dbStats.statements++;
+		return execute(...args);
+	}) as typeof execute;
+	client.batch = ((statements: any[], ...rest: any[]) => {
+		dbStats.requests++;
+		dbStats.statements += statements.length;
+		return (batch as any)(statements, ...rest);
+	}) as typeof batch;
 	const db = new RemoteLibSQL(client);
 	const env = {
 		HD_MNEMONIC: 'test test test test test test test test test test test junk',
@@ -84,7 +110,8 @@ export async function createTestServer(extraEnv: Record<string, string> = {}) {
 		...extraEnv,
 	} as const;
 	const app = createServer<any>({getDB: () => db, getEnv: () => env});
-	const uninstallMockRPC = installMockRPC();
+	const rpc: MockRPCState = {balances: new Map(), calls: []};
+	const uninstallMockRPC = installMockRPC(rpc);
 
 	async function request(pathname: string, init?: RequestInit) {
 		return app.fetch(new Request(`http://localhost${pathname}`, init));
@@ -112,6 +139,8 @@ export async function createTestServer(extraEnv: Record<string, string> = {}) {
 	return {
 		app,
 		db: client,
+		dbStats,
+		rpc,
 		request,
 		getJSON,
 		postSigned,

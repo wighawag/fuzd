@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import 'named-logs-context';
-import {createServer} from '@fuzd/server';
+import {createServer, type InternalAction} from '@fuzd/server';
 import {serve} from '@hono/node-server';
 import {RemoteLibSQL} from 'remote-sql-libsql';
 import {createClient} from '@libsql/client';
@@ -149,10 +149,19 @@ async function main() {
 		}
 	}
 
+	// each action runs again only once its previous run is over: with a short interval, overlapping
+	// runs would pick the same due items and compete for the same broadcasters
+	const running = new Set<InternalAction>();
 	function processQueueAndTransactions() {
-		app.fetch(new Request('http://localhost/internal/processQueue'));
-		app.fetch(new Request('http://localhost/internal/processTransactions'));
-		app.fetch(new Request('http://localhost/internal/checkScheduledExecutionStatus'));
+		for (const action of ['processQueue', 'processTransactions', 'checkScheduledExecutionStatus'] as const) {
+			if (running.has(action)) {
+				continue;
+			}
+			running.add(action);
+			Promise.resolve(app.fetch(app.internalRequest(action)))
+				.catch((err) => console.error(`${action} failed: ${err}`))
+				.finally(() => running.delete(action));
+		}
 	}
 
 	if (processInterval > 0) {

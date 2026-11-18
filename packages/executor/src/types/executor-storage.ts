@@ -75,7 +75,24 @@ export interface ExecutorStorage<TransactionDataType> {
 			helpedForUpToGasPrice: {upToGasPrice: bigint; valueSent: bigint};
 		},
 	): Promise<PendingExecutionStored<TransactionDataType>>;
-	getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored<TransactionDataType>[]>;
+	/**
+	 * The unfinalized executions with the earliest next check first.
+	 * `chainId` restricts them to one chain, `upToNextCheckTime` to those due at that time.
+	 */
+	getPendingExecutions(params: {
+		limit: number;
+		chainId?: IntegerString;
+		upToNextCheckTime?: number;
+	}): Promise<PendingExecutionStored<TransactionDataType>[]>;
+	/**
+	 * Move the next check of an unfinalized execution, unless it changed since it was read: only the
+	 * row still carrying `hash` is updated, so a concurrent resubmission is never overwritten.
+	 */
+	postponePendingExecution(
+		execution: {chainId: IntegerString; account: String0x; slot: string; batchIndex: number; hash: String0x},
+		nextCheckTime: number,
+		lastError?: string,
+	): Promise<void>;
 	getPendingExecutionsPerBroadcaster(
 		broadcasterData: {
 			chainId: IntegerString;

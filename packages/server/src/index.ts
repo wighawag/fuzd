@@ -4,7 +4,7 @@ import {cors} from 'hono/cors';
 import {ServerOptions} from './types.js';
 import {getPublicAPI} from './api/public/index.js';
 import {getAdminAPI} from './api/admin/index.js';
-import {getInternalAPI} from './api/internal/index.js';
+import {getInternalAPI, createInternalToken, INTERNAL_TOKEN_HEADER, type InternalAction} from './api/internal/index.js';
 import {getSchedulingAPI} from './api/scheduling/index.js';
 import {getExecutionAPI} from './api/execution/index.js';
 import {setup} from './setup.js';
@@ -21,6 +21,7 @@ export type {Context} from 'hono';
 
 export * from './storage/RemoteSQLExecutorStorage.js';
 export * from './storage/RemoteSQLSchedulerStorage.js';
+export type {InternalAction} from './api/internal/index.js';
 
 const logger = <FUZDLogger>logs('fuzd-server');
 
@@ -65,10 +66,15 @@ export function createServer<Bindings extends Env>(options: ServerOptions<Bindin
 		.use(setup({serverOptions: options}))
 		.route('/admin', adminDashboard);
 
-	const internalAPI = getInternalAPI(options);
+	// only this process knows it: the crons of the platform (cf-worker, nodejs) use it, through
+	// internalRequest, to trigger the internal actions that are otherwise refused without admin credentials.
+	// Generated on first use: a Worker may not generate random values in global scope, where it creates the server.
+	let internalToken: string | undefined;
+	const getInternalToken = () => (internalToken ??= createInternalToken());
+	const internalAPI = getInternalAPI(options, getInternalToken);
 	const adminAPI = getAdminAPI(options);
 
-	return createAppWithPublicAPIOnly(options)
+	const app = createAppWithPublicAPIOnly(options)
 		.get('/', (c) => {
 			return c.text(`fuzd api : ${version}`);
 		})
@@ -109,6 +115,15 @@ export function createServer<Bindings extends Env>(options: ServerOptions<Bindin
 				500,
 			);
 		});
+
+	return Object.assign(app, {
+		/** A request for an internal action (processQueue, ...), authenticated for this server only. */
+		internalRequest(action: InternalAction): Request {
+			return new Request(`http://localhost/internal/${action}`, {
+				headers: {[INTERNAL_TOKEN_HEADER]: getInternalToken()},
+			});
+		},
+	});
 
 	// .notFound((c) => {
 	// 	return c.json(

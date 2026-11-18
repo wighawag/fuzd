@@ -32,7 +32,15 @@ export interface SchedulerStorage<TransactionDataType> {
 	createOrUpdateQueuedExecution(
 		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
 	): Promise<ScheduledExecutionQueued<TransactionDataType>>;
-	getQueueTopMostExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
+	/**
+	 * The queued (not yet broadcast) executions with the earliest checkin time first.
+	 * `chainId` restricts them to one chain, `upToCheckinTime` to those due at that time.
+	 */
+	getQueueTopMostExecutions(params: {
+		limit: number;
+		chainId?: IntegerString;
+		upToCheckinTime?: number;
+	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	getUnFinalizedBroadcastedScheduledExecutions(params: {
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;

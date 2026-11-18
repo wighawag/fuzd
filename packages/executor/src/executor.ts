@@ -16,6 +16,8 @@ import {
 	validateParameters,
 	IntegerString,
 	FUZDLogger,
+	processInGroups,
+	resolveProcessingBudget,
 } from '@fuzd/common';
 import {ExecutorConfig} from './types/internal.js';
 import {BroadcasterSignerData, ChainProtocol, SignedTransactionInfo, TransactionDataTypes} from '@fuzd/chain-protocol';
@@ -97,7 +99,12 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 	const {chainProtocols, storage} = config;
 	const maxExpiry = config.maxExpiry || 24 * 3600;
-	const maxNumTransactionsToProcessInOneGo = config.maxNumTransactionsToProcessInOneGo || 10;
+	const processingBudget = resolveProcessingBudget(config.processing);
+	// seconds until a broadcast transaction is checked again, after a check that needed no action or failed
+	const NEXT_CHECK_DELAY = 60; // TODO config
+	const NEXT_CHECK_DELAY_AFTER_ERROR = 30;
+	const LOCK_ATTEMPTS = 5;
+	const LOCK_RETRY_DELAY_MS = 200;
 
 	async function getServiceParameters(
 		chainId: IntegerString,
@@ -329,36 +336,101 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		return result;
 	}
 
+	/**
+	 * Check the broadcast transactions that are due, chain by chain, in batches until none is left or
+	 * the processing budget is spent: finalize them, or resubmit them (gas bump, void) when needed.
+	 * Transactions of different broadcasters run concurrently, those of one broadcaster in nonce order.
+	 * Each one checked moves its next check forward, so the same few never monopolise the runs.
+	 */
 	async function processPendingTransactions() {
-		const limit = maxNumTransactionsToProcessInOneGo;
+		const budget = processingBudget;
+		const start = Date.now();
+		const seen = new Set<string>();
+		const processedExecutions: PendingExecutionStored<TransactionDataType>[] = [];
+		const withinBudget = () =>
+			processedExecutions.length < budget.maxItemsPerRun && Date.now() - start < budget.maxDurationPerRunMs;
 
-		const pendingExecutions = await storage.getPendingExecutions({limit});
-		if (pendingExecutions.length === 0) {
-			// logger.info(`found zero transactions`);
-		} else if (pendingExecutions.length === 1) {
-			// logger.info(`found 1 transaction`);
-		} else {
-			// logger.info(`found ${pendingExecutions.length} transactions`);
-		}
-		if (pendingExecutions) {
-			for (const pendingExecution of pendingExecutions) {
-				try {
-					await __processPendingTransaction(pendingExecution);
-				} catch (err: any) {
-					logger.error(`failed to process pending execution: ${computeExecutionIdentifier(pendingExecution)}`, {
-						error: {
-							name: err.name,
-							code: err.code,
-							status: err.status,
-							stack: err.stack,
-							cause: err,
-						},
-					});
+		for (const chainId of Object.keys(chainProtocols) as IntegerString[]) {
+			if (!withinBudget()) {
+				break;
+			}
+			let currentTimestamp: number;
+			try {
+				currentTimestamp = await _getChainProtocol(chainId).getTimestamp();
+			} catch (err: any) {
+				logger.error(`could not get the timestamp of chain ${chainId}, skipping it: ${err.message || err}`);
+				continue;
+			}
+
+			while (withinBudget()) {
+				const limit = Math.min(budget.batchSize, budget.maxItemsPerRun - processedExecutions.length);
+				const pendingExecutions = await storage.getPendingExecutions({
+					limit,
+					chainId,
+					upToNextCheckTime: currentTimestamp,
+				});
+				const fresh = pendingExecutions
+					.filter((v) => !seen.has(computeExecutionIdentifier(v)))
+					.sort(
+						(a, b) =>
+							Number(a.transactionParametersUsed.nonce) - Number(b.transactionParametersUsed.nonce) ||
+							a.nextCheckTime - b.nextCheckTime,
+					);
+				if (fresh.length === 0) {
+					break;
+				}
+				for (const pendingExecution of fresh) {
+					seen.add(computeExecutionIdentifier(pendingExecution));
+					processedExecutions.push(pendingExecution);
+				}
+
+				await processInGroups(
+					fresh,
+					(v) => `${v.chainId}/${v.transactionParametersUsed.from}`,
+					budget.concurrency,
+					async (pendingExecution) => {
+						let updated = false;
+						let lastError: string | undefined;
+						try {
+							updated = await __processPendingTransaction(pendingExecution);
+						} catch (err: any) {
+							lastError = (err && (err.message || err.toString())) || 'unknown error';
+							logger.error(`failed to process pending execution: ${computeExecutionIdentifier(pendingExecution)}`, {
+								error: {
+									name: err.name,
+									code: err.code,
+									status: err.status,
+									stack: err.stack,
+									cause: err,
+								},
+							});
+						}
+						if (!updated) {
+							try {
+								await storage.postponePendingExecution(
+									pendingExecution,
+									currentTimestamp + (lastError ? NEXT_CHECK_DELAY_AFTER_ERROR : NEXT_CHECK_DELAY),
+									lastError,
+								);
+							} catch (err: any) {
+								logger.error(
+									`could not postpone pending execution ${computeExecutionIdentifier(pendingExecution)}: ${err.message || err}`,
+								);
+							}
+						}
+					},
+				);
+
+				if (pendingExecutions.length < limit) {
+					break;
 				}
 			}
 		}
+		if (processedExecutions.length > 0) {
+			logger.info(`processed ${processedExecutions.length} pending executions in ${Date.now() - start}ms`);
+		}
 		// TODO make returning the pending transaction part of the api
-		return pendingExecutions as unknown as void;
+		return processedExecutions as unknown as void;
 	}
 
 	// --------------------------------------------------------------------------------------------
@@ -375,11 +447,20 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 			logger.error(errorMessage);
 			throw new Error(errorMessage);
 		}
-		const dataFromStorage = await storage.lockBroadcaster({
-			chainId: chainId,
-			address: broadcasterAddress,
-			nonceFromNetwork: currentNonceAsPerNetwork,
-		});
+		// broadcasters are processed concurrently, and some are shared (the payment account helps many
+		// executions during a gas spike): wait briefly for a lock held by another item instead of failing at once
+		let dataFromStorage: Awaited<ReturnType<typeof storage.lockBroadcaster>>;
+		for (let attempt = 0; ; attempt++) {
+			dataFromStorage = await storage.lockBroadcaster({
+				chainId: chainId,
+				address: broadcasterAddress,
+				nonceFromNetwork: currentNonceAsPerNetwork,
+			});
+			if (dataFromStorage || attempt >= LOCK_ATTEMPTS - 1) {
+				break;
+			}
+			await new Promise((resolve) => setTimeout(resolve, LOCK_RETRY_DELAY_MS));
+		}
 
 		if (!dataFromStorage) {
 			const errorMessage = `could not lock broadcaster ${chainId}/${broadcasterAddress}`;
@@ -427,6 +508,21 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 
 		const {nextNonce: expectedNonce, debt: currentDebt} = broadcasterData;
 		try {
+			if (typeof options.forceNonce === 'undefined' && !options.previouslyStored) {
+				// broadcastExecution checked the slot was free before taking the lock, but a concurrent run
+				// (overlapping crons) may have broadcast it since: checking again under the lock is what
+				// prevents the same execution from being sent twice, with two nonces
+				const alreadyStored = await storage.getPendingExecution({
+					chainId: execution.chainId,
+					account: execution.account,
+					slot: execution.slot,
+					batchIndex: execution.batchIndex,
+				});
+				if (alreadyStored) {
+					return alreadyStored;
+				}
+			}
+
 			// console.log({expectedNonce, forceNonce: options.forceNonce});
 
 			let nonce = expectedNonce;
@@ -696,7 +792,8 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		}
 	}
 
-	async function _resubmitIfNeeded(pendingExecution: PendingExecutionStored<TransactionDataType>): Promise<void> {
+	/** Returns whether the execution was resubmitted (and so stored again, with its next check). */
+	async function _resubmitIfNeeded(pendingExecution: PendingExecutionStored<TransactionDataType>): Promise<boolean> {
 		const chainProtocol = _getChainProtocol(pendingExecution.chainId);
 		const timestamp = await chainProtocol.getTimestamp();
 		const diffSinceInitiated = timestamp - pendingExecution.initialTime;
@@ -849,7 +946,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				`resubmit with maxFeePerGas: ${maxFeePerGas} and maxPriorityFeePerGas: ${maxPriorityFeePerGas} \n(maxFeePerGasUsed: ${maxFeePerGasUsed}, maxPriorityFeePerGasUsed: ${maxPriorityFeePerGasUsed})`,
 			);
 			// console.log(pendingExecution.transactionParametersUsed);
-			await _submitTransaction(broadcaster, pendingExecution, {
+			const resubmitted = await _submitTransaction(broadcaster, pendingExecution, {
 				forceNonce: Number(pendingExecution.transactionParametersUsed.nonce),
 				maxFeePerGas,
 				maxPriorityFeePerGas,
@@ -857,12 +954,15 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				previouslyStored: pendingExecution,
 				forceVoid,
 			});
+			return !!resubmitted;
 		}
+		return false;
 	}
 
+	/** Returns whether the execution was stored again (finalized or resubmitted). */
 	async function __processPendingTransaction(
 		pendingExecution: PendingExecutionStored<TransactionDataType>,
-	): Promise<void> {
+	): Promise<boolean> {
 		const chainProtocol = _getChainProtocol(pendingExecution.chainId);
 
 		const txStatus = await chainProtocol.getTransactionStatus({
@@ -917,9 +1017,11 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 				updateNonceIfNeeded: undefined,
 				debtOffset,
 			});
+			return true;
 		} else if (!txStatus.pending) {
-			await _resubmitIfNeeded(pendingExecution);
+			return _resubmitIfNeeded(pendingExecution);
 		}
+		return false;
 	}
 
 	// --------------------------------------------------------------------------------------------

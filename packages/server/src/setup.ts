@@ -3,7 +3,7 @@ import {ServerOptions} from './types.js';
 import {ExecutorBackend, ExecutorStorage, createExecutor} from '@fuzd/executor';
 import {Scheduler, SchedulerBackend, SchedulerConfig, SchedulerStorage, createScheduler} from '@fuzd/scheduler';
 import {ETHAccount, initAccountFromHD} from 'remote-account';
-import {ExecutionSubmission, Executor, IntegerString, String0x} from '@fuzd/common';
+import {ExecutionSubmission, Executor, IntegerString, ProcessingBudget, String0x} from '@fuzd/common';
 import {mnemonicToSeedSync} from '@scure/bip39';
 import {HDKey} from '@scure/bip32';
 import {initDecrypter, mainnetClient} from '@fuzd/tlock-decrypter';
@@ -120,6 +120,23 @@ function assignChainProtocols(
 	}
 }
 
+/**
+ * The processing budget of each processQueue / processTransactions run, from the env. Unset or
+ * invalid values keep the defaults (`DEFAULT_PROCESSING_BUDGET`, sized for a Cloudflare cron).
+ */
+function processingBudgetFromEnv(env: Record<string, unknown>): Partial<ProcessingBudget> {
+	const read = (name: string) => {
+		const value = env[name];
+		return typeof value === 'string' && value !== '' ? Number(value) : undefined;
+	};
+	return {
+		batchSize: read('PROCESSING_BATCH_SIZE'),
+		concurrency: read('PROCESSING_CONCURRENCY'),
+		maxItemsPerRun: read('PROCESSING_MAX_ITEMS_PER_RUN'),
+		maxDurationPerRunMs: read('PROCESSING_MAX_DURATION_MS'),
+	};
+}
+
 export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env>): MiddlewareHandler {
 	const {getDB, getEnv} = options.serverOptions;
 
@@ -148,6 +165,7 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			serverAccount: account,
 			maxExpiry: 24 * 3600,
 			maxNumTransactionsToProcessInOneGo: 10,
+			processing: processingBudgetFromEnv(env),
 			chainProtocols,
 			contractTimestampAddress: contractTimestamp,
 		};

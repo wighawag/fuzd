@@ -183,10 +183,24 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		return executionToStore;
 	}
 
-	async getQueueTopMostExecutions(params: {limit: number}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
-		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE broadcasted = FALSE ORDER BY nextCheckTime ASC LIMIT ?1;`;
+	async getQueueTopMostExecutions(params: {
+		limit: number;
+		chainId?: IntegerString;
+		upToCheckinTime?: number;
+	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
+		const conditions = ['broadcasted = FALSE'];
+		const bindings: (string | number)[] = [params.limit];
+		if (params.chainId !== undefined) {
+			bindings.push(params.chainId);
+			conditions.push(`chainId = ?${bindings.length}`);
+		}
+		if (params.upToCheckinTime !== undefined) {
+			bindings.push(params.upToCheckinTime);
+			conditions.push(`nextCheckTime <= ?${bindings.length}`);
+		}
+		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE ${conditions.join(' AND ')} ORDER BY nextCheckTime ASC LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
-		const {results} = await statement.bind(params.limit).all<ScheduledExecutionInDB>();
+		const {results} = await statement.bind(...bindings).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
 	}
 

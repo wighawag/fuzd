@@ -402,12 +402,47 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		return executionToStore;
 	}
 
-	async getPendingExecutions(params: {limit: number}): Promise<PendingExecutionStored<TransactionDataType>[]> {
+	async getPendingExecutions(params: {
+		limit: number;
+		chainId?: IntegerString;
+		upToNextCheckTime?: number;
+	}): Promise<PendingExecutionStored<TransactionDataType>[]> {
+		const conditions = ['finalized = FALSE'];
+		const bindings: (string | number)[] = [params.limit];
+		if (params.chainId !== undefined) {
+			bindings.push(params.chainId);
+			conditions.push(`chainId = ?${bindings.length}`);
+		}
+		if (params.upToNextCheckTime !== undefined) {
+			bindings.push(params.upToNextCheckTime);
+			conditions.push(`nextCheckTime <= ?${bindings.length}`);
+		}
 		const statement = this.db.prepare(
-			`SELECT * FROM BroadcastedExecutions  WHERE finalized = FALSE  ORDER BY nextCheckTime ASC LIMIT ?1;`,
+			`SELECT * FROM BroadcastedExecutions WHERE ${conditions.join(' AND ')} ORDER BY nextCheckTime ASC LIMIT ?1;`,
 		);
-		const {results} = await statement.bind(params.limit).all<ExecutionInDB>();
+		const {results} = await statement.bind(...bindings).all<ExecutionInDB>();
 		return results.map(fromExecutionInDB<TransactionDataType>);
+	}
+
+	async postponePendingExecution(
+		execution: {chainId: IntegerString; account: String0x; slot: string; batchIndex: number; hash: String0x},
+		nextCheckTime: number,
+		lastError?: string,
+	): Promise<void> {
+		const statement = this.db.prepare(
+			`UPDATE BroadcastedExecutions SET nextCheckTime = ?1, lastError = COALESCE(?2, lastError) WHERE account = ?3 AND chainId = ?4 AND slot = ?5 AND batchIndex = ?6 AND hash = ?7 AND finalized = FALSE;`,
+		);
+		await statement
+			.bind(
+				nextCheckTime,
+				lastError ?? null,
+				execution.account,
+				execution.chainId,
+				execution.slot,
+				execution.batchIndex,
+				execution.hash,
+			)
+			.all();
 	}
 
 	async getAllExecutions(params: {

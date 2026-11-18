@@ -1,4 +1,5 @@
 import {Hono} from 'hono';
+import {basicAuth} from 'hono/basic-auth';
 import {ServerOptions} from '../../types.js';
 import {logs} from 'named-logs';
 import {createErrorObject} from '../../utils/response.js';
@@ -14,8 +15,37 @@ function wait(seconds: number) {
 	});
 }
 
-export function getInternalAPI<Bindings extends Env>(options: ServerOptions<Bindings>) {
+/** The actions a platform triggers periodically (its crons). */
+export type InternalAction = 'processQueue' | 'processTransactions' | 'checkScheduledExecutionStatus';
+
+export const INTERNAL_TOKEN_HEADER = 'x-fuzd-internal-token';
+
+export function createInternalToken(): string {
+	const bytes = new Uint8Array(32);
+	crypto.getRandomValues(bytes);
+	return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * The internal routes do the work of the crons (broadcast due executions, resubmit transactions).
+ * They accept the token of the server instance (what the platform's own crons send) or the admin
+ * credentials (an operator triggering a run by hand). Open to anyone, they would let anybody start
+ * runs at will: costs on a metered platform, and runs overlapping each other.
+ */
+export function getInternalAPI<Bindings extends Env>(options: ServerOptions<Bindings>, getInternalToken: () => string) {
+	const adminAuth = basicAuth({
+		verifyUser: (username, password, c) => {
+			const tokenAdmin = (options.getEnv(c) as Env).TOKEN_ADMIN;
+			return !!tokenAdmin && username === 'admin' && password === tokenAdmin;
+		},
+	});
 	const app = new Hono<{Bindings: Bindings}>()
+		.use(async (c, next) => {
+			if (c.req.header(INTERNAL_TOKEN_HEADER) === getInternalToken()) {
+				return next();
+			}
+			return adminAuth(c, next);
+		})
 		.use(setup({serverOptions: options}))
 		.get('/processQueue', async (c) => {
 			try {
