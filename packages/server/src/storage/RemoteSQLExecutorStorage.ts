@@ -1,6 +1,6 @@
 import type {RemoteSQL, SQLPreparedStatement} from 'remote-sql';
 import type {ExecutorStorage, BroadcasterData, ChainConfiguration, BroadcasterDataWithLock} from '@fuzd/executor';
-import {setupClaimColumns, sqlToStatements, toValues} from './utils.js';
+import {MAX_SLOTS_PER_STATEMENT, chunks, setupClaimColumns, sqlToStatements, toValues} from './utils.js';
 import {logs} from 'named-logs';
 import setupTables from '../schema/ts/executor.sql.js';
 import {FUZDLogger, Fees, IntegerString, PendingExecutionStored, String0x, UpdateableParameter} from '@fuzd/common';
@@ -203,6 +203,26 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		const {account, chainId, slot} = params;
 		const {results} = await statement.bind(account, chainId, slot).all<ExecutionInDB>();
 		return results.map(fromExecutionInDB<TransactionDataType>);
+	}
+
+	async getSlotsWithUnfinalizedExecutions(params: {
+		chainId: IntegerString;
+		slots: {account: String0x; slot: string}[];
+	}): Promise<{account: String0x; slot: string}[]> {
+		const found: {account: String0x; slot: string}[] = [];
+		// D1 takes at most 100 bound parameters per statement: ?1 is the chain, then 2 per slot. The `+`
+		// keep SQLite on the primary key (the listed accounts' rows), not on every unfinalized row of the chain
+		for (const slots of chunks(params.slots, MAX_SLOTS_PER_STATEMENT)) {
+			const pairs = slots.map((_, i) => `(?${2 * i + 2}, ?${2 * i + 3})`).join(', ');
+			const {results} = await this.db
+				.prepare(
+					`SELECT DISTINCT account, slot FROM BroadcastedExecutions WHERE +chainId = ?1 AND +finalized = FALSE AND (account, slot) IN (VALUES ${pairs});`,
+				)
+				.bind(params.chainId, ...slots.flatMap((v) => [v.account, v.slot]))
+				.all<{account: String0x; slot: string}>();
+			found.push(...results);
+		}
+		return found;
 	}
 
 	async deletePendingExecution(params: {

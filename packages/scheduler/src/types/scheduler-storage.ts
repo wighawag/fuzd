@@ -74,20 +74,27 @@ export interface SchedulerStorage<TransactionDataType> {
 		claimant: string,
 	): Promise<boolean>;
 	/**
-	 * Mark a broadcast execution finalized (what checkScheduledExecutionStatus writes), and nothing
-	 * else: only while the stored execution is still broadcast, so that a new schedule written into
-	 * the slot since it was read is left as it is. Answers whether it applied.
+	 * Mark broadcast executions of one chain finalized (what checkScheduledExecutionStatus writes), and
+	 * nothing else: only those still broadcast, so that a new schedule written into a slot since it was
+	 * read is left as it is. Answers the slots it marked.
 	 */
-	markExecutionFinalized(execution: {chainId: IntegerString; account: String0x; slot: string}): Promise<boolean>;
+	markExecutionsFinalized(params: {
+		chainId: IntegerString;
+		slots: {account: String0x; slot: string}[];
+	}): Promise<{account: String0x; slot: string}[]>;
 	/** archiveExecution, only while `claimant` still holds the claim (see updateClaimedExecution). */
 	archiveClaimedExecution(
 		executionToStore: ScheduledExecutionQueued<TransactionDataType>,
 		claimant: string,
 	): Promise<boolean>;
-	/** The oldest broadcast executions not yet finalized, of one chain when `chainId` is given. */
+	/**
+	 * The oldest broadcast executions not yet finalized, of one chain when `chainId` is given, ordered
+	 * by checkin time, account and slot; `after` continues past the last one of a previous page.
+	 */
 	getUnFinalizedBroadcastedScheduledExecutions(params: {
 		limit: number;
 		chainId?: IntegerString;
+		after?: {checkinTime: number; account: String0x; slot: string};
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
 	getUnFinalizedScheduledExecutionsPerBroadcaster(params: {
 		chainId: IntegerString;

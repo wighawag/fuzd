@@ -42,6 +42,8 @@ CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_finalized_nextCheckTime ON Sc
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_chainId_finalized_nextCheckTime ON ScheduledExecutions (chainId, finalized, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_chainId_broadcaster_finalized_nextCheckTime ON ScheduledExecutions (chainId, broadcaster, finalized, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_broadcasted_finalized_nextCheckTime ON ScheduledExecutions (broadcasted, finalized, nextCheckTime);
+-- checkScheduledExecutionStatus pages through a chain's broadcast executions in this order
+CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_chainId_broadcasted_finalized_nextCheckTime_account_slot ON ScheduledExecutions (chainId, broadcasted, finalized, nextCheckTime, account, slot);
 
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_account_nextCheckTime ON ScheduledExecutions (account, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_ScheduledExecutions_onBehalf_broadcasted ON ScheduledExecutions (onBehalf, broadcasted);

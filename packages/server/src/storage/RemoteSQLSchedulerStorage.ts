@@ -1,6 +1,6 @@
 import type {RemoteSQL} from 'remote-sql';
 import type {ScheduledExecutionQueued, SchedulerStorage} from '@fuzd/scheduler';
-import {setupClaimColumns, sqlToStatements, toValues} from './utils.js';
+import {MAX_SLOTS_PER_STATEMENT, chunks, setupClaimColumns, sqlToStatements, toValues} from './utils.js';
 import setupTables from '../schema/ts/scheduler.sql.js';
 import {IntegerString, String0x} from '@fuzd/common';
 
@@ -257,14 +257,24 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		return results.length > 0;
 	}
 
-	async markExecutionFinalized(execution: {chainId: IntegerString; account: String0x; slot: string}): Promise<boolean> {
-		const {results} = await this.db
-			.prepare(
-				`UPDATE ScheduledExecutions SET finalized = TRUE WHERE account = ?1 AND chainId = ?2 AND slot = ?3 AND broadcasted = TRUE RETURNING slot;`,
-			)
-			.bind(execution.account, execution.chainId, execution.slot)
-			.all<{slot: string}>();
-		return results.length > 0;
+	async markExecutionsFinalized(params: {
+		chainId: IntegerString;
+		slots: {account: String0x; slot: string}[];
+	}): Promise<{account: String0x; slot: string}[]> {
+		const applied: {account: String0x; slot: string}[] = [];
+		// D1 takes at most 100 bound parameters per statement: ?1 is the chain, then 2 per slot. The `+`
+		// keep SQLite on the account index (the listed accounts' rows), not on every broadcast row of the chain
+		for (const slots of chunks(params.slots, MAX_SLOTS_PER_STATEMENT)) {
+			const pairs = slots.map((_, i) => `(?${2 * i + 2}, ?${2 * i + 3})`).join(', ');
+			const {results} = await this.db
+				.prepare(
+					`UPDATE ScheduledExecutions SET finalized = TRUE WHERE +chainId = ?1 AND +broadcasted = TRUE AND (account, slot) IN (VALUES ${pairs}) RETURNING account, slot;`,
+				)
+				.bind(params.chainId, ...slots.flatMap((v) => [v.account, v.slot]))
+				.all<{account: String0x; slot: string}>();
+			applied.push(...results);
+		}
+		return applied;
 	}
 
 	async archiveClaimedExecution(
@@ -293,6 +303,7 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 	async getUnFinalizedBroadcastedScheduledExecutions(params: {
 		limit: number;
 		chainId?: IntegerString;
+		after?: {checkinTime: number; account: String0x; slot: string};
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
 		const conditions = ['broadcasted = TRUE', 'finalized = FALSE'];
 		const bindings: (string | number)[] = [params.limit];
@@ -300,7 +311,12 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 			bindings.push(params.chainId);
 			conditions.push(`chainId = ?${bindings.length}`);
 		}
-		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE ${conditions.join(' AND ')} ORDER BY nextCheckTime ASC LIMIT ?1;`;
+		if (params.after) {
+			bindings.push(params.after.checkinTime, params.after.account, params.after.slot);
+			const n = bindings.length;
+			conditions.push(`(nextCheckTime, account, slot) > (?${n - 2}, ?${n - 1}, ?${n})`);
+		}
+		const sqlStatement = `SELECT * FROM ScheduledExecutions WHERE ${conditions.join(' AND ')} ORDER BY nextCheckTime ASC, account ASC, slot ASC LIMIT ?1;`;
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(...bindings).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);

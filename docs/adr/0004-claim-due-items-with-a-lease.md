@@ -60,7 +60,7 @@ So every write of `processQueue` is guarded by its claim: `SchedulerStorage.upda
 
 - What a user's schedule does is unchanged: `scheduleExecution` still upserts the whole row with `createOrUpdateQueuedExecution`, and that releases any claim. A run then loses its claim to the new schedule, so its late write no longer overwrites the new record either. Refusing a schedule into a spent slot stays `work/tasks/backlog/reject-a-schedule-into-a-spent-slot.md`.
 - Considered: a guard that only refuses to turn `broadcasted` from true back to false. Narrower (it lets a late run overwrite every other column of another run's work, re-create an archived row, or archive a row it no longer holds), and it needs telling a user's write from a run's anyway.
-- `checkScheduledExecutionStatus` takes no claim. It wrote `finalized = true` with the full-row upsert, so a new schedule written into the slot between its read and its write was overwritten by the old record (found in review). It now sets the flag alone, only while the row is still broadcast (`SchedulerStorage.markExecutionFinalized`).
+- `checkScheduledExecutionStatus` takes no claim. It wrote `finalized = true` with the full-row upsert, so a new schedule written into the slot between its read and its write was overwritten by the old record (found in review). It now sets the flag alone, only while the row is still broadcast (`SchedulerStorage.markExecutionsFinalized`).
 
 ## Amendment (2026-11-18, later still): processTransactions holds a broadcaster one run at a time
 

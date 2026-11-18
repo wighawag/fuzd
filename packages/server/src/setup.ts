@@ -165,6 +165,13 @@ function processingBudgetFromEnv(env: Record<string, unknown>): Partial<Processi
 	};
 }
 
+/** How many broadcast executions one checkScheduledExecutionStatus run looks at per chain (STATUS_CHECK_MAX_PER_RUN). */
+function statusChecksPerRunFromEnv(env: Record<string, unknown>): number {
+	const value = Number(env.STATUS_CHECK_MAX_PER_RUN);
+	// a few statements per batch of executions: 1000 stays far below D1's 1000 queries per invocation
+	return Number.isInteger(value) && value > 0 ? value : 1000;
+}
+
 export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env>): MiddlewareHandler {
 	const {getDB, getEnv, getDrandClient} = options.serverOptions;
 
@@ -189,7 +196,7 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 		const baseConfig = {
 			serverAccount: account,
 			maxExpiry: 24 * 3600,
-			maxNumTransactionsToProcessInOneGo: 10,
+			maxNumTransactionsToProcessInOneGo: statusChecksPerRunFromEnv(env),
 			processing: processingBudgetFromEnv(env),
 			chainProtocols,
 			contractTimestampAddress: contractTimestamp,

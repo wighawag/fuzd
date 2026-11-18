@@ -131,6 +131,15 @@ export type Executor<TransactionDataType> = {
 		account: String0x;
 	}): Promise<'finalized' | 'broadcasted' | undefined>;
 
+	/**
+	 * getExecutionStatus for many slots of one chain at once, in the same order: `broadcasted` while
+	 * one of a slot's transactions is not finalized, `finalized` otherwise.
+	 */
+	getExecutionStatuses(
+		chainId: IntegerString,
+		slots: {account: String0x; slot: string}[],
+	): Promise<('finalized' | 'broadcasted')[]>;
+
 	getServiceParameters(chainId: IntegerString): Promise<UpdateableParameters<ExecutionServiceParameters>>;
 };
 // ------------------------------------------------------------------------------------------------

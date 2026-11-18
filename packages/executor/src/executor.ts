@@ -148,6 +148,19 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		return 'finalized';
 	}
 
+	async function getExecutionStatuses(
+		chainId: IntegerString,
+		slots: {account: String0x; slot: string}[],
+	): Promise<('finalized' | 'broadcasted')[]> {
+		if (slots.length === 0) {
+			return [];
+		}
+		const unfinalized = await storage.getSlotsWithUnfinalizedExecutions({chainId, slots});
+		const pending = new Set(unfinalized.map((v) => `${v.account.toLowerCase()}/${v.slot}`));
+		// as getExecutionStatus: a slot without transactions (pruned once final) counts as finalized
+		return slots.map((v) => (pending.has(`${v.account.toLowerCase()}/${v.slot}`) ? 'broadcasted' : 'finalized'));
+	}
+
 	async function getRemoteAccount(chainId: IntegerString, account: String0x): Promise<RemoteAccountInfo> {
 		const serviceParameters = await getServiceParameters(chainId);
 
@@ -1057,6 +1070,7 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 		getRemoteAccount,
 		broadcastExecution,
 		getExecutionStatus,
+		getExecutionStatuses,
 		getServiceParameters,
 		processPendingTransactions,
 	};

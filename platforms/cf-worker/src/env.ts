@@ -18,6 +18,8 @@ export type Env = {
 	PROCESSING_MAX_ITEMS_PER_RUN?: string;
 	PROCESSING_MAX_DURATION_MS?: string;
 	PROCESSING_LEASE_DURATION_MS?: string;
+	/** how many broadcast executions one checkScheduledExecutionStatus run looks at per chain, 1000 by default */
+	STATUS_CHECK_MAX_PER_RUN?: string;
 	DISABLE_CRON?: string;
 	/** the Durable Objects that run processQueue and processTransactions back to back (src/processing-loop.ts) */
 	PROCESSING_LOOP?: DurableObjectNamespace;

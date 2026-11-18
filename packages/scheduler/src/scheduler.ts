@@ -683,50 +683,115 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		return result;
 	}
 
+	/**
+	 * Mark finalized the broadcast executions whose transactions the executor has finalized: chain by
+	 * chain, configured chains only (the executor finalizes the transactions of those only, so the
+	 * rows of a chain no longer configured would otherwise take every place), in batches of
+	 * `batchSize`, each read, checked and written in a few statements. Each chain gets up to
+	 * `maxNumTransactionsToProcessInOneGo` executions per run, so one whose transactions are slow to
+	 * finalize never keeps the others from being looked at; `maxDurationPerRunMs` bounds the run.
+	 *
+	 * Every run starts again from the oldest, and pages past the ones not final yet. It reports
+	 * `budgetExhausted` only when a chain's share, or the run's time, ran out while it was finalizing
+	 * at least a batch's worth: the next run then gets further, while one that finalized few would
+	 * mostly read the same executions again (a processing loop would spin on it while transactions
+	 * wait for finality).
+	 */
 	async function checkScheduledExecutionStatus(): Promise<QueueProcessingResult> {
 		const limit = maxNumTransactionsToProcessInOneGo;
+		const budget = processingBudget;
 		const result: QueueProcessingResult = {
 			limit,
 			executions: [],
 			chainTimestamps: {},
+			budgetExhausted: false,
 		};
+		const start = Date.now();
+		// more to do at once: a chain whose share was spent while it was making progress, or chains the
+		// run had no time for after making progress
+		let more = false;
+		let finalized = 0;
+		let outOfTime = false;
 
-		// chain by chain, configured chains only: the executor finalizes the transactions of those
-		// only, so the rows of a chain no longer configured would otherwise take every place
 		for (const chainId of Object.keys(chainProtocols) as IntegerString[]) {
-			const executions = await storage.getUnFinalizedBroadcastedScheduledExecutions({limit, chainId});
-			for (const execution of executions) {
-				let statusToReport: ExecutionStatus;
+			let after: {checkinTime: number; account: String0x; slot: string} | undefined;
+			let checked = 0;
+			let finalizedOnChain = 0;
+			for (;;) {
+				if (Date.now() - start >= budget.maxDurationPerRunMs) {
+					outOfTime = true;
+					break;
+				}
+				const batchLimit = Math.min(budget.batchSize, limit - checked);
+				let executions: ScheduledExecutionQueued<TransactionDataType>[];
 				try {
-					const status = await executor.getExecutionStatus(execution);
-					if (status === 'finalized') {
-						// only the flag, and only while still broadcast: a new schedule written into the slot since
-						// this run read it must not be overwritten by the old record
-						if (await storage.markExecutionFinalized(execution)) {
-							statusToReport = {type: 'finalized', reason: 'queried'};
-						} else {
-							statusToReport = {type: 'unknown', reason: 'replaced since it was read'};
-						}
-					} else {
-						statusToReport = {type: status ? 'broadcasted' : 'unknown', reason: 'queried'};
-					}
+					executions = await storage.getUnFinalizedBroadcastedScheduledExecutions({
+						limit: batchLimit,
+						chainId,
+						after,
+					});
 				} catch (err: any) {
-					// one execution whose status cannot be read must not stop the others; it is looked at
-					// again at the next run
-					logger.error(`could not check the status of ${chainId}/${execution.account}/${execution.slot}`, err);
-					statusToReport = {type: 'unknown', reason: `failed to check: ${err?.message || err}`};
+					logger.error(`could not read the broadcast executions of chain ${chainId}: ${err?.message || err}`);
+					break;
+				}
+				if (executions.length === 0) {
+					break;
+				}
+				const last = executions[executions.length - 1];
+				after = {checkinTime: last.checkinTime, account: last.account, slot: last.slot};
+				checked += executions.length;
+
+				let statuses: ExecutionStatus[];
+				try {
+					const fromExecutor = await executor.getExecutionStatuses(chainId, executions);
+					const toFinalize = executions.filter((_, i) => fromExecutor[i] === 'finalized');
+					// only the flag, and only while still broadcast: a new schedule written into a slot since
+					// this run read it must not be overwritten by the old record
+					const marked = await storage.markExecutionsFinalized({chainId, slots: toFinalize});
+					const markedKeys = new Set(marked.map((v) => `${v.account.toLowerCase()}/${v.slot}`));
+					finalized += marked.length;
+					finalizedOnChain += marked.length;
+					statuses = executions.map((execution, i): ExecutionStatus => {
+						if (fromExecutor[i] !== 'finalized') {
+							return {type: 'broadcasted', reason: 'queried'};
+						}
+						return markedKeys.has(`${execution.account.toLowerCase()}/${execution.slot}`)
+							? {type: 'finalized', reason: 'queried'}
+							: {type: 'unknown', reason: 'replaced since it was read'};
+					});
+				} catch (err: any) {
+					// a batch whose check fails must not stop the others; it is looked at again at the next run
+					logger.error(`could not check the status of ${executions.length} executions of chain ${chainId}`, err);
+					const failure: ExecutionStatus = {type: 'unknown', reason: `failed to check: ${err?.message || err}`};
+					statuses = executions.map(() => failure);
 				}
 
-				result.executions.push({
-					chainId: execution.chainId,
-					account: execution.account,
-					slot: execution.slot,
-					checkinTime: execution.checkinTime,
-					status: statusToReport,
-				});
+				executions.forEach((execution, i) =>
+					result.executions.push({
+						chainId: execution.chainId,
+						account: execution.account,
+						slot: execution.slot,
+						checkinTime: execution.checkinTime,
+						status: statuses[i],
+					}),
+				);
+				if (executions.length < batchLimit) {
+					// that was every broadcast execution of this chain not finalized yet
+					break;
+				}
+				if (checked >= limit) {
+					// this chain's share of the run is spent, and more may be left
+					more = more || finalizedOnChain >= budget.batchSize;
+					break;
+				}
+			}
+			if (outOfTime || Date.now() - start >= budget.maxDurationPerRunMs) {
+				outOfTime = true;
+				break;
 			}
 		}
 
+		result.budgetExhausted = more || (outOfTime && finalized >= budget.batchSize);
 		return result;
 	}
 

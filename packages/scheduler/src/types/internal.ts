@@ -14,7 +14,7 @@ export type SchedulerConfig<ChainProtocolTypes extends ChainProtocol<any>> = {
 	decrypter?: Decrypter<ExecutionSubmission<TransactionDataTypes<ChainProtocolTypes>>>;
 	storage: SchedulerStorage<TransactionDataTypes<ChainProtocolTypes>>;
 	maxExpiry?: number;
-	/** how many broadcast executions checkScheduledExecutionStatus looks at per run */
+	/** how many broadcast executions checkScheduledExecutionStatus looks at per chain per run (10 by default), in batches of `processing.batchSize` */
 	maxNumTransactionsToProcessInOneGo?: number;
 	/** how much one processQueue run may do, see ProcessingBudget for the defaults */
 	processing?: Partial<ProcessingBudget>;

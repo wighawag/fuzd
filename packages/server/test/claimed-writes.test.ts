@@ -102,11 +102,13 @@ describe('a claimed archive', () => {
 	});
 });
 
-describe('marking an execution finalized', () => {
+describe('marking executions finalized', () => {
+	const slot = {account: execution.account, slot: execution.slot};
+
 	it('sets the flag of a broadcast execution, and nothing else', async () => {
 		const storage = await createStorage();
 		await client!.execute('UPDATE ScheduledExecutions SET broadcasted = 1, retries = 3');
-		expect(await storage.markExecutionFinalized({...execution, broadcasted: true, retries: 0})).toBe(true);
+		expect(await storage.markExecutionsFinalized({chainId: execution.chainId, slots: [slot]})).toEqual([slot]);
 		const {rows: found} = await client!.execute('SELECT broadcasted, finalized, retries FROM ScheduledExecutions');
 		expect(found.map((v: any) => ({...v}))).toEqual([{broadcasted: 1, finalized: 1, retries: 3}]);
 	});
@@ -115,10 +117,20 @@ describe('marking an execution finalized', () => {
 		const storage = await createStorage();
 		// the status check read the broadcast execution, then a new schedule replaced it
 		await storage.createOrUpdateQueuedExecution({...execution, checkinTime: 200});
-		expect(await storage.markExecutionFinalized({...execution, broadcasted: true})).toBe(false);
+		expect(await storage.markExecutionsFinalized({chainId: execution.chainId, slots: [slot]})).toEqual([]);
 		const {rows: found} = await client!.execute(
 			'SELECT broadcasted, finalized, nextCheckTime FROM ScheduledExecutions',
 		);
 		expect(found.map((v: any) => ({...v}))).toEqual([{broadcasted: 0, finalized: 0, nextCheckTime: 200}]);
+	});
+
+	it('takes more slots than one statement can bind', async () => {
+		const storage = await createStorage();
+		const slots = Array.from({length: 95}, (_, i) => ({account: execution.account, slot: `slot-${i}`}));
+		for (const {slot} of slots) {
+			await storage.createOrUpdateQueuedExecution({...execution, slot, broadcasted: true});
+		}
+		const marked = await storage.markExecutionsFinalized({chainId: execution.chainId, slots});
+		expect(marked).toHaveLength(95);
 	});
 });

@@ -47,6 +47,15 @@ export interface ExecutorStorage<TransactionDataType> {
 		slot: string;
 	}): Promise<PendingExecutionStored<TransactionDataType>[] | undefined>;
 
+	/**
+	 * Which of these slots (of one chain) still have a transaction not finalized: in a few statements
+	 * for many slots, for checkScheduledExecutionStatus.
+	 */
+	getSlotsWithUnfinalizedExecutions(params: {
+		chainId: IntegerString;
+		slots: {account: String0x; slot: string}[];
+	}): Promise<{account: String0x; slot: string}[]>;
+
 	deletePendingExecution(params: {
 		chainId: IntegerString;
 		account: String0x;

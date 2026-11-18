@@ -22,6 +22,20 @@ export async function addMissingColumns(db: RemoteSQL, table: string, columns: R
 	}
 }
 
+/**
+ * Slots per statement that lists slots as (account, slot) pairs: D1 takes at most 100 bound
+ * parameters per statement, 2 per slot plus a few for the rest.
+ */
+export const MAX_SLOTS_PER_STATEMENT = 40;
+
+export function chunks<T>(list: T[], size: number): T[][] {
+	const result: T[][] = [];
+	for (let i = 0; i < list.length; i += size) {
+		result.push(list.slice(i, i + size));
+	}
+	return result;
+}
+
 export function toValues(inDB: Record<string, any>): {
 	columns: string;
 	values: any[];
