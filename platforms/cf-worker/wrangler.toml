@@ -23,7 +23,7 @@ crons = ["* * * * *", "*/1 * * * *", "*/2 * * * *"]
 [env.staging]
 name = "fuzd-cf-worker-staging"
 d1_databases = [
-  { binding = "DB", database_name = "fuzd-db-staging", database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create" }
+  { binding = "DB", database_name = "fuzd-db-staging", database_id = "885d1d9e-4728-433e-8c49-9003bd5d5f0d" }
 ]
 
 [env.staging.triggers]
