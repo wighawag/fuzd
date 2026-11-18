@@ -36,7 +36,7 @@ Limits that decided it, from developers.cloudflare.com (fetched 2026-11-18: work
 ## Consequences
 
 - An idle loop costs, every `PROCESSING_LOOP_IDLE_MS`, one chain timestamp request and one claim statement per action and per chain: about 24 RPC requests per minute per loop at 5s. That counts against the RPC provider's quota.
-- Two runs never hold scheduled executions of the same account at the same time (claims per account, below). They may still meet on a broadcaster shared by many accounts (the payment account, during a gas spike) or in `processTransactions`, whose claims stay per row: the broadcaster lock waits up to 1s, then the item is retried after 5s.
+- Two runs never hold scheduled executions of the same account at the same time (claims per account, below). `processTransactions` holds a broadcaster one run at a time the same way (amended, below). Runs may still meet on a broadcaster shared by many accounts (the payment account helping executions during a gas spike): the broadcaster lock waits up to 1s, then the item is retried after 5s.
 - `QueueProcessingResult.budgetExhausted` and the `processPendingTransactions` result `{executions, budgetExhausted}` tell a loop to run again at once; the nodejs CLI (`createProcessingLoop` in `@fuzd/server`) and the Durable Object loops both use it.
 - `checkScheduledExecutionStatus` takes no claim: it only marks finalized executions, so overlapping runs repeat a read, not a broadcast.
 
@@ -49,7 +49,7 @@ So an account is held by one run at a time. `claimDueExecutions` still takes the
 - A batch is still at most `limit` executions, and fewer than `limit` still means nothing more is claimable now (what is left belongs to accounts other runs hold).
 - The statement steers SQLite with unary `+` so the held accounts come from the `claimedBy` index (a handful of rows) rather than from the chain's rows. The due executions are read from the due index from the earliest on, until `limit` of them are claimable: rows with a live claim and rows of held accounts are read and skipped, so during a burst with N runs a claim reads up to about N batches of rows more than it claims (D1 bills rows read).
 - Considered first: claiming whole accounts (every due execution of each chosen account). Rejected in review: one account with hundreds of due executions would make one batch, unbounded, past the run's budget and possibly its lease and CPU limit, which brings back the overlap it meant to prevent.
-- `processTransactions` keeps claims per row: it takes the broadcaster lock only to resubmit a transaction (a gas price bump), not to check one, and it already sorts by nonce within a run. Kept as is until a measurement shows contention there.
+- `processTransactions` was first kept with claims per row, since it takes the broadcaster lock only to resubmit a transaction (a gas price bump), not to check one. It now holds broadcasters the same way, for the lock: see the last amendment.
 - Considered: keeping the claim per row and documenting the lock contention. Rejected for the nonce order above, which no lock fixes.
 
 ## Amendment (2026-11-18, later): writes of a run only while it holds the claim
@@ -61,3 +61,7 @@ So every write of `processQueue` is guarded by its claim: `SchedulerStorage.upda
 - What a user's schedule does is unchanged: `scheduleExecution` still upserts the whole row with `createOrUpdateQueuedExecution`, and that releases any claim. A run then loses its claim to the new schedule, so its late write no longer overwrites the new record either. Refusing a schedule into a spent slot stays `work/tasks/backlog/reject-a-schedule-into-a-spent-slot.md`.
 - Considered: a guard that only refuses to turn `broadcasted` from true back to false. Narrower (it lets a late run overwrite every other column of another run's work, re-create an archived row, or archive a row it no longer holds), and it needs telling a user's write from a run's anyway.
 - `checkScheduledExecutionStatus` takes no claim. It wrote `finalized = true` with the full-row upsert, so a new schedule written into the slot between its read and its write was overwritten by the old record (found in review). It now sets the flag alone, only while the row is still broadcast (`SchedulerStorage.markExecutionFinalized`).
+
+## Amendment (2026-11-18, later still): processTransactions holds a broadcaster one run at a time
+
+`claimPendingExecutions` leaves out every broadcaster (`BroadcastedExecutions.broadcaster`, the transaction's `from`) another run holds a live claim on, and keeps the claimant's own, as `claimDueExecutions` does for accounts. A run resubmitting the transactions of one broadcaster during a gas spike then never meets another run on that broadcaster's lock. Tested in `packages/server/test/parallel-processing.test.ts` ("on one transaction of a broadcaster keeps its other transactions from other runs").

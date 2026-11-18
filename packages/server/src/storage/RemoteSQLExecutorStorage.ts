@@ -430,8 +430,12 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		upToNextCheckTime: number;
 		claim: {by: string; now: number; expiresAt: number};
 	}): Promise<PendingExecutionStored<TransactionDataType>[]> {
-		// one statement: SQLite (and D1) runs it atomically, so a row is claimed by one run only
-		const sqlStatement = `UPDATE BroadcastedExecutions SET claimedBy = ?1, claimExpiresAt = ?2 WHERE rowid IN (SELECT rowid FROM BroadcastedExecutions WHERE chainId = ?3 AND finalized = FALSE AND nextCheckTime <= ?4 AND (claimExpiresAt IS NULL OR claimExpiresAt <= ?5) ORDER BY nextCheckTime ASC LIMIT ?6) RETURNING *;`;
+		// one statement: SQLite (and D1) runs it atomically, so a row is claimed by one run only.
+		// One broadcaster at a time (docs/adr/0004): every broadcaster another run holds a transaction of
+		// is left out, so two runs never wait on each other's broadcaster lock to resubmit; this run's
+		// own broadcasters stay in. The `+` keeps the held broadcasters on the claimedBy index.
+		const heldByOthers = `SELECT broadcaster FROM BroadcastedExecutions WHERE claimedBy > '' AND claimedBy != ?1 AND claimExpiresAt > ?5 AND +chainId = ?3`;
+		const sqlStatement = `UPDATE BroadcastedExecutions SET claimedBy = ?1, claimExpiresAt = ?2 WHERE rowid IN (SELECT rowid FROM BroadcastedExecutions WHERE chainId = ?3 AND finalized = FALSE AND nextCheckTime <= ?4 AND (claimExpiresAt IS NULL OR claimExpiresAt <= ?5) AND broadcaster NOT IN (${heldByOthers}) ORDER BY nextCheckTime ASC LIMIT ?6) RETURNING *;`;
 		const {by, now, expiresAt} = params.claim;
 		const {results} = await this.db
 			.prepare(sqlStatement)

@@ -88,6 +88,8 @@ export interface ExecutorStorage<TransactionDataType> {
 	 * Claim the unfinalized executions of a chain due for a check (`nextCheckTime <= upToNextCheckTime`,
 	 * earliest first) that no other run holds, in one atomic step. They stay the claimant's until written
 	 * (createOrUpdatePendingExecution, postponePendingExecution), released, or the claim expires.
+	 * One broadcaster at a time: a broadcaster another run holds a transaction of is left out
+	 * entirely (the claimant's own are not), so two runs never wait on each other's broadcaster lock.
 	 * See docs/adr/0004-claim-due-items-with-a-lease.md.
 	 */
 	claimPendingExecutions(params: {

@@ -238,6 +238,49 @@ describe('a claim', () => {
 		]);
 	});
 
+	it('on one transaction of a broadcaster keeps its other transactions from other runs', async () => {
+		server = await createTestServer();
+		const players = await createPlayers(server, 'held-broadcaster', 3);
+		const [held] = players;
+		const time = Math.floor(Date.now() / 1000) + 3;
+		await scheduleAll(server, players, time);
+		// two more executions of the first player: three transactions of one broadcaster
+		for (const slot of ['second', 'third']) {
+			const {json} = await server.postSigned('/api/scheduling/scheduleExecution', held.wallet, {
+				type: 'clear',
+				chainId: CHAIN_ID,
+				slot,
+				timing: {type: 'fixed-time', scheduledTime: time},
+				executions: [
+					{
+						chainId: CHAIN_ID,
+						transaction: {type: '0x2', gas: '0x5208', to: held.remoteAccount},
+						maxFeePerGasAuthorized: '0x10',
+					},
+				],
+				executionServiceParameters: held.serviceParameters,
+			});
+			expect(json).toMatchObject({success: true});
+		}
+		await new Promise((resolve) => setTimeout(resolve, (time + 1) * 1000 - Date.now()));
+		await run(server, 'processQueue');
+		await server.db.execute('UPDATE BroadcastedExecutions SET nextCheckTime = 0');
+		// another run holds one of them
+		await server.db.execute({
+			sql: "UPDATE BroadcastedExecutions SET claimedBy = 'other-run', claimExpiresAt = ? WHERE account = ? AND slot = 'reveal'",
+			args: [Date.now() + 60_000, held.account],
+		});
+
+		const {transactions} = await run(server, 'processTransactions');
+
+		expect(transactions.map((v: any) => v.account).sort()).toEqual(
+			players
+				.slice(1)
+				.map((v) => v.account)
+				.sort(),
+		);
+	});
+
 	it('of a pending transaction expires too', async () => {
 		server = await createTestServer();
 		const players = await dueBurst(server, 'crashed-pending', 4);
