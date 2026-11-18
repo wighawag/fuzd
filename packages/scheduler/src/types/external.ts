@@ -166,6 +166,8 @@ export type QueueProcessingResult = {
 	limit: number;
 	executions: {chainId: string; account: String0x; slot: string; checkinTime: number; status: ExecutionStatus}[];
 	chainTimestamps: {[chainId: string]: number};
+	/** the run stopped on its budget, not for lack of due work: more may be due, run again at once */
+	budgetExhausted?: boolean;
 };
 // ------------------------------------------------------------------------------------------------
 

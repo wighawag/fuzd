@@ -1,6 +1,6 @@
 import {logs} from 'named-logs';
 import {BroadcasterData} from './types/executor-storage.js';
-import {ExecutorBackend} from './types/external.js';
+import {ExecutorBackend, PendingTransactionsProcessingResult} from './types/external.js';
 import {
 	Executor,
 	ExecutionResponse,
@@ -341,96 +341,120 @@ export function createExecutor<ChainProtocolTypes extends ChainProtocol<any>>(
 	 * the processing budget is spent: finalize them, or resubmit them (gas bump, void) when needed.
 	 * Transactions of different broadcasters run concurrently, those of one broadcaster in nonce order.
 	 * Each one checked moves its next check forward, so the same few never monopolise the runs.
+	 *
+	 * Runs may overlap: each batch is claimed by this run only, for `leaseDurationMs`, and released
+	 * as each one is written back (docs/adr/0004-claim-due-items-with-a-lease.md).
 	 */
-	async function processPendingTransactions() {
+	async function processPendingTransactions(): Promise<PendingTransactionsProcessingResult<TransactionDataType>> {
 		const budget = processingBudget;
 		const start = Date.now();
+		const claimant = `processTransactions:${crypto.randomUUID()}`;
+		let claimed = false;
+		let budgetExhausted = false;
 		const seen = new Set<string>();
 		const processedExecutions: PendingExecutionStored<TransactionDataType>[] = [];
 		const withinBudget = () =>
 			processedExecutions.length < budget.maxItemsPerRun && Date.now() - start < budget.maxDurationPerRunMs;
 
-		for (const chainId of Object.keys(chainProtocols) as IntegerString[]) {
-			if (!withinBudget()) {
-				break;
-			}
-			let currentTimestamp: number;
-			try {
-				currentTimestamp = await _getChainProtocol(chainId).getTimestamp();
-			} catch (err: any) {
-				logger.error(`could not get the timestamp of chain ${chainId}, skipping it: ${err.message || err}`);
-				continue;
-			}
-
-			while (withinBudget()) {
-				const limit = Math.min(budget.batchSize, budget.maxItemsPerRun - processedExecutions.length);
-				const pendingExecutions = await storage.getPendingExecutions({
-					limit,
-					chainId,
-					upToNextCheckTime: currentTimestamp,
-				});
-				const fresh = pendingExecutions
-					.filter((v) => !seen.has(computeExecutionIdentifier(v)))
-					.sort(
-						(a, b) =>
-							Number(a.transactionParametersUsed.nonce) - Number(b.transactionParametersUsed.nonce) ||
-							a.nextCheckTime - b.nextCheckTime,
-					);
-				if (fresh.length === 0) {
+		try {
+			for (const chainId of Object.keys(chainProtocols) as IntegerString[]) {
+				if (!withinBudget()) {
+					budgetExhausted = true;
 					break;
 				}
-				for (const pendingExecution of fresh) {
-					seen.add(computeExecutionIdentifier(pendingExecution));
-					processedExecutions.push(pendingExecution);
+				let currentTimestamp: number;
+				try {
+					currentTimestamp = await _getChainProtocol(chainId).getTimestamp();
+				} catch (err: any) {
+					logger.error(`could not get the timestamp of chain ${chainId}, skipping it: ${err.message || err}`);
+					continue;
 				}
 
-				await processInGroups(
-					fresh,
-					(v) => `${v.chainId}/${v.transactionParametersUsed.from}`,
-					budget.concurrency,
-					async (pendingExecution) => {
-						let updated = false;
-						let lastError: string | undefined;
-						try {
-							updated = await __processPendingTransaction(pendingExecution);
-						} catch (err: any) {
-							lastError = (err && (err.message || err.toString())) || 'unknown error';
-							logger.error(`failed to process pending execution: ${computeExecutionIdentifier(pendingExecution)}`, {
-								error: {
-									name: err.name,
-									code: err.code,
-									status: err.status,
-									stack: err.stack,
-									cause: err,
-								},
-							});
-						}
-						if (!updated) {
+				for (;;) {
+					if (!withinBudget()) {
+						budgetExhausted = true;
+						break;
+					}
+					const limit = Math.min(budget.batchSize, budget.maxItemsPerRun - processedExecutions.length);
+					const now = Date.now();
+					const pendingExecutions = await storage.claimPendingExecutions({
+						limit,
+						chainId,
+						upToNextCheckTime: currentTimestamp,
+						claim: {by: claimant, now, expiresAt: now + budget.leaseDurationMs},
+					});
+					claimed = claimed || pendingExecutions.length > 0;
+					const fresh = pendingExecutions
+						.filter((v) => !seen.has(computeExecutionIdentifier(v)))
+						.sort(
+							(a, b) =>
+								Number(a.transactionParametersUsed.nonce) - Number(b.transactionParametersUsed.nonce) ||
+								a.nextCheckTime - b.nextCheckTime,
+						);
+					if (fresh.length === 0) {
+						break;
+					}
+					for (const pendingExecution of fresh) {
+						seen.add(computeExecutionIdentifier(pendingExecution));
+						processedExecutions.push(pendingExecution);
+					}
+
+					await processInGroups(
+						fresh,
+						(v) => `${v.chainId}/${v.transactionParametersUsed.from}`,
+						budget.concurrency,
+						async (pendingExecution) => {
+							let updated = false;
+							let lastError: string | undefined;
 							try {
-								await storage.postponePendingExecution(
-									pendingExecution,
-									currentTimestamp + (lastError ? NEXT_CHECK_DELAY_AFTER_ERROR : NEXT_CHECK_DELAY),
-									lastError,
-								);
+								updated = await __processPendingTransaction(pendingExecution);
 							} catch (err: any) {
-								logger.error(
-									`could not postpone pending execution ${computeExecutionIdentifier(pendingExecution)}: ${err.message || err}`,
-								);
+								lastError = (err && (err.message || err.toString())) || 'unknown error';
+								logger.error(`failed to process pending execution: ${computeExecutionIdentifier(pendingExecution)}`, {
+									error: {
+										name: err.name,
+										code: err.code,
+										status: err.status,
+										stack: err.stack,
+										cause: err,
+									},
+								});
 							}
-						}
-					},
-				);
+							if (!updated) {
+								try {
+									await storage.postponePendingExecution(
+										pendingExecution,
+										currentTimestamp + (lastError ? NEXT_CHECK_DELAY_AFTER_ERROR : NEXT_CHECK_DELAY),
+										lastError,
+									);
+								} catch (err: any) {
+									logger.error(
+										`could not postpone pending execution ${computeExecutionIdentifier(pendingExecution)}: ${err.message || err}`,
+									);
+								}
+							}
+						},
+					);
 
-				if (pendingExecutions.length < limit) {
-					break;
+					if (pendingExecutions.length < limit) {
+						break;
+					}
+				}
+			}
+		} finally {
+			if (claimed) {
+				// what this run still holds (its write failed) is free again now, rather than when the lease expires
+				try {
+					await storage.releasePendingExecutionClaims(claimant);
+				} catch (err: any) {
+					logger.error(`could not release the claims of ${claimant}, they expire on their own: ${err.message || err}`);
 				}
 			}
 		}
 		if (processedExecutions.length > 0) {
 			logger.info(`processed ${processedExecutions.length} pending executions in ${Date.now() - start}ms`);
 		}
-		// TODO make returning the pending transaction part of the api
-		return processedExecutions as unknown as void;
+		return {executions: processedExecutions, budgetExhausted};
 	}
 
 	// --------------------------------------------------------------------------------------------

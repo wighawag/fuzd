@@ -19,6 +19,8 @@ export const TOKEN_ADMIN = 'test-admin-token';
 export type MockRPCState = {
 	balances: Map<string, bigint>;
 	calls: {method: string; params: any[]}[];
+	/** called before each answer: a test can look at the database while a run is in flight */
+	onCall?: (method: string) => void | Promise<void>;
 };
 
 /**
@@ -67,6 +69,10 @@ function installMockRPC(state: MockRPCState) {
 		const body = JSON.parse(
 			typeof input === 'object' && 'text' in input && !init?.body ? await input.text() : (init?.body as string),
 		);
+		const requests: {method: string}[] = Array.isArray(body) ? body : [body];
+		for (const request of requests) {
+			await state.onCall?.(request.method);
+		}
 		const answer = (request: {id: number; method: string; params?: any[]}) => {
 			try {
 				return {jsonrpc: '2.0', id: request.id, result: mockRPC(state, request.method, request.params || [])};
@@ -94,7 +100,8 @@ export type TestServerOptions = {
 export async function createTestServer(extraEnv: Record<string, string> = {}, options: TestServerOptions = {}) {
 	// the database lives in a scratch dir, never in a shared location
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fuzd-server-test-'));
-	const client = createClient({url: `file:${path.join(dir, 'db.sqlite')}`});
+	const dbURL = `file:${path.join(dir, 'db.sqlite')}`;
+	const client = createClient({url: dbURL});
 	// count what reaches the database: a D1 worker invocation may only make so many queries
 	const dbStats = {requests: 0, statements: 0};
 	const execute = client.execute.bind(client);
@@ -140,6 +147,23 @@ export async function createTestServer(extraEnv: Record<string, string> = {}, op
 	}
 	const adminHeaders = {Authorization: `Basic ${btoa(`admin:${TOKEN_ADMIN}`)}`};
 
+	// other server instances on the same database, each with its own connection: like several
+	// `fuzd` processes, or several Worker invocations, sharing one database
+	const peers: {close(): void}[] = [];
+	function createPeer() {
+		const peerClient = createClient({url: dbURL});
+		const peerDB = new RemoteLibSQL(peerClient);
+		const peerApp = createServer<any>({getDB: () => peerDB, getEnv: () => env, getDrandClient: drand && (() => drand)});
+		peers.push(peerClient);
+		return {
+			app: peerApp,
+			async getJSON(pathname: string, init?: RequestInit) {
+				const response = await peerApp.fetch(new Request(`http://localhost${pathname}`, init));
+				return {status: response.status, json: (await response.json()) as any};
+			},
+		};
+	}
+
 	const setup = await getJSON('/admin/setup', {headers: adminHeaders});
 	if (!setup.json.success) {
 		throw new Error(`setup failed: ${JSON.stringify(setup.json)}`);
@@ -157,8 +181,10 @@ export async function createTestServer(extraEnv: Record<string, string> = {}, op
 		getJSON,
 		postSigned,
 		adminHeaders,
+		createPeer,
 		close() {
 			uninstallMockRPC();
+			for (const peer of peers) peer.close();
 			client.close();
 			fs.rmSync(dir, {recursive: true, force: true});
 		},

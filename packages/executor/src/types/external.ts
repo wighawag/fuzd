@@ -1,7 +1,7 @@
 // ------------------------------------------------------------------------------------------------
 // RawTransactionInfo
 
-import {String0x} from '@fuzd/common';
+import {PendingExecutionStored, String0x} from '@fuzd/common';
 
 // ------------------------------------------------------------------------------------------------
 export type RawTransactionInfo<TransactionDataType> = {
@@ -14,7 +14,14 @@ export type RawTransactionInfo<TransactionDataType> = {
 // ------------------------------------------------------------------------------------------------
 // ExecutorBackend
 // ------------------------------------------------------------------------------------------------
+export type PendingTransactionsProcessingResult<TransactionDataType = unknown> = {
+	/** the pending executions this run checked */
+	executions: PendingExecutionStored<TransactionDataType>[];
+	/** the run stopped on its budget, not for lack of due work: more may be due, run again at once */
+	budgetExhausted: boolean;
+};
+
 export type ExecutorBackend = {
-	processPendingTransactions(): Promise<void>;
+	processPendingTransactions(): Promise<PendingTransactionsProcessingResult>;
 };
 // ------------------------------------------------------------------------------------------------

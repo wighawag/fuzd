@@ -12,18 +12,18 @@ With no `--db` it runs on `:memory:`: the database is created and set up at star
 
 Every option falls back to an environment variable, which the process env or a `.env` / `.env.local` file in the working directory may set (then `.env.default` shipped with the package). A flag overrides its variable.
 
-| flag                                   | env                    | default                                              |                                                                                                                                                                |
-| -------------------------------------- | ---------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-p, --port <port>`                    |                        | `3000`                                               | port to listen on                                                                                                                                              |
-| `-d, --db <url>`                       | `DB`                   | `:memory:`                                           | libsql database url (`:memory:`, `file:./fuzd.db`, a remote url); `:memory:` runs the setup at start                                                           |
-| `-c, --chain <chainId>=<rpc>`          | `CHAIN_<chainId>`      | none                                                 | a chain to serve, repeatable; the rpc may end with `#finality=<blocks>&worstCaseBlockTime=<seconds>&protocol=<ethereum\|starknet>` (defaults 12, 15, ethereum) |
-| `-m, --mnemonic <mnemonic>`            | `HD_MNEMONIC`          | the `test ... junk` mnemonic, from `.env.default`    | the remote accounts are derived from it                                                                                                                        |
-| `--admin-token <token>`                | `TOKEN_ADMIN`          | none: a random token, so the admin routes are closed | password of the admin routes (user `admin`)                                                                                                                    |
-| `--time-lock-decryption <true\|false>` | `TIME_LOCK_DECRYPTION` | `true`                                               | decrypt time-locked executions with drand mainnet                                                                                                              |
-| `--payment-account <address>`          | `PAYMENT_ACCOUNT`      | none                                                 | account whose remote account covers a gas price above what an execution authorised                                                                             |
-| `--contract-timestamp <address>`       | `CONTRACT_TIMESTAMP`   | none                                                 | contract the chain time is read from, instead of the latest block                                                                                              |
-| `--dev`                                | `DEV`                  | off                                                  | enable the development routes, like `/admin/setChainOverride` (which also needs the admin token); `--dev` sets `DEV=true`, the only value that enables them    |
-| `-i, --process-interval <seconds>`     |                        | `1`                                                  | seconds between each run of the queue, the transactions and the status checks; `0` disables it                                                                 |
+| flag                                   | env                    | default                                              |                                                                                                                                                                                  |
+| -------------------------------------- | ---------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-p, --port <port>`                    |                        | `3000`                                               | port to listen on                                                                                                                                                                |
+| `-d, --db <url>`                       | `DB`                   | `:memory:`                                           | libsql database url (`:memory:`, `file:./fuzd.db`, a remote url); `:memory:` runs the setup at start                                                                             |
+| `-c, --chain <chainId>=<rpc>`          | `CHAIN_<chainId>`      | none                                                 | a chain to serve, repeatable; the rpc may end with `#finality=<blocks>&worstCaseBlockTime=<seconds>&protocol=<ethereum\|starknet>` (defaults 12, 15, ethereum)                   |
+| `-m, --mnemonic <mnemonic>`            | `HD_MNEMONIC`          | the `test ... junk` mnemonic, from `.env.default`    | the remote accounts are derived from it                                                                                                                                          |
+| `--admin-token <token>`                | `TOKEN_ADMIN`          | none: a random token, so the admin routes are closed | password of the admin routes (user `admin`)                                                                                                                                      |
+| `--time-lock-decryption <true\|false>` | `TIME_LOCK_DECRYPTION` | `true`                                               | decrypt time-locked executions with drand mainnet                                                                                                                                |
+| `--payment-account <address>`          | `PAYMENT_ACCOUNT`      | none                                                 | account whose remote account covers a gas price above what an execution authorised                                                                                               |
+| `--contract-timestamp <address>`       | `CONTRACT_TIMESTAMP`   | none                                                 | contract the chain time is read from, instead of the latest block                                                                                                                |
+| `--dev`                                | `DEV`                  | off                                                  | enable the development routes, like `/admin/setChainOverride` (which also needs the admin token); `--dev` sets `DEV=true`, the only value that enables them                      |
+| `-i, --process-interval <seconds>`     |                        | `1`                                                  | seconds between two runs of the queue, the transactions and the status checks when the last run found nothing more to do (during a burst they run back to back); `0` disables it |
 
 The default mnemonic (from `.env.default`) is public: it is meant for a local chain only. Give your own for anything else.
 
@@ -31,6 +31,10 @@ The default mnemonic (from `.env.default`) is public: it is meant for a local ch
 # the same configuration from the environment
 DB=:memory: CHAIN_31337="http://127.0.0.1:8555#finality=1&worstCaseBlockTime=2" HD_MNEMONIC="<mnemonic>" npx fuzd --port 34002
 ```
+
+## Several processes on one database
+
+Several `fuzd` processes may share one database (a `file:` or remote libsql url) to process more at once: each run claims the due items it processes, so two processes never handle the same one, and the items of a process that died come back after the lease (`PROCESSING_LEASE_DURATION_MS`, 2 minutes by default). See `docs/adr/0004-claim-due-items-with-a-lease.md`. Run `/admin/setup` once after upgrading an existing database: it adds the claim columns.
 
 ## Develop
 

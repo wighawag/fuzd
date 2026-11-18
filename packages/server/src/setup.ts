@@ -134,6 +134,7 @@ function processingBudgetFromEnv(env: Record<string, unknown>): Partial<Processi
 		concurrency: read('PROCESSING_CONCURRENCY'),
 		maxItemsPerRun: read('PROCESSING_MAX_ITEMS_PER_RUN'),
 		maxDurationPerRunMs: read('PROCESSING_MAX_DURATION_MS'),
+		leaseDurationMs: read('PROCESSING_LEASE_DURATION_MS'),
 	};
 }
 

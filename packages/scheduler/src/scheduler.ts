@@ -509,6 +509,7 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 				});
 			} else {
 				// For now as we do not limit result to a certain time, we will reach there often
+				// (not written back: the run releases its claim when it ends, docs/adr/0004)
 				logger.debug(`not yet time: ${time2text(newCheckinTime - currentTimestamp)} to wait...`);
 				result.executions.push({
 					chainId: execution.chainId,
@@ -555,9 +556,13 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 	}
 
 	/**
-	 * Process the executions that are due, chain by chain: batches of due executions are fetched and
+	 * Process the executions that are due, chain by chain: batches of due executions are claimed and
 	 * processed until none is left or the processing budget is spent. Executions of different accounts
 	 * run concurrently, those of one account one after the other (they share a broadcaster and its nonce).
+	 *
+	 * Runs may overlap (several crons, loops or processes on one database): each batch is claimed by
+	 * this run only, for `leaseDurationMs`, and released as each execution is written back
+	 * (docs/adr/0004-claim-due-items-with-a-lease.md).
 	 */
 	async function processQueue() {
 		const budget = processingBudget;
@@ -565,58 +570,82 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			limit: budget.maxItemsPerRun,
 			executions: [],
 			chainTimestamps: {},
+			budgetExhausted: false,
 		};
 		const start = Date.now();
+		const claimant = `processQueue:${crypto.randomUUID()}`;
+		let claimed = false;
 		const seen = new Set<string>();
 		let processed = 0;
 		const withinBudget = () => processed < budget.maxItemsPerRun && Date.now() - start < budget.maxDurationPerRunMs;
 
-		for (const chainId of Object.keys(chainProtocols) as IntegerString[]) {
-			if (!withinBudget()) {
-				break;
-			}
-			let currentTimestamp: number;
-			try {
-				currentTimestamp = await _getChainProtocol(chainId).getTimestamp();
-			} catch (err: any) {
-				logger.error(`could not get the timestamp of chain ${chainId}, skipping it: ${err.message || err}`);
-				continue;
-			}
-			result.chainTimestamps[Number(chainId).toString()] = currentTimestamp;
-
-			while (withinBudget()) {
-				const limit = Math.min(budget.batchSize, budget.maxItemsPerRun - processed);
-				const executions = await storage.getQueueTopMostExecutions({
-					limit,
-					chainId,
-					upToCheckinTime: currentTimestamp,
-				});
-				// an execution handled earlier in this run and still due made no progress: not again in this run
-				const fresh = executions.filter((v) => !seen.has(computeScheduledExecutionIdentifier(v)));
-				if (fresh.length === 0) {
+		try {
+			for (const chainId of Object.keys(chainProtocols) as IntegerString[]) {
+				if (!withinBudget()) {
+					result.budgetExhausted = true;
 					break;
 				}
-				for (const execution of fresh) {
-					seen.add(computeScheduledExecutionIdentifier(execution));
+				let currentTimestamp: number;
+				try {
+					currentTimestamp = await _getChainProtocol(chainId).getTimestamp();
+				} catch (err: any) {
+					logger.error(`could not get the timestamp of chain ${chainId}, skipping it: ${err.message || err}`);
+					continue;
 				}
-				processed += fresh.length;
+				result.chainTimestamps[Number(chainId).toString()] = currentTimestamp;
 
-				await processInGroups(
-					fresh,
-					(execution) => `${execution.chainId}/${execution.account}`,
-					budget.concurrency,
-					async (execution) => {
-						try {
-							await processExecution(execution, result);
-						} catch (err: any) {
-							await retryAfterFailure(execution, err, result);
-						}
-					},
-				);
+				for (;;) {
+					if (!withinBudget()) {
+						result.budgetExhausted = true;
+						break;
+					}
+					const limit = Math.min(budget.batchSize, budget.maxItemsPerRun - processed);
+					const now = Date.now();
+					const executions = await storage.claimDueExecutions({
+						limit,
+						chainId,
+						upToCheckinTime: currentTimestamp,
+						claim: {by: claimant, now, expiresAt: now + budget.leaseDurationMs},
+					});
+					claimed = claimed || executions.length > 0;
+					// an execution handled earlier in this run and still due made no progress: not again in this run
+					// (its claim is released at the end of the run)
+					const fresh = executions.filter((v) => !seen.has(computeScheduledExecutionIdentifier(v)));
+					if (fresh.length === 0) {
+						break;
+					}
+					for (const execution of fresh) {
+						seen.add(computeScheduledExecutionIdentifier(execution));
+					}
+					processed += fresh.length;
 
-				if (executions.length < limit) {
-					// that was every due execution of this chain
-					break;
+					await processInGroups(
+						fresh,
+						(execution) => `${execution.chainId}/${execution.account}`,
+						budget.concurrency,
+						async (execution) => {
+							try {
+								await processExecution(execution, result);
+							} catch (err: any) {
+								await retryAfterFailure(execution, err, result);
+							}
+						},
+					);
+
+					if (executions.length < limit) {
+						// that was every due execution of this chain
+						break;
+					}
+				}
+			}
+		} finally {
+			if (claimed) {
+				// what this run still holds (not written back: skipped, or its write failed) is free again now,
+				// rather than when the lease expires
+				try {
+					await storage.releaseExecutionClaims(claimant);
+				} catch (err: any) {
+					logger.error(`could not release the claims of ${claimant}, they expire on their own: ${err.message || err}`);
 				}
 			}
 		}

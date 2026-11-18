@@ -41,6 +41,21 @@ export interface SchedulerStorage<TransactionDataType> {
 		chainId?: IntegerString;
 		upToCheckinTime?: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
+	/**
+	 * Claim the due executions of a chain (not broadcast, `checkinTime <= upToCheckinTime`, earliest
+	 * first) that no other run holds: in one atomic step, so two runs never get the same one. They stay
+	 * the claimant's until it writes them (createOrUpdateQueuedExecution and archiveExecution release
+	 * them), calls releaseExecutionClaims, or the claim expires (`claim.expiresAt`, unix ms).
+	 * See docs/adr/0004-claim-due-items-with-a-lease.md.
+	 */
+	claimDueExecutions(params: {
+		limit: number;
+		chainId: IntegerString;
+		upToCheckinTime: number;
+		claim: {by: string; now: number; expiresAt: number};
+	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;
+	/** Release whatever `claimant` still holds (its run is over). */
+	releaseExecutionClaims(claimant: string): Promise<void>;
 	getUnFinalizedBroadcastedScheduledExecutions(params: {
 		limit: number;
 	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]>;

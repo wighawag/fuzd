@@ -1,6 +1,6 @@
 import type {RemoteSQL} from 'remote-sql';
 import type {ScheduledExecutionQueued, SchedulerStorage} from '@fuzd/scheduler';
-import {sqlToStatements, toValues} from './utils.js';
+import {setupClaimColumns, sqlToStatements, toValues} from './utils.js';
 import setupTables from '../schema/ts/scheduler.sql.js';
 import {IntegerString, String0x} from '@fuzd/common';
 
@@ -177,7 +177,8 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 	): Promise<ScheduledExecutionQueued<TransactionDataType>> {
 		const inDB = toScheduledExecutionInDB(executionToStore);
 		const {values, columns, bindings, overwrites} = toValues(inDB);
-		const sqlStatement = `INSERT INTO ScheduledExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites};`;
+		// writing an execution back releases the claim on it (docs/adr/0004)
+		const sqlStatement = `INSERT INTO ScheduledExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot) DO UPDATE SET ${overwrites}, claimedBy = NULL, claimExpiresAt = NULL;`;
 		const statement = this.db.prepare(sqlStatement);
 		await statement.bind(...values).all();
 		return executionToStore;
@@ -202,6 +203,32 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		const statement = this.db.prepare(sqlStatement);
 		const {results} = await statement.bind(...bindings).all<ScheduledExecutionInDB>();
 		return results.map(fromScheduledExecutionInDB<TransactionDataType>);
+	}
+
+	async claimDueExecutions(params: {
+		limit: number;
+		chainId: IntegerString;
+		upToCheckinTime: number;
+		claim: {by: string; now: number; expiresAt: number};
+	}): Promise<ScheduledExecutionQueued<TransactionDataType>[]> {
+		// one statement: SQLite (and D1) runs it atomically, so a row is claimed by one run only
+		const sqlStatement = `UPDATE ScheduledExecutions SET claimedBy = ?1, claimExpiresAt = ?2 WHERE rowid IN (SELECT rowid FROM ScheduledExecutions WHERE chainId = ?3 AND broadcasted = FALSE AND nextCheckTime <= ?4 AND (claimExpiresAt IS NULL OR claimExpiresAt <= ?5) ORDER BY nextCheckTime ASC LIMIT ?6) RETURNING *;`;
+		const {by, now, expiresAt} = params.claim;
+		const {results} = await this.db
+			.prepare(sqlStatement)
+			.bind(by, expiresAt, params.chainId, params.upToCheckinTime, now, params.limit)
+			.all<ScheduledExecutionInDB>();
+		// RETURNING does not keep the order of the selection
+		return results
+			.sort((a, b) => a.nextCheckTime - b.nextCheckTime)
+			.map(fromScheduledExecutionInDB<TransactionDataType>);
+	}
+
+	async releaseExecutionClaims(claimant: string): Promise<void> {
+		await this.db
+			.prepare(`UPDATE ScheduledExecutions SET claimedBy = NULL, claimExpiresAt = NULL WHERE claimedBy = ?1;`)
+			.bind(claimant)
+			.all();
 	}
 
 	async getUnFinalizedBroadcastedScheduledExecutions(params: {
@@ -278,5 +305,7 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 	async setup(): Promise<void> {
 		const statements = sqlToStatements(setupTables);
 		await this.db.batch(statements.map((v) => this.db.prepare(v)));
+		// the old table may lack the claim columns, which the batch above cannot add
+		await setupClaimColumns(this.db, 'ScheduledExecutions');
 	}
 }

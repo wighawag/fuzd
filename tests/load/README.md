@@ -70,6 +70,16 @@ Measured on staging (2026-11-18, RPC through a tunnel):
 | 2000 players | about 200 min, ~1400 missed | | 10.3 min, 2000/2000 |
 | cron CPU per run | under 1s (10) | 4 to 7s (100) | 9 to 20s (200), limit 30s |
 
+Then with the processing loops (`PROCESSING_LOOPS`, `docs/adr/0004-claim-due-items-with-a-lease.md`), same day, default budget:
+
+| run | crons only (`PROCESSING_LOOPS=0`) | 4 loops | 8 loops |
+| - | - | - | - |
+| 600 players | 6.1 min, about 100/min | | |
+| 2000 players | | 2.8 min, 810 in the first minute | 1.3 min, 1577 in the first minute |
+| CPU per invocation | 4.3 to 8.4s (cron, 100) | up to 10.7s (alarm: 100 + pending checks) | same |
+
+Set the loop count with `printf 4 | npx wrangler secret put PROCESSING_LOOPS -e staging`, and back to `0` afterwards: an idle loop keeps waking every 5s. `wrangler tail` samples during a burst; the GraphQL analytics API has every invocation.
+
 Details in `work/notes/findings/cloudflare-worker-cron-capacity.md`.
 
 ## Things the test does NOT cover

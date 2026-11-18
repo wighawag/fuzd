@@ -16,6 +16,12 @@ export type ProcessingBudget = {
 	maxItemsPerRun: number;
 	/** stop pulling new batches after this long, so a run is over before the next one starts */
 	maxDurationPerRunMs: number;
+	/**
+	 * how long the items a run claimed stay its own (docs/adr/0004-claim-due-items-with-a-lease.md):
+	 * other runs skip them until the run writes them back or the lease expires (a run that crashed).
+	 * Well above how long a run takes, or two runs could hold the same item.
+	 */
+	leaseDurationMs: number;
 };
 
 export const DEFAULT_PROCESSING_BUDGET: ProcessingBudget = {
@@ -23,6 +29,7 @@ export const DEFAULT_PROCESSING_BUDGET: ProcessingBudget = {
 	concurrency: 10,
 	maxItemsPerRun: 100,
 	maxDurationPerRunMs: 40_000,
+	leaseDurationMs: 120_000,
 };
 
 export function resolveProcessingBudget(budget?: Partial<ProcessingBudget>): ProcessingBudget {

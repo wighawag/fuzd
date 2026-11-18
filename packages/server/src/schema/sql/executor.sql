@@ -28,9 +28,16 @@ CREATE TABLE IF NOT EXISTS BroadcastedExecutions (
     transactionParametersUsed  text        NOT NULL, -- tx maxFeePerGas,maxPriorityFeePerGas
 
     transactionData            text        NOT NULL, -- 'nonce' | 'maxFeePerGas' | 'maxPriorityFeePerGas' | 'gas' | 'chainId' | 'from' | 'type' | 'accessList' 
+
+    -- the run processing it, until claimExpiresAt (unix ms, real time): docs/adr/0004
+    -- (setup adds both to a table created before them, and their index: not here, as running this file on
+    -- such a table would fail on a column it does not have yet)
+    claimedBy                  text,
+    claimExpiresAt             integer,
     
     PRIMARY KEY (account, chainId, slot, batchIndex)
 );
+
 	
 CREATE INDEX IF NOT EXISTS idx_BroadcastedExecutions_finalized_nextCheckTime ON BroadcastedExecutions (finalized, nextCheckTime);
 CREATE INDEX IF NOT EXISTS idx_BroadcastedExecutions_chainId_finalized_nextCheckTime ON BroadcastedExecutions (chainId, finalized, nextCheckTime);

@@ -1,6 +1,6 @@
 import type {RemoteSQL, SQLPreparedStatement} from 'remote-sql';
 import type {ExecutorStorage, BroadcasterData, ChainConfiguration, BroadcasterDataWithLock} from '@fuzd/executor';
-import {sqlToStatements, toValues} from './utils.js';
+import {setupClaimColumns, sqlToStatements, toValues} from './utils.js';
 import {logs} from 'named-logs';
 import setupTables from '../schema/ts/executor.sql.js';
 import {FUZDLogger, Fees, IntegerString, PendingExecutionStored, String0x, UpdateableParameter} from '@fuzd/common';
@@ -306,7 +306,7 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		const inDB = toExecutionInDB(executionToStore);
 		const {helpedForUpToGasPrice, ...valuesToConsider} = inDB;
 		const {values, columns, bindings, overwrites} = toValues(valuesToConsider);
-		const sqlExecutionInsertionStatement = `INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot, batchIndex) DO UPDATE SET ${overwrites} WHERE (finalized = FALSE);`;
+		const sqlExecutionInsertionStatement = `INSERT INTO BroadcastedExecutions (${columns}) VALUES(${bindings}) ON CONFLICT(account, chainId, slot, batchIndex) DO UPDATE SET ${overwrites}, claimedBy = NULL, claimExpiresAt = NULL WHERE (finalized = FALSE);`;
 		const executionInsertionStatement = this.db.prepare(sqlExecutionInsertionStatement);
 
 		// TODO use number of string ?
@@ -424,13 +424,36 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 		return results.map(fromExecutionInDB<TransactionDataType>);
 	}
 
+	async claimPendingExecutions(params: {
+		limit: number;
+		chainId: IntegerString;
+		upToNextCheckTime: number;
+		claim: {by: string; now: number; expiresAt: number};
+	}): Promise<PendingExecutionStored<TransactionDataType>[]> {
+		// one statement: SQLite (and D1) runs it atomically, so a row is claimed by one run only
+		const sqlStatement = `UPDATE BroadcastedExecutions SET claimedBy = ?1, claimExpiresAt = ?2 WHERE rowid IN (SELECT rowid FROM BroadcastedExecutions WHERE chainId = ?3 AND finalized = FALSE AND nextCheckTime <= ?4 AND (claimExpiresAt IS NULL OR claimExpiresAt <= ?5) ORDER BY nextCheckTime ASC LIMIT ?6) RETURNING *;`;
+		const {by, now, expiresAt} = params.claim;
+		const {results} = await this.db
+			.prepare(sqlStatement)
+			.bind(by, expiresAt, params.chainId, params.upToNextCheckTime, now, params.limit)
+			.all<ExecutionInDB>();
+		return results.sort((a, b) => a.nextCheckTime - b.nextCheckTime).map(fromExecutionInDB<TransactionDataType>);
+	}
+
+	async releasePendingExecutionClaims(claimant: string): Promise<void> {
+		await this.db
+			.prepare(`UPDATE BroadcastedExecutions SET claimedBy = NULL, claimExpiresAt = NULL WHERE claimedBy = ?1;`)
+			.bind(claimant)
+			.all();
+	}
+
 	async postponePendingExecution(
 		execution: {chainId: IntegerString; account: String0x; slot: string; batchIndex: number; hash: String0x},
 		nextCheckTime: number,
 		lastError?: string,
 	): Promise<void> {
 		const statement = this.db.prepare(
-			`UPDATE BroadcastedExecutions SET nextCheckTime = ?1, lastError = COALESCE(?2, lastError) WHERE account = ?3 AND chainId = ?4 AND slot = ?5 AND batchIndex = ?6 AND hash = ?7 AND finalized = FALSE;`,
+			`UPDATE BroadcastedExecutions SET nextCheckTime = ?1, lastError = COALESCE(?2, lastError), claimedBy = NULL, claimExpiresAt = NULL WHERE account = ?3 AND chainId = ?4 AND slot = ?5 AND batchIndex = ?6 AND hash = ?7 AND finalized = FALSE;`,
 		);
 		await statement
 			.bind(
@@ -515,6 +538,8 @@ export class RemoteSQLExecutorStorage<TransactionDataType> implements ExecutorSt
 	async setup(): Promise<void> {
 		const statements = sqlToStatements(setupTables);
 		await this.db.batch(statements.map((v) => this.db.prepare(v)));
+		// the old table may lack the claim columns, which the batch above cannot add
+		await setupClaimColumns(this.db, 'BroadcastedExecutions');
 	}
 
 	async getChainConfiguration(chainId: IntegerString): Promise<ChainConfiguration> {

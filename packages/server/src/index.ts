@@ -22,6 +22,7 @@ export type {Context} from 'hono';
 export * from './storage/RemoteSQLExecutorStorage.js';
 export * from './storage/RemoteSQLSchedulerStorage.js';
 export type {InternalAction} from './api/internal/index.js';
+export * from './processing-loop.js';
 
 const logger = <FUZDLogger>logs('fuzd-server');
 

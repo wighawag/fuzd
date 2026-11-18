@@ -8,10 +8,20 @@ compatibility_flags = [ "nodejs_compat" ] # for node:async_hooks
 enabled = true
 head_sampling_rate = 1 # optional. default = 1.
 
+# The processing loops (src/processing-loop.ts, docs/adr/0004): Durable Objects whose alarms run
+# processQueue and processTransactions back to back during a burst. PROCESSING_LOOPS sets how many
+# (1 by default, 0 for the crons alone), PROCESSING_LOOP_IDLE_MS their pause when idle (5000).
+[[migrations]]
+tag = "v1-processing-loop"
+new_sqlite_classes = ["ProcessingLoop"]
+
 [env.production]
 
 d1_databases = [
   { binding = "DB", database_name = "fuzd-db", database_id = "3b9d30e7-6f33-4607-b4cd-4448e4d88951" }
+]
+durable_objects.bindings = [
+  { name = "PROCESSING_LOOP", class_name = "ProcessingLoop" }
 ]
 
 [triggers]
@@ -24,6 +34,9 @@ crons = ["* * * * *", "*/1 * * * *", "*/2 * * * *"]
 name = "fuzd-cf-worker-staging"
 d1_databases = [
   { binding = "DB", database_name = "fuzd-db-staging", database_id = "885d1d9e-4728-433e-8c49-9003bd5d5f0d" }
+]
+durable_objects.bindings = [
+  { name = "PROCESSING_LOOP", class_name = "ProcessingLoop" }
 ]
 
 [env.staging.triggers]

@@ -26,6 +26,12 @@ CREATE TABLE IF NOT EXISTS ScheduledExecutions (
     retries                       integer, 
 
     lastError                     text,
+
+    -- the run processing it, until claimExpiresAt (unix ms, real time): docs/adr/0004
+    -- (setup adds both to a table created before them, and their index: not here, as running this file on
+    -- such a table would fail on a column it does not have yet)
+    claimedBy                     text,
+    claimExpiresAt                integer,
     
     PRIMARY KEY (account, chainId, slot)
 );

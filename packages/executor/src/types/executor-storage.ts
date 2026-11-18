@@ -85,6 +85,20 @@ export interface ExecutorStorage<TransactionDataType> {
 		upToNextCheckTime?: number;
 	}): Promise<PendingExecutionStored<TransactionDataType>[]>;
 	/**
+	 * Claim the unfinalized executions of a chain due for a check (`nextCheckTime <= upToNextCheckTime`,
+	 * earliest first) that no other run holds, in one atomic step. They stay the claimant's until written
+	 * (createOrUpdatePendingExecution, postponePendingExecution), released, or the claim expires.
+	 * See docs/adr/0004-claim-due-items-with-a-lease.md.
+	 */
+	claimPendingExecutions(params: {
+		limit: number;
+		chainId: IntegerString;
+		upToNextCheckTime: number;
+		claim: {by: string; now: number; expiresAt: number};
+	}): Promise<PendingExecutionStored<TransactionDataType>[]>;
+	/** Release whatever `claimant` still holds (its run is over). */
+	releasePendingExecutionClaims(claimant: string): Promise<void>;
+	/**
 	 * Move the next check of an unfinalized execution, unless it changed since it was read: only the
 	 * row still carrying `hash` is updated, so a concurrent resubmission is never overwritten.
 	 */
