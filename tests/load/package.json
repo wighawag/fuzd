@@ -1,0 +1,15 @@
+{
+  "name": "fuzd-tests-load",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "load test reproducing a game reveal burst: many players' executions scheduled for the same instant",
+  "devDependencies": {
+    "@fuzd/client": "workspace:*",
+    "viem": "^2.21.55"
+  },
+  "scripts": {
+    "schedule": "node reveal-burst.ts schedule",
+    "watch": "node reveal-burst.ts watch"
+  }
+}

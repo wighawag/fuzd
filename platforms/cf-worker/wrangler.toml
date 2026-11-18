@@ -16,3 +16,15 @@ d1_databases = [
 
 [triggers]
 crons = ["* * * * *", "*/1 * * * *", "*/2 * * * *"]
+
+# A copy of production on its own worker and D1, for load tests (tests/load). Create the database
+# once with `wrangler d1 create fuzd-db-staging`, paste its id below, then `pnpm init-db:staging`.
+# Secrets (HD_MNEMONIC, TOKEN_ADMIN, CHAIN_<id>) are per env: `wrangler secret put <NAME> -e staging`.
+[env.staging]
+name = "fuzd-cf-worker-staging"
+d1_databases = [
+  { binding = "DB", database_name = "fuzd-db-staging", database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create" }
+]
+
+[env.staging.triggers]
+crons = ["* * * * *", "*/1 * * * *", "*/2 * * * *"]

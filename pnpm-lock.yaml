@@ -664,6 +664,15 @@ importers:
         specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.2)(supports-color@8.1.1)
 
+  tests/load:
+    devDependencies:
+      '@fuzd/client':
+        specifier: workspace:*
+        version: link:../../packages/client
+      viem:
+        specifier: ^2.21.55
+        version: 2.21.55(typescript@5.6.3)(zod@3.24.1)
+
   tests/starknet:
     devDependencies:
       '@fuzd/chain-protocol':
@@ -4033,6 +4042,7 @@ packages:
   image-size@0.5.5:
     resolution: {integrity: sha512-6TDAlDPZxUFCv+fuOkIoXT/V/f3Qbq8e37p+YOiYrUv3v9cc3/6x78VdfPgFVaB9dZYeLUfKgHRebpkm/oP2VQ==}
     engines: {node: '>=0.10.0'}
+    deprecated: Please migrate to image-size@2.x
     hasBin: true
 
   immutable@4.3.7:
