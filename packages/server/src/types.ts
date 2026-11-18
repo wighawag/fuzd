@@ -2,10 +2,13 @@ import {Context} from 'hono';
 import {HonoBase} from 'hono/hono-base';
 import {Bindings, Endpoint, Schema} from 'hono/types';
 import {RemoteSQL} from 'remote-sql';
+import type {HttpChainClient} from 'tlock-js';
 
 export type ServerOptions<Env extends Bindings = Bindings> = {
 	getDB: (c: Context<{Bindings: Env}>) => RemoteSQL;
 	getEnv: (c: Context<{Bindings: Env}>) => Env;
+	/** the drand network time-locked executions are decrypted with (drand mainnet when not given) */
+	getDrandClient?: (c: Context<{Bindings: Env}>) => HttpChainClient;
 };
 
 export type ServerObject = {

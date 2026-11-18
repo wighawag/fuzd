@@ -105,6 +105,31 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 		return initialTime + maxExpiry;
 	}
 
+	/**
+	 * Replace a time-locked execution's payload and timing by those of its inner layer. The inner timing
+	 * decides from then on: the check-in time, and the expiry (from its own initial time). Without an
+	 * expiryDelta of its own it keeps the outer one, so peeling a layer never lengthens what the user asked.
+	 * A confirmation of the outer timing's prior transaction does not carry over to the inner timing.
+	 */
+	function peelOuterLayer(
+		execution: ScheduledExecutionQueued<TransactionDataType>,
+		newPayload: string,
+		newTiming: TimingTypes,
+	) {
+		if (execution.type !== 'time-locked') {
+			throw new Error(`only a time-locked execution has layers`);
+		}
+		if (newTiming.type === 'delta-time') {
+			throw new Error(`a time-locked layer cannot have a timing of type "delta-time"`);
+		}
+		const outerExpiryDelta = execution.timing.expiryDelta;
+		execution.payload = newPayload;
+		// unset is what getExpiryTime reads as unset (0 and null included): it would mean the 24h maximum
+		execution.timing =
+			!newTiming.expiryDelta && outerExpiryDelta ? {...newTiming, expiryDelta: outerExpiryDelta} : newTiming;
+		execution.priorTransactionConfirmation = undefined;
+	}
+
 	async function retryLater(
 		execution: ScheduledExecutionQueued<TransactionDataType>,
 		newCheckinTime: number,
@@ -144,7 +169,17 @@ export function createScheduler<ChainProtocolTypes extends ChainProtocol<any>>(
 			if (decryptionResult.success) {
 				executions = decryptionResult.executions;
 			} else {
-				if (decryptionResult.retry) {
+				if (decryptionResult.newPayload && decryptionResult.newTiming) {
+					// onion: the decrypted payload is itself time-locked. Keep that inner layer and its timing, so the
+					// next attempt decrypts it rather than the outer layer again, and wait for its time.
+					peelOuterLayer(scheduledExecutionQueued, decryptionResult.newPayload, decryptionResult.newTiming);
+					scheduledExecutionQueued.checkinTime = Math.max(
+						computePotentialExecutionTime(scheduledExecutionQueued),
+						decryptionResult.retry || 0,
+					);
+					await storage.createOrUpdateQueuedExecution(scheduledExecutionQueued);
+					return {type: 'reassigned', reason: 'outer time-lock layer decrypted'};
+				} else if (decryptionResult.retry) {
 					// a round already past would make it due again at once: give it at least the first retry delay
 					scheduledExecutionQueued.checkinTime = Math.max(
 						decryptionResult.retry,

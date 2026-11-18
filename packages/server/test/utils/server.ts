@@ -5,6 +5,7 @@ import {createClient} from '@libsql/client';
 import {RemoteLibSQL} from 'remote-sql-libsql';
 import {keccak256} from 'viem';
 import type {PrivateKeyAccount} from 'viem/accounts';
+import type {HttpChainClient} from 'tlock-js';
 import {createServer} from '../../src/index.js';
 
 export const CHAIN_ID = '31337';
@@ -86,6 +87,8 @@ export type TestServer = Awaited<ReturnType<typeof createTestServer>>;
 export type TestServerOptions = {
 	/** remove TOKEN_ADMIN from the env once the database is set up: a server run without one */
 	forgetAdminTokenAfterSetup?: boolean;
+	/** decrypt time-locked executions with this drand network (also needs TIME_LOCK_DECRYPTION=true) */
+	drand?: HttpChainClient;
 };
 
 export async function createTestServer(extraEnv: Record<string, string> = {}, options: TestServerOptions = {}) {
@@ -114,7 +117,8 @@ export async function createTestServer(extraEnv: Record<string, string> = {}, op
 		TOKEN_ADMIN,
 		...extraEnv,
 	} as Record<string, string | undefined>;
-	const app = createServer<any>({getDB: () => db, getEnv: () => env});
+	const drand = options.drand;
+	const app = createServer<any>({getDB: () => db, getEnv: () => env, getDrandClient: drand && (() => drand)});
 	const rpc: MockRPCState = {balances: new Map(), calls: []};
 	const uninstallMockRPC = installMockRPC(rpc);
 

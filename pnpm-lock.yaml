@@ -329,6 +329,12 @@ importers:
       '@libsql/client':
         specifier: ^0.18.0
         version: 0.18.0
+      '@noble/curves':
+        specifier: 1.6.0
+        version: 1.6.0
+      '@noble/hashes':
+        specifier: 1.5.0
+        version: 1.5.0
       as-soon:
         specifier: ^0.0.11
         version: 0.0.11

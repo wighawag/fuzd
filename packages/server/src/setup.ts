@@ -138,7 +138,7 @@ function processingBudgetFromEnv(env: Record<string, unknown>): Partial<Processi
 }
 
 export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env>): MiddlewareHandler {
-	const {getDB, getEnv} = options.serverOptions;
+	const {getDB, getEnv, getDrandClient} = options.serverOptions;
 
 	return async (c, next) => {
 		const env = getEnv(c);
@@ -181,7 +181,7 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			env.TIME_LOCK_DECRYPTION === 'false'
 				? undefined
 				: initDecrypter<ExecutionSubmission<MyTransactionData>>({
-						client: mainnetClient(),
+						client: getDrandClient ? getDrandClient(c) : mainnetClient(),
 					});
 		const schedulerConfig: SchedulerConfig<MyChainProtocols> = {
 			...baseConfig,

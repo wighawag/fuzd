@@ -44,18 +44,20 @@ export function initDecrypter<ExecutionDataType>(config: DecrypterConfig): Decry
 		const json: DecryptedPayload<ExecutionDataType> = JSON.parse(decrypted.toString('utf-8'));
 
 		if (json.type === 'time-locked') {
-			// onion decryption
+			// onion decryption: the decrypted payload is itself time-locked, with the timing of its own layer
+			const newTiming = json.timing;
 			if (
+				!newTiming ||
 				!(
-					execution.timing.type === 'fixed-time' ||
-					execution.timing.type === 'fixed-round' ||
-					execution.timing.type === 'delta-time-with-target-time'
+					newTiming.type === 'fixed-time' ||
+					newTiming.type === 'fixed-round' ||
+					newTiming.type === 'delta-time-with-target-time'
 				)
 			) {
-			} else {
-				throw new Error(`execution timing of type "${execution.timing.type}" is not supported with tlock decrypter`);
+				throw new Error(
+					`execution timing of type "${(newTiming as any)?.type}" is not supported for a time-locked payload`,
+				);
 			}
-			const newTiming = json.timing;
 			const drandChainInfo = await config.client.chain().info();
 			let round: number;
 			switch (newTiming.type) {
@@ -66,7 +68,8 @@ export function initDecrypter<ExecutionDataType>(config: DecrypterConfig): Decry
 					round = newTiming.scheduledRound;
 					break;
 				case 'delta-time-with-target-time':
-					round = newTiming.targetTimeUnlessHigherDelta;
+					// a time, not a round: the earliest the inner layer can be decrypted
+					round = roundAt(newTiming.targetTimeUnlessHigherDelta * 1000, drandChainInfo);
 					break;
 			}
 			const retry = Math.floor(roundTime(drandChainInfo, round) / 1000);
