@@ -7,5 +7,7 @@
 		"skipLibCheck": true,
 		"lib": ["ESNext"],
 		"types": ["@cloudflare/workers-types/2023-07-01"]
-	}
+	},
+	// the tests have their own tsconfig (test/tsconfig.json), with the vitest-pool-workers types
+	"include": ["src"]
 }

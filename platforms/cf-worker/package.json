@@ -13,14 +13,14 @@
     "workers-logger": "0.2.1"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.5.36",
-    "@cloudflare/workers-types": "^4.20241205.0",
-    "@types/node": "^22.10.2",
+    "@cloudflare/vitest-pool-workers": "^0.12.21",
+    "@cloudflare/workers-types": "^4.20260702.1",
     "@fuzd/chain-protocol": "workspace:*",
     "@fuzd/common": "workspace:*",
     "@fuzd/executor": "workspace:*",
     "@fuzd/scheduler": "workspace:*",
     "@fuzd/server": "workspace:*",
+    "@types/node": "^22.10.2",
     "ldenv": "^0.3.12",
     "remote-account": "^0.2.2",
     "set-defaults": "^0.0.5",
@@ -36,7 +36,7 @@
     "init-db:staging": "ldenv wrangler -e staging d1 execute fuzd-db-staging --remote --file=node_modules/@fuzd/server/src/schema/sql/scheduler.sql ~~ wrangler -e staging d1 execute fuzd-db-staging --remote --file=node_modules/@fuzd/server/src/schema/sql/executor.sql ~~",
     "dev": "pnpm init-db && wrangler dev -e production --port 34002",
     "init-db": "ldenv wrangler -e production d1 execute fuzd-db --file=node_modules/@fuzd/server/src/schema/sql/scheduler.sql ~~ wrangler -e production d1 execute fuzd-db --file=node_modules/@fuzd/server/src/schema/sql/executor.sql ~~",
-    "test": "vitest",
+    "test": "vitest run",
     "test:node": "vitest run --config vitest.node.config.ts"
   },
   "private": true

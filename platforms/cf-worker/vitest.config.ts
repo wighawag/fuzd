@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import {defineWorkersConfig, readD1Migrations} from '@cloudflare/vitest-pool-workers/config';
 
@@ -5,8 +6,18 @@ export default defineWorkersConfig(async () => {
 	// Read all migrations in the `migrations` directory
 	const migrationsPath = path.join(__dirname, '../../packages/server/src/schema/sql');
 	const migrations = await readD1Migrations(migrationsPath);
+	// @fuzd/server is bundled by Vite (below) and is a workspace package: its build changes without
+	// the lockfile changing, which is all Vite checks before reusing a bundle, and vitest drops
+	// `optimizeDeps.force`. So the bundle is made again on every run.
+	fs.rmSync(path.join(__dirname, 'node_modules/.vite/vitest/deps_ssr'), {recursive: true, force: true});
 	return {
 		test: {
+			include: ['test/**/*.test.ts'],
+			exclude: ['test/**/*.node.test.ts'],
+			// @fuzd/server is bundled by Vite first: served module by module, its generated
+			// `schema/ts/*.sql.js` match wrangler's default `**/*.sql` Text rule in the pool, and workerd
+			// then fails to load them
+			deps: {optimizer: {ssr: {enabled: true, include: ['@fuzd/server']}}},
 			setupFiles: ['./test/vitest/apply-migrations.ts'],
 			poolOptions: {
 				workers: {
@@ -16,9 +27,13 @@ export default defineWorkersConfig(async () => {
 						environment: 'production',
 					},
 					miniflare: {
-						// Add a test-only binding for migrations, so we can apply them in a
-						// setup file
-						bindings: {TEST_MIGRATIONS: migrations},
+						// a test-only binding for the migrations, applied in a setup file, and the test's own
+						// secrets, over any .dev.vars (which the pool reads too)
+						bindings: {
+							TEST_MIGRATIONS: migrations,
+							HD_MNEMONIC: 'test test test test test test test test test test test junk',
+							TOKEN_ADMIN: 'test-admin-token',
+						},
 					},
 				},
 			},

@@ -2,3 +2,10 @@ packages:
   - 'tests/*'
   - 'packages/*'
   - 'platforms/*'
+# install scripts of dependencies, which pnpm refuses to run until each is decided. None is needed:
+# esbuild and workerd get their binaries from optional dependencies, and sharp (pulled in by
+# miniflare for its image binding) is never used by fuzd's tests
+allowBuilds:
+  esbuild: false
+  sharp: false
+  workerd: false

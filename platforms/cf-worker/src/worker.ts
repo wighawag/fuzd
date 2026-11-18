@@ -40,7 +40,8 @@ const cronInternalActions: Record<string, InternalAction> = {
 	'*/2 * * * *': 'checkScheduledExecutionStatus',
 };
 
-const scheduled = async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+// a module Worker's scheduled handler gets a ScheduledController (ScheduledEvent is the service-worker syntax)
+const scheduled = async (event: ScheduledController, env: Env, ctx: ExecutionContext) => {
 	if (env.DISABLE_CRON) {
 		return new Response(`CRON ARE DISABLED`, {
 			status: 200,
