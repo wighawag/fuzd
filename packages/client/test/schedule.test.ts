@@ -234,3 +234,26 @@ describe('a schedule into a slot already broadcast', () => {
 		expect(await stored(slot)).toBeUndefined();
 	});
 });
+
+describe('a request the server refuses', () => {
+	// the server's failure body is {success: false, errors: [{message, ...}]}: the client's error says
+	// what the server said, not just the URL, nor `[object Object]`
+	it('fetching a remote account throws with the server message', async () => {
+		await expect(client.assignRemoteAccount('99999')).rejects.toThrow(/cannot get protocol for chain with id 99999/);
+	});
+
+	it('reading the reserved amount throws with the server message', async () => {
+		await client.assignRemoteAccount(CHAIN_ID);
+		const error = await client
+			.computeBalanceRequired({
+				chainId: 'not-a-chain' as any,
+				slot: 'any',
+				gas: 21000n,
+				maxFeePerGasAuthorized: 10n,
+			})
+			.catch((err) => err);
+		expect(error).toBeInstanceOf(Error);
+		expect(error.message).not.toMatch(/object Object/);
+		expect(error.message).toMatch(/^invalid param at chainId/);
+	});
+});

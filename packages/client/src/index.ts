@@ -142,6 +142,12 @@ export type FailureResponse = {
 	errors: {name?: string; message: string; code?: number; status?: number}[];
 };
 
+/** The messages of a failure the server answered (a FailureResponse), or `fallback` when it has none. */
+function failureMessage(result: Partial<FailureResponse> | undefined, fallback: string): string {
+	const messages = (result?.errors || []).map((v) => v?.message).filter((v): v is string => !!v);
+	return messages.length > 0 ? messages.join('; ') : fallback;
+}
+
 export type DirectSubmission = {
 	slot: string;
 	chainId: IntegerString;
@@ -170,7 +176,7 @@ export function createClient(config: ClientConfig) {
 		}
 
 		if (!remoteAccountResult.success) {
-			throw new Error(remoteAccountResult.error || `failed: ${remoteAccountRequestUrl}`);
+			throw new Error(failureMessage(remoteAccountResult, `failed: ${remoteAccountRequestUrl}`));
 		}
 		return remoteAccountResult.account;
 	}
@@ -231,7 +237,7 @@ export function createClient(config: ClientConfig) {
 		}
 
 		if (!reservedResult.success) {
-			throw new Error(reservedResult.errors);
+			throw new Error(failureMessage(reservedResult, `failed: ${reservedRequestUrl}`));
 		}
 
 		const amountReserved = BigInt(reservedResult.total);
