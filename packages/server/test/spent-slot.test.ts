@@ -205,6 +205,31 @@ describe('a schedule into a slot a run is processing', () => {
 	});
 });
 
+describe('a slot archived twice', () => {
+	// a slot archived without a broadcast is free again: its next schedule may be archived too, and
+	// the archive keeps one record per slot (the latest)
+	it('is archived again, and its next schedule is accepted', async () => {
+		const slot = 'archived-twice';
+		const archive = () =>
+			server.getJSON(`/admin/archiveSubmission/${CHAIN_ID}/${account}/${slot}`, {
+				method: 'POST',
+				headers: server.adminHeaders,
+			});
+		expect((await schedule(slot, [tx(first)])).json.success).toBe(true);
+		expect((await archive()).json).toEqual({success: true});
+		expect((await schedule(slot, [tx(second)])).json.success).toBe(true);
+		expect((await archive()).json).toEqual({success: true});
+		expect(await queued(slot)).toBeUndefined();
+		const {rows} = await server.db.execute({
+			sql: 'SELECT payload FROM ArchivedScheduledExecutions WHERE account = ? AND slot = ?',
+			args: [account, slot],
+		});
+		expect(rows.map((v: any) => JSON.parse(v.payload)[0].transaction.to)).toEqual([second]);
+
+		expect((await schedule(slot, [tx(first)])).json.success).toBe(true);
+	});
+});
+
 describe('a broadcast schedule the executor holds nothing for', () => {
 	// An empty clear batch is accepted and marked broadcast without the executor storing anything
 	// (as is a slot whose executor records were pruned before its status was checked). Its status

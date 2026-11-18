@@ -167,7 +167,9 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 			'DELETE FROM ScheduledExecutions WHERE account = ?1 AND chainId = ?2 AND slot = ?3;',
 		);
 		const insertIntoArchive = this.db.prepare(
-			`INSERT INTO ArchivedScheduledExecutions (${columns}) VALUES(${bindings})`,
+			// the archive keeps one record per slot (its primary key): the latest, as a slot archived
+			// without a broadcast may be scheduled into, and archived, again
+			`INSERT OR REPLACE INTO ArchivedScheduledExecutions (${columns}) VALUES(${bindings})`,
 		);
 		await this.db.batch([deleteFromExecutions.bind(account, chainId, slot), insertIntoArchive.bind(...values)]);
 	}
@@ -311,11 +313,12 @@ export class RemoteSQLSchedulerStorage<TransactionDataType> implements Scheduler
 		const columns = Object.keys(inDB);
 		const values = columns.map((column) => (inDB as Record<string, unknown>)[column]);
 		// ?1 to ?4: the key and the claimant, then the columns. One batch (a transaction): the archive
-		// row is written only if the claim is still held, then the row is deleted under the same guard
+		// row is written only if the claim is still held (replacing an earlier archive of the slot, see
+		// archiveExecution), then the row is deleted under the same guard
 		const held = `account = ?1 AND chainId = ?2 AND slot = ?3 AND claimedBy = ?4`;
 		const insertIntoArchive = this.db
 			.prepare(
-				`INSERT INTO ArchivedScheduledExecutions (${columns.join(', ')}) SELECT ${columns.map((_, i) => `?${i + 5}`).join(', ')} WHERE EXISTS (SELECT 1 FROM ScheduledExecutions WHERE ${held});`,
+				`INSERT OR REPLACE INTO ArchivedScheduledExecutions (${columns.join(', ')}) SELECT ${columns.map((_, i) => `?${i + 5}`).join(', ')} WHERE EXISTS (SELECT 1 FROM ScheduledExecutions WHERE ${held});`,
 			)
 			.bind(account, chainId, slot, claimant, ...values);
 		const deleteFromExecutions = this.db

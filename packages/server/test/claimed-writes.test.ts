@@ -82,6 +82,21 @@ describe('a claimed archive', () => {
 		expect(await rows('ArchivedScheduledExecutions')).toEqual([{slot: 'reveal', broadcasted: 0, retries: 0}]);
 	});
 
+	it('archives a slot archived before', async () => {
+		const storage = await createStorage();
+		expect(await storage.archiveClaimedExecution(execution, 'run-a')).toBe(true);
+		await storage.createOrUpdateQueuedExecution({...execution, retries: 2});
+		await storage.claimDueExecutions({
+			limit: 10,
+			chainId: execution.chainId,
+			upToCheckinTime: 1000,
+			claim: {by: 'run-b', now: Date.now(), expiresAt: Date.now() + 60_000},
+		});
+		expect(await storage.archiveClaimedExecution({...execution, retries: 2}, 'run-b')).toBe(true);
+		expect(await rows('ScheduledExecutions')).toEqual([]);
+		expect(await rows('ArchivedScheduledExecutions')).toEqual([{slot: 'reveal', broadcasted: 0, retries: 2}]);
+	});
+
 	it('neither archives nor deletes once another run holds the execution', async () => {
 		const storage = await createStorage();
 		await client!.execute("UPDATE ScheduledExecutions SET claimedBy = 'run-b'");
