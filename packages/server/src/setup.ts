@@ -45,6 +45,33 @@ declare module 'hono' {
 	}
 }
 
+type ServerAccount = ReturnType<typeof initAccountFromHD>;
+
+// The server account derived from a mnemonic (PBKDF2 with 2048 rounds, then the HD path): most of
+// the CPU of a request when done each time, so done once per mnemonic, per isolate or process.
+// Filled lazily, in a request: nothing is computed at global scope (a Worker refuses to deploy
+// with random values generated there). Keyed by the mnemonic, so a changed mnemonic derives anew.
+const serverAccounts = new Map<string, ServerAccount>();
+
+function getServerAccount(mnemonic: string): ServerAccount {
+	let account = serverAccounts.get(mnemonic);
+	if (!account) {
+		const seed = mnemonicToSeedSync(mnemonic);
+		const masterKey = HDKey.fromMasterSeed(seed);
+		const accountHDKey = masterKey.derive(defaultPath);
+		account = initAccountFromHD(accountHDKey);
+		serverAccounts.set(mnemonic, account);
+	}
+	return account;
+}
+
+// The default drand client, made once (lazily, in a request): it caches the chain info it fetches,
+// so a new one per request fetched that info again before each run's first decryption.
+let defaultDrandClient: ReturnType<typeof mainnetClient> | undefined;
+function getDefaultDrandClient() {
+	return (defaultDrandClient ??= mainnetClient());
+}
+
 const chainOverrides: Record<string, string> = {};
 
 export function setChainOverride(chainId: IntegerString, override: string) {
@@ -148,10 +175,7 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 		if (!mnemonic) {
 			throw new Error(`no HD_MNEMONIC defined`);
 		}
-		const seed = mnemonicToSeedSync(mnemonic);
-		const masterKey = HDKey.fromMasterSeed(seed);
-		const accountHDKey = masterKey.derive(defaultPath);
-		const account = initAccountFromHD(accountHDKey);
+		const account = getServerAccount(mnemonic);
 
 		const contractTimestamp: String0x = env.CONTRACT_TIMESTAMP as String0x;
 		const chainProtocols: ChainProtocols<MyChainProtocols> = {};
@@ -182,7 +206,7 @@ export function setup<Env extends Bindings = Bindings>(options: SetupOptions<Env
 			env.TIME_LOCK_DECRYPTION === 'false'
 				? undefined
 				: initDecrypter<ExecutionSubmission<MyTransactionData>>({
-						client: getDrandClient ? getDrandClient(c) : mainnetClient(),
+						client: getDrandClient ? getDrandClient(c) : getDefaultDrandClient(),
 					});
 		const schedulerConfig: SchedulerConfig<MyChainProtocols> = {
 			...baseConfig,
