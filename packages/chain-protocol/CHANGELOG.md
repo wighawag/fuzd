@@ -1,5 +1,15 @@
 # @fuzd/chain-protocol
 
+## 0.11.2
+
+### Patch Changes
+
+- Updated dependencies [634d9b2]
+- Updated dependencies [78c897b]
+- Updated dependencies [a86ddf2]
+- Updated dependencies [7175a77]
+  - @fuzd/common@0.12.0
+
 ## 0.11.1
 
 ### Package name
