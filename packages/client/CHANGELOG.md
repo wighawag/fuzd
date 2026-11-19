@@ -1,5 +1,29 @@
 # @fuzd/client
 
+## 0.13.0
+
+### Minor Changes
+
+- a86ddf2: The failure that `scheduleExecution` and `broadcastExecution` return is typed as the server's body, `FailureResponse` (`{success: false, errors: [{message, name?, code?, status?}]}`, now exported), instead of `{success: false, error}`: over HTTP the client returns the server's body unchanged, and it never had an `error` field. `broadcastExecution` with a function `schedulerEndPoint` returns that shape too (`errors: [{message}]`) instead of `{success: false, error}`.
+
+### Patch Changes
+
+- 1eb7e0f: When the server refuses a remote account or reserved-amount request, the client's error now carries the server's messages. It threw `failed: <url>` for the remote account (it read a field the server never sends, `error`), and `[object Object]` for the reserved amount (it passed the `errors` array to `Error`).
+- Updated dependencies [634d9b2]
+- Updated dependencies [ef023b9]
+- Updated dependencies [ce469f4]
+- Updated dependencies [c3df485]
+- Updated dependencies [78c897b]
+- Updated dependencies [a86ddf2]
+- Updated dependencies [d63f9c0]
+- Updated dependencies [a86ddf2]
+- Updated dependencies [52e27a9]
+- Updated dependencies [7175a77]
+  - @fuzd/common@0.12.0
+  - @fuzd/scheduler@0.12.0
+  - @fuzd/executor@0.12.0
+  - @fuzd/chain-protocol@0.11.2
+
 ## 0.12.0
 
 ### Minor Changes
