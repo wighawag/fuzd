@@ -4,7 +4,7 @@
  * GraphQL analytics API. `wrangler tail` samples during a burst and drops most busy invocations
  * (and their logs); the analytics API counts every one.
  *
- *   CLOUDFLARE_API_TOKEN=... node cf-analytics.ts --script fuzd-cf-worker-staging --since -30m
+ *   CLOUDFLARE_API_TOKEN=... node cf-analytics.ts --script fuzd-cf-worker-staging --since=-30m
  *
  * Two datasets: `durableObjectsInvocationsAdaptiveGroups` (the processing loops' alarms) and
  * `workersInvocationsAdaptive` (the Worker itself: requests and crons, split by event type).
@@ -196,7 +196,7 @@ async function main() {
 	});
 	if (args.help) {
 		console.log(
-			'node cf-analytics.ts [--script fuzd-cf-worker-staging] [--account <id>] [--since -60m] [--until -0m] [--json]',
+			'node cf-analytics.ts [--script fuzd-cf-worker-staging] [--account <id>] [--since=-60m] [--until=-0m] [--json]',
 		);
 		return;
 	}

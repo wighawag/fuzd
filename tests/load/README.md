@@ -87,7 +87,7 @@ Set the loop count with `printf 4 | npx wrangler secret put PROCESSING_LOOPS -e 
 ```sh
 export CLOUDFLARE_API_TOKEN=...   # a token with Account Analytics: Read
 cd tests/load
-node cf-analytics.ts --script fuzd-cf-worker-staging --since -30m
+node cf-analytics.ts --script fuzd-cf-worker-staging --since=-30m
 node cf-analytics.ts --since 2026-11-18T16:20:00Z --until 2026-11-18T16:40:00Z --account <account id>
 ```
 
@@ -95,7 +95,7 @@ node cf-analytics.ts --since 2026-11-18T16:20:00Z --until 2026-11-18T16:40:00Z -
 | - | - | - |
 | `--script` | `fuzd-cf-worker-staging` | the Worker's name |
 | `--account` | `CLOUDFLARE_ACCOUNT_ID`, else read from `wrangler whoami` (in `platforms/cf-worker`) | account id; needed when the token sees several accounts |
-| `--since` / `--until` | `-60m` / `-0m` | `-<n>m`, `-<n>h`, `-<n>d` before now, or an ISO time |
+| `--since` / `--until` | `-60m` / `-0m` | `-<n>m`, `-<n>h`, `-<n>d` before now (written `--since=-30m`: node's argument parser takes `--since -30m` for an option), or an ISO time |
 | `--json` | | print the API's answer as it is |
 
 The analytics lag a minute or two behind real time. `node --test cf-analytics.test.ts` (or `pnpm test` here) checks the parsing and the table against an answer recorded from staging (`fixtures/cf-analytics-sample.json`), without the network.
