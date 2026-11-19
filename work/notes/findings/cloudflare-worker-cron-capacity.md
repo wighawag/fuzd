@@ -31,3 +31,17 @@ Time-locked reveals, budget of 100 per run (the default), all due at the same in
 - **Wall time, not CPU, bounds a run**: an invocation has at most 6 simultaneous outgoing connections, and each execution waits on several RPC round trips (through a tunnel here). More loops scale; more concurrency inside one run does not.
 - **An idle loop** wakes every 5s (`PROCESSING_LOOP_IDLE_MS`); each idle alarm took 0.1 to 1s of CPU, mostly `setup` deriving the server account from the mnemonic on every internal request, plus two RPC requests per chain.
 - **wrangler tail samples under load**: during the bursts it dropped most of the busy invocations, including their logs. The GraphQL analytics API (`durableObjectsInvocationsAdaptiveGroups`, `workersInvocationsAdaptive`, per-minute CPU and wall quantiles) has them all. `tests/load/cf-analytics.ts` prints them per minute; the API reports CPU and wall times in microseconds.
+
+## After the status-check, claim-per-account and setup-cache changes (2026-11-19)
+
+Same staging Worker and D1, deployed at 52f1380 (version 882ae03b), a fresh anvil (chain id 31339) through a trycloudflare tunnel, 8 loops, 2000 time-locked reveals due at the same instant, window 1h. Numbers from `tests/load/reveal-burst.ts` and `tests/load/cf-analytics.ts`.
+
+| run | all broadcast in | broadcasts per minute | delay p50 / p99 | all finalized |
+| - | - | - | - | - |
+| 2000 players, 8 loops | about 1.3 min | 1625, 375 | 37s / 77s | about 6 min after the reveal |
+
+- **Broadcasting** is as before (1577 in the first minute then, 1625 now): claims per account and guarded writes cost nothing measurable.
+- **An idle loop's alarm** now takes 0.01s of CPU at p50 (0.1 to 1s before): deriving the server account once per isolate was most of it.
+- **Finalization keeps up**: the 2000 were marked finalized in two status-check crons once their transactions were final. The D1 also held 6600 broadcast executions of an earlier run (chain 31338) never marked finalized, which the old status check (10 per chain every 2 minutes) had not got through: they were finalized at 1000 per cron, in 13 minutes, while 290 executions of a chain no longer reachable (31337) stayed unfinalized without blocking them.
+- **Scheduling** 2000 at 50 concurrent: 33 per second, `scheduleExecution` p50 956 ms, p99 2.1s (it now reads the executor's records for the slot first).
+- **A chain whose RPC does not answer slows every alarm**: with two such chains configured (31337, 31338: a closed tunnel and an unreachable URL), an idle alarm took 25s of wall time at p50 instead of about 5s, the timestamp requests waiting for their timeout. No error, no CPU, but each loop then looks at the queue every 25 to 30s rather than every 5s. Not fixed.
